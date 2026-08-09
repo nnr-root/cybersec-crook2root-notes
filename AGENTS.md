@@ -17,8 +17,8 @@ Every technical leaf is a zero-to-mastery lesson, not a summary or cheat sheet. 
 1. Begin at **Crook** level with a plain-language mental model, prerequisites, and vocabulary suitable for a complete beginner.
 2. Progress to **Operator** level with architecture, commands, code, realistic output, troubleshooting, and evidence interpretation.
 3. Finish at **Root** level with internals, edge cases, failure modes, security consequences, debugging, and design tradeoffs.
-4. Include at least one meaningful visual—prefer Mermaid for architecture, sequence, state, or decision flows. Use SVG, PNG, or GIF assets only when they teach something Mermaid cannot.
-5. Include a reproducible authorized lab or exercise, expected output, cleanup guidance where state changes, and a **Crook → Operator → Root** checkpoint.
+4. Include at least one meaningful visual—prefer Mermaid for architecture, sequence, state, or decision flows. When the subject is inherently spatial (a byte/frame/header field map, a hex-dump-to-field mapping, a memory or address-space map, a register/flag layout, a disk or RF-channel arrangement), Mermaid is **insufficient**: author a self-contained SVG (dark bg `#0f1420`), store it in `assets/` with a domain prefix, embed with `![[name.svg]]`, and **render and visually inspect it before committing**.
+5. Include a **runnable, step-by-step authorized lab** in which every step shows a real command **and its real output**, contains at least one deliberate failure, and ends with verified cleanup where state changes—then a **Crook → Operator → Root** checkpoint. A bulleted list of things the reader "could try", or commands with no output shown, is **not a lab** and is grounds for rejecting the note. Prefer labs that run on one machine the reader already has (build extra hosts with namespaces/containers/loopback rather than assuming spare VMs or hardware). See `docs/Crook2Root Authoring Standard.md` §6.
 6. Replace generic filler with topic-specific mechanisms. Define not only what happens, but why the underlying parser, protocol, kernel, runtime, or control behaves that way.
 
 ## Required First-Degree Learning Order
@@ -57,7 +57,8 @@ Before reporting completion, verify:
 - Learning order is present, plain text, first-degree only, and matches the parent curriculum.
 - Code fences and Mermaid blocks are balanced.
 - Commands have realistic expected output.
-- Labs are bounded, authorized, reproducible, and include cleanup when needed.
+- The lab is a runnable step-by-step sequence: every step shows a real command **and its output**, it contains a deliberate failure, it runs on one machine the reader plausibly has, and it ends with verified cleanup. A "could try" bullet list fails the audit.
+- If the subject is a byte/packet/memory/register/disk layout, an authored, visually-inspected image (not just Mermaid) is present.
 - No lateral leaf links, broken wikilinks, broken anchors, or missing embeds exist.
 - Domain tags still match `.obsidian/graph.json` color groups.
 - Nothing is staged, committed, or pushed.

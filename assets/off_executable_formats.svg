@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 560" font-family="ui-monospace,Menlo,Consolas,monospace">
+  <rect width="880" height="560" fill="#0f1420"/>
+  <text x="440" y="34" fill="#e6edf3" font-size="20" font-weight="700" text-anchor="middle">Executable Formats — On-Disk Layout</text>
+  <text x="440" y="56" fill="#8b98a5" font-size="13" text-anchor="middle">header → tables/commands → code &amp; data segments; the loader maps these into memory</text>
+
+  <!-- ELF column -->
+  <g>
+    <text x="150" y="88" fill="#58a6ff" font-size="16" font-weight="700" text-anchor="middle">ELF · Linux</text>
+    <rect x="40" y="100" width="220" height="44" fill="#1c2333" stroke="#58a6ff"/><text x="52" y="127" fill="#79c0ff" font-size="13">ELF Header (e_ident, e_entry)</text>
+    <rect x="40" y="146" width="220" height="40" fill="#161b22" stroke="#30363d"/><text x="52" y="171" fill="#adbac7" font-size="13">Program Headers (segments)</text>
+    <rect x="40" y="188" width="220" height="40" fill="#132b1e" stroke="#2ea043"/><text x="52" y="213" fill="#3fb950" font-size="13">.text  (executable code)</text>
+    <rect x="40" y="230" width="220" height="38" fill="#33261a" stroke="#e3a008"/><text x="52" y="254" fill="#f2cc60" font-size="13">.rodata / .data</text>
+    <rect x="40" y="270" width="220" height="34" fill="#161b22" stroke="#30363d"/><text x="52" y="292" fill="#adbac7" font-size="13">.bss (zero-init)</text>
+    <rect x="40" y="306" width="220" height="40" fill="#161b22" stroke="#30363d"/><text x="52" y="331" fill="#8b98a5" font-size="13">Section Headers (link/debug)</text>
+  </g>
+
+  <!-- PE column -->
+  <g>
+    <text x="440" y="88" fill="#d6a2ff" font-size="16" font-weight="700" text-anchor="middle">PE · Windows</text>
+    <rect x="330" y="100" width="220" height="44" fill="#1c2333" stroke="#a371f7"/><text x="342" y="120" fill="#d6a2ff" font-size="13">DOS Header ("MZ")</text><text x="342" y="137" fill="#8b98a5" font-size="11">+ DOS stub</text>
+    <rect x="330" y="146" width="220" height="40" fill="#161b22" stroke="#30363d"/><text x="342" y="171" fill="#adbac7" font-size="13">PE/NT Headers ("PE\0\0")</text>
+    <rect x="330" y="188" width="220" height="40" fill="#161b22" stroke="#30363d"/><text x="342" y="213" fill="#adbac7" font-size="13">Section Table</text>
+    <rect x="330" y="230" width="220" height="38" fill="#132b1e" stroke="#2ea043"/><text x="342" y="254" fill="#3fb950" font-size="13">.text  (code)</text>
+    <rect x="330" y="270" width="220" height="34" fill="#33261a" stroke="#e3a008"/><text x="342" y="292" fill="#f2cc60" font-size="13">.rdata / .data</text>
+    <rect x="330" y="306" width="220" height="40" fill="#161b22" stroke="#30363d"/><text x="342" y="331" fill="#8b98a5" font-size="13">.reloc / imports (IAT)</text>
+  </g>
+
+  <!-- Mach-O column -->
+  <g>
+    <text x="730" y="88" fill="#3fb950" font-size="16" font-weight="700" text-anchor="middle">Mach-O · macOS</text>
+    <rect x="620" y="100" width="220" height="44" fill="#1c2333" stroke="#2ea043"/><text x="632" y="127" fill="#3fb950" font-size="13">Mach Header (magic, cputype)</text>
+    <rect x="620" y="146" width="220" height="40" fill="#161b22" stroke="#30363d"/><text x="632" y="171" fill="#adbac7" font-size="13">Load Commands</text>
+    <rect x="620" y="188" width="220" height="40" fill="#132b1e" stroke="#2ea043"/><text x="632" y="213" fill="#3fb950" font-size="13">__TEXT  (code, __cstring)</text>
+    <rect x="620" y="230" width="220" height="38" fill="#33261a" stroke="#e3a008"/><text x="632" y="254" fill="#f2cc60" font-size="13">__DATA  (globals, __got)</text>
+    <rect x="620" y="270" width="220" height="34" fill="#161b22" stroke="#30363d"/><text x="632" y="292" fill="#adbac7" font-size="13">__DATA_CONST</text>
+    <rect x="620" y="306" width="220" height="40" fill="#161b22" stroke="#30363d"/><text x="632" y="331" fill="#8b98a5" font-size="13">__LINKEDIT (symbols, sigs)</text>
+  </g>
+
+  <text x="440" y="390" fill="#8b98a5" font-size="13" text-anchor="middle">All three share the pattern: a magic number identifies the format, a header table describes segments,</text>
+  <text x="440" y="410" fill="#8b98a5" font-size="13" text-anchor="middle">and the loader maps code (executable, read-only) separately from data (writable, non-executable — W^X / NX).</text>
+
+  <rect x="230" y="440" width="420" height="70" fill="#161b22" stroke="#30363d"/>
+  <text x="245" y="465" fill="#e6edf3" font-size="13" font-weight="700">Entry point &amp; magic bytes</text>
+  <text x="245" y="486" fill="#79c0ff" font-size="12">ELF: 7F 45 4C 46   ·   PE: 4D 5A … 50 45   ·   Mach-O: FE ED FA CF</text>
+  <text x="245" y="503" fill="#8b98a5" font-size="12">execution begins at the header-declared entry point after relocation</text>
+</svg>

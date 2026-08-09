@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 560" font-family="ui-monospace,Menlo,Consolas,monospace">
+  <rect width="760" height="560" fill="#0f1420"/>
+  <text x="380" y="34" fill="#e6edf3" font-size="20" font-weight="700" text-anchor="middle">x86-64 Stack Frame &amp; Overflow Direction</text>
+  <text x="380" y="56" fill="#8b98a5" font-size="13" text-anchor="middle">stack grows toward lower addresses; a buffer overflow writes toward higher addresses</text>
+
+  <!-- address axis -->
+  <text x="150" y="92" fill="#8b98a5" font-size="12" text-anchor="end">higher addr</text>
+  <text x="150" y="516" fill="#8b98a5" font-size="12" text-anchor="end">lower addr</text>
+  <line x1="150" y1="100" x2="150" y2="508" stroke="#30363d" stroke-width="1"/>
+  <polygon points="150,508 146,498 154,498" fill="#30363d"/>
+
+  <!-- frame rows: x=170..560 -->
+  <g font-size="14">
+    <rect x="170" y="96" width="390" height="40" fill="#161b22" stroke="#30363d"/>
+    <text x="185" y="121" fill="#8b98a5">caller's frame …</text>
+
+    <rect x="170" y="140" width="390" height="44" fill="#1c2333" stroke="#3d444d"/>
+    <text x="185" y="167" fill="#d6a2ff">function arguments (7th+)</text>
+
+    <rect x="170" y="188" width="390" height="44" fill="#3a1d24" stroke="#f85149"/>
+    <text x="185" y="215" fill="#ff7b72" font-weight="700">return address (saved RIP)</text>
+
+    <rect x="170" y="236" width="390" height="44" fill="#33261a" stroke="#e3a008"/>
+    <text x="185" y="263" fill="#f2cc60" font-weight="700">saved RBP (frame pointer)</text>
+
+    <rect x="170" y="284" width="390" height="44" fill="#161b22" stroke="#30363d"/>
+    <text x="185" y="311" fill="#8b98a5">other locals / saved regs</text>
+
+    <rect x="170" y="332" width="390" height="80" fill="#132b1e" stroke="#2ea043"/>
+    <text x="185" y="360" fill="#3fb950" font-weight="700">char buf[64]  ← attacker input lands here</text>
+    <text x="185" y="384" fill="#8b98a5" font-size="12">RBP-0x40 … RBP-0x01</text>
+    <text x="185" y="403" fill="#8b98a5" font-size="12">strcpy(buf, argv[1]) with no bound = overflow</text>
+
+    <rect x="170" y="416" width="390" height="40" fill="#161b22" stroke="#30363d"/>
+    <text x="185" y="441" fill="#8b98a5">RSP → top of stack</text>
+  </g>
+
+  <!-- overflow arrow along the right, pointing up from buf to saved RIP -->
+  <line x1="600" y1="392" x2="600" y2="205" stroke="#f85149" stroke-width="3"/>
+  <polygon points="600,196 593,212 607,212" fill="#f85149"/>
+  <text x="618" y="320" fill="#ff7b72" font-size="13" transform="rotate(90 618 320)">overflow writes upward, past RBP into saved RIP</text>
+
+  <!-- RSP/RBP pointers -->
+  <text x="700" y="440" fill="#58a6ff" font-size="13" text-anchor="middle">RSP</text>
+  <line x1="682" y1="436" x2="562" y2="436" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="700" y="262" fill="#58a6ff" font-size="13" text-anchor="middle">RBP</text>
+  <line x1="682" y1="258" x2="562" y2="258" stroke="#58a6ff" stroke-width="1.5"/>
+</svg>

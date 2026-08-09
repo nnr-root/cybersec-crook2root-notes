@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" width="900" height="470" font-family="ui-monospace,Menlo,Consolas,monospace">
+  <rect width="900" height="470" fill="#0f1420"/>
+  <text x="20" y="34" fill="#e6edf3" font-size="19" font-weight="bold">Ethernet II frame — byte layout on the wire</text>
+  <text x="20" y="56" fill="#8b98a5" font-size="12">Numbers in brackets are byte counts. Only the shaded 14 bytes are the header a switch reads.</text>
+
+  <!-- frame bar -->
+  <rect x="20"  y="78" width="90"  height="58" fill="#1b2431" stroke="#3d4c5f"/>
+  <rect x="110" y="78" width="115" height="58" fill="#243447" stroke="#6f9ad1" stroke-width="1.5"/>
+  <rect x="225" y="78" width="115" height="58" fill="#243447" stroke="#6f9ad1" stroke-width="1.5"/>
+  <rect x="340" y="78" width="80"  height="58" fill="#2d4a63" stroke="#6f9ad1" stroke-width="1.5"/>
+  <rect x="420" y="78" width="350" height="58" fill="#1f3b30" stroke="#3d4c5f"/>
+  <rect x="770" y="78" width="90"  height="58" fill="#4a2d33" stroke="#3d4c5f"/>
+
+  <text x="65"  y="103" fill="#7c8a99" font-size="11.5" text-anchor="middle">Preamble+SFD</text>
+  <text x="65"  y="122" fill="#7c8a99" font-size="12" text-anchor="middle">[8]</text>
+  <text x="167" y="103" fill="#cfe3ff" font-size="12.5" text-anchor="middle">Dest MAC</text>
+  <text x="167" y="122" fill="#e6edf3" font-size="12" text-anchor="middle">[6]</text>
+  <text x="282" y="103" fill="#cfe3ff" font-size="12.5" text-anchor="middle">Src MAC</text>
+  <text x="282" y="122" fill="#e6edf3" font-size="12" text-anchor="middle">[6]</text>
+  <text x="380" y="103" fill="#9fd0ff" font-size="12.5" text-anchor="middle">EtherType</text>
+  <text x="380" y="122" fill="#e6edf3" font-size="12" text-anchor="middle">[2]</text>
+  <text x="595" y="103" fill="#a9e6c3" font-size="12.5" text-anchor="middle">Payload — the IP packet</text>
+  <text x="595" y="122" fill="#e6edf3" font-size="12" text-anchor="middle">[46 – 1500]</text>
+  <text x="815" y="103" fill="#ffb3bd" font-size="12.5" text-anchor="middle">FCS</text>
+  <text x="815" y="122" fill="#e6edf3" font-size="12" text-anchor="middle">[4]</text>
+
+  <text x="65" y="152" fill="#6f7d8c" font-size="10.5" text-anchor="middle">(not shown by capture tools)</text>
+
+  <!-- legend: no leader lines, so nothing can cross -->
+  <g>
+    <rect x="22" y="176" width="13" height="13" fill="#243447" stroke="#6f9ad1"/>
+    <text x="44" y="187" fill="#cfe3ff" font-size="12.5">Dest MAC</text>
+    <text x="130" y="187" fill="#b9c6d4" font-size="12.5">who receives this frame on THIS link — rebuilt at every hop</text>
+
+    <rect x="22" y="202" width="13" height="13" fill="#243447" stroke="#6f9ad1"/>
+    <text x="44" y="213" fill="#cfe3ff" font-size="12.5">Src MAC</text>
+    <text x="130" y="213" fill="#b9c6d4" font-size="12.5">claimed sender — written by the sender, verified by no one</text>
+
+    <rect x="22" y="228" width="13" height="13" fill="#2d4a63" stroke="#6f9ad1"/>
+    <text x="44" y="239" fill="#9fd0ff" font-size="12.5">EtherType</text>
+    <text x="130" y="239" fill="#b9c6d4" font-size="12.5">0x0800 IPv4 · 0x86DD IPv6 · 0x0806 ARP · 0x8100 VLAN tag</text>
+
+    <rect x="22" y="254" width="13" height="13" fill="#4a2d33" stroke="#3d4c5f"/>
+    <text x="44" y="265" fill="#ffb3bd" font-size="12.5">FCS</text>
+    <text x="130" y="265" fill="#b9c6d4" font-size="12.5">CRC — on mismatch the frame is silently DISCARDED, never repaired</text>
+  </g>
+
+  <!-- hex dump -->
+  <text x="20" y="308" fill="#e6edf3" font-size="14.5" font-weight="bold">The same bytes in a real tcpdump hex dump</text>
+  <rect x="20" y="322" width="840" height="118" fill="#111721" stroke="#2b3648"/>
+
+  <text x="36"  y="352" fill="#6f7d8c" font-size="13">0x0000:</text>
+  <text x="112" y="352" fill="#cfe3ff" font-size="13">0050 56aa bbcc</text>
+  <text x="256" y="352" fill="#cfe3ff" font-size="13">001a 2b3c 4d5e</text>
+  <text x="400" y="352" fill="#9fd0ff" font-size="13">0800</text>
+  <text x="466" y="352" fill="#a9e6c3" font-size="13">4500 ...</text>
+
+  <line x1="112" y1="362" x2="238" y2="362" stroke="#4a5b6f"/>
+  <line x1="256" y1="362" x2="382" y2="362" stroke="#4a5b6f"/>
+  <line x1="400" y1="362" x2="440" y2="362" stroke="#4a5b6f"/>
+  <line x1="466" y1="362" x2="540" y2="362" stroke="#4a5b6f"/>
+
+  <text x="112" y="380" fill="#8b98a5" font-size="11.5">dest MAC</text>
+  <text x="256" y="380" fill="#8b98a5" font-size="11.5">src MAC</text>
+  <text x="392" y="380" fill="#8b98a5" font-size="11.5">type</text>
+  <text x="466" y="380" fill="#8b98a5" font-size="11.5">IP header starts</text>
+
+  <text x="36" y="410" fill="#b9c6d4" font-size="12">First 6 bytes = destination · next 6 = source · next 2 name the payload's protocol.</text>
+  <text x="36" y="430" fill="#b9c6d4" font-size="12">Then <tspan fill="#a9e6c3">45</tspan> begins the IP header: <tspan fill="#a9e6c3">4</tspan> = IPv4, <tspan fill="#a9e6c3">5</tspan> = header length in 32-bit words (20 bytes).</text>
+</svg>

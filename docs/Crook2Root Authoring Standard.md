@@ -54,11 +54,11 @@ Section names may adapt to the subject, but every technical leaf needs the follo
 3. `## Parent Learning Order` followed by one plain-text order line.
 4. Beginner mental model and prerequisites.
 5. Architecture or mechanics explanation.
-6. At least one meaningful visual.
+6. At least one meaningful visual — Mermaid **or an authored image** where the subject is inherently spatial (see §4).
 7. Practical commands, code, or protocol examples with realistic output.
 8. Failure modes and troubleshooting.
 9. Security implications and authorized-use boundaries.
-10. A reproducible lab or exercise.
+10. A **runnable, step-by-step lab** — every step shows its real command *and* its real output (see §6). A list of things the reader "could try" is not a lab and does not satisfy this item.
 11. A Crook → Operator → Root checkpoint.
 12. A single parent link at the footer.
 
@@ -95,9 +95,9 @@ Use Mermaid for:
 - `classDiagram` — object ownership and structural relationships.
 - `timeline` — boot, incident, or forensic sequences.
 
-Use an image or animation when motion, physical layout, UI state, packet timing, or hardware arrangement cannot be represented clearly in Mermaid. Store repository assets in `assets/` and embed them with `![[asset.ext]]`. Every visual needs nearby prose explaining how to read it and why it matters.
+**Mermaid is not sufficient for every subject.** When the concept is inherently *spatial* — a byte or bit layout, a packet/frame/header field map, a hex-dump-to-field mapping, a memory or address-space map, a register or flag layout, a disk/partition structure, or an RF channel arrangement — Mermaid cannot express it, and the note **must include an authored image**. Author these as self-contained SVGs (theme-agnostic dark background `#0f1420`, light text), store them in `assets/` with a domain prefix (e.g. `net_`, `os_`), and embed with `![[name.svg]]`. **Any authored image must be rendered and visually inspected before it is committed** — SVG label collisions and overflow are common and are not caught by text tooling. Every visual needs nearby prose explaining how to read it and why it matters.
 
-Decorative diagrams, repeated generic flows, and visuals that merely restate a list do not satisfy the standard.
+Decorative diagrams, repeated generic flows, and visuals that merely restate a list do not satisfy the standard. A note whose only visuals are Mermaid flowcharts, when its subject is a byte or memory layout, is **incomplete**.
 
 ## 5. Practical Evidence Standard
 
@@ -112,7 +112,30 @@ Commands without output teach syntax but not interpretation. Every important wor
 
 Use synthetic hosts, identities, domains, addresses, records, and markers. Authorized offensive material should establish the mechanism with bounded evidence and explicit stop conditions.
 
-## 6. Strict Multiple-Trees Architecture
+## 6. The Lab Standard — Labs Must Actually Run
+
+The lab is the leaf's proof that the reader can *do* the thing, not just read about it. It is the most frequently degraded section, so its requirements are explicit and non-negotiable.
+
+**A lab is a sequence of executed steps, each showing a real command and its real output.** The reader should be able to paste the commands and see the results described.
+
+Every lab MUST:
+
+1. **State its setup cost honestly, and minimise it.** Prefer a lab that runs on **one machine the reader already has**. Network topics use Linux network namespaces, veth pairs, or loopback to build a real second host inside one kernel — never demand "two VMs" or hardware the reader may lack when a namespace or container will do. Platform notes (Windows, macOS) may require that platform, but must still run on a single ordinary instance of it with built-in tooling.
+2. **Show real output under every command**, in its own fenced block, with a sentence interpreting it. A step with a command and no output is unfinished.
+3. **Include at least one deliberate failure or break** — a wrong mask, a dropped packet, a missing `-ErrorAction Stop`, a spoofed field — so the reader sees the mechanism fail, not only succeed. The most important lessons live in the break.
+4. **End with verifiable cleanup** whenever it changes state: a command that removes what was created **and** output confirming removal (e.g. a "does not exist" error). Read-only labs state "no cleanup required — every command read state only."
+5. **Close with a one-line "What you should now be able to do."**
+
+**Prohibited lab anti-patterns** (each is grounds for rejecting the note):
+
+- A bulleted list of suggestions — "try scanning…", "you could inspect…", "if you have a second VM…" — with no commands or output. This is a to-do list, not a lab.
+- Commands with no output shown.
+- A cleanup that deletes without confirming, or a state-changing lab with no cleanup.
+- A lab that cannot be run at all without infrastructure the note never helps the reader build.
+
+A lab that merely tells the reader what they *could* try teaches nothing and fails the Crook2Root promise. If the reader cannot follow the lab to a verified result on a machine they have, the note is incomplete.
+
+## 7. Strict Multiple-Trees Architecture
 
 The graph is intentionally hierarchical:
 
@@ -131,7 +154,7 @@ Cyber Security
 - Domain `tree/*` tags drive Graph View colors.
 - A concept needing substantial independent treatment becomes an atomic leaf under the correct parent rather than a large lateral section.
 
-## 7. Naming & Metadata
+## 8. Naming & Metadata
 
 Use professional names that resemble an enterprise wiki:
 
@@ -160,7 +183,7 @@ Color: "#FFA500"
 ---
 ```
 
-## 8. Editorial Quality
+## 9. Editorial Quality
 
 - Write in professional English.
 - Prefer precise plain language over inflated jargon.
@@ -171,7 +194,7 @@ Color: "#FFA500"
 - Replace platform branding from training providers with technology-focused instruction.
 - Preserve existing image embeds and user-authored material unless the task explicitly supersedes it.
 
-## 9. Definition of Done
+## 10. Definition of Done
 
 A leaf is complete only when:
 
@@ -182,6 +205,8 @@ A leaf is complete only when:
 - The parent link, Domain property, color, aliases, tags, code fences, visuals, and embeds are valid.
 - No sibling or lateral leaf wikilinks were introduced.
 - Commands include realistic output and interpretation.
-- The lab is bounded, authorized, and reproducible.
+- The lab is a **runnable step-by-step sequence** in which every step shows a real command and its real output, includes a deliberate failure, and ends with verified cleanup (§6). A "things you could try" list fails this test.
+- The lab runs on **one machine the reader plausibly has**, building any additional hosts locally (namespaces, containers, loopback) rather than assuming unavailable infrastructure.
+- If the subject is a byte, packet, memory, register, or disk layout, an **authored, visually-inspected image** is present, not merely a Mermaid flowchart (§4).
 - No generic placeholders remain.
 

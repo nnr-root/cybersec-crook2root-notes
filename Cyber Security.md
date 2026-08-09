@@ -31,6 +31,19 @@ flowchart TD
     style ROOT fill:#111,stroke:#fff,stroke-width:2px,color:#fff
 ```
 
+## 🚦 Start Here — If You Are New
+
+> [!tip] Never studied this before? Read and master in this order.
+> Everything in this vault assumes the fluency built by the first two domains. Do not start in the middle.
+>
+> 1. **Network Foundations** (in [[Networking]]) — what a network is, the OSI and TCP/IP models, how a packet becomes a frame. Nothing else makes sense without this.
+> 2. **Addressing & Subnetting** (in [[Networking]]) — IP addresses, masks, and why a subnet boundary is a security control.
+> 3. **OS Theory and Architecture** (in [[OS Internals]]) — processes, threads, scheduling, and memory: the ideas every operating system shares.
+> 4. Pick the platform you actually use — **Linux**, **Windows**, or **macOS** (all in [[OS Internals]]) — and work through its curriculum in order.
+> 5. Then continue down the Networking path (Switching → Routing → Transport → Services), and only afterwards branch into [[Cryptography]], [[Offensive Security]], or [[Defensive Security]].
+>
+> Every leaf opens at **Crook** level with a plain-language mental model and an analogy, then climbs to **Operator** and **Root**. If a note feels too advanced, its `Parent Learning Order` line names the siblings you should read first.
+
 ## 🌳 The Twelve Domains
 - 🌐 **[[Networking]]** — How data moves — OSI/TCP-IP, addressing, DNS/DHCP/NAT, routing, and the protocols both sides target.
 - 🐧 **[[OS Internals]]** — The operating system a hacker lives in — the CLI arsenal, filesystem, permissions & processes, and privilege escalation.
