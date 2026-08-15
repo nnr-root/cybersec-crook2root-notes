@@ -1,0 +1,72 @@
+---
+title: "Aperisolve"
+aliases: ["Aperisolve", "aperisolve"]
+tags: [tree/tooling, cyber/tooling/offensive/web-tools/aperisolve, type/tool, level/apprentice]
+Domain: "[[Web-Based Tools & References]]"
+Color: "#708090"
+---
+
+# Aperisolve
+
+Aperisolve (`aperisolve.com`) is an online **steganography analysis** platform. Upload an image and it runs a whole battery of stego tools at once — layer/bit-plane visualisation, `zsteg`, `steghide`, `outguess`, `exiftool`, `binwalk`, `foremost`, and `strings` — then shows the combined results. It is the fastest first pass for CTF forensics/stego challenges, doing in one upload what would otherwise be a dozen manual commands.
+
+> [!warning] Upload only non-sensitive images
+> Aperisolve processes your file on a third-party server. Use it for CTF/lab images, never for images containing real sensitive data.
+
+## Parent Learning Order
+GTFOBins -> LOLBAS -> CrackStation -> Aperisolve -> revshells.com
+
+## Crook — The Mental Model
+
+Steganography hides data *inside* a carrier file. An image is just numbers (pixel colour values + metadata + trailing bytes), and data can be tucked into any of those layers: the least-significant bits of pixels, an EXIF field, a password-protected `steghide` blob, or extra bytes appended after the image ends. No single tool checks all of them — so you run *all* of them.
+
+```mermaid
+flowchart TD
+    I["uploaded image"] --> P["bit-plane / colour-layer view (LSB)"]
+    I --> Z["zsteg / steghide / outguess"]
+    I --> E["exiftool (metadata)"]
+    I --> B["binwalk / foremost (appended files)"]
+    I --> S["strings (embedded text)"]
+    P --> R["combined report"]
+    Z --> R
+    E --> R
+    B --> R
+    S --> R
+```
+
+Aperisolve is the "run every stego check in parallel and show me anything unusual" button.
+
+## Operator — Make It Work
+
+Upload the image; Aperisolve returns each tool's output in tabs. A typical CTF find:
+
+```text
+[ Superimposed / bit planes ]  → hidden text visible in the red channel, plane 0 (LSB)
+[ strings ]                    → "flag{...}" fragment near end of file
+[ binwalk ]                    → Zip archive found at offset 0x4210 (appended after PNG)
+[ exiftool ]                   → Comment: "pass: hunter2"  (→ feed to steghide)
+[ steghide ]                   → needs passphrase (try the exiftool comment)
+```
+
+The layers chain: `exiftool` leaks a passphrase → you use it with `steghide`; `binwalk` finds an appended ZIP → you carve and extract it. Aperisolve surfaces the leads; you follow the chain.
+
+## Root — Internals & The Deliberate Break
+
+The bit-plane view is the conceptual heart, and it reveals why **format matters**:
+
+```text
+PNG  (lossless)  → LSB steganography survives → bit-plane view shows hidden pixels
+JPEG (lossy)     → recompression destroys LSBs → LSB stego does NOT survive
+                    (JPEG stego uses DCT coefficients instead — different technique)
+```
+
+**The deliberate break:** LSB steganography — hiding data in the least-significant bit of each pixel — only works in **lossless** formats (PNG, BMP). Try it in a JPEG and the lossy DCT compression *rewrites* those low bits, destroying the payload. So when Aperisolve's bit-plane view shows clean noise on a JPEG, that's not "no stego" — it's "LSB can't live here; look for DCT-based hiding or appended data instead." Understanding *which* technique a given format permits stops you from concluding "nothing hidden" when you simply used the wrong lens. Aperisolve runs the tools; format literacy tells you which result is meaningful.
+
+## Crook → Operator → Root Checkpoint
+
+- **Crook:** Why does stego analysis run many tools instead of one?
+- **Operator:** Aperisolve's `binwalk` tab reports a ZIP at an offset. What does that mean and what do you do?
+- **Root:** Explain why LSB steganography survives in PNG but not JPEG, and what that tells you when the bit-plane view is clean.
+
+---
+> 🔼 Up: [[Web-Based Tools & References]]

@@ -1,0 +1,60 @@
+---
+title: "WPScan"
+aliases: ["wpscan"]
+tags: [tree/tooling, cyber/tooling/offensive/web/wpscan, type/tool, level/operator]
+Domain: "[[Web Application Testing Tools]]"
+Color: "#708090"
+---
+
+# WPScan
+
+WPScan is a WordPress-specific security scanner. WordPress powers a huge share of the web, and its risk is rarely the core — it's the sprawl of **plugins and themes**, each a third-party codebase with its own CVEs. WPScan enumerates the version, installed plugins/themes, and users, then cross-references a vulnerability database to say exactly what is exploitable.
+
+> [!warning] Authorized targets only
+> Enumeration and password attacks hit a real site. Scope it, and respect the API token's rate limits — user brute-forcing can lock accounts.
+
+## Parent Learning Order
+curl -> Postman -> Burp Suite -> OWASP ZAP -> Nikto -> WPScan -> SQLmap
+
+## Crook — The Mental Model
+
+Like Nikto, WPScan aims at the **server** — but it's a specialist. It knows exactly how WordPress exposes its version, plugins, themes, and users, and it fingerprints each, then looks up known vulnerabilities.
+
+![[tool_web_request_path.svg]]
+
+The insight WPScan encodes: a WordPress site is only as secure as its *weakest plugin*. The core is well-maintained; the twelve plugins someone installed years ago are not. WPScan's job is to inventory that third-party sprawl and match it against a CVE feed.
+
+## Operator — Make It Work
+
+```shell-session
+operator@lab:~$ wpscan --url https://blog.example.test --enumerate vp,u --api-token $TOK
+[+] WordPress version 5.8.1 identified (Insecure, released 2021-09-09)
+[+] contact-form-7 5.4.1 - outdated
+ |   [!] Contact Form 7 - Unrestricted File Upload (CVE-2020-35489)
+[+] Users: admin, editor_jane
+```
+
+`--enumerate vp` = *vulnerable plugins*, `u` = users. The **API token unlocks the CVE mapping** — without it you get versions but not the vulnerability data. WPScan can also brute-force enumerated users via `xmlrpc.php` (`--passwords rockyou.txt`) — bound it and respect lockouts.
+
+## Root — Internals & The Deliberate Break
+
+```shell-session
+operator@lab:~$ wpscan --url https://blog.example.test --enumerate vp --api-token $TOK | grep CVE
+ |   Contact Form 7 - Unrestricted File Upload (CVE-2020-35489)
+operator@lab:~$ curl -s https://blog.example.test/wp-content/plugins/contact-form-7/readme.txt | grep -i 'Stable tag'
+Stable tag: 5.4.1
+# --- after the site updates the plugin ---
+operator@lab:~$ wpscan --url https://blog.example.test --enumerate vp --api-token $TOK | grep -c CVE
+0
+```
+
+**The deliberate break:** WPScan *inferred* the plugin version from fingerprints — the `readme.txt` **curl** confirms `5.4.1` is really installed before you assert CVE-2020-35489 applies (fingerprints can lie; a partial install or a hidden version means guessing). After the update, the CVE count drops to `0` — an objective before/after remediation metric. The professional flow is the same everywhere in this category: the scanner *narrows*, a manual check *confirms*, and the fix is measured by re-running the scanner.
+
+## Crook → Operator → Root Checkpoint
+
+- **Crook:** Why are plugins and themes, not the WordPress core, usually the real risk?
+- **Operator:** WPScan reports a vulnerable plugin. What must you check before asserting the CVE is exploitable?
+- **Root:** Explain why the API token is required for CVE mapping, and how the CVE count gives an objective remediation metric.
+
+---
+> 🔼 Up: [[Web Application Testing Tools]]

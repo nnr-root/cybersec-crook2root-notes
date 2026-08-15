@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 600" font-family="ui-monospace,Menlo,Consolas,monospace">
+  <rect width="880" height="600" fill="#0f1420"/>
+  <text x="440" y="30" fill="#e6edf3" font-size="20" font-weight="700" text-anchor="middle">Cracking WPA2/WPA3-PSK — Capture On-Air, Crack Offline</text>
+  <text x="440" y="52" fill="#8b98a5" font-size="13" text-anchor="middle">the encryption is never broken over the air — you capture a hash, then attack it offline</text>
+
+  <!-- prerequisite -->
+  <rect x="30" y="70" width="820" height="30" fill="#161b22" stroke="#e3a008"/>
+  <text x="440" y="90" fill="#f2cc60" font-size="12" text-anchor="middle">Prerequisite: a Wi-Fi adapter that supports MONITOR MODE + packet injection (airmon-ng puts it in monitor mode)</text>
+
+  <!-- Method A -->
+  <rect x="30" y="116" width="400" height="150" fill="#161b22" stroke="#58a6ff"/>
+  <text x="44" y="140" fill="#79c0ff" font-size="14" font-weight="700">A · 4-way handshake  (needs a client)</text>
+  <text x="44" y="164" fill="#8b98a5" font-size="11.5">1. airodump-ng — listen on the AP's channel</text>
+  <text x="44" y="184" fill="#8b98a5" font-size="11.5">2. aireplay-ng --deauth — kick a client off</text>
+  <text x="44" y="204" fill="#8b98a5" font-size="11.5">3. client auto-reconnects → 4-way handshake</text>
+  <text x="44" y="224" fill="#8b98a5" font-size="11.5">4. airodump captures it  ✋ deauth = a DoS</text>
+  <text x="44" y="248" fill="#58a6ff" font-size="11.5" font-weight="700">tool: aircrack-ng suite</text>
+
+  <!-- Method B -->
+  <rect x="450" y="116" width="400" height="150" fill="#161b22" stroke="#2ea043"/>
+  <text x="464" y="140" fill="#3fb950" font-size="14" font-weight="700">B · PMKID  (clientless)</text>
+  <text x="464" y="164" fill="#8b98a5" font-size="11.5">1. hcxdumptool associates with the AP</text>
+  <text x="464" y="184" fill="#8b98a5" font-size="11.5">2. many APs leak a PMKID in the FIRST frame</text>
+  <text x="464" y="204" fill="#8b98a5" font-size="11.5">3. captured — no client, no deauth needed</text>
+  <text x="464" y="224" fill="#8b98a5" font-size="11.5">4. quieter, no DoS against users</text>
+  <text x="464" y="248" fill="#3fb950" font-size="11.5" font-weight="700">tool: hcxdumptool / hcxtools</text>
+
+  <!-- converge -->
+  <line x1="230" y1="266" x2="380" y2="300" stroke="#8b98a5" stroke-width="1.5"/><polygon points="380,300 370,297 373,290" fill="#8b98a5"/>
+  <line x1="650" y1="266" x2="500" y2="300" stroke="#8b98a5" stroke-width="1.5"/><polygon points="500,300 507,290 510,297" fill="#8b98a5"/>
+
+  <rect x="300" y="304" width="280" height="40" fill="#2a1c33" stroke="#a371f7"/>
+  <text x="440" y="322" fill="#d6a2ff" font-size="12.5" text-anchor="middle">crackable material (.pcapng)</text>
+  <text x="440" y="338" fill="#8b98a5" font-size="10.5" text-anchor="middle">hcxpcapngtool converts → hashcat 22000 format</text>
+
+  <line x1="440" y1="344" x2="440" y2="366" stroke="#8b98a5" stroke-width="1.5"/><polygon points="440,366 436,358 444,358" fill="#8b98a5"/>
+
+  <rect x="280" y="370" width="320" height="44" fill="#3a1d24" stroke="#f85149"/>
+  <text x="440" y="390" fill="#ff7b72" font-size="13" font-weight="700" text-anchor="middle">OFFLINE CRACK</text>
+  <text x="440" y="407" fill="#8b98a5" font-size="11" text-anchor="middle">hashcat -m 22000  /  aircrack-ng -w wordlist</text>
+
+  <line x1="440" y1="414" x2="440" y2="434" stroke="#8b98a5" stroke-width="1.5"/><polygon points="440,434 436,426 444,426" fill="#8b98a5"/>
+  <rect x="330" y="438" width="220" height="34" fill="#132b1e" stroke="#2ea043"/>
+  <text x="440" y="460" fill="#3fb950" font-size="12.5" text-anchor="middle">PSK — only if it is WEAK</text>
+
+  <!-- Kismet + key -->
+  <rect x="30" y="486" width="820" height="98" fill="#161b22" stroke="#a371f7"/>
+  <text x="46" y="510" fill="#d6a2ff" font-size="13" font-weight="700">Kismet — the passive layer (transmits nothing)</text>
+  <text x="46" y="530" fill="#8b98a5" font-size="11.5">logs every AP / client / probe request it hears → wardriving, mapping, rogue-AP + deauth-flood detection. Use it FIRST</text>
+  <text x="46" y="546" fill="#8b98a5" font-size="11.5">to find the networks and their channels, then aircrack-ng/hcxtools to capture. Kismet never injects — pure listening.</text>
+  <text x="46" y="570" fill="#f2cc60" font-size="11.5">The wall: the crack is OFFLINE and only beats a WEAK passphrase. A long random PSK survives everything above.</text>
+</svg>

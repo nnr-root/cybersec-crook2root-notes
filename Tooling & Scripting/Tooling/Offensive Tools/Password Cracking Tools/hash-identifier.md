@@ -1,0 +1,75 @@
+---
+title: "hash-identifier"
+aliases: ["hash-identifier", "hashid", "hash-id"]
+tags: [tree/tooling, cyber/tooling/offensive/cracking/hashid, type/tool, level/apprentice]
+Domain: "[[Password Cracking Tools]]"
+Color: "#708090"
+---
+
+# hash-identifier
+
+hash-identifier (and the related `hashid`) is the classic interactive hash-type guesser. You paste a hash, it prints the algorithms whose structure matches. It predates and overlaps **name-that-hash** — knowing both matters because they disagree in useful ways, and disagreement is a signal about how confident you can be in the identification.
+
+> [!warning] Identification is safe; cracking is scoped
+> Naming a hash touches nothing. Only crack hashes captured under authorization or generated yourself.
+
+## Parent Learning Order
+name-that-hash -> hash-identifier -> John the Ripper -> Hashcat
+
+## Crook — The Mental Model
+
+Every hash type leaves a structural fingerprint — a prefix, a length, a charset. A hash *identifier* is a lookup that reads those fingerprints and lists the algorithms they could be.
+
+![[tool_hash_anatomy.svg]]
+
+The diagram is what these tools automate. hash-identifier is the older, simpler engine: it matches length and charset against a fixed list. That simplicity is both its speed and its weakness — it will confidently list *many* possibilities for an ambiguous value, and you must reason about which is real from the diagram's three signals.
+
+## Operator — Make It Work
+
+`hashid` is the fast, scriptable, modern variant; `hash-identifier` is the interactive legacy tool. Both take a hash and rank types:
+
+```shell-session
+operator@lab:~$ hashid '482c811da5d5b4bc6d497ffa98491e38'
+Analyzing '482c811da5d5b4bc6d497ffa98491e38'
+[+] MD2
+[+] MD5
+[+] MD4
+[+] NTLM
+operator@lab:~$ hashid -m '$1$28772684$iEwNOgGugqO9.bIz5sk8k/'
+[+] MD5 Crypt      [Hashcat Mode: 500]
+[+] Cisco-IOS(MD5)
+```
+
+The `-m` flag adds the Hashcat mode — the bridge to the cracker. `hash-identifier` is the same idea, interactively:
+
+```shell-session
+operator@lab:~$ hash-identifier
+ HASH: 5f4dcc3b5aa765d61d8327deb882cf99
+Possible Hashs:
+[+] MD5
+[+] Domain Cached Credentials
+```
+
+## Root — Internals & The Deliberate Break
+
+hash-identifier matches against a **fixed rule table**, and it has no notion of *likelihood* — it lists every structural match with equal weight.
+
+```shell-session
+operator@lab:~$ hashid '5f4dcc3b5aa765d61d8327deb882cf99'
+[+] MD5
+[+] Domain Cached Credentials
+[+] NTLM
+```
+
+**The deliberate break:** for a bare 32-hex string, hash-identifier lists MD5, DCC, **and** NTLM with no ranking — technically correct, practically unhelpful, because it can't tell you *which*. This is exactly why **name-that-hash** was written: it adds likelihood ordering and cleaner output. The professional workflow uses both — if they *agree*, confidence is high; if hash-identifier lists an option name-that-hash ranks low, the source context (web DB → MD5, AD dump → NTLM) breaks the tie. A tool that "identifies" a hash is really *narrowing a field*, never deciding — running the wrong Hashcat `-m` on a misidentified hash burns hours for nothing.
+
+Note `hashid` reads from files/stdin (scriptable) while `hash-identifier` is interactive only — for automation, `hashid` or name-that-hash; for a quick manual check, either.
+
+## Crook → Operator → Root Checkpoint
+
+- **Crook:** What structural signals does a hash identifier read to guess a type?
+- **Operator:** `hashid -m` prints a `Hashcat Mode`. Why is that the most useful part of the output?
+- **Root:** Explain why hash-identifier lists MD5/DCC/NTLM together with no ranking, and how you resolve the ambiguity in practice.
+
+---
+> 🔼 Up: [[Password Cracking Tools]]

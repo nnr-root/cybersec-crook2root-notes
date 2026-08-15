@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 560" font-family="ui-monospace,Menlo,Consolas,monospace">
+  <rect width="860" height="560" fill="#0f1420"/>
+  <text x="430" y="34" fill="#e6edf3" font-size="20" font-weight="700" text-anchor="middle">Reading a Hash — Structure Reveals the Type</text>
+  <text x="430" y="56" fill="#8b98a5" font-size="13" text-anchor="middle">prefix, length, charset and separators are the fingerprints name-that-hash reads</text>
+
+  <!-- rows -->
+  <g font-size="13">
+    <!-- MD5/NTLM ambiguous -->
+    <rect x="40" y="80" width="500" height="50" fill="#161b22" stroke="#e3a008"/>
+    <text x="52" y="103" fill="#f2cc60">5f4dcc3b5aa765d61d8327deb882cf99</text>
+    <text x="52" y="121" fill="#8b98a5" font-size="11">32 hex chars, no prefix → ambiguous: MD5 or NTLM (context decides)</text>
+    <rect x="560" y="80" width="260" height="50" fill="#1c2333" stroke="#e3a008"/>
+    <text x="572" y="103" fill="#f2cc60" font-size="12">len=32 hex</text>
+    <text x="572" y="121" fill="#8b98a5" font-size="11">→ MD5 (0) / NTLM (1000)</text>
+
+    <!-- SHA1 -->
+    <rect x="40" y="140" width="500" height="44" fill="#161b22" stroke="#58a6ff"/>
+    <text x="52" y="167" fill="#79c0ff" font-size="12">cbfdac6008f9cab4083784cbd1874f76618d2a97</text>
+    <rect x="560" y="140" width="260" height="44" fill="#1c2333" stroke="#58a6ff"/>
+    <text x="572" y="167" fill="#79c0ff" font-size="12">len=40 hex → SHA-1 (100)</text>
+
+    <!-- LM:NTLM pair -->
+    <rect x="40" y="194" width="500" height="50" fill="#161b22" stroke="#a371f7"/>
+    <text x="52" y="217" fill="#d6a2ff" font-size="11">aad3b435b51404ee...:31d6cfe0d16ae931b73c59d7e0c089c0</text>
+    <text x="52" y="235" fill="#8b98a5" font-size="11">colon separates two 32-hex halves → LM : NTLM (from a SAM/NTDS dump)</text>
+    <rect x="560" y="194" width="260" height="50" fill="#1c2333" stroke="#a371f7"/>
+    <text x="572" y="217" fill="#d6a2ff" font-size="12">':' + 32:32 → LM:NTLM</text>
+    <text x="572" y="235" fill="#8b98a5" font-size="11">aad3b4… = empty LM</text>
+
+    <!-- bcrypt -->
+    <rect x="40" y="254" width="500" height="50" fill="#132b1e" stroke="#2ea043"/>
+    <text x="52" y="277" fill="#3fb950" font-size="12">$2b$12$R9h/cIPz0gi.URNNX3kh2O...</text>
+    <text x="52" y="295" fill="#8b98a5" font-size="11">$id$ prefix + cost + 22-char salt + 31-char hash</text>
+    <rect x="560" y="254" width="260" height="50" fill="#1c2333" stroke="#2ea043"/>
+    <text x="572" y="277" fill="#3fb950" font-size="12">$2b$ → bcrypt (3200)</text>
+    <text x="572" y="295" fill="#8b98a5" font-size="11">12 = cost (slow!)</text>
+
+    <!-- sha512crypt -->
+    <rect x="40" y="314" width="500" height="44" fill="#161b22" stroke="#3fb950"/>
+    <text x="52" y="341" fill="#3fb950" font-size="12">$6$rounds=5000$salt$hash...</text>
+    <rect x="560" y="314" width="260" height="44" fill="#1c2333" stroke="#3fb950"/>
+    <text x="572" y="341" fill="#3fb950" font-size="12">$6$ → sha512crypt (1800)</text>
+
+    <!-- kerberos -->
+    <rect x="40" y="368" width="500" height="44" fill="#3a1d24" stroke="#f85149"/>
+    <text x="52" y="395" fill="#ff7b72" font-size="12">$krb5tgs$23$*svc*$...  (very long)</text>
+    <rect x="560" y="368" width="260" height="44" fill="#1c2333" stroke="#f85149"/>
+    <text x="572" y="395" fill="#ff7b72" font-size="12">$krb5tgs$ → Kerberoast (13100)</text>
+  </g>
+
+  <!-- decode key -->
+  <rect x="40" y="432" width="780" height="96" fill="#161b22" stroke="#30363d"/>
+  <text x="56" y="458" fill="#e6edf3" font-size="14" font-weight="700">The three signals</text>
+  <text x="56" y="482" fill="#8b98a5" font-size="12">1. PREFIX  ($2b$, $6$, $krb5tgs$)  — an explicit type tag when present</text>
+  <text x="56" y="500" fill="#8b98a5" font-size="12">2. LENGTH  (32/40/64 hex)          — narrows the family (MD5/SHA-1/SHA-256)</text>
+  <text x="56" y="518" fill="#8b98a5" font-size="12">3. CHARSET / SEPARATORS (hex only, base64, ':' pairs) — disambiguates the rest</text>
+</svg>

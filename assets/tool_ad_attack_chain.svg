@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 560" font-family="ui-monospace,Menlo,Consolas,monospace">
+  <rect width="880" height="560" fill="#0f1420"/>
+  <text x="440" y="32" fill="#e6edf3" font-size="20" font-weight="700" text-anchor="middle">The Active Directory Attack Chain</text>
+  <text x="440" y="54" fill="#8b98a5" font-size="13" text-anchor="middle">AD is a graph of who-can-access-what; compromise = find a path from foothold → Domain Admin</text>
+
+  <!-- start -->
+  <rect x="30" y="96" width="120" height="52" rx="6" fill="#161b22" stroke="#30363d"/>
+  <text x="90" y="120" fill="#adbac7" font-size="13" text-anchor="middle" font-weight="700">foothold</text>
+  <text x="90" y="138" fill="#8b98a5" font-size="11" text-anchor="middle">on the network</text>
+
+  <!-- 1 Responder -->
+  <rect x="30" y="176" width="400" height="76" fill="#3a1d24" stroke="#f85149"/>
+  <text x="44" y="200" fill="#ff7b72" font-size="14" font-weight="700">1 · Responder — capture credentials</text>
+  <text x="44" y="222" fill="#8b98a5" font-size="11.5">poison LLMNR / NBT-NS / mDNS → victims send you their</text>
+  <text x="44" y="240" fill="#8b98a5" font-size="11.5">NetNTLMv2 hashes → crack offline, or relay them</text>
+
+  <!-- 2 NetExec -->
+  <rect x="450" y="176" width="400" height="76" fill="#1c2333" stroke="#58a6ff"/>
+  <text x="464" y="200" fill="#79c0ff" font-size="14" font-weight="700">2 · NetExec (nxc) — validate &amp; spread</text>
+  <text x="464" y="222" fill="#8b98a5" font-size="11.5">spray one credential across the domain: WHERE does it work?</text>
+  <text x="464" y="240" fill="#8b98a5" font-size="11.5">nxc smb 10.0.0.0/24 -u u -p p  → Pwned! (local admin)</text>
+
+  <!-- 3 BloodHound -->
+  <rect x="450" y="286" width="400" height="76" fill="#2a1c33" stroke="#a371f7"/>
+  <text x="464" y="310" fill="#d6a2ff" font-size="14" font-weight="700">3 · BloodHound — map the graph</text>
+  <text x="464" y="332" fill="#8b98a5" font-size="11.5">collect users/groups/ACLs/sessions → shortest path to</text>
+  <text x="464" y="350" fill="#8b98a5" font-size="11.5">Domain Admin (Kerberoast? DCSync? ACL abuse? session?)</text>
+
+  <!-- 4 Impacket -->
+  <rect x="30" y="286" width="400" height="76" fill="#33261a" stroke="#e3a008"/>
+  <text x="44" y="310" fill="#f2cc60" font-size="14" font-weight="700">4 · Impacket — execute the technique</text>
+  <text x="44" y="332" fill="#8b98a5" font-size="11.5">GetUserSPNs (Kerberoast) · secretsdump (DCSync) ·</text>
+  <text x="44" y="350" fill="#8b98a5" font-size="11.5">psexec / wmiexec (lateral movement) · ticketer (Golden)</text>
+
+  <!-- domain admin -->
+  <rect x="360" y="392" width="160" height="52" rx="6" fill="#132b1e" stroke="#2ea043"/>
+  <text x="440" y="416" fill="#3fb950" font-size="14" font-weight="700" text-anchor="middle">DOMAIN ADMIN</text>
+  <text x="440" y="434" fill="#8b98a5" font-size="11" text-anchor="middle">owns the forest</text>
+
+  <!-- arrows around the loop -->
+  <line x1="90" y1="148" x2="90" y2="174" stroke="#8b98a5" stroke-width="1.5"/><polygon points="90,174 86,166 94,166" fill="#8b98a5"/>
+  <line x1="430" y1="214" x2="448" y2="214" stroke="#8b98a5" stroke-width="1.5"/><polygon points="448,214 440,210 440,218" fill="#8b98a5"/>
+  <line x1="650" y1="252" x2="650" y2="284" stroke="#8b98a5" stroke-width="1.5"/><polygon points="650,284 646,276 654,276" fill="#8b98a5"/>
+  <line x1="448" y1="324" x2="432" y2="324" stroke="#8b98a5" stroke-width="1.5"/><polygon points="432,324 440,320 440,328" fill="#8b98a5"/>
+  <line x1="230" y1="362" x2="360" y2="404" stroke="#2ea043" stroke-width="1.5"/><polygon points="360,404 350,401 353,394" fill="#2ea043"/>
+
+  <!-- key -->
+  <rect x="30" y="464" width="820" height="86" fill="#161b22" stroke="#a371f7"/>
+  <text x="46" y="490" fill="#d6a2ff" font-size="14" font-weight="700">The loop, not a line</text>
+  <text x="46" y="512" fill="#8b98a5" font-size="12">Each new credential re-enters the cycle: capture → validate → re-map the graph → execute the next hop. You rarely</text>
+  <text x="46" y="530" fill="#8b98a5" font-size="12">jump straight to DA; you chain small wins. BloodHound tells you WHICH Impacket technique the path actually needs.</text>
+</svg>

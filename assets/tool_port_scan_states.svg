@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 600" font-family="ui-monospace,Menlo,Consolas,monospace">
+  <rect width="860" height="600" fill="#0f1420"/>
+  <text x="430" y="32" fill="#e6edf3" font-size="20" font-weight="700" text-anchor="middle">Port States &amp; What Each Scan Type Infers</text>
+  <text x="430" y="54" fill="#8b98a5" font-size="13" text-anchor="middle">a scanner never "sees" a port — it infers state from the reply (or the silence)</text>
+
+  <!-- TCP handshake -->
+  <text x="60" y="88" fill="#58a6ff" font-size="15" font-weight="700">The TCP 3-way handshake (baseline)</text>
+  <text x="150" y="112" fill="#8b98a5" font-size="12" text-anchor="middle">scanner</text>
+  <text x="710" y="112" fill="#8b98a5" font-size="12" text-anchor="middle">target port</text>
+  <line x1="150" y1="120" x2="150" y2="196" stroke="#30363d"/>
+  <line x1="710" y1="120" x2="710" y2="196" stroke="#30363d"/>
+  <line x1="150" y1="132" x2="710" y2="132" stroke="#3fb950" stroke-width="1.5"/>
+  <polygon points="710,132 700,127 700,137" fill="#3fb950"/>
+  <text x="430" y="127" fill="#3fb950" font-size="12" text-anchor="middle">SYN  (can I connect?)</text>
+  <line x1="710" y1="158" x2="150" y2="158" stroke="#58a6ff" stroke-width="1.5"/>
+  <polygon points="150,158 160,153 160,163" fill="#58a6ff"/>
+  <text x="430" y="153" fill="#79c0ff" font-size="12" text-anchor="middle">SYN-ACK  (yes, I'm open)</text>
+  <line x1="150" y1="184" x2="710" y2="184" stroke="#3fb950" stroke-width="1.5"/>
+  <polygon points="710,184 700,179 700,189" fill="#3fb950"/>
+  <text x="430" y="179" fill="#3fb950" font-size="12" text-anchor="middle">ACK  (connection established)</text>
+
+  <!-- state legend -->
+  <rect x="60" y="212" width="150" height="26" fill="#132b1e" stroke="#2ea043"/><text x="135" y="230" fill="#3fb950" font-size="12" text-anchor="middle">OPEN</text>
+  <rect x="230" y="212" width="150" height="26" fill="#3a1d24" stroke="#f85149"/><text x="305" y="230" fill="#ff7b72" font-size="12" text-anchor="middle">CLOSED</text>
+  <rect x="400" y="212" width="180" height="26" fill="#33261a" stroke="#e3a008"/><text x="490" y="230" fill="#f2cc60" font-size="12" text-anchor="middle">FILTERED (no reply)</text>
+
+  <!-- scan-type table -->
+  <text x="60" y="272" fill="#d6a2ff" font-size="15" font-weight="700">How each scan reads the reply</text>
+  <g font-size="12.5">
+    <!-- header -->
+    <rect x="60" y="284" width="200" height="30" fill="#1c2333" stroke="#30363d"/><text x="72" y="304" fill="#adbac7">scan</text>
+    <rect x="260" y="284" width="180" height="30" fill="#1c2333" stroke="#30363d"/><text x="272" y="304" fill="#3fb950">reply = OPEN</text>
+    <rect x="440" y="284" width="180" height="30" fill="#1c2333" stroke="#30363d"/><text x="452" y="304" fill="#ff7b72">reply = CLOSED</text>
+    <rect x="620" y="284" width="180" height="30" fill="#1c2333" stroke="#30363d"/><text x="632" y="304" fill="#f2cc60">silence =</text>
+
+    <!-- SYN -->
+    <rect x="60" y="314" width="200" height="34" fill="#161b22" stroke="#30363d"/><text x="72" y="336" fill="#adbac7">SYN  -sS (half-open)</text>
+    <rect x="260" y="314" width="180" height="34" fill="#161b22" stroke="#30363d"/><text x="272" y="336" fill="#3fb950">SYN-ACK</text>
+    <rect x="440" y="314" width="180" height="34" fill="#161b22" stroke="#30363d"/><text x="452" y="336" fill="#ff7b72">RST</text>
+    <rect x="620" y="314" width="180" height="34" fill="#161b22" stroke="#30363d"/><text x="632" y="336" fill="#f2cc60">filtered</text>
+    <!-- Connect -->
+    <rect x="60" y="348" width="200" height="34" fill="#161b22" stroke="#30363d"/><text x="72" y="370" fill="#adbac7">Connect  -sT (full)</text>
+    <rect x="260" y="348" width="180" height="34" fill="#161b22" stroke="#30363d"/><text x="272" y="370" fill="#3fb950">handshake completes</text>
+    <rect x="440" y="348" width="180" height="34" fill="#161b22" stroke="#30363d"/><text x="452" y="370" fill="#ff7b72">RST</text>
+    <rect x="620" y="348" width="180" height="34" fill="#161b22" stroke="#30363d"/><text x="632" y="370" fill="#f2cc60">filtered</text>
+    <!-- UDP -->
+    <rect x="60" y="382" width="200" height="34" fill="#161b22" stroke="#30363d"/><text x="72" y="404" fill="#adbac7">UDP  -sU</text>
+    <rect x="260" y="382" width="180" height="34" fill="#161b22" stroke="#30363d"/><text x="272" y="404" fill="#3fb950">UDP reply</text>
+    <rect x="440" y="382" width="180" height="34" fill="#161b22" stroke="#30363d"/><text x="452" y="404" fill="#ff7b72">ICMP port-unreach</text>
+    <rect x="620" y="382" width="180" height="34" fill="#161b22" stroke="#30363d"/><text x="632" y="404" fill="#f2cc60">open|filtered</text>
+  </g>
+
+  <!-- key insight -->
+  <rect x="60" y="440" width="740" height="120" fill="#161b22" stroke="#a371f7"/>
+  <text x="76" y="466" fill="#d6a2ff" font-size="14" font-weight="700">Why "filtered" and "open|filtered" are the hard cases</text>
+  <text x="76" y="490" fill="#8b98a5" font-size="12">Silence is ambiguous: a firewall dropping the probe looks identical to a lost packet. That is why UDP</text>
+  <text x="76" y="508" fill="#8b98a5" font-size="12">scans are slow and uncertain (no reply = "open OR filtered") and why a stray result needs a second technique.</text>
+  <text x="76" y="530" fill="#8b98a5" font-size="12">SYN "half-open" (-sS) sends RST instead of the final ACK — faster and never completes the connection,</text>
+  <text x="76" y="548" fill="#8b98a5" font-size="12">so the app never logs a session. Connect (-sT) needs no root but completes the handshake (app sees it).</text>
+</svg>

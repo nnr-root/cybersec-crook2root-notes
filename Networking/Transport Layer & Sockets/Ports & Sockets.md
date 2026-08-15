@@ -45,8 +45,56 @@ Ports worth recognizing on sight:
 | 80 | HTTP | | 3389 | RDP |
 | 123 | NTP | | 5432 | PostgreSQL |
 | 161 | SNMP | | 5985 | WinRM |
+| 21 | FTP | | 389 | LDAP |
 
 A port number is a **convention, not a guarantee**. Nothing forces a web server onto 80 or prevents SSH from listening on 4443. Service identification must ultimately come from interacting with the service, not from assuming the port's usual meaning — which is exactly why version detection exists as a separate step from port discovery.
+
+### Two well-known ports in practice: SSH (22) and FTP (21)
+
+The table is abstract until you *use* a port. The two oldest remote-access ports tell the whole story — and the security lesson that separates them.
+
+**SSH — port 22 — encrypted remote shell + file copy.** SSH gives you an encrypted interactive shell on a remote host, and file transfer over the same secure channel:
+
+```shell-session
+user@laptop:~$ ssh admin@192.168.10.24
+The authenticity of host '192.168.10.24' can't be established.
+ED25519 key fingerprint is SHA256:Xr4k...  
+Are you sure you want to continue connecting? yes
+admin@192.168.10.24's password:
+admin@server:~$ whoami
+admin
+user@laptop:~$ scp report.pdf admin@192.168.10.24:/home/admin/   # copy over the same encrypted channel
+report.pdf                          100%  482KB   4.1MB/s   00:00
+```
+
+The login, the commands, and the file bytes are all encrypted. The host-key fingerprint prompt is SSH proving the *server's* identity so you aren't talking to an impostor.
+
+**FTP — port 21 — legacy file transfer, cleartext.** FTP predates ubiquitous encryption and sends credentials and data in plaintext:
+
+```shell-session
+user@laptop:~$ ftp 192.168.10.24
+220 (vsFTPd 3.0.5)
+Name (192.168.10.24:user): admin
+331 Please specify the password.
+Password:                       # ← sent in CLEARTEXT over the wire
+230 Login successful.
+ftp> ls
+150 Here comes the directory listing.
+-rw-r--r--    1 0  0  10485760 Aug 10 09:14 backup.tar.gz
+ftp> get backup.tar.gz
+226 Transfer complete.
+ftp> bye
+```
+
+FTP also uses a **second port, 20**, for the data channel: the control connection on 21 negotiates a separate data connection, which is why FTP is awkward through firewalls and NAT (active vs. passive mode).
+
+**The security lesson.** Capture both sessions with `tcpdump`/Wireshark and the contrast is stark — the FTP username, password, and file contents are readable in the clear, while the SSH session is opaque ciphertext. This is why **FTP is deprecated for anything sensitive**; its modern replacement is **SFTP** (file transfer *inside* the SSH channel, on port 22) or FTPS (FTP wrapped in TLS). Recognising `21` on a scan is recognising a plaintext-credential exposure.
+
+```shell-session
+user@laptop:~$ sftp admin@192.168.10.24     # same copy, encrypted — rides SSH port 22, not 21
+sftp> get backup.tar.gz
+Fetching /home/admin/backup.tar.gz to backup.tar.gz   100%   10MB
+```
 
 **Prerequisites:** IP addressing, and that a packet reaches a host.
 

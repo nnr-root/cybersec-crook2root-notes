@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 540" font-family="ui-monospace,Menlo,Consolas,monospace">
+  <rect width="860" height="540" fill="#0f1420"/>
+  <text x="430" y="32" fill="#e6edf3" font-size="20" font-weight="700" text-anchor="middle">Reading HTTP Status Codes in Content Discovery</text>
+  <text x="430" y="54" fill="#8b98a5" font-size="13" text-anchor="middle">the brute-forcer guesses paths; the status code (and body size) tells you what exists</text>
+
+  <g font-size="13">
+    <!-- 200 -->
+    <rect x="40" y="76" width="120" height="40" fill="#132b1e" stroke="#2ea043"/><text x="100" y="101" fill="#3fb950" font-size="15" text-anchor="middle" font-weight="700">200</text>
+    <rect x="170" y="76" width="650" height="40" fill="#161b22" stroke="#30363d"/><text x="184" y="101" fill="#adbac7">OK — the path exists and returns content (unless it's a soft-404, see below)</text>
+    <!-- 301/302 -->
+    <rect x="40" y="122" width="120" height="40" fill="#1c2333" stroke="#58a6ff"/><text x="100" y="147" fill="#79c0ff" font-size="15" text-anchor="middle" font-weight="700">301/302</text>
+    <rect x="170" y="122" width="650" height="40" fill="#161b22" stroke="#30363d"/><text x="184" y="147" fill="#adbac7">redirect — usually a directory (`/admin` → `/admin/`); follow it and recurse</text>
+    <!-- 401 -->
+    <rect x="40" y="168" width="120" height="40" fill="#33261a" stroke="#e3a008"/><text x="100" y="193" fill="#f2cc60" font-size="15" text-anchor="middle" font-weight="700">401</text>
+    <rect x="170" y="168" width="650" height="40" fill="#161b22" stroke="#30363d"/><text x="184" y="193" fill="#adbac7">Unauthorized — it EXISTS but needs credentials (a finding: an auth surface)</text>
+    <!-- 403 -->
+    <rect x="40" y="214" width="120" height="40" fill="#3a2a13" stroke="#e3a008"/><text x="100" y="239" fill="#f2cc60" font-size="15" text-anchor="middle" font-weight="700">403</text>
+    <rect x="170" y="214" width="650" height="40" fill="#161b22" stroke="#30363d"/><text x="184" y="239" fill="#adbac7">Forbidden — EXISTS but access denied; often bypassable, always worth noting</text>
+    <!-- 404 -->
+    <rect x="40" y="260" width="120" height="40" fill="#3a1d24" stroke="#f85149"/><text x="100" y="285" fill="#ff7b72" font-size="15" text-anchor="middle" font-weight="700">404</text>
+    <rect x="170" y="260" width="650" height="40" fill="#161b22" stroke="#30363d"/><text x="184" y="285" fill="#8b98a5">Not Found — the miss (BUT a lying server can return 200 for these: soft-404)</text>
+    <!-- 500 -->
+    <rect x="40" y="306" width="120" height="40" fill="#2a1c33" stroke="#a371f7"/><text x="100" y="331" fill="#d6a2ff" font-size="15" text-anchor="middle" font-weight="700">500</text>
+    <rect x="170" y="306" width="650" height="40" fill="#161b22" stroke="#30363d"/><text x="184" y="331" fill="#adbac7">Server Error — your input broke something; sometimes the most interesting hit</text>
+  </g>
+
+  <!-- soft-404 warning -->
+  <rect x="40" y="366" width="780" height="150" fill="#161b22" stroke="#f85149"/>
+  <text x="56" y="392" fill="#ff7b72" font-size="14" font-weight="700">The trap: the soft-404</text>
+  <text x="56" y="416" fill="#8b98a5" font-size="12">A misconfigured app returns 200 with a fixed "not found" page for EVERY path — so every guess looks</text>
+  <text x="56" y="434" fill="#8b98a5" font-size="12">like a hit. The status code alone can't be trusted. Recover the truth by filtering on the constant:</text>
+  <text x="56" y="458" fill="#79c0ff" font-size="12">  • response SIZE   (ffuf -fs 1520 · feroxbuster --filter-size · dirsearch --exclude-sizes)</text>
+  <text x="56" y="476" fill="#79c0ff" font-size="12">  • word / line count, or a body hash</text>
+  <text x="56" y="500" fill="#8b98a5" font-size="12">Reading the code AND the size together is the single most important content-discovery skill.</text>
+</svg>

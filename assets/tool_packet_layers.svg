@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 560" font-family="ui-monospace,Menlo,Consolas,monospace">
+  <rect width="880" height="560" fill="#0f1420"/>
+  <text x="440" y="30" fill="#e6edf3" font-size="20" font-weight="700" text-anchor="middle">A Packet's Layers — What Wireshark &amp; tcpdump Decode</text>
+  <text x="440" y="52" fill="#8b98a5" font-size="13" text-anchor="middle">each layer wraps the one above it; a filter targets a field in one specific layer</text>
+
+  <!-- nested headers -->
+  <!-- Ethernet -->
+  <rect x="40" y="74" width="800" height="86" fill="#161b22" stroke="#58a6ff"/>
+  <text x="52" y="94" fill="#79c0ff" font-size="13" font-weight="700">Ethernet (Layer 2)</text>
+  <text x="52" y="114" fill="#8b98a5" font-size="11">src MAC · dst MAC · ethertype (0x0800 = IPv4)</text>
+  <!-- IP -->
+  <rect x="70" y="120" width="750" height="200" fill="#1c2333" stroke="#a371f7"/>
+  <text x="82" y="140" fill="#d6a2ff" font-size="13" font-weight="700">IP (Layer 3)</text>
+  <text x="82" y="160" fill="#8b98a5" font-size="11">src IP · dst IP · protocol (6 = TCP) · TTL</text>
+  <!-- TCP -->
+  <rect x="100" y="166" width="690" height="120" fill="#33261a" stroke="#e3a008"/>
+  <text x="112" y="186" fill="#f2cc60" font-size="13" font-weight="700">TCP (Layer 4)</text>
+  <text x="112" y="206" fill="#8b98a5" font-size="11">src port · dst port · seq · ack · flags (SYN/ACK/FIN/RST) · window</text>
+  <!-- Payload -->
+  <rect x="130" y="212" width="630" height="60" fill="#132b1e" stroke="#2ea043"/>
+  <text x="142" y="232" fill="#3fb950" font-size="13" font-weight="700">Payload (Layer 7)</text>
+  <text x="142" y="252" fill="#8b98a5" font-size="11">HTTP request · TLS handshake · DNS query · … (the actual data)</text>
+
+  <!-- filters mapping -->
+  <text x="40" y="352" fill="#e6edf3" font-size="14" font-weight="700">A filter names a layer's field</text>
+  <g font-size="11.5">
+    <rect x="40" y="364" width="400" height="26" fill="#161b22" stroke="#30363d"/><text x="52" y="382" fill="#58a6ff">tcpdump: ether host aa:bb:..  (L2)</text>
+    <rect x="40" y="392" width="400" height="26" fill="#161b22" stroke="#30363d"/><text x="52" y="410" fill="#a371f7">tcpdump: host 10.0.0.5  (L3)</text>
+    <rect x="40" y="420" width="400" height="26" fill="#161b22" stroke="#30363d"/><text x="52" y="438" fill="#e3a008">tcpdump: tcp port 443 and tcp[13]=2  (L4 SYN)</text>
+    <rect x="440" y="364" width="400" height="26" fill="#161b22" stroke="#30363d"/><text x="452" y="382" fill="#58a6ff">Wireshark: eth.addr == aa:bb:..</text>
+    <rect x="440" y="392" width="400" height="26" fill="#161b22" stroke="#30363d"/><text x="452" y="410" fill="#a371f7">Wireshark: ip.addr == 10.0.0.5</text>
+    <rect x="440" y="420" width="400" height="26" fill="#161b22" stroke="#30363d"/><text x="452" y="438" fill="#2ea043">Wireshark: http.request or tls.handshake</text>
+  </g>
+
+  <!-- key -->
+  <rect x="40" y="462" width="800" height="82" fill="#161b22" stroke="#a371f7"/>
+  <text x="56" y="486" fill="#d6a2ff" font-size="13" font-weight="700">tcpdump vs Wireshark — same packets, two jobs</text>
+  <text x="56" y="506" fill="#8b98a5" font-size="11.5">tcpdump: fast CLI CAPTURE with a BPF filter (kernel-level, decides what to SAVE). Great on a headless server.</text>
+  <text x="56" y="524" fill="#8b98a5" font-size="11.5">Wireshark: deep GUI ANALYSIS with a display filter (reassembles streams, decodes L7). Capture with tcpdump →</text>
+  <text x="56" y="540" fill="#8b98a5" font-size="11.5">read the .pcap in Wireshark. Capture filter picks what you keep; display filter picks what you currently see.</text>
+</svg>
