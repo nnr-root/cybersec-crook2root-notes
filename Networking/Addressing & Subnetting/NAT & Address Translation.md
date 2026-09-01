@@ -135,6 +135,12 @@ Rewriting headers violates the assumption that addresses are stable end-to-end, 
 
 **Carrier-grade NAT compounds everything.** Providers translate customers into a shared pool from `100.64.0.0/10`. Many subscribers share one public address, so address-based reputation, blocking, and attribution apply to strangers as well as the intended target — and inbound connectivity is impossible without provider involvement.
 
+**The deliberate break:** NAT feels protective. Nothing outside can reach an internal host directly, so the translation boundary reads as a firewall that came free with the router.
+
+The inbound blocking is a **side effect of an absent table entry**, not a policy decision, and it says nothing whatever about the direction that matters. Everything an internal host initiates outbound is permitted, and each of those flows creates its own return path — so malware behind NAT reaches its infrastructure without difficulty and the command traffic comes back through the translation table doing exactly its job. "Not reachable from outside" and "controlled" are different claims, and only the first is true here.
+
+**How you'd spot it:** test the direction nobody tests. From an internal host, open a connection to an arbitrary port on an external address you control: if it completes, there is no egress policy at all, whatever the perimeter diagram shows. Then enumerate the DNAT rules and ask what each one is still for — every port forward is a deliberate hole punched through the side effect people are relying on, they get added under time pressure, and they routinely outlive the reason they were created.
+
 ## Security Implications
 
 **NAT is not a firewall.** This is the most consequential misconception in the topic. NAT blocks unsolicited inbound traffic as a side effect of having no table entry, not as a policy decision. Everything a host initiates outbound is permitted and creates a return path. Malware behind NAT connects out to its infrastructure without difficulty, and the returning command traffic is delivered by the translation table doing exactly its job. The absence of inbound reachability says nothing about outbound control, egress filtering, or what an internal host is doing. Explicit firewall policy remains necessary, and any port forward is a deliberate hole through the side effect people were relying on.

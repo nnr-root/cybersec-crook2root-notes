@@ -118,6 +118,12 @@ Deploying DAI before DHCP snooping means DAI has an empty table and either block
 
 The controls above prevent forgery but do not provide confidentiality; a device with physical access to a link can still read frames. **MACsec (802.1AE)** adds hop-by-hop encryption and integrity at Layer 2, so frames on the wire are unreadable and tamper-evident between two MACsec peers. It is used on high-assurance segments and between infrastructure devices where physical interception is part of the threat model. Unlike the forgery-prevention controls, MACsec addresses the "the frame is readable by anyone who receives it" property directly.
 
+**The deliberate break:** the controls read as a checklist of independent switch features — port security, DHCP snooping, Dynamic ARP Inspection, IP Source Guard, 802.1X — to be enabled wherever they are available.
+
+They are a dependency chain, and the order is load-bearing. DAI and IP Source Guard do not carry their own knowledge of what is legitimate; they **query the DHCP snooping binding table**, and that table is built only as hosts acquire leases through a trusted port. Enable inspection before snooping has populated the table and every legitimate host validates against an empty register — the control either fails open and protects nothing, or fails closed and takes the segment down. The table is the keystone; the rest are consumers of it.
+
+**How you'd spot it:** before trusting any inspection control, confirm the register it reads has entries — a binding table with a handful of rows on a segment of two hundred hosts means the controls above it are inspecting against nothing. The other tell is a wave of drops immediately after enabling DAI: that is almost always statically addressed hosts with no lease and therefore no binding, not an attack, and it is fixed with static entries rather than by disabling the control.
+
 ## Security Implications
 
 **Layered controls fail independently, which is the point.** An attacker who somehow presents a valid MAC still faces DAI validating their ARP; one who forges an ARP reply still faces IP Source Guard on their traffic; one who reaches the port at all still faces 802.1X. Each control assumes the others might be bypassed, and together they make a link-layer foothold expensive rather than free.

@@ -147,6 +147,12 @@ A "changed ethernet address" event for the gateway is the alert that matters mos
 
 DAI is the scalable answer, and it depends on the snooping binding table — which is why the link-layer controls in this branch reinforce each other rather than standing alone.
 
+**The deliberate break:** ARP is shaped like a question and an answer, so it reads as a lookup protocol — you ask who has an address, the owner replies, the way a DNS query works.
+
+There is no binding between the question and the answer. A host caches replies it never requested, a later reply silently overwrites an earlier one, and an unsolicited announcement is honoured by design. That makes ARP less a query protocol than a **bulletin board any device on the segment may write to**, where the request is a courtesy rather than a precondition. Every link-layer on-path attack follows from that one property, and none of them require breaking anything — the attacker uses the protocol exactly as specified.
+
+**How you'd spot it:** the absence of symptoms is the symptom, because a competent attacker relays traffic and nothing appears broken. Test positively instead: `ip neigh show` (and `ip -6 neigh` for NDP) with two different addresses resolving to one MAC is a signature legitimate configuration essentially never produces. On the infrastructure side, Dynamic ARP Inspection drop counters climbing on an access port is the same event caught by the switch.
+
 ## Security Implications
 
 ARP and NDP spoofing are the foundation of most local on-path attacks. Once an attacker sits between a victim and its gateway, everything downstream becomes possible: reading plaintext credentials, stripping transport security by tampering with the handshake, injecting content, redirecting name lookups, and harvesting authentication material. The position is the prize; the specific payload varies.

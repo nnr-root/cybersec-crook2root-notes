@@ -97,6 +97,12 @@ sequenceDiagram
 
 Double tagging is one-directional — the attacker can inject frames into the target VLAN but receives no replies, because the return path has no matching double-tag trick. That still enables meaningful attacks: injecting into a management VLAN, or triggering a reflected response to a third party. The defence is to make the native VLAN an unused, dedicated VLAN that carries no real traffic and to which no access port is assigned, so an attacker is never on it, and to tag the native VLAN explicitly where the hardware allows.
 
+**The deliberate break:** a VLAN ID reads as a property of the frame — the frame *belongs to* VLAN 20, carries that membership around with it, and switches simply honour it.
+
+The tag is a claim written by whoever built the frame, and what it means depends entirely on the port it arrives at. An access port ignores any tag it receives; a trunk port honours it; the native VLAN strips it. The same bytes therefore mean different things at two consecutive hops — which is precisely why double tagging works, and why a port willing to negotiate itself into a trunk hands over every VLAN on the switch. Segmentation lives in the port configuration, not in the frame.
+
+**How you'd spot it:** audit the ports rather than the design document. Any interface left in dynamic auto or dynamic desirable mode is willing to become a trunk, and that willingness is the entire switch-spoofing attack; an access port assigned to the native VLAN is the other half. In traffic, a frame carrying two stacked 802.1Q tags arriving on an access port has no legitimate explanation at all.
+
 ## Security Implications
 
 **A VLAN is only as strong as the configuration around it.** The isolation is real, but it rests on assumptions: that access ports cannot become trunks, that the native VLAN is not an attacker-reachable production VLAN, and that inter-VLAN routing applies policy. Violate any one and the segmentation leaks. VLAN separation should therefore be verified by testing hop attempts, not assumed from a design document.

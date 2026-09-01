@@ -123,6 +123,12 @@ Memorizing a mapping table hides three real disagreements worth understanding.
 
 These are not trivia. Each one is a place where a control that assumes strict layering can be bypassed — a firewall that inspects the outer header only, an IDS that cannot parse the inner protocol, a policy that assumes TCP.
 
+**The deliberate break:** the layers read as an organising convenience — a filing system that makes protocols easier to teach, with no consequence once you have memorised which one goes where.
+
+The stack encodes a **trust chain that runs downward and is verified nowhere**. An application trusts that the transport delivered data from the peer it believes it is talking to; the transport trusts that IP delivered from the stated source; IP trusts that the link delivered from the stated device. None of those trusts is checked by default. Break the chain low enough and every layer above inherits the lie without noticing, which is the entire mechanism behind on-path attacks and the reason authentication has to be end-to-end and cryptographic rather than derived from position in the path.
+
+**How you'd spot it:** resolve tool disagreements by layer rather than by preference — a capture decodes all four layers at once and outranks any tool reading one of them. And read every result as a statement about its own layer only: an open port means a listener completed a handshake, not that the service behind it is healthy, and certainly not that the host answering is the one you intended to reach.
+
 ## Security Implications
 
 Offensive and defensive tooling is organized around this suite, and knowing which layer a tool operates at tells you what its results can and cannot prove.

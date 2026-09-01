@@ -125,6 +125,12 @@ The filter isolates bare SYN segments — connection attempts without ACK. Seque
 
 A **slow scan** deliberately spreads probes over hours to stay under such thresholds, which is why correlation windows must be long and why single-packet analysis is insufficient.
 
+**The deliberate break:** denial of service reads as a volume problem — a pipe filled with more traffic than it can carry, defeated by having a bigger pipe or a scrubbing service in front of it.
+
+The resource these attacks consume is **table entries, not bandwidth**. A half-open handshake costs the server a backlog slot and the attacker a single packet; a slow-connection attack completes its handshakes honestly and then holds connection slots open while transferring almost nothing at all. Neither shows up as a volumetric anomaly, because neither is volumetric — a slow-exhaustion attack can take a server down using less bandwidth than one video call. Capacity planning that counts only bits per second is measuring the wrong axis, and every device in the path that tracks connection state inherits the same finite limit.
+
+**How you'd spot it:** classify by the ratio of connection count to throughput, never by throughput alone. Many `SYN-RECV` with near-zero `ESTAB` is a flood; many `ESTAB` with near-zero bytes and long connection ages is slow exhaustion; many `ESTAB` with throughput in proportion is a real traffic spike. Bandwidth graphs cannot separate the second case from an idle server, which is exactly why these attacks are reported as "the site is down but the monitoring looks fine."
+
 ## Security Implications
 
 **Availability is the transport layer's primary risk.** Unlike application-layer vulnerabilities that leak data, transport attacks predominantly deny service. Defenses therefore belong in capacity planning and resilience design as much as in security controls — and they must be tested under load, because a control that works at normal volume may itself become the bottleneck.

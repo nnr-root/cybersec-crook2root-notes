@@ -160,6 +160,12 @@ HOST: workstation           Loss%   Snt   Last   Avg  Best  Wrst StDev
 
 This output contains the single most misread pattern in network diagnostics. Hop 3 shows 100% loss, yet hops 4 and 5 are fine — so traffic obviously passes through hop 3 without difficulty. That hop simply does not generate Time Exceeded messages, usually by policy or ICMP rate limiting. **Loss at an intermediate hop that does not persist to subsequent hops is a reporting artefact, not a fault.** Only loss that continues to the final destination — the 5% at hop 5 here — describes the actual path quality.
 
+**The deliberate break:** ICMP looks optional. It is the diagnostics protocol, attackers use it for sweeps and tunnels, and blocking it therefore reads as a free hardening win with only a lost convenience as the cost.
+
+Parts of it are load-bearing. **Fragmentation Needed** is how path MTU discovery works and **Time Exceeded** is how traceroute works, so dropping them does not harden anything — it creates black holes where small transfers succeed, large ones hang, and nothing in the logs explains why. Meanwhile the covert-channel argument does not survive contact: the same tunnelling works over DNS and HTTPS, so blocking echo relocates the problem rather than solving it. Blanket ICMP denial trades a genuine operational dependency for a reconnaissance benefit that mostly is not there; rate limiting and selective type filtering are the instruments that actually fit.
+
+**How you'd spot it:** the black hole has a distinctive shape — a connection that establishes cleanly and then hangs the moment a large payload moves, with `ping` and small requests working perfectly throughout. Confirm it with a size sweep using the do-not-fragment bit (`ping -M do -s`), and look for the point where replies stop. For the tunnel, the pattern is sustained bidirectional echo between exactly one internal host and one external address, with payloads far larger than any diagnostic needs and intervals far too regular for a human.
+
 ## Security Implications
 
 ICMP sits in an awkward position: it is genuinely useful to attackers and genuinely necessary for correct operation.

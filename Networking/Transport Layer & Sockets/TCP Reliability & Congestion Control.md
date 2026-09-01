@@ -128,6 +128,12 @@ Case B: cwnd:210 ssthresh:180 retrans:0/0    rtt:11/1   rcv_space:64240 (Send-Q 
 
 Case A shows heavy retransmission, a collapsed congestion window, and high RTT variance — the **path** is losing packets, and no server tuning will fix it. Case B shows a healthy path with no loss but data queued locally; the limit is the receive window or the peer application's read rate — the **endpoint** is the bottleneck. Same symptom, opposite causes, distinguished in one command.
 
+**The deliberate break:** "the TCP window" is spoken of as one number — the amount of data in flight, tuned in one place, meaning one thing.
+
+There are two, they protect different parties, and only one of them is ever advertised. The **receive window** is the receiver's statement about its own buffer space and travels in every segment. The **congestion window** is the sender's private estimate of what the path will absorb, and nobody advertises it because nobody else can know it. The sender is bounded by whichever is smaller, which is why the diagnosis matters more than the tuning: a transfer limited by the receive window is a slow application on the receiving host, and a transfer limited by the congestion window is a lossy path. The two call for entirely different remediation, and "increase the window" applied to the wrong one changes nothing.
+
+**How you'd spot it:** read them separately with `ss -tin` rather than inferring from throughput. A large congestion window sitting beside a small advertised window from the peer means the receiver is the bottleneck; a congestion window that repeatedly collapses alongside a climbing retransmit count means the path is. The distinctive third case is a fast, quiet link delivering only a few megabits with no loss at all — that is window scaling stripped or mangled during the handshake, and it is confirmed by looking for the wscale option in the SYN rather than anywhere in the established connection.
+
 ## Security Implications
 
 **Congestion control is voluntary, and that is a systemic risk.** TCP's fairness depends on endpoints implementing back-off honestly. A modified stack that ignores congestion signals gains bandwidth at the expense of every well-behaved flow sharing the path. At scale this is a denial-of-service vector: aggressive or non-responsive flows can starve legitimate traffic without sending an obviously malicious packet.

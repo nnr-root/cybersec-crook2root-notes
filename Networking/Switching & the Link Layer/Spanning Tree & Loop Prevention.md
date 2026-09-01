@@ -91,6 +91,12 @@ First, blocked links carry no traffic. Half your redundant bandwidth may sit idl
 
 First-time forwarding is also **delayed**. When a device connects to a port, classic STP holds the port in listening and learning states before forwarding, to be sure it is not creating a loop. That delay — tens of seconds on classic STP — breaks things that expect instant connectivity, such as a host trying to obtain a DHCP lease the moment its link comes up. The fix for edge ports is **PortFast** (or RSTP edge ports), which skip the delay for ports known to face endpoints rather than switches. And PortFast is precisely where the security problem enters, because a port that forwards immediately is also a port that trusts quickly.
 
+**The deliberate break:** Spanning Tree presents as an availability feature — a resilience protocol that keeps redundant links from melting the network, with no security dimension worth thinking about.
+
+It is an **unauthenticated election that decides where all traffic converges**. The root bridge is chosen by lowest bridge ID, any device that speaks the protocol may advertise one, and the winner becomes the point every path is recalculated toward. A laptop that claims a low enough bridge ID takes a network-wide on-path position without touching a single host, exploiting no bug and sending nothing malformed. A protocol whose entire purpose is to elect a traffic concentration point, with no authentication on the ballot, is a security surface first and a resilience feature second.
+
+**How you'd spot it:** know which switch is your root and alarm when it changes — a network where nobody can name the current root bridge has no way to notice it moved. `show spanning-tree` reporting a root ID that is not your intended core is the finding itself; climbing topology-change counters are the same event in progress. At the edge, a BPDU Guard errdisable is the control working, and it is worth a log entry rather than a silent port reset.
+
 ## Security Implications
 
 Spanning Tree assumes every device speaking BPDUs is a trustworthy switch. It has no authentication, so an attacker who sends BPDUs can manipulate the topology.

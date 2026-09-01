@@ -135,6 +135,12 @@ Expected excerpt:
 
 `pmtu 1420` is the evidence: a tunnel on hop 2 costs 80 bytes of overhead. The fix is to correct MSS or MTU on the path, or to permit the ICMP type that carries the notification — not to disable DF globally.
 
+**The deliberate break:** encapsulation reads as bookkeeping — each layer adds a header on the way down and strips it on the way up, symmetrical and uninteresting once you have seen the diagram.
+
+Each header is a **claim that the layer above accepts without checking**, and the nesting has no defined bottom. Nothing prevents a payload from containing another complete stack, which is why traffic tunnelled inside DNS, ICMP or HTTPS carries a perfectly valid outer header and passes any control that evaluates only that header. The depth is not a curiosity of the diagram; it is the reason inspection stops where parsing stops, and the reason a filter and a destination host that disagree about how to reassemble the same bytes create an evasion surface between them.
+
+**How you'd spot it:** compare a protocol's payload against what that protocol normally carries, rather than checking that the header is well formed. DNS queries with high-entropy labels and a length distribution unlike any real lookup, ICMP echo carrying kilobytes, an HTTPS flow to one destination that never varies in size — each is a tunnel wearing a valid outer header. Regularity is the giveaway that generalises: real traffic of almost every protocol is bursty and irregular, and a tunnel carrying a session underneath tends not to be.
+
 ## Security Implications
 
 Encapsulation depth is a security property because **inspection stops where parsing stops**.

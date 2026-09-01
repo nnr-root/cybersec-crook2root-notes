@@ -193,6 +193,12 @@ Expected excerpt:
 
 This is the property that lets a specific exception coexist with a broad summary. It is also the property that makes an accidental specific route so dangerous: a single injected `/32` overrides every broader route for that destination, and it will not appear anomalous in a table dominated by aggregates.
 
+**The deliberate break:** summarisation reads as pure tidying — the same intent expressed in fewer lines, and therefore good practice anywhere a list of prefixes has grown long.
+
+It is safe for routes and dangerous for policy, and the reason is a mechanism that exists on only one side. Longest-prefix match makes an aggregate route harmless: advertise a `/22` and a more specific `/24` still wins wherever it exists, so the summary is a fallback rather than an override. A firewall rule has no such tie-breaker. Collapsing four `/24` permits into one `/22` authorises everything in between, and if the four were not contiguous it authorises a great deal more. Identical notation, opposite consequence, because routing resolves by specificity while policy resolves by match.
+
+**How you'd spot it:** expand every range to its literal address count during review and read that number rather than the prefix — a `/22` is 1,024 addresses whether or not you meant the four `/24`s inside it. On the routing side, monitor for unexpected *specific* prefixes rather than for reachability: a more-specific injection breaks nothing, users notice nothing, and traffic simply travels somewhere it should not, so a reachability check will report everything healthy throughout.
+
 ## Security Implications
 
 The routing behaviour above transfers directly into two security problems.

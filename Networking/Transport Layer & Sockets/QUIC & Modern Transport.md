@@ -119,6 +119,12 @@ Expected output when QUIC succeeds:
 HTTP/3 200
 ```
 
+**The deliberate break:** QUIC reads as "TCP but faster" — a performance upgrade you adopt and otherwise ignore, since the network below it is unchanged.
+
+It relocates the transport itself. Reliability and ordering move into **user space**, so they ship with the application rather than the kernel; the transport headers are largely **encrypted**, so middleboxes cannot read them; and connection identity moves from the five-tuple to a **connection ID**, so a session survives an address change. Each of those is a performance decision with a network-visibility consequence attached. Every control built on reading transport state — five-tuple flow accounting, TCP stream reassembly in an IDS, a connection-state firewall — is looking at an opaque UDP conversation whose endpoints may change mid-session. QUIC is not a faster TCP; it is a transport your network can no longer inspect or account for the way it did.
+
+**How you'd spot it:** start with what your tooling does with UDP/443, because that single port is the whole migration. In flow data, one user session appearing as several unrelated UDP flows is connection migration rather than several users. The subtler tell is a monitoring regression with no configuration change behind it — HTTP visibility in an IDS quietly falling after a browser update is HTTP/3 taking over from HTTP/2. Blocking UDP/443 to force TCP fallback restores that visibility and is a deliberate downgrade, so it belongs in the risk register rather than in a firewall rule nobody documented.
+
 ## Security Implications
 
 **Mandatory encryption is a defensive win and a visibility loss simultaneously.** Every QUIC connection is encrypted with TLS 1.3 semantics — there is no unencrypted mode — which eliminates downgrade and passive interception at the transport layer. The same property means network-based inspection that relied on reading TCP and TLS metadata sees far less. Defenders lose sequence-level visibility, connection-state telemetry, and much of the fingerprinting surface.

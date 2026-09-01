@@ -134,6 +134,12 @@ The defenses operate at three levels:
 
 The recurring theme is that operators of UDP services must protect *third parties*, not just themselves. An open, amplifying UDP service is a weapon pointed at strangers.
 
+**The deliberate break:** a public UDP service looks like something that can be attacked — the exposure question is whether *your* server is reachable, patched and hardened.
+
+The more consequential exposure runs the other way. With no handshake, the service cannot verify who asked, so it replies to whatever source address the request claimed. A hardened, fully patched, perfectly behaving UDP service is therefore still **a weapon aimed at a third party**: an attacker spoofs a victim's address, your server answers dutifully, and the victim absorbs a reply many times larger than the request that triggered it. The risk you carry is not only being a target but being an unwitting participant, and no amount of patching the service changes that — the property belongs to the transport.
+
+**How you'd spot it:** look at the direction of the bytes. A UDP service whose outbound volume materially exceeds its inbound volume is being used as an amplifier, and that ratio is visible in flow data long before anyone complains. Then check the specific features that make the ratio large — recursion on a resolver, `monlist` on NTP, public community strings on SNMP, an exposed memcached — and fix the origin as well as the reflector: source-address validation at your own edge (BCP 38) stops your network emitting the spoofed requests that make everyone else's servers into weapons.
+
 ## Security Implications
 
 **Statelessness cuts both ways for defenders.** There is no connection state to inspect, so a firewall cannot rely on "this is a reply to a request we made" the way it can with TCP. Stateful devices approximate it by tracking recent outbound datagrams and permitting matching returns for a short window — a heuristic, not a guarantee, and one an attacker can sometimes time around.

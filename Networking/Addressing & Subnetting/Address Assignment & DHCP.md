@@ -148,6 +148,12 @@ This record is the backbone of attribution. An investigation that finds activity
 
 **Relay misconfiguration.** Because Discover is broadcast, a server on another segment never sees it. A **DHCP relay** forwards the request as unicast and records the originating subnet so the server picks the right pool. If the relay is missing or points at the wrong server, clients on that segment silently get nothing.
 
+**The deliberate break:** DHCP reads as an assignment protocol — a host asks for an address, a server hands one out, and the whole thing is an administrative convenience that saves someone typing.
+
+The lease carries far more than an address. It names the **default gateway** and the **resolvers**, which is to say it decides where all of that host's traffic goes and who answers every name it looks up. And the exchange is settled by whoever replies first, with no authentication anywhere in it. DHCP is therefore the moment a host accepts its entire network configuration from an unauthenticated stranger on the basis of response speed — which is why a rogue server is an on-path position rather than an addressing nuisance, and why the controls for it all live at the link layer.
+
+**How you'd spot it:** two `DHCPOFFER` sources on a segment that should have one is the whole signal, and it needs no special tooling to see. A client whose server identifier changes between renewals is the same event from the host's side. The check available to anyone is to compare the gateway and DNS servers in your own lease against the documented configuration — and note that a consumer router plugged into a wall port produces a signature identical to a deliberate attack, so the response is the same either way.
+
 ## Security Implications
 
 **Rogue DHCP** is the headline risk. An attacker running a server on the segment answers Discovers faster than the legitimate one and issues leases naming their own host as gateway and resolver. The victim's traffic then flows through attacker-controlled infrastructure, and every name it resolves is attacker-answered. Nothing appears broken to the user — connectivity works perfectly, which is precisely what makes it effective. It can also occur accidentally: a consumer router plugged into a wall port serves the whole VLAN.

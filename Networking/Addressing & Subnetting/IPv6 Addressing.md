@@ -141,6 +141,12 @@ Expected excerpt:
 
 The `%eth0` suffix is mandatory for link-local and omitting it produces `Invalid argument` — a small detail that consumes a surprising amount of troubleshooting time.
 
+**The deliberate break:** "we have not deployed IPv6" is heard as "IPv6 is not here", and therefore as one fewer thing to write policy for.
+
+Deployment is not what turns it on. Modern operating systems enable IPv6 by default, **prefer it over IPv4 when both resolve**, and bring link-local connectivity up on every segment whether or not anyone planned for it. So a network with no IPv6 project still has a working IPv6 path on every wire — and if the firewall rules, the logging and the inspection were all written against IPv4 addresses, that path is entirely unfiltered and entirely unmonitored. The absence of a deployment is the absence of *management*, not the absence of the protocol, which is precisely what makes this one of the most reliably productive findings in an internal assessment.
+
+**How you'd spot it:** run `ip -6 addr` on any workstation. Addresses on every interface are not evidence of a deployment; they are the default, and they mean the path exists. Then look at the controls rather than the hosts — a firewall ruleset and a SIEM containing no IPv6 addresses or fields at all, on a network whose machines all have them, is the finding stated in one line. `ping6 ff02::1` returning the segment instantly is the other half, and the reason "the address space is too large to scan" was never a control.
+
 ## Security Implications
 
 IPv6's security problems are overwhelmingly problems of *unmanaged* IPv6 rather than flaws in the protocol.

@@ -163,6 +163,12 @@ Expected excerpt:
 
 The row of asterisks at hop 3 is the field most often misread. It does not mean the packet stopped there. It means that hop did not return a Time Exceeded message — commonly because the device is configured not to, or rate-limits ICMP. Traffic clearly continued, since hops 4 and 5 replied. Concluding "the network breaks at hop 3" from this output is a classic false conclusion; the correct reading is "hop 3 is silent, and the path is intact."
 
+**The deliberate break:** devices are sorted by what they are called — this is a switch, that is a router, that one is a firewall — as though the label determined the capability.
+
+The classification that predicts behaviour is **which header the device reads, and whether it keeps state**. A layer-3 switch, a router and a firewall all forward packets; what separates them is inspection depth and memory of previous packets. Once you know how deep a device parses, you know both what it is able to enforce and what is invisible to it — which is why a control that reads only link-layer fields cannot express an application policy, and why a stateless filter cannot tell a reply from an unsolicited packet that merely looks like one.
+
+**How you'd spot it:** for every device in the path, ask which header it reads; that single question bounds what it can possibly enforce, and it exposes controls that were bought to solve a problem one layer above what they parse. The recurring concrete finding is a management interface answering from an ordinary user segment — check what responds on each device's management address from a normal workstation, because compromising the device that enforces segmentation removes the segmentation entirely.
+
 ## Security Implications
 
 Each device is simultaneously a control point and a target.
