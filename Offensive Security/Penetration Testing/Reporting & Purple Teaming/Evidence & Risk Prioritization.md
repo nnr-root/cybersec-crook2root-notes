@@ -33,6 +33,12 @@ The core skill of prioritization is knowing that **technical severity is not bus
 
 **Prerequisites:** **Rules of Engagement & Scoping** (evidence governance/chain-of-custody lifecycle) and **Vulnerability Intelligence & Scoring** (how CVSS/EPSS are computed) — this note applies both to the *reporting* stage.
 
+**The deliberate break:** more evidence is safer evidence. Screenshot everything, dump the table, keep the whole capture — you can always trim it later.
+
+Over-collection is a **liability you created**, not a safety margin. Every extra record you copied is client data you now hold, transported and stored under your control, in a report that will be emailed and filed. If a single canary row proves cross-tenant access, dumping ten thousand real ones proves the same finding and manufactures a data-protection incident on top of it. The standard is *sufficient, minimal, reproducible* — and minimal is a security control, not a convenience.
+
+**How you'd spot the line:** ask what the evidence must prove, then whether one more record would change that. If the answer is no, you are collecting for comfort rather than for proof.
+
 ## Evidence: Sufficient, Minimal, Reproducible, Protected, Traceable
 
 Good evidence meets five tests: it is **sufficient** (proves the finding), **minimal** (no over-collection of real data), **reproducible** (another operator can repeat it), **protected** (encrypted, access-controlled), and **traceable** (hashed original + full custody record).

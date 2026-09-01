@@ -33,6 +33,14 @@ The unifying discipline across both: **separate confirmed fact from inference, a
 
 **Prerequisites:** **Evidence & Risk Prioritization** (the report presents that evidence and ranking); **Penetration Testing Fundamentals** (the risk vocabulary).
 
+**The deliberate break:** the report documents what you did. Write up the exploit, attach the proof, rank it by severity, and the engagement is delivered.
+
+The client is not buying a record of your work — they are buying **decisions they can act on**, and the exploit is the least useful part of that. What makes a finding actionable is the *root cause* (why it exists, so it is not merely patched here and left everywhere else), the *business impact* (what an attacker gains, in terms the person funding the fix understands), and the *specific remediation*. A finding with a payload and none of those three is a scanner export with a narrative.
+
+There are also two readers with different needs, and writing for one fails the other: the engineer needs reproduction detail, the executive needs the risk decision. Neither is served by a document that splits the difference.
+
+**How you'd spot a weak finding:** it describes what you sent and what came back, and never says why the application allowed it. If the fix cannot be inferred from the finding, the analysis is still missing.
+
 ## The Technical Finding: Anatomy
 
 A defensible finding connects **condition → evidence → impact → root cause → fix → retest**. Include: precise title, affected assets and versions, prerequisite identity, the violated security invariant, reproducible steps, observed *and expected* results, minimum proof, business impact, likelihood factors, root cause, compensating controls, remediation (naming the control layer), detection opportunity, cleanup, and retest criteria.

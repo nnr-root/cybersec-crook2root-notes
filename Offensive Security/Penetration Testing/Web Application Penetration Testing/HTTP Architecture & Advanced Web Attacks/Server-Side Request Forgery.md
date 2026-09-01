@@ -25,6 +25,14 @@ Any feature that fetches a URL is a candidate: a "load image from URL" field, a 
 
 **Prerequisites:** HTTP, internal vs. external network addressing, and the cloud-metadata concept.
 
+**The deliberate break:** SSRF sounds like a lesser flaw — you make the server fetch a URL, which is what servers do all day. Compared with code execution it reads as an inconvenience.
+
+The severity does not come from the fetch, it comes from **where the request originates**. Your request arrives from the internet and is filtered accordingly; the server's request originates *inside* the network, from a host the internal services already trust. That turns a URL parameter into a proxy into the environment: internal admin panels with no authentication because they are "internal", databases bound to private addresses, and above all cloud metadata at `169.254.169.254`, which will hand out the instance's credentials to anything that asks from the instance.
+
+That is why SSRF regularly escalates to full cloud-account compromise while looking, in the request, like a thumbnail generator being given a different link.
+
+**How you'd spot it:** any parameter containing a URL, a hostname, or something that becomes one — webhook targets, PDF renderers, thumbnailers, import-from-URL, XML entities. Point one at a service you control and watch whether the *server's* address connects. That out-of-band callback is the proof, and it needs no internal target at all.
+
 ## The High-Value Targets
 
 SSRF's severity comes from what the server can reach that you cannot:
