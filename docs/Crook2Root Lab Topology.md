@@ -141,6 +141,8 @@ real single-vendor fleet would look.
 | `00:00:5E:00:53:30` | `SCAN-07` |
 | `00:00:5E:00:53:40` | `jump` |
 | `00:00:5E:00:53:50` | `edge` |
+| `00:00:5E:00:53:C0` | the `MERIDIAN-CORP` access point |
+| `00:00:5E:00:53:C1` | the `MERIDIAN-GUEST` access point |
 | `00:00:5E:00:53:DE` | the attacker — deliberately memorable, used wherever a note shows a spoofed or hostile frame |
 
 IPv6 hosts take `2001:db8:acad:<vlan>::<host>`, matching the IPv4 last octet:

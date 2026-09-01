@@ -62,7 +62,7 @@ Core flags: `-l` listen, `-n` no DNS, `-v` verbose, `-z` zero-I/O scan, `-w` tim
 ```shell-session
 # 1) rlwrap — wrap the listener with readline: arrow keys, history, line editing
 attacker$ rlwrap nc -lvnp 4444
-Connection received on 10.0.0.20 51234
+Connection received on 10.10.20.20 51234
 $ (now Up-arrow recalls commands, Left/Right edit the line)
 ```
 

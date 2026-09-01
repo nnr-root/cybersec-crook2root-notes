@@ -29,9 +29,9 @@ Point Zeek at an interface (or a pcap); it produces the logs:
 ```shell-session
 analyst@sensor:~$ zeek -i eth0
 analyst@sensor:~$ head -1 conn.log; cat conn.log | zeek-cut id.orig_h id.resp_h duration | head
-10.0.0.44  203.0.113.9   0.512
-10.0.0.44  203.0.113.9   0.498     ← same pair, regular ~0.5s connections
-10.0.0.44  203.0.113.9   0.505
+10.10.10.44  203.0.113.9   0.512
+10.10.10.44  203.0.113.9   0.498     ← same pair, regular ~0.5s connections
+10.10.10.44  203.0.113.9   0.505
 ```
 
 `zeek-cut` extracts columns from the tab-separated logs. The high-value logs: `conn.log` (every flow + duration + bytes), `dns.log` (queries — catch DGA/exfil), `ssl.log` (JA3 + SNI + cert), `http.log`, `files.log` (extracted files + hashes). Zeek's scripting language lets you write custom detections that trigger on protocol events.

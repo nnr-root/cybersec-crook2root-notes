@@ -28,7 +28,7 @@ The two moves that do 80% of the work: **display filters** and **Follow Stream**
 
 ```text
 Display filter examples (apply to already-captured packets):
-  ip.addr == 10.0.0.5 && tcp.port == 443
+  ip.addr == 198.51.100.9 && tcp.port == 443
   http.request.method == "POST"
   tcp.flags.syn == 1 && tcp.flags.ack == 0     (SYN scans)
   tls.handshake.extensions_server_name          (which hostnames via SNI)
@@ -41,15 +41,15 @@ Right-click a packet → **Follow → TCP Stream** reassembles the whole convers
 The single most common Wireshark confusion is **capture filter vs. display filter** — they look similar and behave oppositely:
 
 ```text
-CAPTURE filter (BPF, set BEFORE capturing):   host 10.0.0.5
+CAPTURE filter (BPF, set BEFORE capturing):   host 198.51.100.9
   → only matching packets are ever SAVED. Everything else is gone forever.
 
-DISPLAY filter (set AFTER capturing):         ip.addr == 10.0.0.5
+DISPLAY filter (set AFTER capturing):         ip.addr == 198.51.100.9
   → hides non-matching packets from VIEW. They're still in the .pcap; clear the
     filter and they reappear.
 ```
 
-**The deliberate break:** an analyst sets a *capture* filter of `host 10.0.0.5` to "focus," runs the capture, and later realises the attacker pivoted to `10.0.0.9` — but those packets were **never saved** and are unrecoverable. The safe habit is: capture *broad* (little or no capture filter), then narrow with *display* filters, which are non-destructive and reversible. The two even use **different syntax** (BPF `host 10.0.0.5` for capture; Wireshark `ip.addr == 10.0.0.5` for display), which is the tell that they're different mechanisms. One more Root reality: Wireshark shows TLS as opaque ciphertext unless you supply the session keys (via `SSLKEYLOGFILE`) — you can see *that* two hosts did TLS and to which SNI, but not the plaintext, without the keys.
+**The deliberate break:** an analyst sets a *capture* filter of `host 198.51.100.9` to "focus," runs the capture, and later realises the attacker pivoted to `10.10.10.9` — but those packets were **never saved** and are unrecoverable. The safe habit is: capture *broad* (little or no capture filter), then narrow with *display* filters, which are non-destructive and reversible. The two even use **different syntax** (BPF `host 198.51.100.9` for capture; Wireshark `ip.addr == 198.51.100.9` for display), which is the tell that they're different mechanisms. One more Root reality: Wireshark shows TLS as opaque ciphertext unless you supply the session keys (via `SSLKEYLOGFILE`) — you can see *that* two hosts did TLS and to which SNI, but not the plaintext, without the keys.
 
 ## Summary
 

@@ -34,7 +34,7 @@ alert tcp any any -> $HOME_NET 445 (msg:"SMB exploit attempt";
 ```shell-session
 analyst@sensor:~$ snort -c /etc/snort/snort.conf -i eth0 -A console
 [**] [1:1000001:1] SMB exploit attempt [**]
-{TCP} 10.0.0.44:51234 -> 10.0.0.5:445
+{TCP} 10.10.10.44:51234 -> 198.51.100.9:445
 ```
 
 `content:` is the byte pattern to match; `flow:` scopes direction; `sid:` uniquely identifies the rule; `msg:` is the alert text. `-A console` prints alerts; production logs to unified2 → a SIEM. Community and subscriber (Talos) rule sets provide thousands of maintained rules.

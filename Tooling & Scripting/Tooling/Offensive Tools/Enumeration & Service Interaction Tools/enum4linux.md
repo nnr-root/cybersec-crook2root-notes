@@ -35,7 +35,7 @@ The mental model: SMB is a chatty service, and enum4linux is the megaphone that 
 ## What a null session hands you
 
 ```shell-session
-operator@lab:~$ enum4linux-ng -A 10.0.0.20
+operator@lab:~$ enum4linux-ng -A 10.10.20.20
 [+] Got domain/workgroup name: CORP
 [+] Server allows session using username '', password ''  (null session!)
 === Users ===   svc_backup (RID 0x3e9),  jdoe (RID 0x3ea)
@@ -48,10 +48,10 @@ The gold: a null session leaked the user list **and** a policy with **no lockout
 ## One registry value, two completely different answers
 
 ```shell-session
-operator@lab:~$ enum4linux-ng -U 10.0.0.20       # legacy/misconfigured
+operator@lab:~$ enum4linux-ng -U 10.10.20.20       # legacy/misconfigured
 [+] Server allows session using username '', password ''
 users: svc_backup, jdoe, intern
-operator@lab:~$ enum4linux-ng -U 10.0.0.99       # hardened host
+operator@lab:~$ enum4linux-ng -U 10.10.20.99       # hardened host
 [-] Could not establish null session: STATUS_ACCESS_DENIED
 [-] No users enumerated
 ```

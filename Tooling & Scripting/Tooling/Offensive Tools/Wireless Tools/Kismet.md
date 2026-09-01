@@ -28,10 +28,10 @@ Point it at a monitor-mode interface; drive it from the web UI:
 
 ```shell-session
 operator@kali:~$ sudo kismet -c wlan0mon
-[INFO] Detected new 802.11 Wi-Fi access point AA:BB:CC:11:22:33 "CorpWiFi" ch 6
-[INFO] Detected new 802.11 Wi-Fi device 44:55:66:77:88:99 (client)
-[INFO] Probe request from 44:55:66:77:88:99 for "HomeNet-5G"
-[ALERT] BCASTDISCON: possible deauth flood on AA:BB:CC:11:22:33
+[INFO] Detected new 802.11 Wi-Fi access point 00:00:5E:00:53:C0 "MERIDIAN-CORP" ch 6
+[INFO] Detected new 802.11 Wi-Fi device 00:00:5E:00:53:0E (client)
+[INFO] Probe request from 00:00:5E:00:53:0E for "HomeNet-5G"
+[ALERT] BCASTDISCON: possible deauth flood on 00:00:5E:00:53:C0
 ```
 
 The web UI (`http://localhost:2501`) shows live APs, associated clients, signal strength (for direction-finding/wardriving), and alerts. It logs to `.kismet` (SQLite) and pcapng for later analysis. As a WIDS, its alerts (`DEAUTHFLOOD`, rogue-AP, karma-attack) are the blue-team side of everything in this category.
@@ -41,10 +41,10 @@ The web UI (`http://localhost:2501`) shows live APs, associated clients, signal 
 The most surprising Kismet capability isn't about networks — it's about **people**, and it's entirely passive:
 
 ```shell-session
-[Probe] client 44:55:66:77:88:99 →  "CorpWiFi"
-[Probe] client 44:55:66:77:88:99 →  "HomeNet-5G"
-[Probe] client 44:55:66:77:88:99 →  "SFO_Airport_WiFi"
-[Probe] client 44:55:66:77:88:99 →  "Marriott_Guest"
+[Probe] client 00:00:5E:00:53:0E →  "MERIDIAN-CORP"
+[Probe] client 00:00:5E:00:53:0E →  "HomeNet-5G"
+[Probe] client 00:00:5E:00:53:0E →  "SFO_Airport_WiFi"
+[Probe] client 00:00:5E:00:53:0E →  "Marriott_Guest"
 ```
 
 **The deliberate break:** those are **probe requests** — a phone shouting the names of Wi-Fi networks it has connected to before, looking for them. Kismet harvests them without transmitting anything, and the *list itself* is a fingerprint: it reveals where this device (person) lives, works, and has travelled — enough to identify and track an individual across locations. Beginners think Kismet "just finds Wi-Fi"; its deeper power (and privacy hazard) is that clients leak their history for free, which is why modern phones randomize MACs and stop broadcasting saved SSIDs. This also flips Kismet into a defensive tool: the same passive visibility detects an attacker's deauth flood or an evil-twin AP the instant it appears. Kismet doesn't attack — it *sees*, and seeing is both reconnaissance and defense.
