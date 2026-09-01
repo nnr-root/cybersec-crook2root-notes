@@ -18,6 +18,10 @@ Suricata -> Snort -> Zeek
 
 ## Recording behaviour instead of matching signatures
 
+> *You deploy Zeek and it raises no alerts at all. Is it broken?*
+>
+> Hold your answer — the section below is the response.
+
 Zeek is the entire right-hand model of the diagram — behaviour, not signatures.
 
 Where Snort/Suricata ask "did a *known* threat just happen?", Zeek asks nothing — it simply *records*. Every connection becomes a row in `conn.log`; every DNS lookup a row in `dns.log`; every TLS handshake (JA3, SNI, cert) a row in `ssl.log`. The detection happens *later*, when you or a SIEM hunt over those logs for what's abnormal. Its superpower is seeing patterns no signature could encode — and doing so even on **encrypted** traffic, because it reasons about *metadata*, not payload.

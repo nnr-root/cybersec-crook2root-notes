@@ -20,6 +20,10 @@ Wireshark -> tcpdump
 
 ## Deciding in the kernel which packets are worth keeping
 
+> *Wireshark and tcpdump look at the same packet. What does tcpdump decide that Wireshark never gets to?*
+>
+> Hold your answer — the section below is the response.
+
 Same layered packet as Wireshark — but tcpdump lives at the **capture** end, deciding (via a kernel BPF filter) which packets are worth saving at all.
 
 Its filters target the lower layers efficiently (`host`, `port`, `tcp[13]` flag bits) because BPF runs *in the kernel* before the packet is ever copied to userspace — so a tight filter means the machine barely notices the capture. tcpdump's job is to grab exactly the right bytes with minimal overhead; deep decoding is Wireshark's job.

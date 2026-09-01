@@ -18,6 +18,10 @@ Nmap -> Masscan -> RustScan
 
 ## The first move of a SYN scan, and nothing else
 
+> *Masscan sends the same opening packet as an Nmap SYN scan. What does it not do afterwards?*
+>
+> Hold your answer — the section below is the response.
+
 Masscan sends the same first move as Nmap's SYN scan — but only the first move.
 
 It fires a `SYN` at every target/port and listens for the `SYN-ACK` (open) or `RST` (closed) from the diagram. What it does **not** do is the rest: no version detection, no handshake completion, no follow-up. It is a firehose of the top row of that table, which is why the mental model is "discover fast, then validate slow." A Masscan hit is a *lead*, never a conclusion.

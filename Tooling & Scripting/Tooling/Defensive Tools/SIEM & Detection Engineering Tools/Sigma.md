@@ -18,6 +18,10 @@ Splunk Basics -> Sigma
 
 ## The portable half of the detection pipeline
 
+> *"Office spawned PowerShell" is the same detection idea in Splunk, Elastic and Sentinel. What is different about it in each?*
+>
+> Hold your answer — the section below is the response.
+
 Sigma is the **rule**, not the platform — the portable half of the pipeline.
 
 The insight: a detection like "Office spawned PowerShell" is the *same idea* everywhere, but Splunk expresses it in SPL, Elastic in KQL, Sentinel in its own KQL. Sigma writes the idea **once** in YAML and lets a compiler translate it to each backend — so a rule shared on GitHub can be deployed by anyone, on any SIEM, without a rewrite. That's the whole value proposition: detection logic that isn't hostage to one vendor.

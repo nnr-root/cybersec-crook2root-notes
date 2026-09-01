@@ -18,6 +18,10 @@ aircrack-ng -> Kismet -> hcxtools
 
 ## You cannot break WPA2, so you capture the handshake
 
+> *You cannot break WPA2 encryption over the air. What do you take instead?*
+>
+> Hold your answer — the section below is the response.
+
 You cannot break WPA2 encryption over the air. What you *can* do is capture the **4-way handshake** — the brief exchange when a client joins, which contains a value derived from the passphrase — and then attack that value offline.
 
 aircrack-ng is method **A** on the map: capture the handshake (deauthing a client to force a reconnect if you're impatient), then crack offline. The whole security of WPA2-PSK reduces to one question the handshake lets you ask offline: *is the passphrase in my wordlist?*

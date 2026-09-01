@@ -18,6 +18,10 @@ name-that-hash -> hash-identifier -> John the Ripper -> Hashcat
 
 ## Different algorithms leave different shapes
 
+> *One hash starts `$2b$`; another is 32 hex characters. What have you already learned?*
+>
+> Hold your answer — the section below is the response.
+
 A hash is a fixed-length fingerprint of some input, but different algorithms leave different **shapes**. An unsalted MD5 is 32 hex characters; SHA-1 is 40; bcrypt starts with `$2b$`; a Windows dump gives you `LM:NTLM` pairs separated by a colon. You do not need to memorise them all — you need to *read the signals*.
 
 ## Identifying one hash, with the crack modes attached

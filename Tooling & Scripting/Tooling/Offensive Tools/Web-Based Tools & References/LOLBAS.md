@@ -18,6 +18,10 @@ GTFOBins -> LOLBAS -> CrackStation -> Aperisolve -> revshells.com
 
 ## Abusing the trusted binaries already on the box
 
+> *Modern defences block unknown executables. So what does the attacker run instead?*
+>
+> Hold your answer — the section below is the response.
+
 Modern defenses block *unknown* executables. So attackers stop bringing their own tools and instead abuse the **trusted ones already on the box** — "living off the land." `certutil` can download a file. `mshta` can run script. `regsvr32` can execute a remote scriptlet. Each is signed by Microsoft, so an allow-list waves it through.
 
 ```mermaid

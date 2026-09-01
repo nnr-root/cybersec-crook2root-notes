@@ -18,6 +18,10 @@ Sysmon -> osquery
 
 ## The event stream: CCTV for the operating system
 
+> *A process started at 02:14 and exited at 02:15. Tomorrow you need to know it happened. What kind of visibility does that require?*
+>
+> Hold your answer — the section below is the response.
+
 There are two shapes of endpoint visibility. Sysmon is the **event stream** — a continuous, ordered recording of what happened.
 
 Think of it as CCTV for the OS: every process launch, network connection, and injection becomes a timestamped **Event ID** you can replay to reconstruct exactly what an attacker did and when. Event ID 1 (ProcessCreate, with parent and command line) alone underpins a huge fraction of detections, because "what spawned what, with what arguments" is the story of most attacks.

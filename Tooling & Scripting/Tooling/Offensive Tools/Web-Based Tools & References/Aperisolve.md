@@ -18,6 +18,10 @@ GTFOBins -> LOLBAS -> CrackStation -> Aperisolve -> revshells.com
 
 ## Data tucked into every layer of an image
 
+> *An image is just numbers. How many places inside one can data hide?*
+>
+> Hold your answer — the section below is the response.
+
 Steganography hides data *inside* a carrier file. An image is just numbers (pixel colour values + metadata + trailing bytes), and data can be tucked into any of those layers: the least-significant bits of pixels, an EXIF field, a password-protected `steghide` blob, or extra bytes appended after the image ends. No single tool checks all of them — so you run *all* of them.
 
 ```mermaid

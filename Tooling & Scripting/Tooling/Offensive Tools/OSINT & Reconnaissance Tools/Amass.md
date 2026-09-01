@@ -18,6 +18,10 @@ theHarvester -> Amass -> Shodan
 
 ## Mapping one target's DNS estate into a graph
 
+> *Is Amass a passive tool?*
+>
+> Hold your answer — the section below is the response.
+
 Amass is the **depth** tool — where theHarvester casts a wide net, Amass exhaustively maps one target's DNS estate into a graph.
 
 But note *where* Amass sits on the map: it **straddles the passive/active line**. Its default enumeration is passive (querying cert transparency, DNS datasets, archives — the target sees nothing). The moment you add `-brute` or `-active`, it starts sending DNS queries and probes *to the target itself* — crossing into active recon, where you appear in their logs. Understanding which side of that line a given command lives on is the single most important thing about Amass.

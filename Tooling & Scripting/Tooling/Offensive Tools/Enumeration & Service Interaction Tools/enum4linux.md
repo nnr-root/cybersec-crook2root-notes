@@ -18,6 +18,10 @@ Gobuster -> ffuf -> feroxbuster -> dirsearch -> Netcat -> enum4linux
 
 ## SMB defaults built to be helpful
 
+> *You have no credentials at all. Why does an SMB server answer your questions anyway?*
+>
+> Hold your answer — the section below is the response.
+
 Windows file sharing (SMB) was built to be *helpful*: legacy defaults let an **anonymous** client — a "null session," empty username and password — ask "who are your users? what do you share? what's your password policy?" and get answers. enum4linux automates every one of those questions.
 
 ```mermaid

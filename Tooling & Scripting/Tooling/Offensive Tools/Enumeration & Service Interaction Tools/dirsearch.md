@@ -18,6 +18,10 @@ Gobuster -> ffuf -> feroxbuster -> dirsearch -> Netcat -> enum4linux
 
 ## Asking for thousands of paths and watching the codes
 
+> *You request `/admin` and the server answers `200`. Does `/admin` exist?*
+>
+> Hold your answer — the section below is the response.
+
 A web server only tells you about the URLs you ask for. **Content discovery** means asking for thousands of likely paths (`/admin`, `/backup`, `/.git/`, `/api/v1`) and watching the HTTP status code to infer what exists — a `200` or `301` is a hit, a `404` is a miss. The whole game is a good wordlist and correctly *reading the status codes*.
 
 dirsearch prints the status and size for every hit; the diagram is how you read them — including the soft-404 trap it can auto-detect but you must confirm.

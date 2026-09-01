@@ -18,6 +18,10 @@ aircrack-ng -> Kismet -> hcxtools
 
 ## The passive discovery layer you run first
 
+> *Before you capture or crack anything on a wireless engagement, what do you need first?*
+>
+> Hold your answer — the section below is the response.
+
 Before you capture or crack anything, you have to *know what's there*. Kismet is the passive-discovery layer.
 
 On the map, Kismet is the bottom band — you run it **first** to map the RF environment (which SSIDs, which BSSIDs, which channels, which clients), then hand targets to aircrack-ng/hcxtools. Its defining property: it **injects nothing**. It only listens, hopping channels and logging every frame, which makes it invisible on the air and equally useful as a *defensive* wireless IDS — it detects the very deauth floods and rogue APs that the offensive tools produce.

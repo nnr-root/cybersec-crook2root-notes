@@ -18,6 +18,10 @@ Security Tool Architecture & Design Patterns -> Building Network Scanners -> Com
 
 ## The well-built-tool diagram applied to hashing
 
+> *Which part of a hashing tool should know how to print?*
+>
+> Hold your answer — the section below is the response.
+
 Hashsmith is the "well-built tool" diagram applied to a hashing/integrity/audit pipeline.
 
 The CLI edge parses explicit subcommands into immutable **operation objects**; a pure core (codecs, digest engines, verifiers) does the work with no printing or `exit()`; new algorithms plug in without touching the engine; and everything emits structured JSON evidence. The one conceptual line the whole design defends: an **encoding is reversible, a hash is not**, and a hash is an *integrity* primitive — conflating "hash" with "encrypt/decrypt" is the error the tool's structure refuses to make.

@@ -18,6 +18,10 @@ Splunk Basics -> Sigma
 
 ## Where the logs go to be searched at scale
 
+> *Logs are arriving from 4,000 hosts. What does Splunk do to them before you can search anything?*
+>
+> Hold your answer — the section below is the response.
+
 Splunk is the **platform** in the detection pipeline — the place logs go to be stored and searched at scale.
 
 Read the pipeline: sources feed Splunk, Splunk indexes them (by `source`, `sourcetype`, `host`), and you search with SPL. SPL is a **pipeline language** — data flows left to right through `|` commands, each transforming the stream: `search → stats → eval → table`. Once "everything is a searchable event and I pipe it through transforms" clicks, Splunk stops being a log viewer and becomes an analytics engine.

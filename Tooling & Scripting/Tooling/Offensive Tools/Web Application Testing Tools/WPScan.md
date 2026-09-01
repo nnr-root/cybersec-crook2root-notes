@@ -18,6 +18,10 @@ curl -> Postman -> Burp Suite -> OWASP ZAP -> Nikto -> WPScan -> SQLmap
 
 ## A specialist that knows how WordPress leaks
 
+> *Nikto and WPScan both aim at the server. What does WPScan know that Nikto does not?*
+>
+> Hold your answer — the section below is the response.
+
 Like Nikto, WPScan aims at the **server** — but it's a specialist. It knows exactly how WordPress exposes its version, plugins, themes, and users, and it fingerprints each, then looks up known vulnerabilities.
 
 The insight WPScan encodes: a WordPress site is only as secure as its *weakest plugin*. The core is well-maintained; the twelve plugins someone installed years ago are not. WPScan's job is to inventory that third-party sprawl and match it against a CVE feed.

@@ -18,6 +18,10 @@ Python -> Go -> C++ -> Bash
 
 ## Where Bash belongs: gluing tools, not building logic
 
+> *Bash has arrays, functions and arithmetic. Should you build program logic with them?*
+>
+> Hold your answer — the section below is the response.
+
 Bash sits in the **orchestration** corner — different from the other three: it's not for *building* logic, it's for *gluing* tools.
 
 Reach for Bash to chain `nmap | grep | awk`, automate a repetitive sequence, or write a quick pipeline — jobs where the real work is done by other programs and Bash just connects their input and output. Its ceiling is low on purpose: the moment you're maintaining state, parsing structured data, or handling untrusted input, you've hit the edge of what Bash does safely and should graduate to Python.

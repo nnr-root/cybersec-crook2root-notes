@@ -18,6 +18,10 @@ LinPEAS -> WinPEAS
 
 ## Finding the one thing that trusts you too much
 
+> *Escalating to root means finding one thing. What kind of thing?*
+>
+> Hold your answer — the section below is the response.
+
 Escalating from a normal user to root means finding **one thing that is misconfigured to trust you more than it should**: a program that runs as root but you can influence, a file root reads that you can write, or a kernel old enough to have a known exploit. The vectors are always the same handful of categories.
 
 The left column of the diagram is LinPEAS's entire checklist. You do not memorise commands for each — LinPEAS runs them all — but you must recognise the categories so you can *read the output*: a writable SUID binary means "check GTFOBins," a `NOPASSWD` sudo rule means "run that command as root," an old kernel means "look up a CVE."

@@ -18,6 +18,10 @@ Impacket -> NetExec -> BloodHound -> Responder
 
 ## One credential, checked everywhere at once
 
+> *You hold one valid credential. Which question matters more than "is it valid?"*
+>
+> Hold your answer — the section below is the response.
+
 NetExec is the **validate & spread** stage — take one credential and find out, fast, everywhere it's good.
 
 The insight it operationalises: in AD, the value of a credential isn't "is it valid?" but "*where* is it valid, and where is it **admin**?" A single local-admin password reused across 200 workstations turns one leaked hash into the whole fleet. NetExec sweeps that question in seconds — one credential against a whole subnet, over the protocol of your choice.

@@ -18,6 +18,10 @@ Python -> Go -> C++ -> Bash
 
 ## One static binary, cheap concurrency
 
+> *You need to hand a fast concurrent scanner to someone on a machine you have never seen. What makes Go's answer simpler than Python's?*
+>
+> Hold your answer — the section below is the response.
+
 Go is the **deployable-speed** corner of the map.
 
 Reach for Go when you've outgrown Python's speed or deployment story: you need a fast concurrent tool that runs as *one file* on a stranger's machine. Its two superpowers are the **static binary** (`GOOS`/`GOARCH` cross-compile → a Linux/Windows/ARM executable from your laptop, no interpreter to install) and **goroutines** (concurrency so cheap you can launch thousands) — while staying memory-safe, unlike C++.

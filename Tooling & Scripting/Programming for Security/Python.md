@@ -18,6 +18,10 @@ Python -> Go -> C++ -> Bash
 
 ## The rapid-development corner of the map
 
+> *Most security tasks already have a library written for them. Which language does that fact point at?*
+>
+> Hold your answer — the section below is the response.
+
 Python is the **rapid-development** corner of the language map.
 
 Reach for it when the task is prototyping, parsing, automation, or anything with a library that already exists — which is most security work. You trade raw speed and easy deployment for development velocity, and that's usually the right trade: a working Python tool today beats a fast Rust tool next month. The one thing to understand up front is *why* Python is slow at CPU-bound work, so you pick the right concurrency model instead of fighting the language.

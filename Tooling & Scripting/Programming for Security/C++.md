@@ -18,6 +18,10 @@ Python -> Go -> C++ -> Bash
 
 ## Maximum control, and no memory-safety net
 
+> *What does C++ give you that Go and Python cannot, and what does it take away in exchange?*
+>
+> Hold your answer — the section below is the response.
+
 C++ is the **maximum-control** corner — and the one place on the map with no memory-safety net.
 
 Reach for C++ only when the problem genuinely needs it: every cycle, every byte, no garbage-collector pauses, direct memory layout. The defining tradeoff is stark — the same low-level control that makes C++ fast is exactly what lets a mistake become a **buffer overflow or use-after-free**, the memory-corruption bugs that the Exploit-Development branch weaponises. Writing safe C++ means understanding those failure modes and structurally preventing them.

@@ -18,6 +18,10 @@ curl -> Postman -> Burp Suite -> OWASP ZAP -> Nikto -> WPScan -> SQLmap
 
 ## Structured input, structured output, gated by auth
 
+> *Testing one API request by hand is easy. What is the hard part?*
+>
+> Hold your answer — the section below is the response.
+
 An API is a set of endpoints that take structured input (usually JSON) and return structured output, gated by authentication. Testing one request by hand is easy; the hard part is testing *many* requests, as *different users*, *repeatedly*, without re-typing tokens. Postman's answer is three layers stacked on top of a single request.
 
 ```mermaid

@@ -18,6 +18,10 @@ GTFOBins -> LOLBAS -> CrackStation -> Aperisolve -> revshells.com
 
 ## Exploiting the asymmetry firewalls create
 
+> *The firewall blocks inbound connections and permits outbound ones. Which way should your shell travel?*
+>
+> Hold your answer — the section below is the response.
+
 A firewall usually blocks *inbound* connections but allows *outbound* ones. A **reverse shell** exploits that asymmetry: instead of you connecting *to* the victim (a bind shell, usually blocked), the victim connects *back to you*, and its shell's input/output ride that connection. You run a listener; the victim "calls home."
 
 ```mermaid

@@ -18,6 +18,10 @@ Impacket -> NetExec -> BloodHound -> Responder
 
 ## The execution engine of the AD attack chain
 
+> *BloodHound told you which technique to run next. What actually runs it?*
+>
+> Hold your answer — the section below is the response.
+
 Impacket is the **execution** engine of the AD attack chain — the toolkit that actually performs each technique once you know which one you need.
 
 (The diagram shows the operational flow; the learning order above is different.) Impacket's insight: Windows AD attacks are just *network protocols*, and if you re-implement those protocols you don't need a Windows box, an agent, or malware — a Python script on Kali authenticates and acts as a first-class domain participant. Each example script is one technique: `GetUserSPNs.py` (Kerberoast), `secretsdump.py` (dump hashes / DCSync), `psexec.py`/`wmiexec.py` (remote execution), `ticketer.py` (forge tickets).

@@ -18,6 +18,10 @@ Security Tool Architecture & Design Patterns -> Building Network Scanners -> Com
 
 ## A scope gate every action must pass
 
+> *What must every ShadowStep action pass through before anything runs?*
+>
+> Hold your answer — the section below is the response.
+
 ShadowStep is the "well-built tool" diagram with the **scope guard promoted to a mandatory gate** every action must pass.
 
 A typed CLI feeds a **policy/scope gate**, which produces a **dry-run plan** *before* anything runs; three capability modules (log simulation, lab-artifact shred, identity-mask simulation) are plugins behind that gate; and every action writes to a **remote immutable audit** with rollback/verification. The design philosophy: an anti-forensics tool is only defensible if it is *safe by default* and every destructive step is scoped, planned, logged elsewhere, and reversible.

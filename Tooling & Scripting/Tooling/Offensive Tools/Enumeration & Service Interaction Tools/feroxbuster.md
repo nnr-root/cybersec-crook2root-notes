@@ -18,6 +18,10 @@ Gobuster -> ffuf -> feroxbuster -> dirsearch -> Netcat -> enum4linux
 
 ## Recursion as the one added idea
 
+> *A scan turns up `/admin/`. What does a flat brute-forcer do next?*
+>
+> Hold your answer — the section below is the response.
+
 feroxbuster reads the same signals as every content-discovery tool — the HTTP status code and response size — but adds one idea: **when a directory turns up, dig into it automatically.**
 
 A `301` redirect to `/admin/` isn't an endpoint, it's a *door*; feroxbuster walks through it and keeps brute-forcing `/admin/*` without you lifting a finger. That recursion is powerful and dangerous in equal measure — it also multiplies your request count and your exposure to the soft-404 trap at every level.

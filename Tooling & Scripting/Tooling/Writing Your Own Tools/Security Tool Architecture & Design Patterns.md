@@ -18,6 +18,10 @@ Security Tool Architecture & Design Patterns -> Building Network Scanners -> Com
 
 ## Separating the engine from the edges
 
+> *One decision separates a script from a tool. Which decision?*
+>
+> Hold your answer — the section below is the response.
+
 The single decision that separates a script from a tool is **separating the engine from the edges**.
 
 The layers on the diagram — CLI/config in, a *pure* core engine, pluggable capabilities, bounded concurrency, structured evidence out — are just a disciplined way to keep concerns apart. A script mashes all five into one file; a tool gives each a boundary. The payoff is concrete: a pure engine (no argparse, no sockets) can be unit-tested with plain inputs and reused as a library, and the edges (how args come in, how results go out) become thin and swappable.

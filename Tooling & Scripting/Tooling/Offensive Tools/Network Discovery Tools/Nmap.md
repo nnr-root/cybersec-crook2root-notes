@@ -18,6 +18,10 @@ Nmap -> Masscan -> RustScan
 
 ## Inferring state from a reply, or from silence
 
+> *Does a port scanner ever actually see an open port?*
+>
+> Hold your answer — the section below is the response.
+
 A scanner never "sees" an open port. It sends a probe and **infers** the port's state from the reply — or from silence. The whole tool rests on the TCP handshake and a small set of possible responses.
 
 ```mermaid

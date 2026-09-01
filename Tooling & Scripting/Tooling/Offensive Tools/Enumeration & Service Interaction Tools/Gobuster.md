@@ -18,6 +18,10 @@ Gobuster -> ffuf -> feroxbuster -> dirsearch -> Netcat -> enum4linux
 
 ## Inferring what exists from status codes
 
+> *A web server never lists its URLs. So how do you find out what is on it?*
+>
+> Hold your answer — the section below is the response.
+
 A web server only tells you about URLs you request. Content discovery means asking for thousands of likely paths and **reading the status code** to infer what exists.
 
 The diagram is the whole skill. Gobuster shows you a `Status:` and a `Size:` for every hit; you read them together. A `403` means *it exists but you're forbidden* (a finding); a `301` is usually a directory to recurse into; and — the trap — a `200` might be a real page **or** a soft-404 lying to you. Learn to read the code and size, and Gobuster's output becomes a map.

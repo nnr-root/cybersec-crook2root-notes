@@ -18,6 +18,10 @@ aircrack-ng -> Kismet -> hcxtools
 
 ## Clientless capture, and the limitation it removes
 
+> *The aircrack method needs a connected client and usually a deauth to force one. What does hcxtools remove?*
+>
+> Hold your answer — the section below is the response.
+
 hcxtools is method **B** on the map — the clientless capture that fixed the biggest limitations of the aircrack handshake approach.
 
 The old way (aircrack) needs a *connected client* to capture a handshake, and often a *deauth* to force one — noisy, and a DoS. The PMKID attack skips all that: hcxdumptool simply asks the AP to associate, and many APs helpfully include a **PMKID** (a hash derived from the passphrase) in that very first response — no client, no deauth, no disruption. Same offline crack at the end, but a quieter, cleaner capture.

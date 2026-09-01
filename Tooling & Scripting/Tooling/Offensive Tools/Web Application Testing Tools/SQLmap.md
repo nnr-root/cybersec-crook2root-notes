@@ -18,6 +18,10 @@ curl -> Postman -> Burp Suite -> OWASP ZAP -> Nikto -> WPScan -> SQLmap
 
 ## One request, one parameter, probed deeply
 
+> *Scanners sweep the whole server. What does SQLmap point at instead?*
+>
+> Hold your answer — the section below is the response.
+
 Where scanners sweep the whole server, SQLmap is a sniper: it takes **one request and one parameter** and probes the deepest point in the path — the boundary where the app builds a SQL query and hands it to the database.
 
 SQLmap automates the manual SQL-injection craft (see the **SQL Injection** leaf): it sends crafted values, watches how the response changes, and from those differences deduces *whether* the parameter is injectable, *which* technique works, and *what* DBMS is behind it. You already learned to do this by hand; SQLmap does it faster and more thoroughly — which is exactly why it must be bounded.

@@ -18,6 +18,10 @@ Nmap -> Masscan -> RustScan
 
 ## Letting the OS complete the handshake
 
+> *Why does RustScan need no root when Nmap's `-sS` does?*
+>
+> Hold your answer — the section below is the response.
+
 RustScan uses the simplest probe of all: a full TCP `connect()`.
 
 Unlike Masscan's stateless SYN or Nmap's half-open `-sS`, RustScan lets the OS complete the handshake (the "Connect -sT" row of the diagram) — so it needs **no root**, but the target application **does** see the connection. It races through ports with many concurrent sockets, collects the open set, and then invokes Nmap on just those ports. The model is "sprint to find the doors, then let Nmap describe each one."

@@ -18,6 +18,10 @@ Gobuster -> ffuf -> feroxbuster -> dirsearch -> Netcat -> enum4linux
 
 ## Put FUZZ here, and define what counts as interesting
 
+> *ffuf tries every word in your list against the target. What decides which responses you ever see?*
+>
+> Hold your answer — the section below is the response.
+
 Everything ffuf does is "put `FUZZ` here, try every word, keep the interesting responses." *Interesting* is defined by matchers (`-m*`, keep) and filters (`-f*`, drop) on the response's status/size/words/lines — which is just the content-discovery status map applied programmatically.
 
 Read the diagram and ffuf's filters make sense: `-fc 404` drops misses, `-fs 127` drops the soft-404 constant, `-mc 200,403` keeps the codes that mean "something's here." The keyword-and-filter model is why ffuf generalises beyond paths to *any* fuzzable position.

@@ -18,6 +18,10 @@ theHarvester -> Amass -> Shodan
 
 ## One command fanned out across public sources
 
+> *One command, fanned out across many public sources. Is theHarvester optimising for depth or breadth?*
+>
+> Hold your answer — the section below is the response.
+
 theHarvester is the **breadth** tool of passive recon — one command that fans out across many public sources and merges what they know about a domain.
 
 Its place in the map: it sits on the far-left, tapping the widest set of *third-party* sources at once. You never send a packet to the target — you ask search engines, crt.sh, and keyservers what *they* already know, and theHarvester deduplicates it into a first list of emails and hosts. Breadth over depth: it's the "cast a wide net first" pass before Amass digs deep or Shodan tells you what's exposed.

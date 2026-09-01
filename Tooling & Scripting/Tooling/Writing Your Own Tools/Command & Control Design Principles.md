@@ -18,6 +18,10 @@ Security Tool Architecture & Design Patterns -> Building Network Scanners -> Com
 
 ## A topology built so the operator is never exposed
 
+> *Why is there anything at all between the operator's console and the target?*
+>
+> Hold your answer — the section below is the response.
+
 A C2 is a distributed client/server system with a deliberate topology, built so that the operator is never directly exposed to the target.
 
 ```mermaid

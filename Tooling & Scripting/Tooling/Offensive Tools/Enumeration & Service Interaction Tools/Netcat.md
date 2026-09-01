@@ -18,6 +18,10 @@ Gobuster -> ffuf -> feroxbuster -> dirsearch -> Netcat -> enum4linux
 
 ## Connecting two byte streams
 
+> *Netcat does port scanning, file transfer, banner grabbing and reverse shells. How many mechanisms is that?*
+>
+> Hold your answer — the section below is the response.
+
 Everything Netcat does is "connect two byte streams." One side **listens** (`-l`), the other **connects**; then stdin on one end appears on the other's stdout. Every use is a variation on that pipe.
 
 ```mermaid

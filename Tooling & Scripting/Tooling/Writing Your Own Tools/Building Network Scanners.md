@@ -18,6 +18,10 @@ Security Tool Architecture & Design Patterns -> Building Network Scanners -> Com
 
 ## One tiny question, answered concurrently
 
+> *Strip a port scanner back to its core. What single question is it asking?*
+>
+> Hold your answer — the section below is the response.
+
 A scanner is the architecture layers with a network-shaped engine.
 
 The **core engine** is one tiny question — "is this port open?" — answered by attempting a connection and reading the result (open / closed / no-reply, exactly the states in the Nmap note). The **plugins** are scan techniques (connect vs. raw SYN). And the layer that makes it a *scanner* rather than a script is **concurrency + rate**: you must probe thousands of ports in parallel, safely. Get the engine right and the whole thing is small; get the concurrency wrong and it's either uselessly slow or dangerously abusive.

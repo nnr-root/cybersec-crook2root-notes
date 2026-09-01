@@ -18,6 +18,10 @@ curl -> Postman -> Burp Suite -> OWASP ZAP -> Nikto -> WPScan -> SQLmap
 
 ## Firing a list of known-bad requests at the server
 
+> *Does Nikto understand anything about your application's logic?*
+>
+> Hold your answer — the section below is the response.
+
 Nikto doesn't intercept or think about your app's logic — it fires a big list of *known-bad* requests at the **web server** and reports what comes back.
 
 In the request path it targets the server end: "do you have `/phpinfo.php`? a `/backup/` directory? an outdated Apache banner? `/.git/`?" It's a checklist scanner — every hit is a *lead* pulled from its signature database, never proof. That makes it fast and great for a first look, but also exactly why its output needs triage, not copy-paste.

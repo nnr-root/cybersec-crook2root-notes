@@ -18,6 +18,10 @@ LinPEAS -> WinPEAS
 
 ## The vector families that lead to SYSTEM
 
+> *On Windows, what are you actually hunting for on the way to SYSTEM?*
+>
+> Hold your answer — the section below is the response.
+
 Escalating on Windows means finding a **service, task, or privilege that will execute your code as SYSTEM** — or a credential that unlocks a higher account. The vector families are distinct from Linux, but the principle is identical: one misconfiguration that trusts a low-priv user too much.
 
 The **right** column of the diagram is WinPEAS's checklist. The two that pay off most often: **`SeImpersonatePrivilege`** on a service account (the "Potato" family escalates it to SYSTEM), and **unquoted service paths** (Windows may execute an attacker-planted `C:\Program.exe`). WinPEAS finds them; you recognise which to pursue.

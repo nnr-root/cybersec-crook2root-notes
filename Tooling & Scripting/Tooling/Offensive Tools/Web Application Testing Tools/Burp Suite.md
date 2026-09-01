@@ -18,6 +18,10 @@ curl -> Postman -> Burp Suite -> OWASP ZAP -> Nikto -> WPScan -> SQLmap
 
 ## The most powerful position: the middle
 
+> *Every web tool sits at some point in the request path. Which point is the most powerful, and why?*
+>
+> Hold your answer — the section below is the response.
+
 Every web tool operates at a *point* in the request path. Burp's point is the most powerful one: **the middle**.
 
 Positioned as the proxy between client and server, Burp sees the *real* traffic your browser generates — then lets you grab any request and change it before it reaches the server. That is the whole superpower: the browser enforces client-side rules (hidden fields, JS validation, disabled buttons); Burp lets you ignore all of them and send exactly the bytes you want. The application's *server-side* behaviour is what you're really testing, and the proxy is how you reach it.

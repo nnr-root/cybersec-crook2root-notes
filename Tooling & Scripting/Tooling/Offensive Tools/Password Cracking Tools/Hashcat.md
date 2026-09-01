@@ -18,6 +18,10 @@ name-that-hash -> hash-identifier -> John the Ripper -> Hashcat
 
 ## The same guess-and-compare loop, at GPU scale
 
+> *John and Hashcat run the same guess-hash-compare loop. What changes?*
+>
+> Hold your answer — the section below is the response.
+
 Same offline loop as John — guess, hash, compare — but Hashcat runs it on a GPU at a scale that changes what's possible.
 
 Hashcat owns the right side of the diagram: it turns the attack-mode ladder into GPU throughput and is the **mask/hybrid king** (rung 3), making brute-force *targeted* instead of blind. It's also the clearest demonstration of the **speed wall** — the same GPU cracks a fast MD5 hash billions of times per second but crawls against a slow bcrypt, which is the entire defensive story. Two flags encode it all: `-m` (which hash) and `-a` (which attack).

@@ -18,6 +18,10 @@ curl -> Postman -> Burp Suite -> OWASP ZAP -> Nikto -> WPScan -> SQLmap
 
 ## Four parts of a request, four parts of a response
 
+> *A request and a response share the same four parts. Name them.*
+>
+> Hold your answer — the section below is the response.
+
 Every web interaction is a **request** that produces a **response**, and each has the same four parts: a start line, headers, a blank line, and an optional body. curl builds the request; the flags map one-to-one onto the parts.
 
 Read the diagram left to right and you have curl's core flags: `-X` sets the method, `-H` adds a header, `-d` sends a body, and `-i` shows you the response status line and headers. Understand this picture and curl stops being a wall of flags and becomes "type out the message you want to send."

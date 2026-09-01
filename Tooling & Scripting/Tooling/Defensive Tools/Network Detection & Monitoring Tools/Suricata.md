@@ -18,6 +18,10 @@ Suricata -> Snort -> Zeek
 
 ## One engine doing both signatures and protocol logging
 
+> *You are handed Suricata output. Which of its three hats produced it?*
+>
+> Hold your answer — the section below is the response.
+
 There are two ways to watch a network; Suricata is unusual in doing *both*.
 
 Suricata wears three hats at once, and knowing which one a given deployment is

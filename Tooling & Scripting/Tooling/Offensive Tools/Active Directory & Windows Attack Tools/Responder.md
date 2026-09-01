@@ -18,6 +18,10 @@ Impacket -> NetExec -> BloodHound -> Responder
 
 ## Getting a hash with no credentials at all
 
+> *A user mistypes a share name. How does that hand you a hash?*
+>
+> Hold your answer — the section below is the response.
+
 Responder is the **capture credentials** stage — how you get your first hash with no credentials at all.
 
 The mechanism is pure trust abuse. When a user mistypes a share (`\\fileserv1`) or a host looks up a name DNS can't resolve, Windows *shouts to the whole subnet*: "who is `fileserv1`?" via LLMNR/NBT-NS broadcast. Nobody authenticates that answer — so Responder shouts back "me!", the victim connects and **authenticates**, and you capture its NetNTLMv2 challenge-response. One poisoned typo yields a crackable credential.

@@ -18,6 +18,10 @@ Impacket -> NetExec -> BloodHound -> Responder
 
 ## Active Directory as a directed graph
 
+> *You have a complete list of every group membership in the domain. Why is that not the same as knowing your path to Domain Admin?*
+>
+> Hold your answer — the section below is the response.
+
 BloodHound is the **map** — the step that tells you *which* technique to run next.
 
 The core idea: AD is a directed graph. Nodes are users, computers, and groups; **edges** are permissions — `MemberOf`, `AdminTo`, `HasSession`, `GenericAll`, `CanRDP`. A path along those edges from your foothold to Domain Admin *is* an attack plan. What looks like a flat directory is really a web of transitive rights, and BloodHound computes the shortest route through it — often three unexpected hops a human would never connect.

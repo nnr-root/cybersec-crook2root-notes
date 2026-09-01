@@ -18,6 +18,10 @@ name-that-hash -> hash-identifier -> John the Ripper -> Hashcat
 
 ## Generating smart candidates, not just more of them
 
+> *Offline cracking is one loop repeated. Which part of it is John's specialty?*
+>
+> Hold your answer — the section below is the response.
+
 Offline cracking is one loop: guess a candidate, hash it, compare to the target, repeat. What changes is *how you generate candidates* — and John's specialty is generating *smart* ones.
 
 On the ladder, John excels at rungs 1–2 (dictionary and **dictionary + rules**) and format breadth. Where Hashcat brings raw GPU speed, John brings a CPU, a huge format list (NetNTLM, Kerberos, ZIP, PDF, bcrypt), and a rule engine that turns `summer2024` into `Summer2024!` — which, as the diagram's "most fall HERE" rung says, is where the majority of real passwords actually break.

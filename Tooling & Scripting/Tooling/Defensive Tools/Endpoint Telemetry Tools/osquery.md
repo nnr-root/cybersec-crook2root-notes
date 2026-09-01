@@ -18,6 +18,10 @@ Sysmon -> osquery
 
 ## The flashlight: what is true right now
 
+> *You want to ask 3,000 endpoints one question and have the answer now. Stream, or snapshot?*
+>
+> Hold your answer — the section below is the response.
+
 The other shape of endpoint visibility: osquery answers **what is true right now**.
 
 Where Sysmon *streams* events over time, osquery is a **flashlight** — you point a question at an endpoint (or all of them) and get the current state back as query results. "Which hosts have a process running from a path that no longer exists on disk?" is one SQL statement, and because the OS is modelled as tables, everything you know about databases transfers directly to endpoint analysis.

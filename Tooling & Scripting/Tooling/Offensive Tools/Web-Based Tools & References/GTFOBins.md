@@ -18,6 +18,10 @@ GTFOBins -> LOLBAS -> CrackStation -> Aperisolve -> revshells.com
 
 ## Programs that do more than their name suggests
 
+> *`find` finds, `vim` edits, `tar` archives. What else can they do?*
+>
+> Hold your answer — the section below is the response.
+
 Unix ships hundreds of small programs, and many can do more than their name suggests. `find` can execute commands. `vim` can spawn a shell. `tar` can run a program on checkpoint. If one of those is granted extra power — a **SUID bit** (runs as its owner, often root) or a **sudo rule** — that hidden capability becomes a privilege-escalation path.
 
 ```mermaid

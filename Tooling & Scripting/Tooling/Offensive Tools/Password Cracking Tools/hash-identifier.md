@@ -18,6 +18,10 @@ name-that-hash -> hash-identifier -> John the Ripper -> Hashcat
 
 ## Reading the structural fingerprint of a hash
 
+> *A hash is a run of hex characters. What in it could possibly reveal which algorithm produced it?*
+>
+> Hold your answer — the section below is the response.
+
 Every hash type leaves a structural fingerprint — a prefix, a length, a charset. A hash *identifier* is a lookup that reads those fingerprints and lists the algorithms they could be.
 
 The diagram is what these tools automate. hash-identifier is the older, simpler engine: it matches length and charset against a fixed list. That simplicity is both its speed and its weakness — it will confidently list *many* possibilities for an ambiguous value, and you must reason about which is real from the diagram's three signals.

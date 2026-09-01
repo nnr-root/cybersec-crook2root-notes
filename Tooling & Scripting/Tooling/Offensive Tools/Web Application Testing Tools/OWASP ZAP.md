@@ -18,6 +18,10 @@ curl -> Postman -> Burp Suite -> OWASP ZAP -> Nikto -> WPScan -> SQLmap
 
 ## Passive reading versus active probing
 
+> *ZAP sits exactly where Burp sits in the request path. What is the distinction that matters for ZAP specifically?*
+>
+> Hold your answer — the section below is the response.
+
 ZAP occupies the same spot as Burp — the intercepting proxy in the middle of the request path.
 
 The mental leap for ZAP specifically is **passive vs. active**. Passive scanning only *watches* the traffic you generate (flagging missing headers, insecure cookies) and sends nothing extra — safe against any target. Active scanning *injects* attack payloads to find injection/XSS — powerful but intrusive. Knowing which mode you're in is the difference between a safe CI check and attacking a system you shouldn't.

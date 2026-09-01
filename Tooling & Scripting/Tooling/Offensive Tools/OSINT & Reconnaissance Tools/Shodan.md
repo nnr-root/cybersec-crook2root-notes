@@ -18,6 +18,10 @@ theHarvester -> Amass -> Shodan
 
 ## Passive recon where the scanning already happened
 
+> *How many packets do you send the target when you research it on Shodan?*
+>
+> Hold your answer — the section below is the response.
+
 Shodan is the *extreme* case of passive recon: the scanning already happened.
 
 On the map, Shodan is its own data source — it scanned the whole internet *for you*, so reading a Shodan result is reconnaissance with **zero** packets to the target. That inverts the usual model: normally you scan a host to learn its open ports; with Shodan you *search* for hosts that already have a given port/product/vulnerability open. It answers "what is exposed?" before you've decided to touch anything.

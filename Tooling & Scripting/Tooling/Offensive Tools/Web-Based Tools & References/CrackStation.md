@@ -18,6 +18,10 @@ GTFOBins -> LOLBAS -> CrackStation -> Aperisolve -> revshells.com
 
 ## Precomputing once, looking up forever
 
+> *Cracking normally means guessing. What does a lookup table replace the guessing with?*
+>
+> Hold your answer — the section below is the response.
+
 Cracking a hash normally means *guessing*: try a password, hash it, compare. A **lookup table** flips that around — precompute the hashes of billions of known passwords *once*, store them, and then any future hash is a database query. If a password has ever appeared in a wordlist or breach, its unsalted hash is already in the table.
 
 ```mermaid

@@ -18,6 +18,10 @@ Suricata -> Snort -> Zeek
 
 ## Matching traffic against known-bad patterns
 
+> *A Snort rule describes one threat. What has to be true before it can ever fire?*
+>
+> Hold your answer — the section below is the response.
+
 Snort is the archetype of the left-hand model: match traffic against a library of known-bad patterns.
 
 Each Snort **rule** describes one threat — "if you see *this* pattern going to *that* port, alert." It's fast and low-effort because the analysis is pre-encoded in the rule; the cost is that Snort can only catch what someone already wrote a rule for. That single property — powerful against the known, blind to the novel — is the whole nature of signature detection, and Snort is where you internalise it.

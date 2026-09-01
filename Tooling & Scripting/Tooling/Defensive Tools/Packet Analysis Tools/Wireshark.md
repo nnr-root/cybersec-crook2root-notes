@@ -18,6 +18,10 @@ Wireshark -> tcpdump
 
 ## Peeling nested layers and naming every field
 
+> *A packet arrives as one run of bytes. How does Wireshark know that byte 34 is a TCP port?*
+>
+> Hold your answer — the section below is the response.
+
 A packet is a set of **nested layers**, each wrapping the one above it. Wireshark's whole job is to peel them apart and name every field.
 
 Read the diagram: Ethernet wraps IP wraps TCP wraps the payload. Wireshark decodes all of them at once and lets a **display filter** target any field at any layer — `ip.addr`, `tcp.flags.syn`, `http.request`. Once you see traffic as addressable fields rather than a byte blur, analysis becomes "filter to the layer/field that answers my question."
