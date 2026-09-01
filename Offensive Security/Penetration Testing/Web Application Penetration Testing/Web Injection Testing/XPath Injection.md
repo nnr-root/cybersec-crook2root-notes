@@ -80,6 +80,13 @@ Content-Type: application/problem+json
 {"title":"Invalid laboratory credentials"}
 ```
 
+That `401` is the honest baseline: the XML engine accepted the expression,
+evaluated it against the document, and returned an empty node set, which the
+application reported as a failed login. Nothing was blocked and nothing errored —
+the expression simply matched no node. Establishing that first is what makes the
+next result meaningful, because from here the only variable is the *shape of the
+expression*, so any change in response comes from how the engine parsed it.
+
 The deliberately vulnerable fixture contains only:
 
 ```xml

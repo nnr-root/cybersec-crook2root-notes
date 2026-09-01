@@ -88,14 +88,42 @@ GENERIC_HEADINGS = {
 }
 
 # ── warnings ──────────────────────────────────────────────────────────────────
+# High precision, deliberately low recall. An earlier broad word-match flagged
+# Mermaid node labels, C and PHP source, command flags and success reports as
+# "errors" and was ~90% false positives, which made the corpus look far worse at
+# explaining its failures than it is. Match only shapes that are unambiguously a
+# tool refusing something.
 ERROR_LINE = re.compile(
-    r"(?i)\b(error|denied|refused|failed|failure|invalid|no such file|"
-    r"cannot|can't|unable to|not permitted|rejected|timed out|unauthorized)\b")
+    r"(?m)^(?:\s*)(?:"
+    r"error(?:\s+\d+)?\s*[: ]"                       # error: / error 20 at ...
+    r"|Error(?:\s*\(\w+\))?\s*[: ]"                 # Error: / Error (Code):
+    r"|.*\b(?:Permission denied|Access is denied|Connection refused"
+    r"|command not found|No such file or directory|Operation not permitted"
+    r"|Authentication failure|authentication failed|Login incorrect"
+    r"|Verification Failure|verification failed|certificate verify failed"
+    r"|unable to (?:get|open|read|connect)|could not resolve"
+    r"|Segmentation fault|core dumped)\b"
+    r"|HTTP/\d(?:\.\d)? (?:4\d\d|5\d\d)\b"          # 4xx / 5xx status lines
+    r"|\S+:\s+FAILED\s*$"                             # sha256sum -c style
+    r"|\{\s*\"error\"\s*:"                            # {"error": ...}
+    r")")
+
 MECHANISM = re.compile(
-    r"(?i)(because|the reason|rejected (it|the|because)|refused (it|because)|"
-    r"why it fail|what went wrong|caused by|never (saw|reached|got)|"
-    r"before (it|the) .{0,40}(saw|reached)|checks? (for|that)|validat|"
-    r"parser|kernel|driver|stage|at that point|the check )")
+    r"(?i)(because|the reason|why it fail|what went wrong|caused by|"
+    r"reject|refus|den(y|ied|ial)|does not (trust|match|exist|have)|"
+    r"cannot be|could not be|never (saw|reached|got|reaches|matches)|"
+    r"no longer matches|is the (correct|expected|finding|detection|signature)|"
+    r"requires? a|one-time|two separate|blocker|inert|"
+    r"checks? (for|that)|validat|parser|kernel|driver|stage|the check |"
+    r"breaks? the|insufficient|does not (prove|mean)|proves? only|"
+    r"came from|produced by|returned by|evaluated|matched zero)")
+
+# Only *output* lines can be an error. A command, a comment, a Mermaid node
+# label or a line of C/PHP is not, and treating them as one produced a check
+# that was ~90% false positives.
+OUTPUT_FENCE = re.compile(r"^```(shell-session|console|text|http|sql)\s*$")
+PROMPT = re.compile(r"^\s*(?:[\w.\-]+@[\w.\-]+[:~][^#$]*[#$]|[$#>]|PS\s+[A-Z]:|msf\d?\s|>>>|\.\.\.)\s")
+COMMENTISH = re.compile(r"^\s*(#|//|--\s)")
 ANALOGY = re.compile(
     r"(?i)(think of it (as|like)|is like a|as if it were|imagine (a|an|you)|the analogy)")
 ANALOGY_BREAK = re.compile(
@@ -300,17 +328,25 @@ def check(root="."):
                             f"a claim about behaviour needs the observation that confirms it")
 
         # ── WARNING: The Autopsy ──────────────────────────────────────────────
-        infence, start = False, None
+        infence, start, is_output = False, None, False
         for i, line in enumerate(lines):
             if re.match(r"^(`{3,}|~{3,})", line):
                 if not infence:
                     infence, start = True, i
+                    is_output = bool(OUTPUT_FENCE.match(line.strip()))
                 else:
                     infence = False
-                    block = "\n".join(lines[start + 1:i])
-                    if ERROR_LINE.search(block):
+                    # consider only genuine output lines, not commands or comments
+                    body_lines = [l for l in lines[start + 1:i]
+                                  if not PROMPT.match(l) and not COMMENTISH.match(l)]
+                    block = "\n".join(body_lines) if is_output else ""
+                    if block.strip() and ERROR_LINE.search(block):
                         nxt = " ".join(paragraphs_after(lines, mask, i + 1, 2))
-                        if not MECHANISM.search(nxt):
+                        # a note may also set the mechanism up *before* the block
+                        # ("the server must reject both forms with a schema error")
+                        prev = " ".join(l for l in lines[max(0, start - 4):start]
+                                        if l.strip() and not l.lstrip().startswith("```"))
+                        if not MECHANISM.search(nxt) and not MECHANISM.search(prev):
                             warnings.append(
                                 f"{rel}:{start+1}: error output with no mechanism paragraph — "
                                 f"name what rejected it, at which stage, and what it checked")

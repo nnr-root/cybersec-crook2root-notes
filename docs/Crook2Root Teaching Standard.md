@@ -49,7 +49,7 @@ where the reader is already stressed.
 |:--|:--|:--|
 | **The Cold Open** | Open on the artifact — a capture, a dump, a command that fails — not the definition. Abstraction lands *after* the reader has seen the thing it abstracts. | warning at >15% |
 | **The Break** | State the model a reasonable person would arrive at, then violate it. Phrase it in the reader's voice and state it confidently: "you'd assume", never "some people think". | review |
-| **The Autopsy** | Every error output gets a paragraph naming **which component rejected it**, **at which stage**, and **what it was checking for**. "It failed because the value was wrong" does not satisfy this. | warning |
+| **The Autopsy** | Every error output gets a paragraph naming **which component rejected it**, **at which stage**, and **what it was checking for**. "It failed because the value was wrong" does not satisfy this. The corpus was already close to this; see §6a. | warning |
 | **The Twin** | Two surface-different, structurally identical examples, with the comparison spelled out in prose. Juxtaposition alone does not work — only 16% of readers compare unprompted. | review |
 | **The Name** | Give the deep structure a label and reuse it everywhere it recurs. "Parser differential." Named patterns are chunks, and chunking is what expertise physically is. | glossary |
 | **The Tell** | Name the recognition cue — how you notice you are looking at this, not how to exploit it. Where options are confusable, use a diagnostic table. | review |
@@ -104,16 +104,43 @@ matching state held at both ends". These characterise *attacker cost* or
 prose. The original blanket ban flagged 85 instances; only one was a real
 violation. The gate was retargeted rather than the corpus mangled.
 
+## 6a. A correction: the corpus already had The Autopsy
+
+The audit originally reported that 75% of notes show a command failing and
+**0.3% explain why**, and called closing that gap the single highest-leverage
+fix. **That figure was wrong**, and the error was in the measuring instrument.
+
+The first detector matched any line containing "error", "denied", "failed" or
+"invalid" *anywhere in any fenced block*. That swept in Mermaid node labels
+(`DENY["Access denied"]`), C and PHP source (`else puts("denied")`), command
+flags (`F=Invalid credentials`), shell options (`set -e  # exit on error`),
+comments, and — memorably — a success report reading `Failed : 0`. On the other
+side, it required narrow trigger words to recognise an explanation, so it scored
+a paragraph reading "a single appended line breaks the hash" as no explanation
+at all.
+
+Rebuilt for precision — output-only fences, prompt and comment lines excluded, a
+narrow set of shapes that are unambiguously a tool refusing something, and
+recognition that a note may set the mechanism up *before* the block as easily as
+after — the real backlog was **four notes**, not 230. Three have been written;
+the rest of the corpus already did this.
+
+The lesson is not that the pattern is unimportant. It is that a
+badly-calibrated check produces a confidently wrong number, and a number is what
+a plan gets built on. Treat any figure this gate reports as a claim about the
+gate until it has been read against the source.
+
 ## 6. What the gate cannot check
 
 **The Break, The Twin, The Tell and The Fade are not mechanisable.** A regex that
 "detected" a naive-model beat would only teach us to type the trigger phrase.
 These live on the review checklist in `CONTRIBUTION.md` and are checked by reading.
 
-The pedagogy gate is deliberately generous on The Autopsy: it looks for a causal
-marker in the two paragraphs after an error block, so it catches the worst cases
-and passes some notes that name a cause loosely. Treat its count as a floor, not
-a score.
+The pedagogy gate is now deliberately *strict* on what counts as an error output
+and generous on what counts as an explanation — the opposite of its first
+version, and for the reason in §6a. It will miss a genuinely unexplained failure
+written in unusual phrasing. That is the intended trade: a check that cries wolf
+230 times gets ignored, and a check that flags four notes gets read.
 
 ## 7. Staleness
 

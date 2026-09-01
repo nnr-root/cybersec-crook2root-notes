@@ -46,6 +46,15 @@ www-authenticate: Bearer
 {"error":"invalid credentials"}
 ```
 
+Read what rejected that, because it decides where you look next. The `401` came
+from the application, not from nginx and not from TLS: the request completed, the
+server parsed the JSON body, looked `alice` up, and the credential check failed.
+`www-authenticate: Bearer` is the server naming the scheme it wants — so the
+endpoint expects a token, and username/password in the body was never going to
+work. A `401` from the proxy would have carried no `www-authenticate` and usually
+an HTML body; a TLS failure would never have produced an HTTP status at all.
+Distinguishing those three is most of what `-i` is for.
+
 The flags you will use constantly:
 
 | Flag | Does |

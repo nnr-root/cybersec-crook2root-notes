@@ -88,6 +88,14 @@ HTTP/1.1 400 Bad Request
 {"error":"token expired"}
 ```
 
+Name what rejected it before moving on. The `400` came from the application's
+reset handler, not from a WAF and not from routing: the request reached the
+endpoint, the token was found and parsed, and it was its *expiry claim* that
+failed the check. That is a working control, and recording it as such matters —
+an expired-token rejection and a malformed-token rejection look identical from
+outside but tell you completely different things about whether the reset flow
+validates the token's contents or merely its shape.
+
 ## 5. Test Authorization and Tenant Isolation (the core)
 
 Replay a known-valid request while substituting object IDs, parent IDs, tenant headers, HTTP methods, content types, and roles. Test list / read / update / delete / export / indirect actions **separately** — a `403` on `GET` does not prove `PUT` is protected.

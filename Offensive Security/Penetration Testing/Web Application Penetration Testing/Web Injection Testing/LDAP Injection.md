@@ -78,6 +78,13 @@ Content-Type: application/problem+json
 {"title":"No synthetic entry"}
 ```
 
+That `404` is the baseline, and it is worth naming precisely: the directory
+server accepted the filter, evaluated it, and matched zero entries. Nothing was
+rejected — the application turned an empty result set into a `404`. That matters
+because the probe below changes only the *filter grammar*, so if the response
+shifts, the difference can only come from how the filter was parsed, not from
+whether the entry exists.
+
 Bounded canary probe, URL-encoding the filter grammar:
 
 ```http
