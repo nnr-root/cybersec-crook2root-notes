@@ -79,8 +79,8 @@ $ find / -perm -4000 -type f 2>/dev/null      # only the SUID hits, no error flo
 ```shell-session
 # Top 10 IPs hitting a web server, by hit count
 $ cat access.log | cut -d' ' -f1 | sort | uniq -c | sort -rn | head
-   4213 10.0.0.9
-    880 81.143.211.90
+   4213 10.10.10.9
+    880 198.51.100.9
 
 # Every unique user on the box, from /etc/passwd
 $ cut -d: -f1 /etc/passwd | sort

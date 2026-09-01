@@ -128,15 +128,15 @@ sudo ufw enable
 
 #### Stateful vs. stateless: a concrete example
 
-Say a client behind the firewall opens an outbound HTTPS connection (recall the **three-way handshake**): `192.168.1.50:51342 → 93.184.216.34:443`. The reply must arrive as `93.184.216.34:443 → 192.168.1.50:51342` — source and destination flipped, same **ephemeral port**.
+Say a client behind the firewall opens an outbound HTTPS connection (recall the **three-way handshake**): `10.10.10.14:51342 → 203.0.113.20:443`. The reply must arrive as `203.0.113.20:443 → 10.10.10.14:51342` — source and destination flipped, same **ephemeral port**.
 
 - **Stateless firewall:** judges every packet alone, with no memory of the outbound request. To let the reply back in, an admin must permit *any* inbound packet claiming source port 443 into the *entire* ephemeral range (49152–65535) — a standing hole any external host can walk through by setting its own source port to 443.
 - **Stateful firewall:** `conntrack` recorded the outbound SYN, so it expects exactly one specific return 4-tuple. Anything else — even something claiming to be "from port 443" — that doesn't match that tracked connection is `NEW` or `INVALID` and falls to the default-deny policy.
 
 ```
 $ conntrack -L
-tcp 6 431999 ESTABLISHED src=192.168.1.50 dst=93.184.216.34 sport=51342 dport=443 \
-    src=93.184.216.34 dst=192.168.1.50 sport=443 dport=51342 [ASSURED]
+tcp 6 431999 ESTABLISHED src=10.10.10.14 dst=203.0.113.20 sport=51342 dport=443 \
+    src=203.0.113.20 dst=10.10.10.14 sport=443 dport=51342 [ASSURED]
 ```
 Reading it: protocol, remaining timeout (s), state, the *forward* tuple, the *expected reply* tuple, and `[ASSURED]` — traffic seen in both directions, so the entry won't be evicted early under table pressure.
 
@@ -146,7 +146,7 @@ flowchart TD
         S1["Rule: allow src port 443<br/>to ANY dst port 49152-65535"] --> S2["🕳️ Standing hole:<br/>anything claiming src :443 gets in"]
     end
     subgraph Stateful["Stateful (conntrack)"]
-        T1["Outbound SYN recorded:<br/>192.168.1.50:51342 → 93.184.216.34:443"] --> T2["Only THAT exact<br/>return 4-tuple is ESTABLISHED"]
+        T1["Outbound SYN recorded:<br/>10.10.10.14:51342 → 203.0.113.20:443"] --> T2["Only THAT exact<br/>return 4-tuple is ESTABLISHED"]
         T2 --> T3["Everything else: NEW or INVALID<br/>→ hits default-deny"]
     end
 ```
