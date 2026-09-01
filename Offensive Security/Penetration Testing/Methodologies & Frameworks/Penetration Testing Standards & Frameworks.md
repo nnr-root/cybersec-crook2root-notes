@@ -50,6 +50,12 @@ flowchart LR
 
 The differences between frameworks are mostly *emphasis, granularity, and audience* — where they add rigor, how deep the checklist goes, and which client/regulator expects them.
 
+**The deliberate break:** the five frameworks are laid out as numbered phases, so the obvious reading is that a methodology is a checklist — start at intelligence gathering, finish at reporting, tick each box on the way.
+
+Real engagements loop, and the loops are where the findings are. A confirmed identity flaw changes the threat model, sending you back to modelling. A newly discovered subnet sends you back to intelligence gathering with three days already spent. A stop condition in the RoE can halt exploitation entirely and turn the remaining time into deeper enumeration. An engagement that ran cleanly forward through five phases and never revisited one is not a disciplined engagement — it is usually one where nobody found anything that mattered.
+
+Read the phases as **a set of activities with dependencies**, not as a sequence. Which is the same distinction the OS Internals branch draws about systemd: a dependency graph, not a script.
+
 ## The Five, Compared
 
 | Framework | Scope | Best at | Typical audience |

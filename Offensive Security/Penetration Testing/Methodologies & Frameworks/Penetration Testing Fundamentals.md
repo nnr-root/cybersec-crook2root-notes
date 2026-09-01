@@ -62,6 +62,14 @@ Internal network penetration testing, on the other hand, is an "assumed breach" 
 
 Ultimately, modern web applications and networks are built with different interconnected components and systems. Identifying the attack surface helps organisations find all entry points that could contain weaknesses and provide unauthorised access to threat actors. Additionally, it helps in defining the scope of a penetration test prior to the engagement execution.
 
+**The deliberate break:** *vulnerability*, *threat* and *risk* are used interchangeably in ordinary speech, so it is natural to read them as three words for "something bad". Treating them as synonyms is the single most expensive vocabulary error in this field, and the three sections that follow exist to separate them.
+
+They are three different objects and only one of them is a decision. A **vulnerability** is a weakness that exists whether or not anyone ever exploits it. A **threat** is an actor with the capability and intent to try. **Risk** is what you get when you combine them with impact — and it is the only one a business can act on.
+
+The consequence is counterintuitive and worth holding onto: **a CVSS 9.8 vulnerability can be a low risk**, and a CVSS 5.0 can be a critical one. An unauthenticated RCE on a lab box with no data and no route from the internet is a 9.8 that threatens nothing. A moderate flaw in the one system that processes payments, reachable from the internet, and with a public exploit is a different matter entirely. A report that ranks by CVSS alone has skipped the only step the client is paying for.
+
+**How you'd spot a report that skipped it:** it lists findings by severity score with no mention of which asset, which data, or which threat actor. That is a scanner export with a cover page — the analysis is precisely the part that is missing.
+
 ## Vulnerability
 
 A vulnerability is a weakness or gap in an organisation's environment that could be exploited to compromise the security of systems, data, or operations. While it does not cause harm on its own, it presents an opportunity for exploitation.

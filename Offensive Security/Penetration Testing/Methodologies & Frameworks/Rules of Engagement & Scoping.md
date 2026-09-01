@@ -49,6 +49,14 @@ Before you touch a single target, a set of documents defines *what you may do, t
 
 The **SOW** defines commercial and delivery obligations; the **RoE** defines operational behavior; the **scope** defines the targets. Ambiguity about subsidiaries, cloud tenants, third parties, or production testing is a **stop condition** — you resolve it in writing *before* testing, never mid-engagement.
 
+**The deliberate break:** "scope" sounds like a project-management preference — the agreed area of work, the bit the client wants looked at, negotiable if something interesting turns up next door.
+
+Scope is a **legal boundary**. Inside it you have authorisation and the same actions are a professional service; outside it the identical packet is unauthorised access to a computer system, which is a criminal offence under the Computer Fraud and Abuse Act in the US, the Computer Misuse Act in the UK, and equivalents nearly everywhere. There is no "I was only looking" defence, and a scope document is the only thing standing between the two readings of your traffic.
+
+There is a second, quieter trap inside the first: **the person who says "go ahead" may not have the authority to say it**. A client can only authorise testing of assets they actually control. A domain that resolves to a SaaS platform, an application on shared hosting, a cloud service with its own provider policy, an API belonging to a partner — the client's sign-off does not extend to any of them, however sincerely it is given, because it was never theirs to grant.
+
+**How you'd spot an asset you are not authorised for:** resolve it and look at who owns the address, not the name. A CDN or provider netblock, a shared-hosting IP answering for dozens of unrelated names, or a cloud address drawn from a pool are all signals that the target belongs to somebody who never signed anything. Confirm ownership before a single active packet, and record how you confirmed it.
+
 ## Defining Scope Precisely
 
 Scope is defined by **explicit inclusion** — everything not listed is out:
