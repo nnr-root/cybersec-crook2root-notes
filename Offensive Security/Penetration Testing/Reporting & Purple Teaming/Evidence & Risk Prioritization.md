@@ -24,6 +24,10 @@ Evidence & Risk Prioritization -> Finding & Report Writing -> Purple Team Exerci
 
 ## From Raw Proof to a Ranked Risk List
 
+> *You proved cross-tenant access. Do you screenshot one record or export the table?*
+>
+> Hold your answer — the section below is the response.
+
 A report is only as good as its two foundations: **evidence** (defensible proof that each finding is real and reproducible) and **prioritization** (a defensible order in which to fix them). This note covers both, because they are the raw material of every deliverable — the technical and executive write-ups (next leaf) are just *presentation* of well-collected evidence and well-reasoned priority. Get evidence wrong and findings can be disputed or aren't reproducible; get prioritization wrong and the client burns limited remediation budget on the wrong things.
 
 The core skill of prioritization is knowing that **technical severity is not business priority.** A CVSS 9.8 isolated behind strong controls on a throwaway host can matter *less* than a "medium" authorization flaw that exposes every customer's data — and only *you*, who saw the environment, can make that call.

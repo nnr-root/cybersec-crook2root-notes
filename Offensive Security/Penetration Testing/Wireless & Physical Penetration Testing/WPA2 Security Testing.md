@@ -15,6 +15,10 @@ WPA2 Security Testing -> WPA3 Security Testing -> Rogue Access Points & Wireless
 
 ## Why WPA2-PSK Is Offline-Crackable
 
+> *You captured the handshake and the passphrase did not crack in twelve hours. What do you report?*
+>
+> Hold your answer — the section below is the response.
+
 WPA2 with a pre-shared key (the home/small-office mode) protects traffic with keys derived from the Wi-Fi passphrase. Crucially, everything an attacker needs to *test a passphrase guess* is exposed during the **4-way handshake** that happens whenever a client joins. Capture that handshake once and the attacker can guess passphrases **offline**, at full CPU/GPU speed, with no further contact with the network. The only thing standing between a captured handshake and the key is the passphrase's entropy.
 
 The chain: `passphrase + SSID → PMK → (with handshake nonces/MACs) → PTK → MIC`. Because the PMK depends only on the passphrase and the (public) SSID, a dictionary attack derives a candidate PMK per guess and checks it against the captured handshake.

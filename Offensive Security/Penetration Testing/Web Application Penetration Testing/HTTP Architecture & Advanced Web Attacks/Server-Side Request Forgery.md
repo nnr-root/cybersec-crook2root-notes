@@ -16,6 +16,10 @@ Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WA
 
 ## Making the Server Fetch on Your Behalf
 
+> *You make the server fetch a URL of your choosing. Why is that worse than fetching it yourself?*
+>
+> Hold your answer — the section below is the response.
+
 **Server-Side Request Forgery (SSRF)** is a flaw where an attacker induces the *server* to make a request to a URL the attacker chooses. The power is *position*: the server sits inside the network, so it can reach internal services, cloud metadata endpoints, and admin interfaces that the attacker — stuck outside the firewall — cannot touch directly. SSRF turns a public web application into a proxy into the internal infrastructure.
 
 Any feature that fetches a URL is a candidate: a "load image from URL" field, a webhook, a PDF generator that renders a page, a URL-preview feature, an import-from-URL. The root cause is the same as file inclusion — untrusted input reaches a request operation — but the target is the *network* rather than the filesystem.

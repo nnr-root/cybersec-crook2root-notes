@@ -16,6 +16,10 @@ Passive Reconnaissance & OSINT -> DNS & Subdomain Reconnaissance -> Active Recon
 
 ## Learning Without Touching
 
+> *Passive recon found a subdomain. Does it still exist?*
+>
+> Hold your answer — the section below is the response.
+
 **Reconnaissance** is building a model of a target before testing it. It splits cleanly in two: **passive** recon reads sources the target does not control and cannot see you reading — search engines, public records, certificate logs, code repositories, breach data — while **active** recon sends packets to the target and is therefore observable. This note is entirely passive, which is why it comes first: it is free, silent, and legal against public data, and it shapes everything active recon does next.
 
 **OSINT (Open-Source Intelligence)** is the discipline of turning public data into an attack model. The mindset shift for a beginner: you are not "hacking" anything here. You are reading what the organization already published, and assembling scattered facts into a picture they never intended to present as a whole.

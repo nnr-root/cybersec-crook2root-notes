@@ -16,6 +16,10 @@ External Network Pentesting -> Service Enumeration -> Layer 2 & 3 Network Attack
 
 ## An Open Port Is a Question, Not an Answer
 
+> *Enumeration returns no vulnerabilities, but a full user list and a password policy with no lockout. Is that a finding?*
+>
+> Hold your answer — the section below is the response.
+
 Port scanning told you a port is *open*. **Service enumeration** is the deeper interrogation that turns "port 445 is open" into "this is Windows SMB, signing is disabled, and here are the shares and users it will tell me about." It is where most of a network pentest's actual findings come from, because services are chatty — designed to answer questions, and often willing to answer *too many* to an unauthenticated stranger.
 
 The mindset: every open service is a small program with a protocol, and that protocol has queries that leak information — versions, users, shares, configuration, and sometimes credentials. Enumeration is the systematic asking of those queries. The best findings are not exploits at all; they are services misconfigured to reveal what they should not.

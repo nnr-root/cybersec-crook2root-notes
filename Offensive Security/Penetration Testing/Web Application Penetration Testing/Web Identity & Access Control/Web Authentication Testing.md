@@ -16,6 +16,10 @@ Web Authentication Testing -> Broken Access Control -> JWT Security Testing -> F
 
 ## Proving Who You Are, and Staying Proven
 
+> *The login page has MFA, rate limiting and lockout. Where do you attack?*
+>
+> Hold your answer — the section below is the response.
+
 **Authentication** is how an application establishes who you are; **session management** is how it *remembers* that across the many stateless HTTP requests that follow. Both are attack surfaces, and this note covers the foundation the rest of the identity cluster builds on: how login and sessions work, and the flaws in each. Because a broken authentication flaw often means *complete account takeover*, this is among the highest-impact web testing.
 
 The two phases:

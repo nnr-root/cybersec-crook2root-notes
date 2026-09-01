@@ -16,6 +16,10 @@ CORS & Clickjacking -> Cross-Site Scripting -> CSRF & SameSite Testing -> Protot
 
 ## Running Your Script in Someone Else's Page
 
+> *The application blocks `<script>` everywhere. Is XSS ruled out?*
+>
+> Hold your answer — the section below is the response.
+
 **Cross-Site Scripting (XSS)** is a flaw where an application includes attacker-controlled data in a page without properly encoding it, so the browser executes it as *script* in the context of that page's origin. The consequence is severe because the script runs with the victim's session: it can read their data, act as them, and reach anything their browser can. The root cause is always the same — **untrusted input reaching an output context (HTML, attribute, JavaScript, URL) without the encoding that context requires.**
 
 The three types are distinguished by *where the payload lives*:

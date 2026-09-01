@@ -15,6 +15,10 @@ SQL Injection -> NoSQL Injection -> ORM Injection -> Operating System Command In
 
 ## The boundary between grammar and data
 
+> *You escape every quote in the input. Is the query now safe?*
+>
+> Hold your answer — the section below is the response.
+
 SQL injection is a failure to preserve the boundary between **SQL grammar** and **application data**. A database never executes a string directly. Its frontend decodes the client character set, tokenizes keywords, identifiers, operators, literals, and comments, parses those tokens into an abstract syntax tree (AST), resolves names and types, and only then executes. When an application builds query text by *concatenating an untrusted value*, that value enters the lexer **before the AST exists**. A quote can close a literal, an operator can add a predicate, and a comment token can delete the developer's intended suffix.
 
 ```text

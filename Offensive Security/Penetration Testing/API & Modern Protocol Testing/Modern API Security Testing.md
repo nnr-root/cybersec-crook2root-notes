@@ -16,6 +16,10 @@ Modern API Security Testing -> Legacy XML Web Services Testing -> API Security F
 
 ## Testing APIs, Not Pages
 
+> *The web application was tested and passed. How much of the API did that cover?*
+>
+> Hold your answer — the section below is the response.
+
 An **API (Application Programming Interface)** is a web service consumed by *programs*, not browsers — it returns structured data (JSON, binary) rather than HTML. The three dominant modern styles are **REST** (resources at URLs, JSON), **GraphQL** (one endpoint, client-specified queries), and **gRPC** (binary, schema-defined, over HTTP/2). Their transport differences (covered in the Networking domain's **REST & Modern API Transport** leaf) directly change *how you test them* — and that is this note's focus.
 
 The unifying theme: because the consumer is code, APIs are stateless and pass an authentication token on *every* request. So the security model — and the testing — centers on **per-request, per-object authorization**: does the API check not just "is this token valid?" but "may *this* caller access *this* resource?" That single question is where most real API breaches live.

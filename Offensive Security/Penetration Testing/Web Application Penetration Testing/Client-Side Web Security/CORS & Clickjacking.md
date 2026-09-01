@@ -16,6 +16,10 @@ CORS & Clickjacking -> Cross-Site Scripting -> CSRF & SameSite Testing -> Protot
 
 ## Two Ways to Abuse Cross-Origin Trust
 
+> *An API sets permissive CORS headers. Has it become more secure, or less?*
+>
+> Hold your answer — the section below is the response.
+
 The browser's core security rule is the **Same-Origin Policy**: a page from `evil.example` cannot read data from `bank.example`. Two mechanisms deliberately relax parts of this trust boundary, and both are commonly misconfigured into vulnerabilities:
 
 - **CORS (Cross-Origin Resource Sharing)** relaxes the *read* restriction — it lets a server say "these other origins may read my responses." Misconfigure it, and you tell the attacker's origin it may read your users' data.

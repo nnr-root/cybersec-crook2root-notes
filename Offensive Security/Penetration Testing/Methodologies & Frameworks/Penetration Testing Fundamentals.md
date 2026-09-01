@@ -23,6 +23,10 @@ Penetration Testing Fundamentals -> Rules of Engagement & Scoping -> Penetration
 
 ## What This Whole Domain Is For
 
+> *A flaw scores CVSS 9.8. How urgently should the client fix it?*
+>
+> Hold your answer — the section below is the response.
+
 Before any tool or exploit, you need the *mental frame* of the job: what a penetration test is, how it differs from criminal hacking, what the words vulnerability / threat / risk actually mean, and what separates a professional operator from someone who just runs scanners. This note is that frame — the vocabulary and mindset every later leaf assumes. Get this right and the technical leaves make sense as *evidence-gathering toward a risk story*; skip it and you are just poking systems.
 
 > [!tip] The analogy, and where it breaks

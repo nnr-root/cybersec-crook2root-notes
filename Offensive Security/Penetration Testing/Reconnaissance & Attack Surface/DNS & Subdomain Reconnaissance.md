@@ -16,6 +16,10 @@ Passive Reconnaissance & OSINT -> DNS & Subdomain Reconnaissance -> Active Recon
 
 ## The Namespace Is a Map
 
+> *A CNAME points at a cloud resource that was deleted months ago. Who does that subdomain belong to now?*
+>
+> Hold your answer — the section below is the response.
+
 Every organization publishes a **DNS namespace** — the tree of names under its domain — and that tree is a map of its infrastructure. `mail.example.com` names a mail server, `vpn.example.com` a remote-access gateway, `dev.example.com` a system nobody meant to expose. Enumerating that tree is often the highest-yield recon an attacker performs, because each name is a candidate target and the forgotten ones are the softest.
 
 This note covers three progressively more intrusive techniques: reading DNS *records* (what the organization deliberately published), attempting *zone transfers* (a misconfiguration that dumps everything), and *subdomain enumeration* (discovering names that are not meant to be found).

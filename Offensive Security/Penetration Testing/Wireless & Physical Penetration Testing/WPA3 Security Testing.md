@@ -15,6 +15,10 @@ WPA2 Security Testing -> WPA3 Security Testing -> Rogue Access Points & Wireless
 
 ## WPA3 Removes the Offline Target
 
+> *The network advertises WPA3, which has no offline dictionary attack. Is there anything left to test?*
+>
+> Hold your answer — the section below is the response.
+
 WPA2's weakness (see the previous leaf) is that a captured handshake lets an attacker guess passphrases **offline**, forever, at full speed. WPA3-Personal replaces that handshake with **SAE (Simultaneous Authentication of Equals)**, a *password-authenticated key exchange* (PAKE) also called **Dragonfly**. Its defining property: a passive observer captures **no material that lets them test a passphrase guess offline**. Each guess now requires a *fresh, live interaction* with the access point — which the AP can rate-limit and log.
 
 The consequence for a tester: the WPA2 "capture once, crack forever" model is gone. Attacks shift to **online guessing** (slow, detectable), **downgrade** (forcing a WPA2 fallback), and **implementation flaws** (the Dragonblood side-channels).

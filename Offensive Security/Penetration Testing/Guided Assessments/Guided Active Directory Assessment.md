@@ -27,6 +27,10 @@ Guided Network Pentest Walkthrough -> Guided Active Directory Assessment -> Guid
 
 ## Objective
 
+> *You reach Domain Admin in two hours. What has the client learned?*
+>
+> Hold your answer — the section below is the response.
+
 Determine whether ordinary enterprise access can be transformed into control of sensitive systems or directory tiers. The assessment models relationships among identities, endpoints, service accounts, trusts, certificates, delegation, policy, and administrative boundaries.
 
 ```mermaid

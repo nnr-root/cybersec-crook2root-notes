@@ -16,6 +16,10 @@ File Inclusion & Path Traversal -> File Upload Security Testing -> Insecure Dese
 
 ## When a Filename Is Attacker-Controlled
 
+> *The application strips every `../` from the filename. Can you still escape the directory?*
+>
+> Hold your answer — the section below is the response.
+
 Web applications constantly turn user input into file paths — `?page=about` loads `about.html`, `?lang=en` includes `lang/en.php`. When that input is not properly constrained, three closely-related flaws appear, all from the same root cause: **an attacker-controlled value reaches a file operation**.
 
 | Flaw | What the attacker controls | Result |

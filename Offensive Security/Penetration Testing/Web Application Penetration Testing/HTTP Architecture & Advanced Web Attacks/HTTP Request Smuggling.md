@@ -16,6 +16,10 @@ Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WA
 
 ## When Two Servers Disagree About Where a Request Ends
 
+> *You send one request. How many can the back-end server receive?*
+>
+> Hold your answer — the section below is the response.
+
 Modern web traffic passes through a chain: a front-end proxy (CDN, load balancer, WAF) forwards requests to a back-end server. Both must agree on where each request *ends* so they can separate one request from the next. **HTTP Request Smuggling** exploits a *disagreement* between them: if the front-end thinks a request ends in one place and the back-end thinks it ends somewhere else, an attacker can hide a second request inside the first. The front-end sees one request; the back-end sees two — and the smuggled second request gets *prepended to the next user's request*, poisoning it.
 
 The vulnerability lives in neither server alone — it is in the *disagreement between them*. This is the web-layer version of the parser-discrepancy principle: wherever two implementations parse the same bytes differently, that gap is exploitable.

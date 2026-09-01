@@ -20,6 +20,10 @@ OWASP Web Testing Methodology -> Web Identity & Access Control -> Web Injection 
 
 ## Testing model
 
+> *You tested the OWASP Top 10 and found nothing. What have you covered?*
+>
+> Hold your answer — the section below is the response.
+
 ```mermaid
 flowchart LR
     S["Scope and architecture"] --> M["Map routes, roles, data"]

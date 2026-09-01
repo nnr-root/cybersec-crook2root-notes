@@ -16,6 +16,10 @@ Modern API Security Testing -> Legacy XML Web Services Testing -> API Security F
 
 ## The Enterprise APIs That Never Died
 
+> *A SOAP endpoint from 2011 is still running. High priority or low?*
+>
+> Hold your answer — the section below is the response.
+
 Before REST and JSON, enterprise systems talked over **SOAP** — a heavyweight, XML-based protocol — described by **WSDL** documents and carrying **XML** payloads. These are "legacy" but far from gone: they still front banking, government, ERP, and B2B integrations, often the most sensitive systems in an organization. Testing them matters precisely because they guard high-value assets and were designed in an era with weaker default security.
 
 The XML foundation is both their structure and their signature weakness. XML parsers are powerful — they can include external files, resolve entities, and process schemas — and that power, exposed to attacker-controlled input, is the classic legacy-web-service vulnerability: **XML External Entity (XXE)** injection.

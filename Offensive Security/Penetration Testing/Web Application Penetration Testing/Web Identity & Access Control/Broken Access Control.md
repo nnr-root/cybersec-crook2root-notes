@@ -16,6 +16,10 @@ Web Authentication Testing -> Broken Access Control -> JWT Security Testing -> F
 
 ## Authenticated, But Not Authorized
 
+> *The admin button is never rendered for standard users. Can they reach the admin function?*
+>
+> Hold your answer — the section below is the response.
+
 **Authentication** proves *who you are*; **authorization** decides *what you may do*. Broken access control is the failure of the second: the application verifies you are logged in, then fails to check whether *this* user may access *this* resource or *this* function. It is consistently among the most common and most impactful web vulnerabilities, because the flaw is a *missing check* — invisible in normal use, trivial to exploit once found, and it hands an attacker other users' data or admin capabilities using their own valid session.
 
 Three named variants describe the same root failure at different granularities:

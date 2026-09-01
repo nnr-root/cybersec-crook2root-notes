@@ -15,6 +15,10 @@ SQL Injection -> NoSQL Injection -> ORM Injection -> Operating System Command In
 
 ## Core Vulnerability & Parser Mechanics (Zero)
 
+> *The database is MongoDB and the input has no quotes to escape. What is left to inject?*
+>
+> Hold your answer — the section below is the response.
+
 NoSQL injection occurs when untrusted input changes the **structure or semantics of a database command** rather than remaining a scalar value. “NoSQL” is not one language: document stores, key-value stores, graph databases, and search engines expose different query models. The common defect is unsafe deserialization, object merging, operator acceptance, or string-built query expressions.
 
 MongoDB-style document queries illustrate the issue. A safe authentication filter is conceptually `{username: Scalar("alice"), passwordHash: Scalar("...")}`. If a framework turns form keys such as `username[$ne]` into nested objects, the application may receive `{username: {$ne: null}}`. The database query parser treats `$ne` as an operator node, not as text. Both JSON values are syntactically valid, but their abstract query trees differ. The vulnerability therefore survives conventional quote escaping because no quote is required.

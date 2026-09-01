@@ -24,6 +24,10 @@ Evidence & Risk Prioritization -> Finding & Report Writing -> Purple Team Exerci
 
 ## Two Readers, One Truth
 
+> *Your finding has the request, the response and a severity rating. Can the client fix it?*
+>
+> Hold your answer — the section below is the response.
+
 A penetration test produces exactly one durable artifact: the report. It has to serve two very different readers from the *same* set of verified facts. The **technical finding** is written for an engineer who must reproduce the issue and fix its root cause. The **executive summary and attack narrative** are written for a decision-maker who must understand business exposure and allocate budget. This note covers both crafts, because the skill is *translation* — turning the evidence and priorities from the previous leaf into a technical ticket an engineer can act on *and* a narrative a CISO can decide on, without exaggeration and without drowning either reader in the wrong detail.
 
 The unifying discipline across both: **separate confirmed fact from inference, and never claim beyond demonstrated reach** — use "demonstrated," "observed," "inferred," and "not tested" precisely.

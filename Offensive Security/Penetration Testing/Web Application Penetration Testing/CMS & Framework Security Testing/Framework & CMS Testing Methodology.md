@@ -16,6 +16,10 @@ Framework & CMS Testing Methodology -> WordPress Security Testing
 
 ## You Test the Framework the Same Way, Every Time
 
+> *The WordPress core is fully current and no CVEs match. Is the site secure?*
+>
+> Hold your answer — the section below is the response.
+
 Modern web applications are built on frameworks (Django, Laravel, Spring) and content-management systems (WordPress, Drupal, Joomla, Magento). It is tempting to think each needs its own bespoke testing knowledge — and the boilerplate that once filled this branch pretended so, with a near-identical stub per product. The truth is the opposite: **the methodology is identical across all of them.** Fingerprint the framework, pin its exact version, look up that version's known vulnerabilities, and test the handful of framework-specific misconfigurations. The product name changes; the process does not.
 
 This is why one methodology note replaces a shelf of per-product stubs. Learn the four-step loop once and you can test any framework, including ones released after this note was written.
