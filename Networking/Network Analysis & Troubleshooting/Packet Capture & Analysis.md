@@ -22,6 +22,10 @@ Packet Capture & Analysis -> Structured Network Troubleshooting -> Traffic Analy
 
 ## Reading the Wire Directly
 
+> *You put your NIC in promiscuous mode on the office switch. Whose traffic can you now see?*
+>
+> Hold your answer — the section below is the response.
+
 Every diagnostic tool so far has *interpreted* the network — reported a state, a route, a connection. **Packet capture** shows the raw traffic itself: the actual bytes on the wire, header by header. It is the authoritative evidence, because it is not an interpretation — it is what actually happened. When a developer says "the request was sent" and the server says "nothing arrived," the capture ends the argument.
 
 Capture works by putting the network interface into **promiscuous mode**, telling it to hand the operating system every frame it receives rather than only frames addressed to it. A capture library — **libpcap** on Unix-like systems — then delivers those frames to tools like `tcpdump` and Wireshark. The result can be saved as a **PCAP file**, a portable record that any analysis tool can open later.

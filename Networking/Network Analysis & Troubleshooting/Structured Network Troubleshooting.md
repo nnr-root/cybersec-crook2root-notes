@@ -22,6 +22,10 @@ Packet Capture & Analysis -> Structured Network Troubleshooting -> Traffic Analy
 
 ## Method Beats Intuition
 
+> *You are fairly sure you already know what is broken. What does checking the layers below it cost you?*
+>
+> Hold your answer — the section below is the response.
+
 A user reports "the website is down." An unstructured responder starts guessing — restart the browser, reboot the router, blame the ISP — and may stumble onto the answer or waste an hour. A structured responder isolates the fault to a layer, tests one thing at a time, and reaches the cause by elimination. The difference is not intelligence; it is method.
 
 The core technique is **layer-by-layer isolation**, built directly on the OSI model. Because each layer depends on the ones below it, a failure low in the stack makes every test above it meaningless. So you resolve the layers in order and stop when you find the break.

@@ -24,6 +24,10 @@ IPv4 Addressing -> Subnetting & CIDR -> VLSM & Route Summarization -> IPv6 Addre
 
 ## The Mask Is a Boundary Marker
 
+> *Which holds more hosts — a `/16` or a `/24`?*
+>
+> Hold your answer — the section below is the response.
+
 A **subnet mask** is 32 bits in which every network bit is 1 and every host bit is 0, and the ones are always contiguous and leading. `255.255.255.0` in binary is twenty-four 1s followed by eight 0s — which is why it is written `/24` in **CIDR (Classless Inter-Domain Routing)** notation. The number after the slash is simply the count of network bits.
 
 ```text

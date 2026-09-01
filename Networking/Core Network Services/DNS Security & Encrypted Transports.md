@@ -21,6 +21,10 @@ DNS Resolution & Records -> DNS Security & Encrypted Transports -> Local Name Re
 
 ## Two Different Problems
 
+> *Does DNSSEC encrypt your DNS queries?*
+>
+> Hold your answer — the section below is the response.
+
 Classic DNS runs over UDP port 53 in cleartext with no signatures. That creates two independent weaknesses, and the single most common conceptual error in this topic is treating them as one.
 
 | Problem | Question it raises | Technology that addresses it |

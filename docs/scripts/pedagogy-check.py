@@ -141,9 +141,16 @@ PRE_Q_WINDOW = 0.25
 def prose_questions(lines, mask, upto_line):
     out = []
     for i, l in enumerate(lines[:upto_line]):
-        if mask[i] or l.lstrip().startswith(("#", "|", ">")):
+        if mask[i]:
             continue
-        for mm in re.finditer(r"[^\s].{0,180}?\?(?=\s|$)", l):
+        # a question set off as a blockquote is a perfectly good prompt, so strip
+        # the marker rather than skipping the line — but a callout's [!type] line
+        # and table rows are not prose
+        l = re.sub(r"^\s*>\s?", "", l)
+        if l.lstrip().startswith(("#", "|", "[!")):
+            continue
+        # allow a closing emphasis/bracket after the mark: *…?*  **…?**  (…?)
+        for mm in re.finditer(r"[^\s].{0,180}?\?(?=[\s*_`)\]]|$)", l):
             seg = mm.group(0)
             if "http" in seg or "](" in seg:
                 continue

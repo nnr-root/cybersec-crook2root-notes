@@ -23,6 +23,10 @@ DNS Resolution & Records -> DNS Security & Encrypted Transports -> Local Name Re
 
 ## A Distributed Database of Names
 
+> *Your resolver just answered a query. Where did it get the answer from?*
+>
+> Hold your answer — the section below is the response.
+
 People use names; the network uses addresses. **DNS (Domain Name System)** is the distributed database that translates between them. "Distributed" is the essential word: no single server holds the mapping for the whole Internet. Instead, authority is **delegated** down a hierarchy, and each level knows only who to ask next.
 
 Read a domain name **right to left**, because that is the order of delegation:

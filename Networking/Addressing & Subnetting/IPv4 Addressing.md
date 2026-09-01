@@ -26,6 +26,10 @@ IPv4 Addressing -> Subnetting & CIDR -> VLSM & Route Summarization -> IPv6 Addre
 
 ## Thirty-Two Bits Wearing a Disguise
 
+> *You block an IP address. How many people have you just blocked?*
+>
+> Hold your answer — the section below is the response.
+
 An **IPv4 address** is a 32-bit number. It identifies a network *interface*, not a device — a host with three interfaces has three addresses, and a single interface can hold several.
 
 For human convenience the 32 bits are split into four 8-bit groups called **octets**, each written in decimal from 0 to 255 and separated by dots.

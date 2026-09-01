@@ -25,6 +25,10 @@ Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbo
 
 ## What a MAC Address Is
 
+> *How long does it take to change a device's MAC address?*
+>
+> Hold your answer — the section below is the response.
+
 A **MAC (Media Access Control) address** is a 48-bit identifier assigned to a network interface, written as six hex pairs: `00:00:5e:00:53:0e`. It identifies a device on a local segment, and unlike an IP address it is not hierarchical and does not describe location — it is a flat name.
 
 The 48 bits have structure:

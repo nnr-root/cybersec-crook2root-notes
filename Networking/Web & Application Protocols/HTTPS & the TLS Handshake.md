@@ -21,6 +21,10 @@ HTTP Fundamentals -> HTTPS & the TLS Handshake -> Web Architecture & Proxies -> 
 
 ## Three Guarantees, Not One
 
+> *HTTPS gives you three guarantees. Which one do attackers actually defeat?*
+>
+> Hold your answer — the section below is the response.
+
 Plain HTTP is readable and modifiable by anyone on the path. **HTTPS** fixes this by running HTTP over **TLS (Transport Layer Security)**, which provides three distinct properties. Conflating them is the most common misunderstanding in web security.
 
 | Guarantee | Question it answers | Failure if absent |

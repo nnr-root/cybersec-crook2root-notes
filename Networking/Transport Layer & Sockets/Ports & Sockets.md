@@ -21,6 +21,10 @@ Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Contr
 
 ## The Problem an Address Cannot Solve
 
+> *A scan reports port 22 as `filtered`. Is it open or closed?*
+>
+> Hold your answer — the section below is the response.
+
 A packet arrives at `10.10.20.30`. That machine is running a web server, an SSH daemon, a database, and a dozen background processes. The IP address identified the *host*, but nothing so far identifies which *program* should receive the data.
 
 A **port** solves this. It is a 16-bit number — 0 to 65535 — carried in the transport header, naming a communication endpoint on the host. The receiving kernel reads the destination port and delivers the payload to whichever program registered an interest in it. This is called **demultiplexing**, and it is the transport layer's defining job.

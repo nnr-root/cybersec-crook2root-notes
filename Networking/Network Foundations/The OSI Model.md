@@ -21,6 +21,10 @@ Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation
 
 ## Why Layer a Network at All
 
+> *How many layers does the stack your packets actually traverse have?*
+>
+> Hold your answer — the section below is the response.
+
 Sending data between two programs on different machines is a large problem: signals must be encoded onto a medium, addressed to a machine on the local link, routed across unfamiliar networks, delivered to the correct program, and finally interpreted as meaningful content. Solving all of that as one monolithic system would make every change catastrophic — swapping copper for fibre would require rewriting the email client.
 
 **Layering** solves this by defining independent responsibilities with fixed interfaces between them. Each layer offers a service to the layer above and consumes the service of the layer below, and neither needs to know how the other works internally. Replace Ethernet with Wi-Fi and the layers above notice nothing.

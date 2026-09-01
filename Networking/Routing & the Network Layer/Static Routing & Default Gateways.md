@@ -22,6 +22,10 @@ IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interi
 
 ## Telling a Device Exactly Where to Send
 
+> *A static route's next hop goes down. What does the routing table say now?*
+>
+> Hold your answer — the section below is the response.
+
 A **static route** is a forwarding instruction an administrator configures directly: "to reach network X, use next hop Y." The device does not learn it, calculate it, or share it — it simply obeys it until someone changes it.
 
 The most important static route on almost every device is the **default gateway**. It is nothing special in mechanism — it is the static route `0.0.0.0/0`, the least specific route possible, matching any destination not matched more specifically. When your laptop sends a packet to a website, no specific route matches, so the default route wins and the packet goes to the gateway. "Configure the default gateway" and "add a static route for everything" are the same action.

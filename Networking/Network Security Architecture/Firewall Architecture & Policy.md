@@ -22,6 +22,10 @@ Firewall Architecture & Policy -> Network Segmentation & Zero Trust -> VPNs & En
 
 ## A Decision on Every Packet
 
+> *Your firewall permits 443 inbound to the web server. Does it stop SQL injection?*
+>
+> Hold your answer — the section below is the response.
+
 A **firewall** enforces a policy about which traffic may pass a boundary. For every packet or connection, it asks a question — "does a rule permit this?" — and either forwards or drops. That is the entire concept; everything else is how sophisticated the question can be and how well the rules are written.
 
 Firewalls evolved through generations, each seeing more:

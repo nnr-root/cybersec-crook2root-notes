@@ -21,6 +21,10 @@ HTTP Fundamentals -> HTTPS & the TLS Handshake -> Web Architecture & Proxies -> 
 
 ## A Conversation of Requests and Responses
 
+> *You log in once and stay logged in. What does the server remember about you between requests?*
+>
+> Hold your answer — the section below is the response.
+
 **HTTP (HyperText Transfer Protocol)** is the application-layer protocol of the web. Its model is simple: a **client** sends a **request**, a **server** sends back a **response**, and the exchange is over. The client always speaks first, the server only ever answers, and neither remembers the other once the exchange completes.
 
 That last property — **statelessness** — is the single most important fact about HTTP. Each request is independent and self-contained; the server, by default, has no memory that this client made a previous request. Everything that feels like memory on the web (being logged in, a shopping cart, a preference) is a deliberate mechanism built on top of a protocol that has none.

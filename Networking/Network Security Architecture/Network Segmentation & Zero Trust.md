@@ -21,6 +21,10 @@ Firewall Architecture & Policy -> Network Segmentation & Zero Trust -> VPNs & En
 
 ## Why the Castle Fell
 
+> *Your perimeter firewall is immaculately configured. How much of your internal traffic does it see?*
+>
+> Hold your answer — the section below is the response.
+
 The traditional model was a **hard perimeter with a soft interior** — a firewall at the edge, and inside it a large trusted network where systems reached each other freely. The metaphor was a castle with a moat: strong walls, and once inside, free movement.
 
 This model has a fatal flaw that defined a generation of breaches. Once an attacker gets inside — through a phished credential, a vulnerable public service, a malicious email, a rogue device — the flat trusted interior lets them move freely from the initial foothold to the actual target. This is **lateral movement**, and it is the phase where a minor intrusion becomes a major breach. The perimeter did nothing to stop it, because inside the perimeter everything was trusted.

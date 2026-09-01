@@ -22,6 +22,10 @@ IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interi
 
 ## Every Host Routes
 
+> *How many routing decisions does your laptop make while loading one web page?*
+>
+> Hold your answer — the section below is the response.
+
 Routing is not something only routers do. Every device with an IP stack consults a routing table for every packet it sends, to answer one question: **is this destination directly reachable, or must I hand the packet to a gateway?**
 
 The decision uses the destination IP and the host's own routes. If the destination falls within a directly connected network, the host delivers it at the link layer. Otherwise it forwards the packet to the **next hop** — a gateway — trusting that gateway to move it closer. The gateway then repeats the identical decision with its own table. Routing is this decision, made independently, hop after hop, with no single device knowing the whole path.

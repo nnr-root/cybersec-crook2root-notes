@@ -192,14 +192,27 @@ was, this one made it look better. The common cause is unchanged — a regex
 standing in for a judgement — and so is the remedy: read a sample before planning
 against a number.
 
-### How to add one economically
+### Where it goes — and why not on the Break
 
-The four notes that already passed did so because **their Break was phrased as a
-question**. That is the preferred form: a Break already states the model the
-reader holds and then violates it, so opening it interrogatively does both jobs in
-one sentence and adds nothing to the note's length.
+The first attempt at this pass tried to be economical: phrase each **Break** as a
+question and let one sentence do both jobs. It does not work, and the corpus said
+so. Breaks sit at a **median 33%** into the lesson body, with 63 of 138 past the
+halfway point, because they were placed where they belong *topically*. A prompt
+two-thirds of the way through a note primes nothing. The four notes that passed
+under the old check had early Breaks by coincidence.
 
-Write a standalone pre-question only where a note has no Break to carry it.
+So the pre-question is its own thing, and it goes at the **top** — immediately
+after the first content heading, set off as a blockquote:
+
+```markdown
+## The Mask Is a Boundary Marker
+
+> *Which holds more hosts — a `/16` or a `/24`?*
+>
+> Hold your answer — the section below is the response.
+```
+
+One per note, aimed at the load-bearing idea, answered by the section it opens.
 
 ## 6. What the gate cannot check
 

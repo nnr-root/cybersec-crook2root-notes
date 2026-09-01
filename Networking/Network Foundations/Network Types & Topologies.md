@@ -21,6 +21,10 @@ Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation
 
 ## What a Network Actually Is
 
+> *Every desk cables back to a single switch in a cupboard. What is the topology?*
+>
+> Hold your answer — the section below is the response.
+
 A **network** is two or more devices that can exchange data using an agreed set of rules. That is the whole definition. Everything else — switches, routers, subnets, firewalls — exists to answer one repeated question: *given this destination, where do I send the data next?*
 
 Before any of that, you need three terms.

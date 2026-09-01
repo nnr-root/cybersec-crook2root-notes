@@ -21,6 +21,10 @@ Wireless Fundamentals & 802.11 -> Wi-Fi Security & WPA -> Wireless Attacks & Rog
 
 ## A Wire You Cannot See or Contain
 
+> *Ten more people join your Wi-Fi channel. What happens to the total throughput?*
+>
+> Hold your answer — the section below is the response.
+
 On a wired network, a frame travels down a cable to a switch that delivers it only where it should go. To intercept it, an attacker must physically tap the cable. The wire is a boundary.
 
 Wireless has no wire. **802.11** — the family of standards marketed as **Wi-Fi** — transmits frames as radio waves that propagate in all directions, through walls, past property lines, into the parking lot. Every device within range receives every transmission at the physical layer; the network relies on addressing and encryption, not physics, to keep frames private.

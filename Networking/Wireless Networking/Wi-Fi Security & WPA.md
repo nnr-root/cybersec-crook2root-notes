@@ -21,6 +21,10 @@ Wireless Fundamentals & 802.11 -> Wi-Fi Security & WPA -> Wireless Attacks & Rog
 
 ## Why the Encryption Is Everything
 
+> *"WPA2 was cracked." What, precisely, did the attacker break?*
+>
+> Hold your answer — the section below is the response.
+
 On the shared radio medium, a passive listener captures every frame. The only thing standing between that listener and your traffic is encryption. If the encryption is weak, the physical exposure becomes a full compromise; if it is strong, the listener gets ciphertext. This is why Wi-Fi security *is* Wi-Fi encryption, and why the history of Wi-Fi is a history of encryption schemes being broken and replaced.
 
 | Scheme | Era | Status |

@@ -22,6 +22,10 @@ Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Contr
 
 ## A Connection Is an Agreement, Not a Wire
 
+> *Where does a TCP connection physically exist?*
+>
+> Hold your answer — the section below is the response.
+
 IP delivers individual packets independently, with no memory that one packet has anything to do with the next. **TCP (Transmission Control Protocol)** builds on that a **connection**: an agreement between two endpoints that they are engaged in one ordered, reliable conversation.
 
 Nothing physical is created. A "connection" is simply matching state held at both ends — sequence numbers, buffers, and a current state value — plus the discipline to maintain it. If one side loses that state, the connection is broken even though nothing on the network changed.
