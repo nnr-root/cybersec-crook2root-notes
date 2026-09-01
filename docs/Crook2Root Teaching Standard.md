@@ -1,0 +1,133 @@
+# Crook2Root Teaching Standard
+
+Companion to the **Authoring Standard**. That document governs *structure* — one
+parent, Mermaid-only visuals, no labs, no numbered tasks. This one governs
+*teaching*: the moves that decide whether a correct note is actually learned.
+
+It exists because a September 2026 audit of all 302 leaves found the prose was
+strong and the sequencing was not. Paragraphs ran a tight 38-word median, 60% of
+analogies stated their own breaking point, 75% of notes showed a command failing
+— and 0.3% explained why it failed, 1.3% named a misconception, 1.6% compared two
+examples, and the first piece of evidence arrived 41% of the way into the note.
+
+## 0. The principle
+
+Chi, Feltovich & Glaser had physicists and undergraduates sort problems. Novices
+sorted by **surface features** — the apparatus, the objects named. Experts sorted
+by the **governing principle**. That gap is what this project is named after:
+
+> **Crook** sees surface features: a tool, a port, a payload that worked once.
+> **Root** sees deep structure: the class of parser confusion that payload belongs to.
+
+Every note exists to move the reader across that line. A note that teaches a tool
+teaches a surface feature. A note that names the *class of mistake* the tool
+exploits, and then shows the same shape somewhere unrelated, moves someone toward
+root.
+
+## 1. What "not boring" means here
+
+Engagement comes from the **structure of the explanation**, never from ornament.
+This is not a style preference. The *seductive details effect* — interesting but
+irrelevant material — measurably degrades both retention and transfer, and the
+damage is worse in technical subjects than in any other. Meanwhile the largest
+single effect in the multimedia literature (d = 0.97) is *coherence*: cutting
+exactly that material.
+
+So the war story that does not bear on the mechanism costs us. The reliable engine
+is the information gap: curiosity is the feeling of a missing piece you know is
+missing. Give the reader the naive model, then break it. That is a reordering, not
+an addition, and it is free.
+
+Humour is allowed in three places: a section opening before the technical content
+starts, a quarantined aside nothing depends on, and self-deprecation about the
+author's own past confusion. It is banned in troubleshooting and remediation,
+where the reader is already stressed.
+
+## 2. The ten patterns
+
+| Pattern | The move | Gate |
+|:--|:--|:--|
+| **The Cold Open** | Open on the artifact — a capture, a dump, a command that fails — not the definition. Abstraction lands *after* the reader has seen the thing it abstracts. | warning at >15% |
+| **The Break** | State the model a reasonable person would arrive at, then violate it. Phrase it in the reader's voice and state it confidently: "you'd assume", never "some people think". | review |
+| **The Autopsy** | Every error output gets a paragraph naming **which component rejected it**, **at which stage**, and **what it was checking for**. "It failed because the value was wrong" does not satisfy this. | warning |
+| **The Twin** | Two surface-different, structurally identical examples, with the comparison spelled out in prose. Juxtaposition alone does not work — only 16% of readers compare unprompted. | review |
+| **The Name** | Give the deep structure a label and reuse it everywhere it recurs. "Parser differential." Named patterns are chunks, and chunking is what expertise physically is. | glossary |
+| **The Tell** | Name the recognition cue — how you notice you are looking at this, not how to exploit it. Where options are confusable, use a diagnostic table. | review |
+| **Subgoal Headings** | Headings name the move, not the topic. The four generic labels are banned outright. | error |
+| **One Pre-Question** | Exactly one per note, on the load-bearing idea, always answered within a few sentences. Never leave one hanging. | warning |
+| **The Fade** | Annotation density drops across a branch. Scaffolding goes in visually distinct, skippable containers. Never repeat an explanation "for safety". | review |
+| **The Honest Note** | When something is hard, say so before the hard part, in the reader's voice. Never "don't worry, this is easy". | error (hedges) |
+
+### The Thread
+
+One lab topology, defined once and referenced by every note: a handful of named
+hosts, one deliberately weak web app, one binary, one capture file. Attention that
+would go into re-orienting goes into the mechanism instead.
+
+This is all-or-nothing. A half-adopted running example is worse than none, because
+readers learn to distrust references to a lab only half the notes use.
+
+## 3. Why the pre-question is budgeted at one
+
+Prequestioned material learns at g = 0.66. Non-prequestioned material *in the same
+lesson* learns at g = 0.01. A pre-question is a targeting instrument, not a warm-up:
+whatever you ask about gets learned, at the expense of everything else on the page.
+Ask three and you have told the reader most of the note is optional.
+
+## 4. Two findings that contradict the obvious
+
+**Do not interleave topics.** Interleaving works for visual category learning
+(g = 0.67 for paintings) but has *no significant effect* for expository text and is
+*negative* for verbal material (g = −0.39). Block your topics — which is what
+`Parent Learning Order` already does. The one exception is high-value: interleave
+where the reader must tell confusable things apart. ECB vs CBC vs CTR vs GCM
+belong juxtaposed in one section, not given separate homes.
+
+**Do not make it harder for a beginner.** Desirable difficulties become
+*undesirable* exactly when the learner lacks the background to succeed. The
+distinction that matters: desirable difficulties are difficulties of **retrieval**,
+never of **comprehension**. Obscure prose and missing steps are extraneous load
+wearing a flattering label.
+
+> Make the *material* as easy to comprehend as possible. Make the reader's
+> *engagement* with it as effortful as they can currently succeed at.
+
+## 5. On hedges — the rule targets the construction, not the word
+
+Banned: minimising the reader's task. "You simply run", "just install", "all you
+have to do is", "it should be clear that". To someone who is stuck, these say the
+problem is them.
+
+**Not banned:** "trivially forged", "trivially bypassed", "a connection is simply
+matching state held at both ends". These characterise *attacker cost* or
+*mechanism minimality* — precise security claims, and deleting them weakens the
+prose. The original blanket ban flagged 85 instances; only one was a real
+violation. The gate was retargeted rather than the corpus mangled.
+
+## 6. What the gate cannot check
+
+**The Break, The Twin, The Tell and The Fade are not mechanisable.** A regex that
+"detected" a naive-model beat would only teach us to type the trigger phrase.
+These live on the review checklist in `CONTRIBUTION.md` and are checked by reading.
+
+The pedagogy gate is deliberately generous on The Autopsy: it looks for a causal
+marker in the two paragraphs after an error block, so it catches the worst cases
+and passes some notes that name a cause loosely. Treat its count as a floor, not
+a score.
+
+## 7. Staleness
+
+Notes containing shell commands carry a `verified:` date in frontmatter, set when
+someone last actually ran them. The gate warns when the field is missing and again
+past twelve months.
+
+**Dates are never backfilled.** A `verified:` date that nobody earned is worse than
+no date, because it converts an honest gap into a false claim. The 294 notes
+currently missing the field stay flagged until their commands are re-run.
+
+This is the one advantage neither TryHackMe nor HackTheBox can match: their content
+review is a release gate with no maintenance stage, and learners discover rot by
+hitting it. A diffable corpus with a verification clock is a structural answer.
+
+---
+> Governance: **Authoring Standard** (structure) · **Teaching Standard** (this) · `AGENTS.md` (agent rules) · `CONTRIBUTION.md` (review checklist)

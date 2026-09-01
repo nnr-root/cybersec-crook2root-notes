@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Crook2Root standard gate — pre-commit hook.
+#
+# Activate once per clone:
+#     git config core.hooksPath .githooks
+#
+# Blocks a commit that introduces a standard violation (a banned Crook/Operator/
+# Root construct, a committed image file, an image embed, an unbalanced fence,
+# or a `## Task N —` heading), or a Teaching Standard violation (a hedge that
+# minimises the reader's task, a generic heading label). Incompleteness (missing
+# summary, thin note, no cold open) is a backlog warning and never blocks.
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "pre-commit: python3 not found — skipping the Crook2Root gate." >&2
+    exit 0
+fi
+
+if ! python3 docs/scripts/ci-check.py --quiet; then
+    echo >&2
+    echo "✗ Commit blocked by the Crook2Root standard gate." >&2
+    echo "  Run:  python3 docs/scripts/ci-check.py        (to see the errors)" >&2
+    echo "  Then fix them, or use 'git commit --no-verify' only if you are certain." >&2
+    exit 1
+fi
+
+if ! python3 docs/scripts/pedagogy-check.py >/dev/null; then
+    echo >&2
+    python3 docs/scripts/pedagogy-check.py >&2 || true
+    echo >&2
+    echo "✗ Commit blocked by the Crook2Root pedagogy gate." >&2
+    echo "  Run:  python3 docs/scripts/pedagogy-check.py --warnings   (errors + backlog)" >&2
+    echo "  Then fix them, or use 'git commit --no-verify' only if you are certain." >&2
+    exit 1
+fi

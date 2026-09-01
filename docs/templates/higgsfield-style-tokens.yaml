@@ -1,0 +1,87 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  Crook2Root — Higgsfield AI Style Tokens
+#
+#  Brand consistency comes from a fixed base style plus a per-domain accent.
+#  Sidecars reference a token by name; they never restate the base style.
+#  Change it here once and every future render inherits the change.
+#
+#  HARD RULE: no prompt may request text, letters, numbers or labels.
+#  Generative video cannot spell technical strings reliably and fails silently
+#  at exactly the moment a learner would trust it. All labels are composited
+#  afterward as SVG overlays. See Blueprint §3.4.
+# ═══════════════════════════════════════════════════════════════════════════
+
+tokens:
+
+  C2R_BASE_DARK:
+    description: "House style. Default for every conceptual animation."
+    prompt: >
+      Abstract technical visualization. Near-black background #0f1420. A single
+      dominant accent colour. Thin luminous lines, volumetric light, shallow
+      depth of field. Slow deliberate camera motion — dolly or orbit, never
+      handheld. Cold, precise, engineered aesthetic. Cinematic composition.
+      No text of any kind.
+    negative: >
+      text, letters, numbers, words, labels, captions, logos, watermarks, UI,
+      human figures, hands, faces, clutter, lens flare, cartoon, photorealism,
+      stock-footage look, fast cuts, shaky camera
+    aspect: "16:9"
+    duration_s: 6
+    loop: true
+
+  C2R_BASE_FORENSIC:
+    description: "Defensive / IR / forensics rooms. Cooler, slower, evidentiary."
+    prompt: >
+      Abstract technical visualization. Near-black background #0f1420. Cool
+      accent colour. Slow lateral drift across a field of faint structured
+      points that gradually resolve into an ordered pattern. Restrained,
+      clinical, evidentiary. Long takes, minimal motion. No text of any kind.
+    negative: >
+      text, letters, numbers, words, labels, logos, watermarks, human figures,
+      urgency, alarm-red flashing, cartoon, fast cuts
+    aspect: "16:9"
+    duration_s: 8
+    loop: true
+
+  C2R_BASE_INTRUSION:
+    description: "Offensive rooms. Directional motion, tension, still clinical."
+    prompt: >
+      Abstract technical visualization. Near-black background #0f1420. Warm
+      accent colour. A single directed element advances through successive
+      translucent barriers, each yielding in turn. Thin luminous geometry,
+      volumetric haze, deliberate forward dolly. Tense but clinical — never
+      theatrical. No text of any kind.
+    negative: >
+      text, letters, numbers, words, labels, logos, watermarks, hoodie hacker,
+      skull, matrix rain, green terminal cliche, human figures, faces,
+      cartoon, photorealism, fast cuts
+    aspect: "16:9"
+    duration_s: 6
+    loop: true
+
+# ── Domain accents — inherited from .obsidian/graph.json so a render reads as
+#    its domain without a caption. Never invent a colour outside this list. ──
+accents:
+  networking:        "#42D4F4"   # cyan
+  os-internals:      "#FFA500"   # orange
+  cryptography:      "#FFE119"   # yellow
+  offensive:         "#E6194B"   # red
+  defensive:         "#4363D8"   # blue
+  appsec:            "#911EB4"   # purple
+  devsecops:         "#3CB44B"   # green
+  tooling:           "#469990"   # teal
+  cloud:             "#FABED4"   # pink
+  reverse-malware:   "#BFEF45"   # lime
+  hardware-iot:      "#9A6324"   # brown
+  ai-security:       "#F032E6"   # magenta
+
+# ── Banned imagery — the visual cliches that make security content look
+#    unserious. Reject any render containing these, regardless of prompt. ──
+banned:
+  - "hooded figure at a laptop"
+  - "green matrix character rain"
+  - "skull / crossbones / biohazard iconography"
+  - "red glowing padlock"
+  - "world map with arcing attack lines"
+  - "binary digits as decoration"
+  - "any rendered text, correct or otherwise"
