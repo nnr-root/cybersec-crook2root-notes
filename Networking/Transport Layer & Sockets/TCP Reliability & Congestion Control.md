@@ -100,7 +100,7 @@ ss -tin
 Expected excerpt:
 
 ```text
-ESTAB 0 0  192.168.10.24:52418  93.184.216.34:443
+ESTAB 0 0  10.10.10.14:52418  203.0.113.20:443
     cubic wscale:7,7 rto:212 rtt:11.4/2.1 mss:1448 cwnd:42 ssthresh:31
     bytes_sent:1842910 bytes_acked:1842910 retrans:0/3 rcv_space:14480
 ```

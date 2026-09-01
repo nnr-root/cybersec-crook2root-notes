@@ -80,7 +80,7 @@ Expected excerpt:
 
 ```text
 State  Recv-Q Send-Q  Local Address:Port      Peer Address:Port
-UNCONN 0      0       192.168.10.24:51284     142.250.180.4:443
+UNCONN 0      0       10.10.10.14:51284       203.0.113.20:443
 ```
 
 Note `UNCONN` — the kernel sees only UDP with no connection state, because all connection state lives in user space inside the application. Everything a defender is accustomed to reading from `ss -tin` for TCP — congestion window, retransmissions, round-trip time — simply is not there. The kernel is not a participant.
@@ -94,9 +94,9 @@ sudo tcpdump -i eth0 -nn -c 4 'udp port 443'
 Expected excerpt:
 
 ```text
-IP 192.168.10.24.51284 > 142.250.180.4.443: UDP, length 1252
-IP 142.250.180.4.443 > 192.168.10.24.51284: UDP, length 1252
-IP 192.168.10.24.51284 > 142.250.180.4.443: UDP, length 44
+IP 10.10.10.14.51284 > 203.0.113.20.443: UDP, length 1252
+IP 203.0.113.20.443 > 10.10.10.14.51284: UDP, length 1252
+IP 10.10.10.14.51284 > 203.0.113.20.443: UDP, length 44
 ```
 
 Compare with a TCP capture, which reveals flags, sequence numbers, window sizes, and connection state transitions. Here there is a UDP header and an opaque payload. Only a small portion of the QUIC header — enough for routing and version negotiation — is unencrypted; the rest, including acknowledgments and stream framing, is protected.

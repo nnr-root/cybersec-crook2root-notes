@@ -82,7 +82,7 @@ The bottom branch is the difficulty. Silence can mean the port is open but the s
 Worse, closed-port detection depends on ICMP port-unreachable messages, which hosts commonly rate-limit. A scan across many ports therefore receives only a fraction of the "closed" replies it should, and the scanner must slow down to avoid mistaking rate limiting for openness.
 
 ```bash
-sudo nmap -sU -p 53,123,161 192.168.10.53
+sudo nmap -sU -p 53,123,161 10.10.20.10
 ```
 
 Expected excerpt:

@@ -135,7 +135,7 @@ Port scanning is entirely an exercise in provoking state-machine responses and r
 A **SYN scan** sends SYN and, on receiving SYN+ACK, sends RST rather than completing the handshake — learning the port is open without ever reaching ESTABLISHED. A **connect scan** completes the handshake fully, which is more visible in application logs because the service actually accepts a connection.
 
 ```bash
-nmap -sS -p 22,80,3306 192.168.10.24
+nmap -sS -p 22,80,3306 10.10.20.30
 ```
 
 Expected excerpt:

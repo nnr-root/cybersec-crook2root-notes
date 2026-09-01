@@ -111,10 +111,10 @@ sudo tcpdump -i eth0 -nn 'tcp[tcpflags] & (tcp-syn|tcp-ack) == tcp-syn' -c 20
 Expected excerpt during a scan:
 
 ```text
-IP 198.51.100.9.41022 > 192.168.10.24.21: Flags [S], seq 1029384756
-IP 198.51.100.9.41023 > 192.168.10.24.22: Flags [S], seq 1029384757
-IP 198.51.100.9.41024 > 192.168.10.24.23: Flags [S], seq 1029384758
-IP 198.51.100.9.41025 > 192.168.10.24.25: Flags [S], seq 1029384759
+IP 198.51.100.9.41022 > 10.10.20.30.21: Flags [S], seq 1029384756
+IP 198.51.100.9.41023 > 10.10.20.30.22: Flags [S], seq 1029384757
+IP 198.51.100.9.41024 > 10.10.20.30.23: Flags [S], seq 1029384758
+IP 198.51.100.9.41025 > 10.10.20.30.25: Flags [S], seq 1029384759
 ```
 
 The filter isolates bare SYN segments — connection attempts without ACK. Sequential destination ports from one source in rapid succession is a port sweep. Note the detection is behavioural: no individual packet is malformed or malicious, and each is a perfectly valid connection attempt. This is why transport-layer detection thresholds on connection-attempt rate and port diversity rather than on packet content.

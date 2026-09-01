@@ -21,7 +21,7 @@ Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Contr
 
 ## The Problem an Address Cannot Solve
 
-A packet arrives at `192.168.10.24`. That machine is running a web server, an SSH daemon, a database, and a dozen background processes. The IP address identified the *host*, but nothing so far identifies which *program* should receive the data.
+A packet arrives at `10.10.20.30`. That machine is running a web server, an SSH daemon, a database, and a dozen background processes. The IP address identified the *host*, but nothing so far identifies which *program* should receive the data.
 
 A **port** solves this. It is a 16-bit number — 0 to 65535 — carried in the transport header, naming a communication endpoint on the host. The receiving kernel reads the destination port and delivers the payload to whichever program registered an interest in it. This is called **demultiplexing**, and it is the transport layer's defining job.
 
@@ -56,14 +56,14 @@ The table is abstract until you *use* a port. The two oldest remote-access ports
 **SSH — port 22 — encrypted remote shell + file copy.** SSH gives you an encrypted interactive shell on a remote host, and file transfer over the same secure channel:
 
 ```shell-session
-user@laptop:~$ ssh admin@192.168.10.24
-The authenticity of host '192.168.10.24' can't be established.
+user@laptop:~$ ssh admin@10.10.20.30
+The authenticity of host '10.10.20.30' can't be established.
 ED25519 key fingerprint is SHA256:Xr4k...  
 Are you sure you want to continue connecting? yes
-admin@192.168.10.24's password:
+admin@10.10.20.30's password:
 admin@server:~$ whoami
 admin
-user@laptop:~$ scp report.pdf admin@192.168.10.24:/home/admin/   # copy over the same encrypted channel
+user@laptop:~$ scp report.pdf admin@10.10.20.30:/home/admin/   # copy over the same encrypted channel
 report.pdf                          100%  482KB   4.1MB/s   00:00
 ```
 
@@ -72,9 +72,9 @@ The login, the commands, and the file bytes are all encrypted. The host-key fing
 **FTP — port 21 — legacy file transfer, cleartext.** FTP predates ubiquitous encryption and sends credentials and data in plaintext:
 
 ```shell-session
-user@laptop:~$ ftp 192.168.10.24
+user@laptop:~$ ftp 10.10.20.30
 220 (vsFTPd 3.0.5)
-Name (192.168.10.24:user): admin
+Name (10.10.20.30:user): admin
 331 Please specify the password.
 Password:                       # ← sent in CLEARTEXT over the wire
 230 Login successful.
@@ -91,7 +91,7 @@ FTP also uses a **second port, 20**, for the data channel: the control connectio
 **The security lesson.** Capture both sessions with `tcpdump`/Wireshark and the contrast is stark — the FTP username, password, and file contents are readable in the clear, while the SSH session is opaque ciphertext. This is why **FTP is deprecated for anything sensitive**; its modern replacement is **SFTP** (file transfer *inside* the SSH channel, on port 22) or FTPS (FTP wrapped in TLS). Recognising `21` on a scan is recognising a plaintext-credential exposure.
 
 ```shell-session
-user@laptop:~$ sftp admin@192.168.10.24     # same copy, encrypted — rides SSH port 22, not 21
+user@laptop:~$ sftp admin@10.10.20.30     # same copy, encrypted — rides SSH port 22, not 21
 sftp> get backup.tar.gz
 Fetching /home/admin/backup.tar.gz to backup.tar.gz   100%   10MB
 ```
@@ -163,7 +163,7 @@ Expected excerpt:
 
 ```text
 Recv-Q Send-Q   Local Address:Port      Peer Address:Port  Process
-     0      0   192.168.10.24:52418     93.184.216.34:443  users:(("firefox",pid=4412,fd=91))
+     0      0   10.10.10.14:52418      203.0.113.20:443  users:(("firefox",pid=4412,fd=91))
 ```
 
 `Recv-Q` and `Send-Q` are queue depths. Persistently non-zero values are diagnostic: a large `Send-Q` means data is queued locally and not being acknowledged — the peer or the path is the problem. A large `Recv-Q` means data has arrived but the local application is not reading it fast enough — the application is the problem, not the network.
