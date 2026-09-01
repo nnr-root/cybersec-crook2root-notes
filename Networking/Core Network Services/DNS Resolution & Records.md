@@ -50,6 +50,12 @@ A **zone** is a portion of the namespace under one administrative control. Deleg
 > [!tip] The analogy, and where it breaks
 > Asking directory assistance for a number, where the first office does not know it but knows which regional office to ask, and so on down to the one that does. The analogy breaks in two ways: real directory assistance answers from one book, whereas DNS genuinely *delegates* — the root does not hold the answer at all; and DNS answers are cached with an expiry, so a corrected number keeps being handed out until that timer runs down.
 
+**The deliberate break:** DNS is described as a lookup — you ask for a name, you get an address, like a phone book.
+
+The resolver you ask almost never knows the answer. It **walks a hierarchy** on your behalf — root, then TLD, then the zone's authoritative servers — and then caches the result for as long as the TTL allows. That caching is the part with consequences: the answer you receive may have been true when it was fetched and false since, which is why a DNS change "hasn't propagated" and why cache poisoning is worth an attacker's effort at all. You are not reading a phone book, you are trusting a stranger's memory of one.
+
+**How you'd spot which you got:** `dig` marks an authoritative answer with the `aa` flag, and a cached one counts its TTL *down* between queries. A TTL that decrements is someone else's memory.
+
 ## Walking the Hierarchy
 
 ```mermaid

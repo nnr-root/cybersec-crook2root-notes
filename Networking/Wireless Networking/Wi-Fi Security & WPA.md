@@ -41,6 +41,12 @@ On the shared radio medium, a passive listener captures every frame. The only th
 > [!tip] The analogy, and where it breaks
 > Two ways to control entry: a single shared door code everyone in the building knows, versus a personal keycard issued to each employee. The analogy breaks on what an eavesdropper can do afterwards — with the shared code, overhearing one person's entry sequence lets an attacker guess the code offline, at leisure, forever, with no lockout. That offline guessing has no physical equivalent, and it is exactly the WPA2 weakness.
 
+**The deliberate break:** "WPA2 was cracked" gets repeated constantly, and it implies the encryption is broken and any WPA2 network is readable.
+
+The encryption is not broken. What an attacker captures is the **four-way handshake**, which contains a value derived from the passphrase — and then guesses passphrases offline, at whatever speed their hardware allows. Nothing about WPA2's cryptography fails; the passphrase does. A network with a long random passphrase is not meaningfully attackable this way, and a network with `Summer2024!` was never protected by its encryption in the first place.
+
+**How you'd spot the exposure:** the question is never "is it WPA2" but "how was the passphrase chosen, and how many people know it". For WPA2-Personal, one shared secret protects everyone on it.
+
 ## The Four-Way Handshake
 
 Everything in WPA2 security depends on one exchange: the **four-way handshake** that occurs after association, establishing the encryption keys for the session.

@@ -101,6 +101,12 @@ Fetching /home/admin/backup.tar.gz to backup.tar.gz   100%   10MB
 > [!tip] The analogy, and where it breaks
 > An apartment building has one street address and many apartment numbers; the address gets mail to the building, the apartment number gets it to the right person. The analogy breaks because the postal worker does not need the *sender's* apartment number to deliver, whereas a network connection is identified by all five values at once — both addresses, both ports, and the protocol. That is what lets thousands of separate conversations share one destination port without confusion.
 
+**The deliberate break:** "port 22 is open on that host" sounds like a fact about the host, the way a door is open or shut.
+
+It is a fact about a **five-tuple** and a vantage point. A port is open *to you, from where you are, right now*: the same port can be open from the LAN, filtered from the DMZ, and closed from the internet, and all three are simultaneously true. A scanner reporting "filtered" has not learned that the port is shut — it has learned that nothing came back, which is what a firewall dropping probes looks like *and* what a dead host looks like.
+
+**How you'd spot the difference:** a closed port answers with RST; a filtered one answers with silence. Silence plus a working route means something is deciding not to reply.
+
 ## The Socket and the Five-Tuple
 
 A **socket** is the programming abstraction for a communication endpoint: the object a program reads from and writes to. Concretely, a connection is uniquely identified by five values together — the **five-tuple**:

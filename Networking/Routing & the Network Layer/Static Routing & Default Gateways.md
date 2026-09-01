@@ -59,6 +59,12 @@ The `proto static` marker distinguishes these from routes the kernel derived or 
 > [!tip] The analogy, and where it breaks
 > A handwritten note taped to a junction saying 'for the north depot, turn left'. It is perfectly reliable and completely unaware — if the left road washes away, the note still says turn left. The analogy breaks in one useful direction: a driver would *see* the missing road, whereas a router keeps forwarding into a dead next hop with no error at all, because a static route's health and its next hop's health are entirely different facts.
 
+**The deliberate break:** static routes feel like the safe choice. Nothing to converge, nothing to be poisoned, no protocol to misconfigure — you wrote it down and it stays written.
+
+Staying written is the failure. A dynamic protocol **withdraws** a route when the path dies; a static route has no idea the path died and keeps sending traffic into it. The result is not an error message, it is a black hole: packets leave, nothing comes back, and every device reports itself healthy. Static routing does not remove failure modes, it converts loud ones into silent ones.
+
+**How you'd spot it:** the route is present in the table and the next hop does not answer. `ip route get` will happily return a path that goes nowhere — a static route is a claim, not a measurement.
+
 ## When Static Is the Right Answer
 
 Static routing trades adaptability for predictability, and that trade is correct in specific situations:

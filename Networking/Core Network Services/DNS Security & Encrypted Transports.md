@@ -35,6 +35,12 @@ DNSSEC signs answers but transmits them in the clear — anyone watching still s
 > [!tip] The analogy, and where it breaks
 > A sealed envelope and a notarised letter solve different problems: the seal stops anyone reading it in transit, the notary proves the contents are genuine. The analogy breaks mainly because people assume one implies the other. Encrypted transport seals the question; DNSSEC notarises the answer. A perfectly sealed envelope can still contain a forgery, which is why an encrypted lookup can still return an attacker's address.
 
+**The deliberate break:** DNSSEC and DNS-over-HTTPS both have "secure DNS" attached to them, so they sound like two implementations of one idea. They solve opposite halves of the problem and neither does the other's job.
+
+**DNSSEC authenticates the answer and encrypts nothing** — a signed record proves it came from the zone owner unmodified, while remaining fully readable to anyone on the path. **DoH/DoT encrypt the question and authenticate nothing about the answer** — the path cannot read your query, and the resolver can still hand you a forged record. Deploy DoH alone and an attacker who controls your resolver is unaffected. Deploy DNSSEC alone and every query is still in the clear.
+
+**How you'd spot it:** the `ad` flag in a `dig` response means the resolver validated DNSSEC. The absence of `ad` on a signed zone is the tell that validation is not happening — a very common silent gap.
+
 ## DNSSEC: Proving the Answer Is Genuine
 
 **DNSSEC (DNS Security Extensions)** adds cryptographic signatures to DNS records. A zone owner signs its records with a private key; a validating resolver verifies the signature with the corresponding public key. If the signature does not verify, the answer is rejected rather than returned.

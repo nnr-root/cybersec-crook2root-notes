@@ -80,6 +80,9 @@ flowchart LR
 
 Read the diagram as the receiver's decision order: integrity is checked first (a corrupt frame is dropped before anything else looks at it), then addressing decides whether to process it at all, and only then does the EtherType select which upper-layer parser receives the payload.
 
+> [!tip] This note's Break
+> The opening question — how many times the destination address is rewritten between you and a server twelve hops away — is the deliberate break for this note. The intuitive answer is zero. The real answer is twelve, and the fourteen bytes you counted are why.
+
 ## The EtherType: The Demultiplexing Key
 
 When a frame arrives, the receiver must decide what to do with the payload. The **EtherType** is that instruction.

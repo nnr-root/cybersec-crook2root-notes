@@ -42,6 +42,12 @@ A request start line is a method, a path, and a version. A response start line i
 > [!tip] The analogy, and where it breaks
 > Ordering at a counter where the server has complete amnesia between orders, so they hand you a numbered ticket to present next time. The analogy breaks because a physical ticket is awkward to copy, whereas a session cookie is just a short string — anyone who obtains it simply *is* you, with no further check. That is why the cookie flags restricting where and how it travels are the actual security control.
 
+**The deliberate break:** the web plainly remembers who you are — you log in once and stay logged in — so HTTP must carry some notion of a session.
+
+HTTP is **stateless**. Every request is independent and the server has no memory of the last one. Everything that feels like continuity is bolted on afterwards, almost always by a cookie the client re-sends on each request. That is not a historical curiosity: it is why stealing one cookie *is* stealing the session, why CSRF works at all, and why "log out everywhere" is difficult. The protocol offers no identity, so identity became a string the browser volunteers.
+
+**How you'd spot the seam:** strip the `Cookie` header from a request and replay it. If the application forgets you entirely, that header was the whole session.
+
 ## A Request and Its Response
 
 ```bash

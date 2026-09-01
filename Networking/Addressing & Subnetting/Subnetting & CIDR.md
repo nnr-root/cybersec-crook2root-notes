@@ -54,6 +54,12 @@ The subtraction of two removes the network address (all host bits zero, which na
 > [!tip] The analogy, and where it breaks
 > A phone number splits into area code and local number, and lengthening the area code carves one big region into many small ones. A subnet mask is that dividing line, except you may place it after *any* bit rather than at a fixed digit. The analogy breaks because area codes are assigned by an authority and never overlap, whereas overlapping prefixes are legal in routing and resolved by longest-prefix match — a rule with no telephone equivalent.
 
+**The deliberate break:** `/24`, `/16`, `/8` read like sizes, and a bigger number sounds like a bigger network. It is exactly backwards.
+
+The number counts **network bits**, so every bit you add to the prefix halves the host space. A `/24` holds 254 usable addresses; a `/16` holds 65,534. If that inversion is not automatic yet, it is the single most reliable source of subnetting mistakes — and it is why a firewall rule written for `/16` when `/24` was meant silently authorises 256 times as many hosts.
+
+**How you'd spot it:** read the prefix as "how much is fixed", never as "how big". `10.10.0.0/16` fixes `10.10`, leaving two octets free.
+
 ## The Reference Table You Should Be Able to Derive
 
 | CIDR | Mask | Total | Usable | Typical use |

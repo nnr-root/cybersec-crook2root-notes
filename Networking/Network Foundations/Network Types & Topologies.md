@@ -50,6 +50,12 @@ The security consequence of this table is trust asymmetry. Devices on the same L
 
 An **overlay** deserves special attention because it breaks the geography intuition entirely. A VPN or software-defined overlay makes two hosts on different continents behave as if they share a segment. Everything you conclude about trust from a physical diagram must therefore be re-checked against the logical topology.
 
+**The deliberate break:** look at any modern office and you will see a star — every desk cabled back to a switch. So the reasonable conclusion is that the topology is a star.
+
+Physically, yes. Logically, it depends entirely on what the switch does, and that is the distinction that matters for security. A hub wired in exactly the same star is a logical **bus**: every frame reaches every port. A switch with one VLAN is a single **broadcast domain**, which is why ARP spoofing works across the whole floor. The cabling diagram tells you where to send an engineer; it tells you almost nothing about who can hear whom.
+
+**How you'd spot it:** ping a broadcast address, or watch a capture with no filter. If you see traffic between two hosts that are not you, you are in a shared segment, not an isolated one — regardless of what the cable map says.
+
 ## Topology: Physical Shape versus Logical Behaviour
 
 **Topology** describes how nodes are interconnected. Crucially, the *physical* topology (where the cables run) and the *logical* topology (how traffic actually flows) can differ.

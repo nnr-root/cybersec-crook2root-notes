@@ -68,6 +68,12 @@ Expected excerpt:
 
 `freq: 2437` is channel 6; `signal: -42 dBm` is strong (closer to zero is stronger, so -42 beats -71). Reading signal strength in dBm is basic wireless literacy: roughly, -30 is excellent, -67 is usable for most things, -80 is marginal, -90 is unusable.
 
+**The deliberate break:** Wi-Fi is presented as wireless Ethernet, so it is natural to expect it to behave like a switch — each client gets its own path, and adding clients adds capacity.
+
+It behaves like a **hub on a shared half-duplex medium**. Only one device on a channel may transmit at a time; everyone else waits. Bandwidth is divided among active devices and total throughput *falls* as the room fills, because collision avoidance overhead grows. And because the medium is shared and broadcast, every device in range receives every frame — the encryption is what stops them reading it, not the topology.
+
+**How you'd spot it:** watch throughput per client as the room fills. Switched Ethernet holds steady; a Wi-Fi channel degrades for everyone.
+
 ## How Frames Share the Air
 
 Wired Ethernet detects collisions after they happen. Radio cannot — a transmitting device cannot simultaneously listen for a collision on the same frequency. So 802.11 uses **CSMA/CA (Carrier Sense Multiple Access with Collision Avoidance)**: a device listens first, and if the medium is busy, waits a random interval before trying, actively *avoiding* collisions rather than detecting them.

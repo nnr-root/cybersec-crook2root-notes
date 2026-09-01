@@ -30,6 +30,10 @@ The **OSI (Open Systems Interconnection) Model** is the ISO reference framework 
 > [!tip] The analogy, and where it breaks
 > Layering is often compared to posting a letter: you write content, put it in an envelope, the postal service routes it, a courier carries it. The analogy is good for encapsulation and bad for everything else — real layers negotiate, retransmit, and give feedback to each other, whereas an envelope never asks the letter to be rewritten. Do not let the analogy suggest that layers are strictly independent in practice.
 
+**The deliberate break:** OSI is taught as though it describes how networks work. It does not. It is a *reference model* from a competing protocol suite that lost — and the stack your packets actually traverse is TCP/IP, which has four layers, not seven.
+
+Layers 5 and 6 have almost no independent existence in real implementations: TLS is routinely called "Layer 6" and is nothing of the kind, and no running system has a "session layer" you can point at. Keep OSI for what it is genuinely good at — a shared vocabulary for *where a problem lives* — and stop expecting to find its seven layers in a packet.
+
 ## The Seven Layers
 
 | # | Layer | PDU | Core responsibility | Concrete examples |

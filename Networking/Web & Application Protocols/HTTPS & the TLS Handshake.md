@@ -38,6 +38,12 @@ This note is deliberately about TLS as a *transport* — the handshake, certific
 > [!tip] The analogy, and where it breaks
 > A sealed courier pouch, plus the courier showing photo ID issued by an authority you already trust. The analogy breaks exactly where people over-read the padlock: the ID proves the courier's *name*, not their honesty. A criminal can hold entirely genuine identification, which is why a phishing site displays a perfectly valid padlock and why reading the hostname remains the human's job.
 
+**The deliberate break:** "HTTPS means it's encrypted" collapses three separate guarantees into one, and the three fail independently.
+
+TLS provides **confidentiality** (the path cannot read it), **integrity** (the path cannot alter it undetected), and **authentication** (you are talking to who you think). Only the third involves certificates, and only the third is the one attackers usually defeat. An attacker who obtains a valid certificate for the name gets all three guarantees working perfectly — for their connection to you. Encryption was never the hard part; deciding whose key to encrypt to is.
+
+**How you'd spot the difference:** a browser warning is an *authentication* failure, not an encryption one. The traffic is still encrypted; the question is to whom.
+
 ## The Handshake
 
 Before any HTTP flows, TLS negotiates a secure channel. The modern TLS 1.3 handshake completes in a single round trip.

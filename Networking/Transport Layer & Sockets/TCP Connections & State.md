@@ -44,6 +44,12 @@ The flags that matter for state are four: **SYN** (synchronize — open), **ACK*
 > [!tip] The analogy, and where it breaks
 > A phone call: you dial, they pick up, and you both say hello before real conversation starts. The analogy breaks in the most important way — no wire is reserved for you. The 'connection' is nothing but matching notes kept at each end, so if one side loses its notes the call is dead even though every cable between you is perfectly fine.
 
+**The deliberate break:** a TCP connection sounds like a thing that exists — a pipe, a circuit, something laid between two machines that you could point at.
+
+Nothing is created anywhere. A "connection" is **matching state held independently at both ends**: sequence numbers, buffers, and a state value, agreed by exchanging three packets. That is why a connection can be half-open with one side convinced it is live, why a SYN flood costs the attacker almost nothing and the server a real table entry, and why an on-path RST can tear down a session neither endpoint wanted to end. There is no pipe to cut, only two opinions to desynchronise.
+
+**How you'd spot it:** `ss -tan` shows each end's opinion. `SYN-RECV` piling up is a server holding state for handshakes nobody completed; `CLOSE-WAIT` piling up is an application that never called close.
+
 ## The Three-Way Handshake
 
 Opening a connection takes three segments, and each has a specific job beyond "saying hello."

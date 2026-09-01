@@ -49,6 +49,12 @@ Three route types appear here, and reading them fluently is the whole skill:
 > [!tip] The analogy, and where it breaks
 > Road signs at every junction listing only the next town, never the whole route — each driver asks one question and moves one hop closer. The analogy breaks on specificity: if two signs point to the same destination, a road network has no rule preferring the more detailed one, whereas routing *always* takes the longest prefix. That rule is why a single injected specific route silently captures traffic while every broader, correct route remains in place.
 
+**The deliberate break:** "routers route, hosts send" is how most people picture it — your laptop hands the packet to the gateway and the clever decisions happen elsewhere.
+
+Your laptop makes a routing decision on **every single packet it sends**. It consults a table, applies longest-prefix match, and picks an interface and a next hop, exactly as a router does. The only difference is table size. This matters practically: a machine that "cannot reach" something often has a perfectly healthy network and a wrong local route, and no amount of investigating the router will show it.
+
+**How you'd spot it:** `ip route get <destination>` reports the decision the kernel will actually make, resolving every overlapping route for you. If it names an unexpected interface or next hop, the problem is on this host.
+
 ## Longest-Prefix Match: The One Rule
 
 When several routes match a destination, the router does **not** pick the first, the cheapest, or the newest. It picks the one with the **longest prefix** — the most specific route, the one with the most network bits fixed. Metric only breaks ties between routes of equal prefix length.

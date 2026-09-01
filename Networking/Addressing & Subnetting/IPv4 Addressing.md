@@ -56,6 +56,10 @@ The diagram shows why the mask is not cosmetic: it is the input to the local-ver
 > [!tip] The analogy, and where it breaks
 > An address is often compared to a postal address, with the network as the street and the host as the house number. It works for the hierarchy. It breaks because a street has a fixed length while a network prefix can be any number of bits, and because a house cannot silently move to another street while keeping its number — an interface can be re-addressed instantly.
 
+**The deliberate break:** an IP address feels like it identifies a machine, the way a phone number identifies a phone. It does neither of those things reliably.
+
+It identifies an **interface**, not a host: a server with four NICs has four addresses, and the same machine reached over VPN answers to a different one. And behind NAT, thousands of devices share a single public address, which is why "we blocked that IP" and "we blocked that attacker" are different sentences. An address is a routing label with a lease on it, not an identity.
+
 ## Classes: History You Still Need to Read
 
 Original IPv4 divided the space into **classes**, with the leading bits determining a fixed network/host split.

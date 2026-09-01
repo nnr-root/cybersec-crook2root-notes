@@ -43,6 +43,12 @@ A **next-generation firewall** goes further, identifying the *application* regar
 > [!tip] The analogy, and where it breaks
 > A doorman with a guest list. The sound version admits only names on the list and turns away everyone else; the doomed version tries to memorise every troublemaker in the city and admits all others. The analogy breaks at statefulness: a doorman does not need to remember that *you* went out in order to let your taxi back in, whereas that memory of an outbound conversation is exactly what a stateful firewall keeps and what makes tight policy practical.
 
+**The deliberate break:** "the firewall blocks attacks" is the mental model almost everyone starts with, and it quietly assumes the firewall knows what an attack is.
+
+It does not. A firewall matches a **policy about connections** — addresses, ports, protocol, and for a stateful one, whether this packet belongs to a flow it already permitted. If your rule allows 443 inbound to the web server, it allows every request that arrives on 443, benign and hostile alike. The firewall is not failing when an SQL injection reaches your application; it is doing exactly what it was configured to do.
+
+**How you'd spot an over-broad rule:** read the address range as its literal extent, not its notation. A `/16` in a permit rule is 65,534 hosts — write it out before approving it.
+
 ## Stateful Inspection in Practice
 
 The stateful model is worth seeing concretely, because it is where most policy lives.

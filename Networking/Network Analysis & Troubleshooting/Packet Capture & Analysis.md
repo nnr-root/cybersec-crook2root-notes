@@ -37,6 +37,12 @@ This captures 100 TCP/443 packets to a file. The `-w` writes raw packets (openab
 > [!tip] The analogy, and where it breaks
 > A tape recorder on a phone line — the definitive record when two parties disagree about what was said. The analogy breaks because a modern switched network is not a party line: by default your recorder hears only your own calls, and you must arrange a deliberate tap or mirror to hear anyone else's. Capturing 'the network' is never automatic.
 
+**The deliberate break:** you put the interface in promiscuous mode, start the capture, and expect to see the network. On a switched network you will see almost nothing but your own traffic and broadcasts.
+
+Promiscuous mode tells your NIC to stop discarding frames not addressed to it. It does not tell the **switch** to send you any. A switch forwards unicast only to the port that owns the destination MAC, so the frames you want never reach your cable. This is the single most common reason a capture "isn't working," and no tcpdump flag fixes it — you need a SPAN/mirror port, a TAP, or to be in the path.
+
+**How you'd spot it:** if every packet you see involves your own address, plus ARP and broadcast, you are on a switch port with no mirror. That is a topology problem, not a filter problem.
+
 ## Two Filters, Constantly Confused
 
 There are two entirely different kinds of filter, applied at different times, and mixing them up is the most common capture mistake.

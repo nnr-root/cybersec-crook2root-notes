@@ -32,6 +32,12 @@ The entire evolution of network security architecture is a response to this sing
 > [!tip] The analogy, and where it breaks
 > A castle with a moat versus a modern building where every internal door needs your badge. In the castle, one person over the wall roams freely; in the building, entering the lobby grants nothing. The analogy breaks because the badge system must also survive a *stolen* badge — which is why zero trust adds per-resource checks rather than trusting anyone already inside, something no physical door does well.
 
+**The deliberate break:** "we have a firewall, so the network is segmented." Those are different claims, and the gap between them is where most breaches spread.
+
+A perimeter firewall filters traffic **crossing** the boundary — north-south. It sees nothing of the traffic between two workstations on the same VLAN, which is east-west, and that is the traffic an attacker uses after the first foothold. A flat internal network behind a strong perimeter is one compromised laptop away from being fully reachable, and the firewall logs will show nothing at all, because nothing crossed it.
+
+**How you'd spot it:** from one internal host, try to reach another host's SMB or RDP port. If it answers, those two machines are in the same trust zone, whatever the network diagram claims.
+
 ## Step One: Segmentation
 
 **Segmentation** divides the flat interior into zones separated by controls, so that compromising one zone does not grant access to the others. Instead of one trusted network, there are many smaller ones with firewalls, ACLs, or VLANs between them, and traffic crossing a zone boundary is subject to policy.

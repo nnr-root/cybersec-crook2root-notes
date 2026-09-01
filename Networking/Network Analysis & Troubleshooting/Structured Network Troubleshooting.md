@@ -51,6 +51,12 @@ A third, **divide-and-conquer**, jumps to the middle (Layer 3 — can you ping t
 > [!tip] The analogy, and where it breaks
 > Diagnosing why a lamp will not light: check the bulb, the switch, the socket, the fuse — in order, one change at a time — rather than replacing everything at once. The analogy breaks in a way worth noticing: with a lamp you can *see* the break, whereas a network fault at a low layer silently invalidates every test above it, so results can look meaningful while being worthless.
 
+**The deliberate break:** an experienced engineer's hunch feels faster than a procedure. Skip the boring checks, go straight to the thing that is probably wrong.
+
+It is faster when the hunch is right and catastrophically slower when it is not — and the failures that reach you are, by selection, the ones where the obvious answer already failed. A method costs a few minutes of checks you expected to pass; a wrong hunch costs an hour of investigating a healthy subsystem. The point of working the layers is not that intuition is bad, it is that intuition provides no way to discover it was wrong.
+
+**How you'd spot the trap:** you are three commands deep into a component and have not yet confirmed the layer below it is healthy. Stop and confirm.
+
 ## The Procedure in Practice
 
 ```bash

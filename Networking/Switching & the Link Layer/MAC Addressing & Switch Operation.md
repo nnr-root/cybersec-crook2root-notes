@@ -54,6 +54,12 @@ The `00:0c:29` prefix identifies the interface as virtual, and `brd ff:ff:ff:ff:
 > [!tip] The analogy, and where it breaks
 > A receptionist who learns where people sit purely by noticing which door each person walks in from, and keeps that list on a small notepad. The analogy breaks because of the notepad's size: fill it with thousands of fake names and the receptionist, unable to record anyone new, resorts to shouting every message down every corridor. That is MAC flooding — an interception achieved by exhausting a data structure, with no human equivalent.
 
+**The deliberate break:** MAC addresses are described as "burned into the hardware," which makes them sound like a serial number you cannot argue with. That is why people try to use them for access control.
+
+The address a NIC *ships* with is burned in. The address it **sends** is whatever the driver was told to put in the frame, and changing it takes one command. Nothing on the wire authenticates it, nothing verifies it against the hardware, and the switch you are about to read about will believe it instantly. MAC filtering therefore raises effort by about thirty seconds and provides no authentication at all.
+
+**How you'd spot a spoof:** the same MAC appearing on two switch ports, or a port whose MAC changes without a device being unplugged. Neither happens in normal operation.
+
 ## How a Switch Learns
 
 A switch has no map of the network when it powers on. It builds one by **observing the source address of every frame** and recording which physical port that frame arrived on, into a structure called the **MAC address table** or **CAM (Content-Addressable Memory) table**.
