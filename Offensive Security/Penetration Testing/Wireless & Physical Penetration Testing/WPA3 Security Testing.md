@@ -19,6 +19,14 @@ WPA2's weakness (see the previous leaf) is that a captured handshake lets an att
 
 The consequence for a tester: the WPA2 "capture once, crack forever" model is gone. Attacks shift to **online guessing** (slow, detectable), **downgrade** (forcing a WPA2 fallback), and **implementation flaws** (the Dragonblood side-channels).
 
+**The deliberate break:** WPA3 replaced the four-way handshake with SAE, which removes the offline dictionary attack. So a WPA3 network has nothing left to test.
+
+SAE does what it claims — you cannot capture a value and grind it offline, and that is a genuine advance. What it does not do is remove the network's other exposures, and one of them undoes the whole benefit: **transition mode**. A network advertising WPA3 *and* WPA2 for compatibility with older clients still accepts the WPA2 association, which still produces a crackable handshake. The upgrade is present, announced, and bypassed by asking politely for the old protocol.
+
+So the WPA3 test is not "can I crack it" but "**can I avoid it**" — transition mode, downgrade, whether Protected Management Frames are enforced or merely available, and what happens to a client that claims not to support SAE.
+
+**How you'd spot it:** read the advertised authentication suites in the beacon. Both SAE and PSK present means transition mode, and the WPA2 attack from the previous note applies unchanged.
+
 ## What You Actually Test on WPA3
 
 | Target | Why it matters |

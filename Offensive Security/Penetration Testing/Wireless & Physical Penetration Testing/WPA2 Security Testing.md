@@ -19,6 +19,14 @@ WPA2 with a pre-shared key (the home/small-office mode) protects traffic with ke
 
 The chain: `passphrase + SSID → PMK → (with handshake nonces/MACs) → PTK → MIC`. Because the PMK depends only on the passphrase and the (public) SSID, a dictionary attack derives a candidate PMK per guess and checks it against the captured handshake.
 
+**The deliberate break:** the test is capturing the handshake. Get the four-way exchange and the assessment is done — the rest is just running hashcat.
+
+The capture is the easy part and proves nothing on its own. Every WPA2-PSK network in range will hand you a handshake; that is not a finding, it is a property of the protocol. The finding is **whether the passphrase falls**, and how fast, against a realistic wordlist and rule set — because that is the number that describes the client's actual exposure.
+
+Which makes the reporting consequence unusual for offensive work: **a crack that fails is a positive result and must be written up as one.** "Handshake captured; passphrase resisted 12 hours against a 14GB wordlist with rules" tells the client their WPA2-Personal deployment is doing its job. Omitting it because nothing was compromised throws away the most useful thing the test learned.
+
+**How you'd spot the real exposure:** ask who knows the passphrase and when it last changed. WPA2-Personal has one shared secret for every device and every person who ever had it — this is the **Shared Secret, No Per-Party Binding** pattern, and it is why the enterprise variant exists.
+
 ## The Key Derivation
 
 The Pairwise Master Key is `PBKDF2-HMAC-SHA1(passphrase, SSID, 4096, 32)`. The 4096 iterations are a deliberate cost to slow guessing — but they only add a constant factor. A weak or human-memorable passphrase falls quickly; a long random one does not. The SSID acts as a salt, which is why per-SSID rainbow tables exist for common names like `linksys` but not for unique ones.

@@ -110,6 +110,7 @@ object* to decide how to check the untrusted object.
 | Where it appears | The shared secret |
 |:--|:--|
 | **Wi-Fi Security & WPA** | WPA2-Personal: one passphrase for every device, and capturing a handshake moves the attack offline |
+| **WPA2 Security Testing** | The same secret, seen from the offensive side: everyone who ever had it still has it |
 | **Broken Access Control** | A predictable or shared identifier standing in for authorisation |
 | **Insecure Deserialization Testing** | A signing key shared across services turns any holder into a signer |
 
