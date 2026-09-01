@@ -126,6 +126,8 @@ Routing is healthy and the Internet is reachable, yet a browser reports "no Inte
 
 The reverse error is equally common: concluding "the network is fine" because ping succeeds. Ping exercises Layers 1 through 3 only. An application failure over an established TCP connection is above transport by definition, and the network team cannot fix it.
 
+**How you'd spot the layer:** work upward and stop at the first failure. No link light is L1. Link but no ARP entry for the gateway is L2. ARP resolves but ping fails is L3. Ping works but the port refuses is L4. The port answers but the application errors is L7. Each answer eliminates everything below it, which is the entire practical value of the model.
+
 ## Security Implications by Layer
 
 Because attacks target mechanisms, and mechanisms live at layers, the model is also a threat taxonomy.

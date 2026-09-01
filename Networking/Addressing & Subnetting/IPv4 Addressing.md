@@ -100,6 +100,8 @@ An address in `100.64.0.0/10` means you are behind carrier-grade NAT and share a
 
 A service bound to `0.0.0.0` is listening on **every** interface, which is very different from `127.0.0.1`. Confusing the two is one of the most common ways a service intended for local use becomes network-reachable.
 
+**How you'd spot it:** the address itself is a diagnosis. `169.254.x.x` means the host asked for a DHCP lease and got no answer — a link or DHCP problem, never a routing one. `100.64.x.x` means you are behind carrier-grade NAT and share a public address with strangers, so inbound connections are impossible and any address reputation is not yours alone. Reading these before you start troubleshooting saves the first twenty minutes.
+
 ## Reading a Real Configuration
 
 ```bash

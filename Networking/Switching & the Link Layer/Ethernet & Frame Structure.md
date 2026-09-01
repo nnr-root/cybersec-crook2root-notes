@@ -141,6 +141,8 @@ Two details are worth pausing on. **The destination comes first, before the sour
 
 Note also what is **absent**: the preamble and the FCS. The NIC strips the preamble before handing the frame up, and validates then discards the FCS. A capture tool shows you what survived, not the complete wire format — which is why an FCS error never appears as a malformed frame in `tcpdump`, only as a counter increment.
 
+**How you'd spot trouble in a frame:** three fields carry almost all the signal. A **source MAC** that does not match the port's history is a spoof or a move. An **EtherType** you did not expect on that segment means something is speaking a protocol nobody deployed. And a frame at exactly the **60-byte floor** is usually padding around a very small payload — worth reading, because a lot of reconnaissance traffic is small.
+
 ## The FCS: Detection, Not Correction
 
 The **Frame Check Sequence** is a 32-bit CRC computed over the addresses, type, and payload. The receiver recomputes it and compares. A mismatch means the frame was corrupted in transit, and the frame is silently **discarded** — Ethernet detects errors but does not correct them. Recovery is left to a higher layer: TCP will retransmit, UDP will not.
