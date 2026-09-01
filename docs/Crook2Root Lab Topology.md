@@ -111,6 +111,26 @@ these directly.
 | `admin_bob` | IT admin, Domain Admins, *already in the BloodHound note* | The graph path, session hijack, lateral movement |
 | `svc_backup` | Service account with an SPN, weak password | Kerberoasting |
 | `svc_track` | App service account on APP01, over-permissioned | Linux privesc, secret hunting |
+| `k.adeyemi` | Help-desk technician, owns password resets and MFA recovery | Help-desk identity verification, recovery-path testing |
+| `d.varga` | CFO, travels often, signs off payment exceptions | Vishing, executive impersonation, business email compromise |
+| `p.nowak` | Facilities coordinator, owns badges and the visitor log | Tailgating, visitor process, physical social engineering |
+
+The human-facing principals exist for the same reason the hosts do. A social
+engineering note that invents "an employee at a company" each time asks the reader
+to build a new workplace in their head before the lesson starts. Naming
+`k.adeyemi` on the help desk and `d.varga` in the CFO's chair means the reader
+already knows who picks up the phone, and the attention goes to the verification
+step instead.
+
+**Supplier of record:** `Halvard Pallet Systems`, in the Meridian vendor master
+with bank details on file. Every supplier-fraud, bank-detail-change and
+invoice-redirection example uses this one vendor.
+
+**Exercise ticket prefix:** authorised social engineering exercises carry a canary
+reference of the form `SE-TEST-nnn` (finance-side variants use `FIN-TEST-nnn`).
+The canary is what makes an exercise auditable after the fact: it appears in the
+ticket, in the operator's call card, and in the debrief, and it is the string a
+defender can search to prove a given event was the test rather than a real attack.
 
 ## 5. The shared artifacts
 
