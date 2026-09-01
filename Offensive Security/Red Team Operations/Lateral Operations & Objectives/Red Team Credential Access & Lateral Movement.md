@@ -24,6 +24,10 @@ Red Team Credential Access & Lateral Movement -> Data Collection & Exfiltration 
 
 ## The Same Moves as Post-Ex, but Measured for Stealth
 
+> *You can dump credentials from six more hosts on the way to the objective. Should you?*
+>
+> Hold your answer — the section below is the response.
+
 A red team's mid-operation work is credential access (harvest keys to the next system) and lateral movement (use them to get there) — the same *actions* as the pentest **Credential Access & Secret Hunting** and **Pivoting & Tunneling** leaves. What makes this a distinct, red-team note is the **objective**: here you don't just prove the path exists, you measure *whether the blue team detects it* and *how much noise each technique makes*. A pentest maximizes coverage; a red team operates like a real adversary — quiet, targeted, living off the land — precisely so the exercise tests the SOC's ability to catch a *stealthy* actor.
 
 The defining idea: **every credential-access and lateral-movement technique has a detection cost**, and red team tradecraft is choosing the technique that achieves the objective with the least, most-plausible telemetry — turning the operation into a test of detection sensitivity.

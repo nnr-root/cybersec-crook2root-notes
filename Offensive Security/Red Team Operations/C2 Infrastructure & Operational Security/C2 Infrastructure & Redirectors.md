@@ -25,6 +25,10 @@ C2 Infrastructure & Redirectors -> Operational Security, Anti-Forensics & Teardo
 
 ## How Operators Talk to Their Foothold
 
+> *An analyst pulls the configuration out of your beacon. What have they learned?*
+>
+> Hold your answer — the section below is the response.
+
 Once a red team has a foothold, it needs a reliable, controllable channel to task the agent and receive results — **Command and Control (C2)**. And it needs that channel to be *resilient*: if the client blocks one address, the operation shouldn't collapse. **Redirectors** provide that resilience by separating the public-facing ingress (what the agent talks to) from the real control server (where operators work), so the front can be replaced without exposing or losing the back. This note covers both — the C2 architecture and the redirector/traffic-governance layer — because together they are the *communications backbone* of every red team operation.
 
 The professional framing that distinguishes authorized C2 from criminal C2: **it is transparent and auditable to the white team** — signed/typed tasks, RBAC, short-lived tasking, immutable audit, and a kill switch. You are building a *coordination and measurement* system, not just a covert tunnel.

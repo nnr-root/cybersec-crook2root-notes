@@ -24,6 +24,10 @@ Red Team Campaign Planning & Initial Access -> C2 Infrastructure & Operational S
 
 ## Designing an Operation, Then Getting In
 
+> *Your operation ran for three weeks and nobody detected a thing. Was it a success?*
+>
+> Hold your answer — the section below is the response.
+
 A red team campaign is not "hack the client stealthily." It is a **planned, threat-informed operation** that tests whether the organization's detection and response can catch a *specific* adversary pursuing a *specific* objective. This note covers the two front-end disciplines: **campaign planning** (translating an executive concern into a scoped, safe, measurable operation) and **initial access** (the authorized, canary-based methods of establishing the first foothold). They belong together because the plan *defines* which initial-access scenario is in play, its safety rails, and how its outcome will be measured.
 
 The defining principle, which separates a professional red team from a criminal: **everything is transparent to the white team and measured against the defenders' response** — the goal is to *exercise and improve the blue team*, not to win a game of hide-and-seek.

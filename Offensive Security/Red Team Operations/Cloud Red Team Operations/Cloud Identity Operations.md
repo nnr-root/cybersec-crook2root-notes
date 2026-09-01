@@ -15,6 +15,10 @@ Cloud Identity Operations -> Cloud Control Plane Operations -> Cloud Persistence
 
 ## In the Cloud, Identity Is the Perimeter
 
+> *There is no network to pivot across. How does lateral movement work in a cloud account?*
+>
+> Hold your answer — the section below is the response.
+
 There is no network edge to breach in a cloud account — every action is an API call authorized by an **IAM policy**. Attacking the cloud is therefore mostly attacking identity: finding a principal (user, role, or service) whose permissions let it *grant itself more* permissions. This is **privilege escalation by policy**, and it rarely needs an exploit — just an over-permissive combination of allowed actions.
 
 The canonical example is `iam:PassRole`. On its own it is harmless. Combined with a service that *runs code with a role you pass it* — Lambda, EC2, Glue — it becomes: "create a function, pass it the admin role, invoke it, and now your code runs as admin."

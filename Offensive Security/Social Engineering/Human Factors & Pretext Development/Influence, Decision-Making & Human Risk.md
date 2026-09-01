@@ -23,6 +23,10 @@ Influence, Decision-Making & Human Risk -> OSINT-Driven Pretext Development
 
 ## From cognitive shortcut to enterprise risk
 
+> *A well-trained employee still approved the request. Was the training wasted?*
+>
+> Hold your answer — the section below is the response.
+
 People make rapid decisions by using cues: the apparent authority of a sender, consistency with an existing conversation, urgency, social proof, and the cost of delaying work. These shortcuts are not defects; they are necessary under workload. Risk appears when a business process lets one plausible message authorize a high-impact action. A mature assessment therefore maps **decision → authority → verification → consequence**, rather than counting who clicked.
 
 | Pressure cue | Unsafe process condition | Resilient control |

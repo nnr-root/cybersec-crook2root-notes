@@ -23,6 +23,10 @@ Tailgating, Facility & Visitor Process Testing -> Removable Media & BadUSB Exerc
 
 ## Zone-based assessment
 
+> *The badge reader is working perfectly and the door is locked. How do you get in?*
+>
+> Hold your answer — the section below is the response.
+
 Map public, reception, employee, restricted, and critical zones. For each transition, identify the responsible control: receptionist validation, sponsor confirmation, badge issuance, anti-passback, turnstile, escort, guard challenge, camera coverage, or locked cabinet. A badge is an identifier, not proof that its holder belongs in every zone.
 
 ```text

@@ -26,6 +26,10 @@ Phishing & Spear-Phishing Methodology -> Smishing, QR & Collaboration-Platform T
 
 ## Campaign design
 
+> *Your simulation achieved a 2% click rate. Is that a good result?*
+>
+> Hold your answer — the section below is the response.
+
 Define the threat behavior before drafting content. Broad phishing tests common delivery and reporting controls; spear-phishing tests whether business context and role targeting defeat them. Use controlled domains, authenticated mail where approved, unique campaign identifiers, a harmless destination, and an expiration mechanism. Seed indicators with the white cell so an accidental incident escalation can be deconflicted securely.
 
 ```text

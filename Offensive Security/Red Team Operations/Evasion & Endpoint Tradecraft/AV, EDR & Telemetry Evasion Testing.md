@@ -25,6 +25,10 @@ AV, EDR & Telemetry Evasion Testing -> Payload Engineering & Obfuscation -> Proc
 
 ## Knowing What the Endpoint Can See
 
+> *Your payload was not flagged and never quarantined. Did you evade the endpoint?*
+>
+> Hold your answer — the section below is the response.
+
 Modern endpoints run a layered defense stack, and a red team's job is to *test what each layer actually catches*. Four layers dominate, and understanding what each one observes is the whole subject:
 
 - **Antivirus (AV)** — mostly **static signatures**: pattern-matches files/bytes on disk.

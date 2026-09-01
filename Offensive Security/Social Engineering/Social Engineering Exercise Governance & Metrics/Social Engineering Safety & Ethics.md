@@ -24,6 +24,10 @@ Social Engineering Safety & Ethics -> Human-Risk Metrics & Program Improvement
 
 ## Safety case
 
+> *The client authorised a phishing exercise. Does that make every pretext acceptable?*
+>
+> Hold your answer — the section below is the response.
+
 Treat every exercise as a documented safety case. Identify participants and bystanders, plausible harms, existing safeguards, residual risk, decision owner, stop authority, support route, and post-exercise review. Authorization by a manager does not override employment law, privacy obligations, union agreements, accessibility needs, or human dignity.
 
 Use data minimization by design: synthetic credentials, opaque participant IDs, aggregate reporting, narrow retention, encryption, and role-limited access. Operators must know how to respond if a participant reveals abuse, self-harm, fraud, medical information, or another real emergency; the exercise stops and the established safeguarding process takes precedence.

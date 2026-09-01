@@ -15,6 +15,10 @@ Help Desk Identity Verification -> MFA Recovery Process Testing -> Vishing & Exe
 
 ## Why the Help Desk Is a Target
 
+> *The help desk asked for your employee ID and date of birth before resetting the password. Is that verification?*
+>
+> Hold your answer — the section below is the response.
+
 The IT help desk exists to *restore access* — reset passwords, unlock accounts, re-enrol MFA. That mission is in direct tension with security: the same action that helps a locked-out employee also hands an attacker the keys, *if* the agent cannot reliably tell them apart. The attacker's whole game is to impersonate a legitimate user convincingly enough to trigger a reset.
 
 The weak link is **knowledge-based verification (KBA)** — "what's your employee ID / manager / date of birth / last four of your SSN?" Every one of those is often discoverable through OSINT, data breaches, or a plausible pretext. KBA authenticates *knowledge of a fact*, and facts leak.

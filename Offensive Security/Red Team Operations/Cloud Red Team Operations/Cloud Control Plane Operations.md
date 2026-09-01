@@ -15,6 +15,10 @@ Cloud Identity Operations -> Cloud Control Plane Operations -> Cloud Persistence
 
 ## Two Planes: Control and Data
 
+> *You have root on the instance. What can still be done to it that you cannot see or stop?*
+>
+> Hold your answer — the section below is the response.
+
 A cloud resource has a **data plane** (the app serving requests) and a **control plane** (the APIs that create, configure, and grant access to resources). Compromising the data plane gets you one server; compromising the control plane gets you the *account* — the ability to spin up resources, read every bucket, and mint credentials.
 
 The bridge between them is the **Instance Metadata Service (IMDS)** at the link-local address `169.254.169.254`. Any code on a cloud VM can ask IMDS for the temporary credentials of the role attached to that instance. That is convenient for the app — and catastrophic when a **server-side request forgery (SSRF)** bug lets an attacker make the server fetch that URL for them.
