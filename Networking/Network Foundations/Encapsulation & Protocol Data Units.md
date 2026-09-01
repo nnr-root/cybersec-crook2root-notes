@@ -51,7 +51,7 @@ Without these keys, a receiver would have a pile of bytes and no way to parse th
 flowchart TB
     D["Application data: GET /cart"]
     D --> S["+ TCP header (src 52418, dst 443, SEQ, flags) = Segment"]
-    S --> P["+ IP header (src 192.168.10.24, dst 93.184.216.34, TTL 64, proto 6) = Packet"]
+    S --> P["+ IP header (src 10.10.10.14, dst 203.0.113.20, TTL 64, proto 6) = Packet"]
     P --> F["+ Ethernet header (src host MAC, dst gateway MAC, ethertype 0x0800) = Frame"]
     F --> B["Bits on the medium"]
     B --> F2["Frame received: checksum verified, ethertype 0x0800 -> IP"]
@@ -75,15 +75,15 @@ sudo tcpdump -i eth0 -nn -e -c 2 -v 'tcp port 443 and tcp[tcpflags] & tcp-syn !=
 Expected excerpt:
 
 ```text
-00:1a:2b:3c:4d:5e > 00:50:56:aa:bb:cc, ethertype IPv4 (0x0800), length 74:
+00:00:5e:00:53:0e > 00:00:5e:00:53:01, ethertype IPv4 (0x0800), length 74:
     (tos 0x0, ttl 64, id 41207, offset 0, flags [DF], proto TCP (6), length 60)
-    192.168.10.24.52418 > 93.184.216.34.443: Flags [S], seq 2419087713,
+    10.10.10.14.52418 > 203.0.113.20.443: Flags [S], seq 2419087713,
     win 64240, options [mss 1460,sackOK,TS val 88213 ecr 0,nop,wscale 7], length 0
 ```
 
 Every element of the header stack is visible in those four lines:
 
-- `00:1a:...  > 00:50:...` — link layer. The destination is the **gateway's** hardware address, not the server's, because the server is not on this link.
+- `...:53:0e > ...:53:01` — link layer. The destination is the **gateway's** hardware address, not the server's, because the server is not on this link.
 - `ethertype IPv4 (0x0800)` — the demultiplexing key telling the receiver an IP header follows.
 - `ttl 64` — the initial hop budget. Common initial values are 64 (Linux, macOS), 128 (Windows), and 255 (many network devices), which is why an observed TTL hints at both the sender's platform and the hop count travelled.
 - `flags [DF]` — Don't Fragment. This single bit is responsible for a large share of "works for small requests, hangs for large ones" incidents, explained below.
@@ -102,14 +102,14 @@ Here is where it breaks. If an administrator blocks all ICMP at a firewall "for 
 Reproduce the diagnosis with a payload-size sweep:
 
 ```bash
-ping -M do -s 1472 -c 2 192.168.20.10     # 1472 + 8 ICMP + 20 IP = exactly 1500
-ping -M do -s 1473 -c 2 192.168.20.10     # one byte over
+ping -M do -s 1472 -c 2 10.10.20.10     # 1472 + 8 ICMP + 20 IP = exactly 1500
+ping -M do -s 1473 -c 2 10.10.20.10     # one byte over
 ```
 
 Expected excerpt:
 
 ```text
-1480 bytes from 192.168.20.10: icmp_seq=1 ttl=63 time=1.42 ms
+1480 bytes from 10.10.20.10: icmp_seq=1 ttl=63 time=1.42 ms
 
 ping: local error: message too long, mtu=1500
 ```
@@ -117,15 +117,15 @@ ping: local error: message too long, mtu=1500
 The `-M do` flag sets DF, so the kernel refuses rather than fragments. If the first command succeeds and the second fails locally, your own MTU is 1500 and the path is fine. If a *smaller* size fails with no reply at all — silence rather than a local error — a device on the path is discarding oversized packets without signalling, and you have found the black hole. Tunnels are the usual culprit, because each layer of encapsulation subtracts from the usable payload.
 
 ```bash
-tracepath 192.168.20.10
+tracepath 10.10.20.10
 ```
 
 Expected excerpt:
 
 ```text
- 1:  192.168.10.1       0.412ms
- 2:  192.168.30.1       1.104ms  pmtu 1420
- 3:  192.168.20.10      1.881ms  reached
+ 1:  10.10.10.1       0.412ms
+ 2:  10.10.30.1       1.104ms  pmtu 1420
+ 3:  10.10.20.10      1.881ms  reached
      Resume: pmtu 1420 hops 3
 ```
 

@@ -102,10 +102,10 @@ Expected excerpt:
 
 ```text
 Recv-Q Send-Q      Local Address:Port      Peer Address:Port  Process
-     0      0     192.168.10.24:52418        93.184.216.34:443  users:(("firefox",pid=4412,fd=91))
+     0      0     10.10.10.14:52418        203.0.113.20:443  users:(("firefox",pid=4412,fd=91))
 ```
 
-Read this as the transport layer made visible. `192.168.10.24:52418` is the local half of the socket — the ephemeral port is how the kernel demultiplexes this reply to Firefox rather than to some other process. The four values plus the protocol form the five-tuple that uniquely identifies the connection. Nothing here says anything about HTTP; that is one layer up and invisible to `ss`.
+Read this as the transport layer made visible. `10.10.10.14:52418` is the local half of the socket — the ephemeral port is how the kernel demultiplexes this reply to Firefox rather than to some other process. The four values plus the protocol form the five-tuple that uniquely identifies the connection. Nothing here says anything about HTTP; that is one layer up and invisible to `ss`.
 
 ## Where the Models Genuinely Disagree
 

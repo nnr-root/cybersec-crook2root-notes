@@ -90,8 +90,8 @@ The model's real value is diagnostic. When something "doesn't work," resolve the
 
 ```bash
 ip link show eth0                      # L1/L2: is the interface up, is carrier present?
-ip neigh show 192.168.10.1             # L2: did the gateway answer at the link layer?
-ping -c 2 192.168.10.1                 # L3: is the local gateway reachable?
+ip neigh show 10.10.10.1             # L2: did the gateway answer at the link layer?
+ping -c 2 10.10.10.1                 # L3: is the local gateway reachable?
 ping -c 2 1.1.1.1                      # L3: does routing off-segment work?
 getent hosts example.com               # L7: does name resolution work?
 curl -sS -o /dev/null -w '%{http_code}\n' https://example.com   # L4-L7
@@ -101,7 +101,7 @@ Expected excerpt:
 
 ```text
 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP
-192.168.10.1 dev eth0 lladdr 00:1a:2b:3c:4d:5e REACHABLE
+10.10.10.1 dev eth0 lladdr 00:00:5e:00:53:01 REACHABLE
 2 packets transmitted, 2 received, 0% packet loss
 2 packets transmitted, 2 received, 0% packet loss
 200

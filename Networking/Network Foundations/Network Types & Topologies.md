@@ -107,32 +107,32 @@ Expected excerpt:
 
 ```text
 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP
-    inet 192.168.10.24/24 brd 192.168.10.255 scope global eth0
+    inet 10.10.10.14/24 brd 10.10.10.255 scope global eth0
 
-default via 192.168.10.1 dev eth0 proto dhcp metric 100
-192.168.10.0/24 dev eth0 proto kernel scope link src 192.168.10.24
+default via 10.10.10.1 dev eth0 proto dhcp metric 100
+10.10.10.0/24 dev eth0 proto kernel scope link src 10.10.10.14
 
-192.168.10.1 dev eth0 lladdr 00:1a:2b:3c:4d:5e REACHABLE
+10.10.10.1 dev eth0 lladdr 00:00:5e:00:53:01 REACHABLE
 ```
 
 Three facts fall out of that output, and each one answers a scope question:
 
-- `192.168.10.24/24` means this host's own segment holds 254 usable addresses. That is the set of hosts reachable without any routing decision.
-- `default via 192.168.10.1` identifies the gateway — the only exit from this broadcast domain, and therefore the natural place for policy.
+- `10.10.10.14/24` means this host's own segment holds 254 usable addresses. That is the set of hosts reachable without any routing decision.
+- `default via 10.10.10.1` identifies the gateway — the only exit from this broadcast domain, and therefore the natural place for policy.
 - The neighbour entry proves the gateway answered at the link layer, which is a stronger statement than "an address is configured."
 
 To enumerate live hosts within a block you are explicitly authorized to test, use a host-discovery sweep:
 
 ```bash
-nmap -sn 192.168.10.0/24
+nmap -sn 10.10.10.0/24
 ```
 
 Expected excerpt:
 
 ```text
-Nmap scan report for 192.168.10.1
+Nmap scan report for 10.10.10.1
 Host is up (0.00089s latency).
-Nmap scan report for 192.168.10.24
+Nmap scan report for 10.10.10.14
 Host is up (0.000058s latency).
 Nmap done: 256 IP addresses (2 hosts up) scanned in 2.41 seconds
 ```
@@ -144,7 +144,7 @@ Nmap done: 256 IP addresses (2 hosts up) scanned in 2.41 seconds
 The troubleshooting workflow is to change the evidence type rather than repeat the same probe:
 
 ```bash
-nmap -sn -PR 192.168.10.0/24        # ARP-based discovery, local segment only
+nmap -sn -PR 10.10.10.0/24        # ARP-based discovery, local segment only
 ```
 
 ARP discovery is far harder to suppress on a local segment because a host that ignores ARP cannot receive traffic at all. If ARP finds hosts that ICMP missed, the correct conclusion is "ICMP is filtered," not "the network changed."

@@ -70,7 +70,7 @@ Step 5 is the one beginners overlook. The IP addresses are untouched end-to-end;
 
 ```mermaid
 sequenceDiagram
-    participant H as Laptop 192.168.10.24
+    participant H as Laptop 10.10.10.14
     participant SW as Access switch
     participant R as Router / gateway
     participant FW as Firewall
@@ -114,8 +114,8 @@ table inet filter {
   }
 }
 
-tcp  6 431999 ESTABLISHED src=192.168.10.24 dst=203.0.113.10 sport=52418 dport=443
-     src=203.0.113.10 dst=192.168.10.24 sport=443 dport=52418 [ASSURED] mark=0
+tcp  6 431999 ESTABLISHED src=10.10.10.14 dst=203.0.113.10 sport=52418 dport=443
+     src=203.0.113.10 dst=10.10.10.14 sport=443 dport=52418 [ASSURED] mark=0
 ```
 
 The `ct state established,related accept` line is the whole stateful model in one rule: return traffic is not permitted by address, it is permitted because a tracked connection exists. The conntrack entry shows both directions of the flow and the timeout; `[ASSURED]` means traffic has been seen in both directions, so the entry will survive table pressure.
@@ -137,7 +137,7 @@ ip route get 203.0.113.10
 Expected excerpt:
 
 ```text
-203.0.113.10 via 192.168.10.1 dev eth0 src 192.168.10.24 uid 1000
+203.0.113.10 via 10.10.10.1 dev eth0 src 10.10.10.14 uid 1000
     cache
 ```
 
@@ -150,8 +150,8 @@ traceroute -n 203.0.113.10
 Expected excerpt:
 
 ```text
- 1  192.168.10.1     0.512 ms  0.489 ms  0.501 ms
- 2  10.255.0.1       2.118 ms  2.087 ms  2.201 ms
+ 1  10.10.10.1     0.512 ms  0.489 ms  0.501 ms
+ 2  10.10.250.1       2.118 ms  2.087 ms  2.201 ms
  3  * * *
  4  198.51.100.9    12.402 ms 12.388 ms 12.511 ms
  5  203.0.113.10    13.004 ms 12.947 ms 13.020 ms

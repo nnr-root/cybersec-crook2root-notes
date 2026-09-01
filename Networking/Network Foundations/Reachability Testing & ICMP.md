@@ -44,19 +44,19 @@ The reason this table matters more than the ping command is that **blocking ICMP
 ## What Ping Proves, and What It Does Not
 
 ```bash
-ping -c 4 192.168.20.10
+ping -c 4 10.10.20.10
 ```
 
 Expected output:
 
 ```text
-PING 192.168.20.10 (192.168.20.10) 56(84) bytes of data.
-64 bytes from 192.168.20.10: icmp_seq=1 ttl=63 time=1.42 ms
-64 bytes from 192.168.20.10: icmp_seq=2 ttl=63 time=1.38 ms
-64 bytes from 192.168.20.10: icmp_seq=3 ttl=63 time=1.51 ms
-64 bytes from 192.168.20.10: icmp_seq=4 ttl=63 time=1.44 ms
+PING 10.10.20.10 (10.10.20.10) 56(84) bytes of data.
+64 bytes from 10.10.20.10: icmp_seq=1 ttl=63 time=1.42 ms
+64 bytes from 10.10.20.10: icmp_seq=2 ttl=63 time=1.38 ms
+64 bytes from 10.10.20.10: icmp_seq=3 ttl=63 time=1.51 ms
+64 bytes from 10.10.20.10: icmp_seq=4 ttl=63 time=1.44 ms
 
---- 192.168.20.10 ping statistics ---
+--- 10.10.20.10 ping statistics ---
 4 packets transmitted, 4 received, 0% packet loss, time 3005ms
 rtt min/avg/max/mdev = 1.380/1.437/1.510/0.048 ms
 ```
@@ -88,15 +88,15 @@ Silence is not evidence of absence. It is evidence that *this particular probe* 
 Compare against an explicit rejection:
 
 ```bash
-ping -c 2 192.168.30.7
+ping -c 2 10.10.30.7
 ```
 
 ```text
-From 192.168.10.1 icmp_seq=1 Destination Host Unreachable
-From 192.168.10.1 icmp_seq=2 Destination Host Unreachable
+From 10.10.10.1 icmp_seq=1 Destination Host Unreachable
+From 10.10.10.1 icmp_seq=2 Destination Host Unreachable
 ```
 
-Here the gateway told you something concrete: it tried to deliver on the local segment and got no address resolution. That is a far stronger finding than silence, and note that the message came from `192.168.10.1` — the *router* — not the target.
+Here the gateway told you something concrete: it tried to deliver on the local segment and got no address resolution. That is a far stronger finding than silence, and note that the message came from `10.10.10.1` — the *router* — not the target.
 
 ## Traceroute: Weaponizing TTL for Good
 
@@ -128,8 +128,8 @@ traceroute -n -T -p 443 203.0.113.10
 Expected excerpt:
 
 ```text
- 1  192.168.10.1     0.498 ms  0.472 ms  0.510 ms
- 2  10.255.0.1       2.104 ms  2.081 ms  2.190 ms
+ 1  10.10.10.1     0.498 ms  0.472 ms  0.510 ms
+ 2  10.10.250.1       2.104 ms  2.081 ms  2.190 ms
  3  * * *
  4  198.51.100.9    12.410 ms 12.377 ms 12.502 ms
  5  203.0.113.10    13.011 ms 12.958 ms 13.033 ms
@@ -147,8 +147,8 @@ Expected excerpt:
 
 ```text
 HOST: workstation           Loss%   Snt   Last   Avg  Best  Wrst StDev
-  1.|-- 192.168.10.1         0.0%    20    0.5   0.5   0.4   0.7   0.1
-  2.|-- 10.255.0.1           0.0%    20    2.1   2.2   2.0   3.1   0.3
+  1.|-- 10.10.10.1         0.0%    20    0.5   0.5   0.4   0.7   0.1
+  2.|-- 10.10.250.1           0.0%    20    2.1   2.2   2.0   3.1   0.3
   3.|-- ???                 100.0%    20    0.0   0.0   0.0   0.0   0.0
   4.|-- 198.51.100.9         0.0%    20   12.4  12.5  12.3  13.9   0.4
   5.|-- 203.0.113.10         5.0%    20   13.0  13.1  12.9  15.2   0.6
