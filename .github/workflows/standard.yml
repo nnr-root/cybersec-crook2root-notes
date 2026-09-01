@@ -1,0 +1,33 @@
+name: Crook2Root standard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      - name: Structural gate
+        run: python3 docs/scripts/ci-check.py
+
+      - name: Teaching gate
+        run: python3 docs/scripts/pedagogy-check.py
+
+      - name: Backlog (never blocks)
+        if: always()
+        run: |
+          echo "### Structural backlog" >> "$GITHUB_STEP_SUMMARY"
+          python3 docs/scripts/ci-check.py --warnings >> "$GITHUB_STEP_SUMMARY" || true
+          echo "### Teaching backlog" >> "$GITHUB_STEP_SUMMARY"
+          python3 docs/scripts/pedagogy-check.py --warnings >> "$GITHUB_STEP_SUMMARY" || true
