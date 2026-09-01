@@ -1,6 +1,7 @@
-# The Thread — a proposed lab topology
+# The Thread — the Crook2Root lab topology
 
-**Status: proposal. Nothing in the corpus references this yet.**
+**Status: adopted.** Mandatory for every note that names a host, an address or a
+network. Retrofit is in progress branch by branch; see §8.
 
 The audit found 0% of notes refer to a shared running example, which means every
 note re-orients the reader in a fresh imaginary environment. The Thread fixes that:
@@ -24,6 +25,7 @@ ever collide with a real host, a real domain, or a real organisation.
 | Private IPv4 | `10.10.0.0/16`, `10.20.0.0/24` | RFC 1918 |
 | MAC addresses | `00:00:5E:00:53:00`–`FF` | RFC 7042 §2.1.2, reserved for documentation |
 | Cloud metadata | `169.254.169.254` | link-local, the real metadata address |
+| MAC (locally administered) | any address with bit 1 of byte 0 set (`02:`, `6e:`, `8a:`) | RFC 7042 — used only where the LA bit is itself the lesson |
 
 **Meridian Freight** is a fictional mid-size logistics company. Non-tech on purpose:
 its security failures read as ordinary rather than as negligence, and logistics
@@ -119,8 +121,80 @@ these directly.
   certificate example uses it, including the `openssl verify` failure/success pair
   that already exists in the TLS note.
 
+## 5a. MAC allocation
+
+Every Meridian host has one MAC, from the RFC 7042 documentation block. The last
+byte is the host's identifier; the first five bytes are constant, exactly as a
+real single-vendor fleet would look.
+
+| MAC | Host |
+|:--|:--|
+| `00:00:5E:00:53:01` | VLAN 10 gateway (10.10.10.1) |
+| `00:00:5E:00:53:0E` | `WS-014` |
+| `00:00:5E:00:53:1E` | `WS-030` |
+| `00:00:5E:00:53:20` | `DC01` |
+| `00:00:5E:00:53:21` | `FS01` |
+| `00:00:5E:00:53:22` | `APP01` |
+| `00:00:5E:00:53:23` | `LOG01` |
+| `00:00:5E:00:53:30` | `SCAN-07` |
+| `00:00:5E:00:53:40` | `jump` |
+| `00:00:5E:00:53:50` | `edge` |
+
+## 5b. What The Thread does NOT govern
+
+This is the part that decides whether the retrofit improves the corpus or damages
+it. Three categories of value are **exempt**, and rewriting them is a defect:
+
+**1. Values whose identity is the lesson.** `127.0.0.1` teaches loopback semantics.
+`0.0.0.0` teaches wildcard bind. `169.254.169.254` is the real cloud-metadata
+address and the whole point of the SSRF example. Netmasks (`255.255.255.192`) are
+arithmetic. A corpus scan found **145 of 766 IPv4 literals** in this category.
+
+*Worked precedent:* `Ethernet & Frame Structure` demonstrates a veth pair whose
+MACs are `8a:1f:2c:3d:4e:5f` and `6e:9a:0b:1c:2d:3e`, and the note teaches the
+**locally-administered bit** from those exact hex digits. Moving them to
+`00:00:5E:…` would make the paragraph false, because `00` has the LA bit clear.
+Those addresses stayed. Only the note's cold open, where the addresses were
+arbitrary scenery, moved onto The Thread.
+
+**2. Local reproductions.** When a note has the reader build something on their own
+machine — a veth pair, a Docker network, a loopback listener — that is not part of
+Meridian's network and must not be dressed as one. The Thread describes a network
+being *studied*, not every packet in every example.
+
+**3. Address arithmetic.** Notes that teach subnetting, VLSM and summarisation
+derive their examples from the relationships between specific prefixes.
+`VLSM & Route Summarization` carries 34 distinct addresses; `Subnetting & CIDR`
+carries 27. These may only move onto The Thread if the replacement preserves every
+relationship being taught — which means re-deriving the worked examples, not
+substituting strings. See §5c.
+
+## 5c. The Meridian addressing plan (for the arithmetic notes)
+
+So the subnetting notes can sit on The Thread without breaking their own maths,
+Meridian is allocated a supernet with deliberate room:
+
+```
+10.10.0.0/16          Meridian corporate supernet
+├── 10.10.10.0/24     VLAN 10  workstations      (254 hosts)
+├── 10.10.20.0/24     VLAN 20  servers           (254 hosts)
+├── 10.10.30.0/24     VLAN 30  operations        (254 hosts)
+├── 10.10.40.0/22     VLAN 40  reserved — the VLSM exercise space
+│   ├── 10.10.40.0/25    depot-north   (126 hosts)
+│   ├── 10.10.40.128/26  depot-south   (62 hosts)
+│   ├── 10.10.40.192/27  scanners      (30 hosts)
+│   └── 10.10.40.224/30  the depot link (2 hosts)
+└── 10.20.0.0/24      DMZ
+```
+
+`10.10.40.0/22` exists purely so VLSM, summarisation and subnetting examples have
+a Thread-native range to work in. A summarisation exercise over the four depot
+subnets summarises to `10.10.40.0/22` — real arithmetic, on Meridian.
+
 ## 6. Adoption rules
 
+0. **Exemptions first.** Before rewriting any value, check it against §5b. A
+   protected value rewritten is a worse defect than a scenery value left alone.
 1. **Reference by name, never re-describe.** A note says "on `APP01`", links this
    document once, and moves on. Re-describing the topology in each note is the
    split-attention failure the standard exists to prevent.
@@ -132,28 +206,41 @@ these directly.
 4. **The topology is append-only.** Adding `SCAN-08` is fine. Renumbering `APP01`
    invalidates every note that cites it.
 
-## 7. Honest cost, and what I would actually do
+## 7. Measured scope
 
-Retrofitting 302 notes is not worth it. Most already carry example values that are
-correct and self-contained; churning them buys nothing and risks breaking working
-prose.
+From a scan of all 302 leaves:
 
-**Recommended scope:**
+| | Count |
+|:--|--:|
+| Notes containing no IPv4 literal at all | **179** |
+| Notes containing at least one | 123 |
+| Total IPv4 literals | 766 |
+| **Notes off The Thread** (gate-measured) | **71** |
+| **Addresses to migrate** (gate-measured) | **205** |
+| Notes carrying >8 distinct addresses (arithmetic, §5c) | 5 |
 
-- **All new notes** — mandatory from adoption.
-- **The Tier 2 spine** (~40 notes) — retrofit as part of the rewrite that is
-  happening to those notes anyway.
-- **Everything else** — opportunistic. When a note is touched for another reason
-  and its examples are already generic, move them onto The Thread.
+The Thread is a **71-note change**, not a 302-note change. 179 notes — most of
+Cryptography, most of OS Internals, the conceptual OffSec notes — name no host at
+all. Of the 123 that do, 52 are already compliant: the corpus was already using
+RFC 5737 documentation ranges in 58 places.
+
+`pedagogy-check.py` is the authority on this number. Run it to see the live count.
 
 Two notes already conform by accident (`WS-030` / `admin_bob` in BloodHound, the
-lab CA in TLS & PKI), which is a reasonable sign the topology fits the corpus that
-exists rather than the corpus I would have designed.
+lab CA in TLS & PKI), and the corpus already uses RFC 5737 ranges in 58 places,
+which is a reasonable sign the topology fits the corpus that exists rather than
+the corpus I would have designed.
 
-**One thing to decide before adoption:** the Ethernet note's cold open currently
-uses `aa:bb:cc:11:22:33`. Under §1 that becomes a `00:00:5E:00:53:xx` documentation
-MAC. That is a one-line change, but it is the kind of change that has to happen
-everywhere at once or not at all.
+## 8. Retrofit status
+
+| Branch | Notes off Thread | Status |
+|:--|--:|:--|
+| Networking | 36 | in progress — `Ethernet & Frame Structure` done |
+| Tooling & Scripting | 18 | not started |
+| Offensive Security | 14 | not started |
+| OS Internals | 2 | not started |
+| Defensive Security | 1 | not started |
+| **Total** | **71** | |
 
 ---
 > Related: **Teaching Standard** §2 (The Thread) · **Authoring Standard** (structure)

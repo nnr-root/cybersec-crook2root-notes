@@ -27,11 +27,13 @@ The intuitive answer is zero — you typed one address, and it went to one place
 
 ```shell-session
 analyst@lab:~$ tcpdump -i eth0 -c 1 -e -x 'tcp port 443'
-14:22:07.881 aa:bb:cc:11:22:33 > 00:1a:2b:3c:4d:5e, ethertype IPv4 (0x0800), length 74
-    0x0000:  001a 2b3c 4d5e aabb cc11 2233 0800 4500
+14:22:07.881 00:00:5e:00:53:0e > 00:00:5e:00:53:01, ethertype IPv4 (0x0800), length 74
+    0x0000:  0000 5e00 5301 0000 5e00 530e 0800 4500
 ```
 
-Count the bytes before `4500`, which is where the IP packet actually starts: `001a 2b3c 4d5e` is six, `aabb cc11 2233` is six more, `0800` is two. Fourteen bytes sit in front of the packet you thought you sent — and they are thrown away and rebuilt at *every single hop*. The IP addresses inside survive the whole journey. The two addresses in front of them survive one link, then they are gone.
+That is `WS-014` in Meridian's workstation VLAN sending to its gateway. Count the bytes before `4500`, which is where the IP packet actually starts: `0000 5e00 5301` is six, `0000 5e00 530e` is six more, `0800` is two. Fourteen bytes sit in front of the packet you thought you sent — and they are thrown away and rebuilt at *every single hop*. The IP addresses inside survive the whole journey. The two addresses in front of them survive one link, then they are gone.
+
+The two addresses differ only in their final byte, which is not an accident of the lab: the first three bytes of any MAC are the **OUI**, the block assigned to a vendor. Devices bought from the same vendor genuinely do look this similar on the wire, and learning to read the byte that distinguishes them is part of reading a capture.
 
 Those fourteen bytes are an **Ethernet frame header**, and this is the distinction the rest of the note rests on. At the link layer, data does not travel as a "packet" — that word belongs to Layer 3. It travels as a **frame**: a structured sequence of bytes with a header, a payload, and a trailer, addressed to a device on *this segment only*.
 

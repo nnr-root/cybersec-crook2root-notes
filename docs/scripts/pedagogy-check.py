@@ -22,6 +22,7 @@ decide whether a correct note actually gets learned.
     * no question asked anywhere in the body ............. One Pre-Question
     * an analogy with no stated breaking point
     * shell commands not re-verified in 12 months (needs `verified:` frontmatter)
+    * addresses that are not on The Thread and not exempt under Lab Topology §5b
 
 Four patterns are deliberately NOT checked — The Break, The Twin, The Tell and
 The Fade. A regex that "detected" a naive-model beat would only teach us to type
@@ -101,6 +102,34 @@ ANALOGY_BREAK = re.compile(
     r"stops being accurate|don't carry that|unlike a|the analogy is imperfect)")
 PROSE_Q = re.compile(r"\?")
 VERIFIED = re.compile(r"^verified:\s*(\d{4})-(\d{2})-(\d{2})\s*$", re.M)
+
+# ── The Thread ────────────────────────────────────────────────────────────────
+# Every address in the corpus must be either a Meridian address, a reserved
+# documentation range, or a value whose identity is itself the lesson (§5b of
+# docs/Crook2Root Lab Topology.md). Anything else is scenery that should be on
+# The Thread.
+IPV4 = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
+PROTECTED_IPS = {
+    "0.0.0.0",            # wildcard bind
+    "169.254.169.254",    # the real cloud-metadata address
+    "8.8.8.8", "8.8.4.4", "1.1.1.1", "9.9.9.9",   # real public resolvers, named as such
+    "255.255.255.255",    # limited broadcast
+}
+def _thread_ok(ip):
+    if ip in PROTECTED_IPS or ip.startswith(("127.", "255.", "224.", "239.")):
+        return True                                  # identity is the lesson
+    o = ip.split(".")
+    try:
+        a, b = int(o[0]), int(o[1])
+    except ValueError:
+        return True
+    if (a, b) in {(192, 0), (198, 51), (203, 0)}:    # RFC 5737 documentation
+        return True
+    if a == 10 and b in (10, 20):                    # Meridian corporate + DMZ
+        return True
+    if a == 169 and b == 254:                        # link-local
+        return True
+    return False
 
 
 def fence_mask(lines):
@@ -247,6 +276,14 @@ def check(root="."):
         if ANALOGY.search(body) and not ANALOGY_BREAK.search(body):
             warnings.append(f"{rel}: analogy with no stated breaking point — "
                             f"say which part of it does not carry over")
+
+        # ── WARNING: off-Thread addresses ─────────────────────────────────────
+        off = sorted({ip for ip in IPV4.findall(body) if not _thread_ok(ip)})
+        if off:
+            shown = ", ".join(off[:4]) + (f" (+{len(off)-4} more)" if len(off) > 4 else "")
+            warnings.append(f"{rel}: {len(off)} address(es) off The Thread — {shown}. "
+                            f"Move onto Meridian, or confirm they are exempt "
+                            f"(Lab Topology §5b)")
 
         # ── WARNING: staleness ────────────────────────────────────────────────
         if EXAMPLE_FENCE.search(body):
