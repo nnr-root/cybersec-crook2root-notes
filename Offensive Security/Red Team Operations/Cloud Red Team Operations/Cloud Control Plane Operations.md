@@ -19,6 +19,14 @@ A cloud resource has a **data plane** (the app serving requests) and a **control
 
 The bridge between them is the **Instance Metadata Service (IMDS)** at the link-local address `169.254.169.254`. Any code on a cloud VM can ask IMDS for the temporary credentials of the role attached to that instance. That is convenient for the app — and catastrophic when a **server-side request forgery (SSRF)** bug lets an attacker make the server fetch that URL for them.
 
+**The deliberate break:** you got root on the instance, so you own the machine and everything on it. That is the on-premises conclusion and it understates the situation badly.
+
+Cloud has **two planes**, and the host is the smaller one. The **data plane** is the instance — its filesystem, its processes, the thing root controls. The **control plane** is the API that created it, and it sits *above* the host: it can read the disk from a snapshot, replace the boot image, mint credentials, or delete the instance entirely, none of which root can prevent or even observe. So the interesting question after landing on a box is not what root can do; it is **what the instance's attached role can do**, because that identity operates in the plane above the one you compromised.
+
+That is also why SSRF is so severe here rather than merely inconvenient — reaching the metadata endpoint hands you the role's credentials without ever touching the host at all.
+
+**How you'd spot the real privilege:** query the instance's own identity and enumerate its permissions before enumerating the filesystem. An unprivileged web service with an over-permissive attached role is a bigger finding than root on a box with none.
+
 ## SSRF Is the Classic Control-Plane Pivot
 
 The attack chain is short and devastating:

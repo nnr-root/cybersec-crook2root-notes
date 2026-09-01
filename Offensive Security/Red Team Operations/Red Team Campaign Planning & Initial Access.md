@@ -33,6 +33,14 @@ The defining principle, which separates a professional red team from a criminal:
 
 **Prerequisites:** **Threat Modeling & MITRE ATT&CK** (choosing the adversary/behaviors), **Rules of Engagement & Scoping** (authorization/safety), and the **Guided Red Team & Purple Team Operation** walkthrough.
 
+**The deliberate break:** a red team is a stealthier penetration test — same activity, better tradecraft, quieter tools.
+
+They measure different things, and that changes what "success" means. A penetration test measures the **estate**: how many exploitable weaknesses exist, so they can be fixed. A red team measures the **defenders**: whether this organisation's people, process and tooling detect and respond to a realistic adversary. The deliverable is not a list of holes, it is a scored account of what was seen, when, by whom, and what happened next.
+
+Which produces the counterintuitive rule: an operation optimised for *not getting caught* has failed at its purpose. If you evade everything and nobody ever notices, you have learned that one path was undetected and nothing about the response capability the client is paying to assess. The plan must therefore state, up front, which behaviours you will emit deliberately so the blue team has something to catch.
+
+**How you'd spot a plan that has drifted:** it lists techniques and no expected detections. A campaign plan without a behaviour matrix — what we will do, where it should be seen — is a pentest wearing a red team's vocabulary.
+
 ## Campaign Planning: From Concern to Measurable Operation
 
 A plan translates a business concern into a bounded, scored operation. The essential elements:

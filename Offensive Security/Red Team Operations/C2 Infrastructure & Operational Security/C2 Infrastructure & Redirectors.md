@@ -34,6 +34,14 @@ The professional framing that distinguishes authorized C2 from criminal C2: **it
 
 **Prerequisites:** the Networking domain (HTTP/DNS, proxies), **Red Team Campaign Planning & Initial Access**, and OS/process basics.
 
+**The deliberate break:** the C2 server is the infrastructure. Stand it up, point the agents at it, and harden it well.
+
+If the agent knows your control server's address, so does the defender — the first analyst who examines a beacon reads your infrastructure straight out of it. One blocklist entry ends the operation, one abuse report seizes the host, and the addresses you spent weeks warming are burned in an afternoon. **The operator is never directly exposed**, and a redirector is not hardening applied to a working design; it *is* the design.
+
+The second half people underestimate: what gets you caught is rarely the payload. It is **behaviour** — a beacon calling home on a fixed interval produces a metronomic connection pattern that stands out in flow data no matter how well the payload is obfuscated, which is exactly what the **Zeek** note teaches defenders to look for. Jitter, realistic intervals and a profile that matches plausible traffic do more for survival than any amount of packing.
+
+**How you'd spot the mistake in your own build:** extract the configuration from your own agent as a defender would. If the address you find is a host you care about, the architecture is wrong before the operation starts.
+
 ## C2 Architecture: The Moving Parts
 
 | Component | Role |

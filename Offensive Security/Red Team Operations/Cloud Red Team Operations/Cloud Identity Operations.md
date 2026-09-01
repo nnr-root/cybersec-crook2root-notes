@@ -19,6 +19,14 @@ There is no network edge to breach in a cloud account — every action is an API
 
 The canonical example is `iam:PassRole`. On its own it is harmless. Combined with a service that *runs code with a role you pass it* — Lambda, EC2, Glue — it becomes: "create a function, pass it the admin role, invoke it, and now your code runs as admin."
 
+**The deliberate break:** cloud security is network security in somebody else's datacentre — segment it, firewall it, and the familiar rules apply.
+
+There is no network to stand in. In cloud, **identity is the perimeter**, and the lateral movement you are used to is replaced by *assuming a role*. No packet crosses a segment, no host is compromised, nothing gets exploited: a principal calls an API it is permitted to call, receives credentials for a second principal, and is now that principal. A firewall cannot see it and a network diagram cannot show it, because it happened entirely inside the control plane's authorisation model.
+
+That is why the dangerous findings here are **permission combinations** rather than vulnerabilities. `iam:PassRole` next to a compute-creation permission is not a bug in anything; it is two grants that compose into privilege escalation, in the same way the AD note's five sanctioned rights composed into Domain Admin.
+
+**How you'd spot it:** enumerate what your current principal may do, then ask which of those actions can produce *another* principal's credentials — pass a role, create a key, assume, update a trust policy. That question, not a CVE list, is the cloud escalation path.
+
 ## Dangerous Permission Combinations
 
 | Combination | Why it escalates |

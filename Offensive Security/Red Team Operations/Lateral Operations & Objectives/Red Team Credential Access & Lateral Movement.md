@@ -33,6 +33,14 @@ The defining idea: **every credential-access and lateral-movement technique has 
 
 **Prerequisites:** the Post-Ex **Credential Access & Secret Hunting** and **Pivoting & Tunneling** leaves (the mechanics), **Kerberos & NTLM Attacks** (PtH/tokens), and **AV, EDR & Telemetry Evasion Testing** (detection layers).
 
+**The deliberate break:** having landed, collect every credential and reach every host you can. Wider access is more access, and more access is a better result.
+
+That is pentest reasoning, and applied to a red team it destroys the measurement. Each additional host and each additional credential dump is another opportunity to be detected — which sounds like the danger, but the real cost is different: **once you are noticed, everything after it measures a defender who is already alerted**, not a defender operating normally. Maximising reach converts a clean assessment of steady-state detection into one noisy event.
+
+The red team's move is to pick the **quiet path to the objective**, take only what that path needs, and stop at proof rather than at exhaustion. Reaching the objective by one route the defenders did not see is a more useful finding than reaching it by six routes after tripping the first.
+
+**How you'd spot the drift:** you are collecting credentials you have no plan to use. In a red team, a credential you took without a route in mind is pure detection risk for no measurement gain.
+
 ## Credential Access, Measured
 
 Red team credential access validates memory/vault/file/token/service-account/cloud/directory protections *and* their telemetry:

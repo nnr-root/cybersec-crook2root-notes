@@ -62,6 +62,14 @@ flowchart TD
     EDR -->|"direct syscalls / LOLBin -> harder"| OBJ["objective (still leaves ETW traces)"]
 ```
 
+**The deliberate break:** the payload was not flagged, so the endpoint stack was evaded.
+
+Static antivirus and behavioural EDR are **different layers answering different questions**, and beating the first says nothing about the second. AV asks *do these bytes look like something I know* — obfuscation, packing and encoding defeat it, and that is the layer people mean when they report a "bypass". EDR asks *is this sequence of actions what a legitimate program does* — and it observes the process tree, the injection, the handle request, the network callback. Those events fire identically whether your payload was obfuscated or not, because the behaviour is the same behaviour.
+
+So "we got past AV" is a finding about one layer, and reporting it as endpoint evasion overstates the result to a client who will make defensive decisions on it.
+
+**How you'd spot which layer you actually beat:** if the file was never quarantined but an alert fired after execution, the static layer missed it and the behavioural layer caught it. Those need separate rows in the coverage matrix, because they need separate fixes.
+
 ## Worked Example: A Coverage Matrix Across Two Detection Layers
 
 Evasion testing produces one deliverable above all others: a matrix of which
