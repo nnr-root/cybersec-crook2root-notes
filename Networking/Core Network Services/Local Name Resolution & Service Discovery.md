@@ -87,9 +87,9 @@ sudo tcpdump -i eth0 -nn 'udp port 5355 or udp port 137 or udp port 5353'
 Expected excerpt:
 
 ```text
-IP 192.168.10.30.54211 > 224.0.0.252.5355: UDP, length 24   # LLMNR query
-IP 192.168.10.30.137 > 192.168.10.255.137: UDP, length 50   # NetBIOS broadcast
-IP 192.168.10.44.5353 > 224.0.0.251.5353: UDP, length 32    # mDNS query
+IP 10.10.10.30.54211 > 224.0.0.252.5355: UDP, length 24   # LLMNR query
+IP 10.10.10.30.137 > 10.10.10.255.137: UDP, length 50   # NetBIOS broadcast
+IP 10.10.10.44.5353 > 224.0.0.251.5353: UDP, length 32    # mDNS query
 ```
 
 Seeing LLMNR (5355) and NetBIOS (137) queries on an enterprise segment is itself a finding: these protocols are usually unnecessary where DNS is properly configured, and every query is an opportunity for an attacker to answer. Their presence indicates both an attack surface and, often, a DNS misconfiguration causing the failed lookups that trigger them.

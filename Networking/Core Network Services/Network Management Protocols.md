@@ -41,7 +41,7 @@ These are complementary. Polling gives you current metrics (interface utilizatio
 **SNMP (Simple Network Management Protocol)** lets a management system query and configure network devices. A device runs an **agent** exposing a tree of values — the **MIB (Management Information Base)** — where each value has a numeric address called an **OID (Object Identifier)**. The manager polls OIDs for metrics, and devices can also push unsolicited **traps** when something notable occurs.
 
 ```bash
-snmpwalk -v2c -c public 192.168.10.1 system
+snmpwalk -v2c -c public 10.10.10.1 system
 ```
 
 Expected excerpt:
@@ -83,9 +83,9 @@ Classic syslog runs over UDP 514 — unencrypted, unauthenticated, and unreliabl
 
 ```text
 SrcIP           DstIP           Proto SrcPt DstPt  Packets Bytes  Flags
-10.0.5.22       203.0.113.90    TCP   52418 443    1204    88213  ...S
-10.0.5.22       198.51.100.7    UDP   51002 53     6       540    ...
-10.0.5.99       185.22.11.4     TCP   49877 4444   88291   14M    ...
+10.10.10.22     203.0.113.90    TCP   52418 443    1204    88213  ...S
+10.10.10.22     198.51.100.7    UDP   51002 53     6       540    ...
+10.10.10.99     198.51.100.9    TCP   49877 4444   88291   14M    ...
 ```
 
 Flow data is uniquely valuable because it scales and it survives encryption. Recording the full payload of a busy network is impractical and, increasingly, impossible because the traffic is encrypted. But flow *metadata* — who connected to whom, when, how much — is compact enough to retain for long periods and remains visible even when the content does not. The third row above tells a story without any payload: a large sustained transfer to an unusual high port on an external host is the shape of exfiltration or command-and-control, detectable purely from the metadata.

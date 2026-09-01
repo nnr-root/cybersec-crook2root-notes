@@ -8,6 +8,8 @@ tags:
   - difficulty/easy
 Domain:
   - "[[Core Network Services]]"
+thread-exempt:
+  - "10.113.0.203: not an address — the reversed in-addr.arpa name for 203.0.113.10, which is edge"
 Color: "#42D4F4"
 ---
 
@@ -86,7 +88,7 @@ A DNS record maps a name to data of a specific type.
 | **MX** | Mail servers for a domain, with priority | `10 mail.example.com.` |
 | **NS** | Delegates a zone to authoritative servers | `ns1.example.com.` |
 | **TXT** | Arbitrary text; carries SPF, DKIM, DMARC, verification | `"v=spf1 include:..."` |
-| **PTR** | Address → name (reverse lookup) | `10.113.0.203.in-addr.arpa. → www.example.com.` |
+| **PTR** | Address → name (reverse lookup) | `10.113.0.203.in-addr.arpa. → edge.meridian.test.` |
 | **SRV** | Service location: host, port, priority, weight | `_ldap._tcp` → host and port |
 | **SOA** | Zone authority and timing parameters | Serial, refresh, expiry |
 | **CAA** | Which certificate authorities may issue for this domain | `0 issue "letsencrypt.org"` |
