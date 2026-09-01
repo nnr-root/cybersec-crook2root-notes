@@ -119,8 +119,8 @@ regardless of what it then does with the credentials.
 
 You should now be able to:
 
-- Why is stealing an instance's metadata credentials worse than compromising the app on it?
-- You find an SSRF in a URL-preview feature. What exact request proves control-plane exposure with a canary?
+- Explain why stealing an instance's metadata credentials is worse than compromising the application running on it.
+- Prove control-plane exposure from an SSRF in a URL-preview feature with a single canary request.
 - Explain precisely how IMDSv2's session-token requirement blocks a basic SSRF, and what SSRF variant can still defeat it.
 
 ---

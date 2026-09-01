@@ -65,8 +65,8 @@ Edge cases worth knowing: salted formats (`$id$salt$hash`) are self-describing a
 
 You should now be able to:
 
-- What three visual signals let you identify a hash type by eye?
-- `nth` returns both MD5 and NTLM for a 32-hex value. How do you decide which mode to actually run?
+- Name the three visual signals that identify a hash type by eye.
+- Decide which mode to run when `nth` returns both MD5 and NTLM for a 32-hex value.
 - Explain why a prefixed hash like `$2b$...` is unambiguous but a bare 32-hex string is not, and what goes wrong if you crack with the wrong `-m`.
 
 ---

@@ -51,8 +51,8 @@ operator@lab:~$ curl -s http://vuln.example.test/backup/ | head -n 2
 
 You should now be able to:
 
-- Why is Nikto a "first sweep" rather than a thorough application test?
-- Nikto flags `/backup/` as interesting. What's your next step before it goes in the report?
+- Explain why Nikto is a first sweep rather than a thorough application test.
+- Take the next step on a `/backup/` path Nikto flagged, before it goes in the report.
 - Explain why a server-version alert can be a false positive, and how back-porting complicates version-based CVE claims.
 
 ---

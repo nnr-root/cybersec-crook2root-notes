@@ -35,8 +35,8 @@ Have an artifact -> look it up / process it in the browser -> get a lead -> veri
 
 You should now be able to:
 
-- Why is a reference site like GTFOBins a "tool" even though it runs nothing on the target?
-- Which of these tools must you never feed real production data, and why?
+- Explain why a reference site like GTFOBins counts as a tool even though it runs nothing on the target.
+- Identify which of these tools must never be fed real production data, and why.
 - Explain the operational-security tradeoff of a public web tool (convenience) versus a self-hosted copy (no data leakage).
 
 ---

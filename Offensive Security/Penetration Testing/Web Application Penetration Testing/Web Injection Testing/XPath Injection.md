@@ -171,8 +171,8 @@ The team replaced string construction with a precompiled expression and bound va
 
 You should now be able to:
 
-- Why does `' or '1'='1` return every user?
-- Output is suppressed (blind). How do you turn `substring()` and `string-length()` into a boolean oracle to read one canary node?
+- Explain why `' or '1'='1` returns every user.
+- Turn `substring()` and `string-length()` into a boolean oracle to read one canary node from a blind endpoint.
 - XPath 1.0 lacks a comment token like SQL's `--`. Explain how that changes payload construction versus SQL injection.
 
 ---

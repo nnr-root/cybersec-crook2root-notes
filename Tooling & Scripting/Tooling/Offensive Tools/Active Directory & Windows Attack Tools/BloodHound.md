@@ -48,8 +48,8 @@ Path found:  jdoe →(MemberOf)→ Helpdesk →(HasSession on WS30)→ admin_bob
 
 You should now be able to:
 
-- Why is modelling AD as a graph of edges more powerful than reading group memberships?
-- After collecting, what two steps turn the graph into an attack plan?
+- Explain why modelling AD as a graph of edges is more powerful than reading group memberships.
+- Turn a collected graph into an attack plan in two steps.
 - Explain why the "shortest path" isn't always the easiest, contrasting a session-dependent edge with an ACL edge.
 
 ---

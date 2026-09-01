@@ -108,8 +108,8 @@ the persistence, whatever legitimate API call created it.
 
 You should now be able to:
 
-- Why doesn't rotating passwords remove a role-trust-policy backdoor?
-- You simulate persistence in a lab account. Which CloudTrail events must fire, and how do you verify full cleanup?
+- Explain why rotating passwords does not remove a role-trust-policy backdoor.
+- Name the CloudTrail events a simulated persistence must fire, and verify full cleanup afterwards.
 - Compare an added access key, a trust-policy edit, and an OIDC federation backdoor by detectability and durability, and justify the ranking.
 
 ---

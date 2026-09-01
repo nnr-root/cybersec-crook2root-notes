@@ -61,7 +61,7 @@ Sysmon's power and its blind spot are the same thing — the **config**:
 
 You should now be able to:
 
-- What does Sysmon add over default Windows logging, and why is Event ID 1 so central?
+- Describe what Sysmon adds over default Windows logging, and why Event ID 1 is central.
 - Map three Event IDs to the attacker behaviour each catches.
 - Explain why "the config is the tool," and how an attacker or a stopped driver creates a blind spot.
 

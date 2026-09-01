@@ -73,8 +73,8 @@ uid=1000(low) euid=0(root)
 
 You should now be able to:
 
-- How does GTFOBins turn a LinPEAS finding into an actual escalation?
-- You have `sudo -l` showing NOPASSWD on `vim`. What do you look up, and what's the escape?
+- Turn a LinPEAS finding into an actual escalation with GTFOBins.
+- Look up and apply the escape for `sudo -l` showing NOPASSWD on `vim`.
 - Explain why the `-p` flag is required on the SUID `find` escape, in terms of real vs. effective UID.
 
 ---

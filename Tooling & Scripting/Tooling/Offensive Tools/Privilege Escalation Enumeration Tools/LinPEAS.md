@@ -68,7 +68,7 @@ Operational internals: run with `-a` for all checks (slower, thorough) or target
 
 You should now be able to:
 
-- What is the one thing every privilege-escalation vector has in common?
+- Name the one thing every privilege-escalation vector has in common.
 - LinPEAS highlights `(root) NOPASSWD: /usr/bin/tar`. Turn it into a root shell and explain why it works.
 - Explain why LinPEAS's colour ranking is a heuristic, and why a low-confidence line still needs manual verification (both directions of error).
 

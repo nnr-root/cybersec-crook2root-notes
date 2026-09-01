@@ -72,7 +72,7 @@ The fastest run is **not** automatically the best: validate that a known-open ca
 
 You should now be able to:
 
-- What does RustScan do quickly, and what does it hand to Nmap — and why does it need no root?
+- Describe what RustScan does quickly, what it hands to Nmap, and why it needs no root.
 - Write a RustScan command that finds open ports and runs `nmap -sV` on only those ports.
 - Explain how batch size collides with `ulimit -n`, and why a too-high batch can cause false negatives rather than an error.
 

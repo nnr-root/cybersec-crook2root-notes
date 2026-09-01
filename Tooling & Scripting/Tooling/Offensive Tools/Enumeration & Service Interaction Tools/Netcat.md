@@ -99,7 +99,7 @@ Defensively, raw listeners, odd outbound destinations, and plaintext probes show
 
 You should now be able to:
 
-- Why is Netcat described as just "a pipe between two byte streams"?
+- Explain why Netcat is described as a pipe between two byte streams.
 - You catch a raw reverse shell but arrow keys and `sudo` fail. Upgrade it to a full TTY, and explain what `rlwrap` fixes versus a PTY spawn.
 - Explain why `nc -uz` can falsely report a UDP port open, and how you'd truly confirm it.
 

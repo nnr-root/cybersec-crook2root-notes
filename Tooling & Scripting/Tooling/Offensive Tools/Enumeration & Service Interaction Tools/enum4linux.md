@@ -64,8 +64,8 @@ Internals: `enum4linux-ng` speaks more protocols and outputs JSON (better than t
 
 You should now be able to:
 
-- What is a "null session" and why does SMB allow it?
-- enum4linux reports "lockout threshold: none." How does that single fact shape your next step?
+- Define a "null session" and explain why SMB allows it.
+- Shape the next step from a single enum4linux fact — "lockout threshold: none".
 - Explain why a `STATUS_ACCESS_DENIED` result is itself a finding, and which setting produces it.
 
 ---

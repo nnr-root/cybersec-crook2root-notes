@@ -59,7 +59,7 @@ eval "echo Hello $name"                     # name='; rm -rf ~' → command inje
 
 You should now be able to:
 
-- What is Bash actually good for, and when should you stop using it?
+- State what Bash is genuinely good for, and recognise the point at which to stop using it.
 - Write the safe-script preamble and explain what `set -Eeuo pipefail` and quoting buy you.
 - Show how `for f in $(ls)` and `eval` are the same class of bug, and how it becomes command injection.
 

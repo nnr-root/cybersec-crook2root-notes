@@ -82,8 +82,8 @@ Fix at the value boundary: **parameterized statements everywhere**, fixed allow-
 
 You should now be able to:
 
-- Why does `admin' -- ` log you in, and why can't a parameterized query be tricked the same way?
-- Given a blind endpoint with no errors and no reflected output, which subtype do you choose, and what makes your result *proof* rather than a coincidence?
+- Explain why `admin' -- ` authenticates, and why a parameterised query cannot be tricked the same way.
+- Select the right subtype for a blind endpoint with no errors and no reflected output, and explain what makes the result *proof* rather than coincidence.
 - Step 4's UNION needed exactly three columns. Explain how you'd determine the column count on a real target without seeing the source, and why a type mismatch in one column still leaks information.
 
 ---

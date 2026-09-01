@@ -157,7 +157,7 @@ The fix used the vendor library’s filter encoder, enforced a bounded UID synta
 
 You should now be able to:
 
-- What does `(uid=*)` match, and why is that dangerous in a login filter?
+- Explain what `(uid=*)` matches, and why that is dangerous inside a login filter.
 - A login form builds `(&(uid=INPUT)(userPassword=INPUT2))`. Sketch the input that authenticates as the first admin without knowing the password.
 - DN injection and filter injection need different escaping tables. Explain why, and what breaks if you use filter escaping in a DN context.
 

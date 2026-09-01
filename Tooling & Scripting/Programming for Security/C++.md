@@ -58,7 +58,7 @@ $ clang++ -fsanitize=address parser.cpp -o parser && ./parser sample.bin
 
 You should now be able to:
 
-- When is C++ the right choice, and what safety does it give up?
+- Judge when C++ is the right choice, and name the safety it gives up.
 - Rewrite an unsafe `strcpy` parse into bounds-checked modern C++.
 - Explain why a use-after-free can pass tests, and how sanitizers + fuzzing catch it before it ships.
 

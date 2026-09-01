@@ -57,7 +57,7 @@ OrgName: SomeOtherCloudTenant, Inc.        ← NOT Acme Corp anymore
 
 You should now be able to:
 
-- Why does searching Shodan reveal a target's exposed services without you scanning them?
+- Explain why searching Shodan reveals a target's exposed services without scanning them yourself.
 - Write a Shodan query to find an org's exposed RDP, and name three useful filters.
 - Explain Shodan's two snapshot hazards (stale state and IP reassignment) and what you verify before acting on a result.
 

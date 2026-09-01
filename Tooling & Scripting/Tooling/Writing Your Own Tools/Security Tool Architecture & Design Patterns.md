@@ -71,7 +71,7 @@ def main():
 
 You should now be able to:
 
-- What single principle turns a script into a maintainable tool?
+- Name the single principle that turns a script into a maintainable tool.
 - Show how the strategy/registry pattern adds a capability without editing the engine.
 - Take a "god script" and explain what becomes possible once the detection logic is extracted into a pure, I/O-free function.
 

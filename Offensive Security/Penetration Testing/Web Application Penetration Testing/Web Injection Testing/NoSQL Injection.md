@@ -187,9 +187,9 @@ The engineering team added runtime JSON Schema validation at the route, construc
 
 You should now be able to:
 
-- Why does `{"$ne":"x"}` log in when `"guess"` does not?
-- The endpoint accepts JSON. What one property of the request lets an operator object reach the query, and how would you prove control with a canary rather than dumping the collection?
-- Contrast this with SQL injection: why does parameterization fix SQLi but *type/schema validation* is the right fix here?
+- Explain why `{"$ne":"x"}` authenticates where `"guess"` does not.
+- Identify the property of a JSON request that lets an operator object reach the query, and prove control with a canary rather than dumping the collection.
+- Contrast this with SQL injection — explain why parameterisation fixes SQLi while *type and schema validation* is the correct fix here.
 
 ---
 > 🔼 Up: [[Web Injection Testing]]

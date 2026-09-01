@@ -66,7 +66,7 @@ cat conn.log | zeek-cut id.resp_h ts | (detect constant interval) → BEACON at 
 You should now be able to:
 
 - Name the four C2 roles and explain why a redirector sits between the target and the team server.
-- What do sleep, jitter, and a malleable profile each control, and why does jitter matter most for detection?
+- Explain what sleep, jitter and a malleable profile each control, and why jitter matters most for detection.
 - Show how a no-jitter beacon is caught in `conn.log`, and map three C2 design choices to the blue-team detection each resists.
 
 ---

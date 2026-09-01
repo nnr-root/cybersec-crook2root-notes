@@ -81,7 +81,7 @@ alert → drop   → legitimate connections to a partner API now BLOCKED for eve
 
 You should now be able to:
 
-- In what three roles can Suricata operate, and how does it differ from a pure signature IDS?
+- Name the three roles Suricata can operate in, and explain how it differs from a pure signature IDS.
 - Read a Suricata rule's structure, and name the output that feeds a SIEM.
 - Explain why the same rule is safe in IDS mode but dangerous in IPS mode, and what that implies for rollout.
 

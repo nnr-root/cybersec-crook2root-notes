@@ -56,7 +56,7 @@ index=windows sourcetype=Sysmon EventCode=1 process_name=mimikatz.exe earliest=-
 
 You should now be able to:
 
-- Why is SPL described as a "pipeline language," and what does `|` do?
+- Explain why SPL is described as a "pipeline language", and what `|` does.
 - Write a bounded search that counts Office-spawns-PowerShell events, and name three transforming commands.
 - Explain why an unbounded search is dangerous, and why SPL's power is also a portability problem.
 

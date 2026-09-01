@@ -54,7 +54,7 @@ fixture_restored=true        ← and it was reversed
 
 You should now be able to:
 
-- Why does ShadowStep promote the scope guard to a mandatory gate, and what does the dry-run plan produce?
+- Explain why ShadowStep promotes the scope guard to a mandatory gate, and what the dry-run plan produces.
 - Walk the plan → simulate → verify flow, and explain what each guarantees.
 - Explain why deleting a log doesn't destroy the evidence, and how ShadowStep pairs each action with its detection.
 

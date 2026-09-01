@@ -131,7 +131,7 @@ admin" query) find what a line-by-line review misses.
 
 You should now be able to:
 
-- Why is "identity is the perimeter" true in a cloud account with no network edge?
+- Explain why "identity is the perimeter" holds in a cloud account with no network edge.
 - Given a role with `iam:PassRole` and `ec2:RunInstances`, describe the escalation and the canary that proves it safely.
 - Explain how a permissions boundary or SCP stops `PassRole` escalation even when the principal's own policy allows it.
 

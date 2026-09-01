@@ -163,8 +163,8 @@ The remediation replaced the shell wrapper with a resolver library and removed p
 
 You should now be able to:
 
-- Why does `; id` run a second program, and why would `subprocess.run(["ping","-c1",host])` make it harmless?
-- The endpoint hides command output (blind). Which technique proves execution, and how do you keep it bounded and authorized?
+- Explain why `; id` runs a second program, and why `subprocess.run(["ping","-c1",host])` makes it harmless.
+- Choose a technique that proves execution against a blind endpoint hiding command output, and keep it bounded and authorised.
 - Explain how argument-vector execution still leaves *argument injection* risk (e.g. a leading `-` interpreted as an option) and how you would test for it.
 
 ---

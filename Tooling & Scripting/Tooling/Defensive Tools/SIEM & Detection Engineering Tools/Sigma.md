@@ -66,7 +66,7 @@ ParentImage="*\\winword.exe" ...
 
 You should now be able to:
 
-- What problem does Sigma solve that writing SPL directly does not?
+- Explain the problem Sigma solves that writing SPL directly does not.
 - Name the three parts of a Sigma rule, and how you turn one into a Splunk query.
 - Explain why a valid compiled Sigma rule can still match nothing, and what makes it actually fire.
 

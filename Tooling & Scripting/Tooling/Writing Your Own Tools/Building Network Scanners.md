@@ -64,7 +64,7 @@ await asyncio.open_connection(host, 445)   # ...hangs indefinitely, scan never f
 
 You should now be able to:
 
-- What is a scanner's "engine," and which architecture layer makes it more than a `for` loop?
+- Define a scanner's "engine", and name the architecture layer that makes it more than a `for` loop.
 - Write a bounded async probe with a timeout, and explain why each is necessary.
 - Explain the two failure modes of unbounded/untimed scanning, and how a semaphore and a timeout fix them.
 

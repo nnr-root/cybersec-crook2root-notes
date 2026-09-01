@@ -64,7 +64,7 @@ from multiprocessing import Pool          # THIS parallelises CPU work (separate
 
 You should now be able to:
 
-- Why is Python the default for security tooling, and what does it trade away?
+- Explain why Python is the default for security tooling, and what it trades away.
 - Write a bounded async probe and name the libraries you'd use instead of rolling your own.
 - Explain the GIL, and why threads speed up a scanner but not a pure-Python hasher.
 

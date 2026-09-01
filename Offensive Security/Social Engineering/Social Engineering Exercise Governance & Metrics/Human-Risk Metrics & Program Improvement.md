@@ -97,8 +97,8 @@ measuring human risk; it is producing a number that can be made to say anything.
 
 You should now be able to:
 
-- Why is "compromise rate" more meaningful than "click rate"?
-- Given the numbers above, what single program change would you prioritise, and what retest proves it worked?
+- Explain why "compromise rate" carries more information than "click rate".
+- Prioritise a single programme change from a set of exercise numbers, and specify the retest that proves it worked.
 - Explain how to trend human-risk metrics over time without gaming (e.g. easier lures inflating improvement) and how to tie them to real incident reduction.
 
 ---

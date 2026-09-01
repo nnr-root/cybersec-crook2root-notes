@@ -55,8 +55,8 @@ operator@kali:~$ impacket-secretsdump -hashes :A1B2C3... corp/jsmith@10.10.20.30
 
 You should now be able to:
 
-- What trust flaw in LLMNR/NBT-NS lets Responder capture a hash with no credentials?
-- How do you capture a NetNTLMv2 hash and crack it, and what does Analyze mode do?
+- Identify the trust flaw in LLMNR and NBT-NS that lets Responder capture a hash with no credentials.
+- Capture a NetNTLMv2 hash and crack it, and explain what Analyze mode does.
 - Explain why a Responder-captured NetNTLMv2 hash can't be passed, and the two things you can do with it instead.
 
 ---

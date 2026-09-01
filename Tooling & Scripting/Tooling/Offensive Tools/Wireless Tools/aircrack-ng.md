@@ -60,7 +60,7 @@ Passphrase not in dictionary          (exhausted 14 million candidates)
 
 You should now be able to:
 
-- Why is WPA2 cracking an *offline* attack, and what does the 4-way handshake give you?
+- Explain why WPA2 cracking is an *offline* attack, and what the 4-way handshake provides.
 - Walk the airmon → airodump → aireplay → aircrack pipeline, and say what each step does.
 - Explain why capturing a handshake isn't cracking a network, and what really determines whether it falls.
 

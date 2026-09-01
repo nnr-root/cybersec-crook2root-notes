@@ -133,8 +133,8 @@ Use cryptographic credentials, diversified keys, secure enrollment, rapid revoca
 
 You should now be able to:
 
-- Why is a 125 kHz proximity badge that transmits only a static ID trivially cloneable?
-- In an authorized test, how do you demonstrate a badge-cloning risk using a synthetic credential without cloning a real employee's badge?
+- Explain why a 125 kHz proximity badge that transmits only a static ID is trivially cloneable.
+- Demonstrate badge-cloning risk in an authorised test using a synthetic credential, without cloning a real employee's badge.
 - Contrast low-frequency 125 kHz cards with 13.56 MHz smartcards (e.g. DESFire): explain which uses cryptographic challenge-response and why that defeats simple UID replay.
 
 ---

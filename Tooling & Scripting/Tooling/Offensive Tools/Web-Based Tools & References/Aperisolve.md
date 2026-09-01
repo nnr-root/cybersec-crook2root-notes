@@ -66,8 +66,8 @@ JPEG (lossy)     → recompression destroys LSBs → LSB stego does NOT survive
 
 You should now be able to:
 
-- Why does stego analysis run many tools instead of one?
-- Aperisolve's `binwalk` tab reports a ZIP at an offset. What does that mean and what do you do?
+- Explain why stego analysis runs many tools instead of one.
+- Interpret a ZIP at an offset in Aperisolve's `binwalk` tab, and act on it.
 - Explain why LSB steganography survives in PNG but not JPEG, and what that tells you when the bit-plane view is clean.
 
 ---

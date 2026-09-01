@@ -67,8 +67,8 @@ Note `hashid` reads from files/stdin (scriptable) while `hash-identifier` is int
 
 You should now be able to:
 
-- What structural signals does a hash identifier read to guess a type?
-- `hashid -m` prints a `Hashcat Mode`. Why is that the most useful part of the output?
+- Name the structural signals a hash identifier reads to guess a type.
+- Explain why the `Hashcat Mode` printed by `hashid -m` is the most useful part of the output.
 - Explain why hash-identifier lists MD5/DCC/NTLM together with no ranking, and how you resolve the ambiguity in practice.
 
 ---

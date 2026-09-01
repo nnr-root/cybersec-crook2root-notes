@@ -61,8 +61,8 @@ MD5("password"+"a1B9") = 7c2e51f3...   → unique per salt → NOT in any table 
 
 You should now be able to:
 
-- How does a lookup table "crack" a hash instantly without guessing?
-- You have a bcrypt hash. Why is CrackStation the wrong tool, and what do you use instead?
+- Explain how a lookup table "cracks" a hash instantly without guessing.
+- Explain why CrackStation is the wrong tool for a bcrypt hash, and choose what to use instead.
 - Explain, using the same password hashed with and without a salt, why salting defeats lookup tables.
 
 ---

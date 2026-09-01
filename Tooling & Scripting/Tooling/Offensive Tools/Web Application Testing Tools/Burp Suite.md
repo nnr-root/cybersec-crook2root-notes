@@ -71,8 +71,8 @@ One more internal that bites everyone: HTTPS interception fails until Burp's CA 
 
 You should now be able to:
 
-- Why does sitting "in the middle" let Burp defeat client-side validation?
-- How do Repeater and Intruder differ, and when do you reach for each?
+- Explain how sitting in the middle lets Burp defeat client-side validation.
+- Distinguish Repeater from Intruder, and choose between them.
 - Explain why a Cluster Bomb can become a self-DoS, and why a Scanner issue is only a hypothesis until reproduced.
 
 ---

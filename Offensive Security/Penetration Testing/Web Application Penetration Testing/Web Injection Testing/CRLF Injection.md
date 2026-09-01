@@ -162,7 +162,7 @@ The application team replaced string assignment with a validated redirect helper
 
 You should now be able to:
 
-- What two bytes separate HTTP headers, and what happens when a user controls them inside a header value?
+- Name the two bytes that separate HTTP headers, and explain what a user who controls them inside a header value can do.
 - You control the `Location` header of a 302. Describe a *bounded, authorized* canary that proves injection without poisoning a shared cache.
 - Explain why HTTP/2 is largely immune to classic CRLF splitting, and how an HTTP/2-to-HTTP/1 downgrade at a proxy can reintroduce it.
 

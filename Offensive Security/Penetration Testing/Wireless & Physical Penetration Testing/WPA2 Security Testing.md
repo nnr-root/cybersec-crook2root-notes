@@ -108,8 +108,8 @@ passphrase entropy that this example isolates.
 
 You should now be able to:
 
-- Why can an attacker keep guessing your Wi-Fi password without staying near your network?
-- You capture a 4-way handshake in an authorized test. What determines whether you recover the passphrase, and what do you report if you can't?
+- Explain why an attacker can keep guessing a Wi-Fi passphrase without remaining near the network.
+- State what determines whether a 4-way handshake captured in an authorised test yields the passphrase, and what to report when it does not.
 - Explain how the 4096-iteration PBKDF2 count and the SSID-as-salt affect attack cost, and why WPA3's SAE removes the offline attack entirely.
 
 ---

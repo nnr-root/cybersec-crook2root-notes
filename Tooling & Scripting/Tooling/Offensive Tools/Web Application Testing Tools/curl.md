@@ -96,7 +96,7 @@ Other internals worth mastering: curl does **not** follow redirects unless you p
 
 You should now be able to:
 
-- What are the four parts of an HTTP request, and which curl flag builds each?
+- Name the four parts of an HTTP request, and the curl flag that builds each.
 - You need the status code and response time of an endpoint, nothing else. Write the curl command.
 - Explain what `-k` disables and why reaching for it reflexively is dangerous, using the SAN-mismatch failure as your example.
 

@@ -126,7 +126,7 @@ Compare wireless-controller rogue detection, wired switch MAC/port data, DHCP, R
 
 You should now be able to:
 
-- Why does a client happily connect to an "evil twin" with the same SSID as a network it trusts?
+- Explain why a client connects willingly to an "evil twin" carrying the same SSID as a network it trusts.
 - Design a bounded evil-twin detection exercise that proves whether corporate clients auto-associate, without capturing real user credentials.
 - Explain how 802.1X server-certificate validation and PMF (Protected Management Frames) each remove a specific rogue-AP primitive, and what still fails if clients don't validate the RADIUS certificate.
 

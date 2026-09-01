@@ -173,8 +173,8 @@ operator@range:~$ sudo nmap -sU -p53,123,161 192.0.2.10
 
 You should now be able to:
 
-- What does an `open|filtered` UDP result actually tell you, and why is it ambiguous?
-- A scan shows everything `filtered`. How do you distinguish a host firewall from a routing/source-address problem?
+- Interpret an `open|filtered` UDP result, and explain why it is ambiguous.
+- Distinguish a host firewall from a routing or source-address problem when a scan shows everything `filtered`.
 - Explain how `-sS` and `-sT` differ at the packet level, and why one needs root while the other is logged by the application.
 
 ---

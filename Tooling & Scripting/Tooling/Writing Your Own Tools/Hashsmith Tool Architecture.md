@@ -56,7 +56,7 @@ Hash **identification** is where a naive tool over-claims — Hashsmith is desig
 
 You should now be able to:
 
-- Why does Hashsmith structurally separate encodings from hashes, and why does that matter?
+- Explain why Hashsmith structurally separates encodings from hashes, and why that matters.
 - Name three subcommands and the core rules (streaming, constant-time, exit codes) they follow.
 - Explain why the identifier reports confidence not certainty, and how the pure-`Operation` design makes that (and bounded auditing) possible.
 

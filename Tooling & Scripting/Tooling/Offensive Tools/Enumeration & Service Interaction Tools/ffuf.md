@@ -60,8 +60,8 @@ The other classic failure is filters: an over-broad `-fs` silently drops the *re
 
 You should now be able to:
 
-- What does the `FUZZ` keyword do, and why does it make ffuf more than a directory brute-forcer?
-- How do `-fs`, `-fc`, `-mc`, and `-ac` combine to cut false positives?
+- Explain what the `FUZZ` keyword does, and why it makes ffuf more than a directory brute-forcer.
+- Combine `-fs`, `-fc`, `-mc` and `-ac` to cut false positives.
 - Explain why `clusterbomb` with two wordlists can become a self-DoS, and how mode choice controls it.
 
 ---

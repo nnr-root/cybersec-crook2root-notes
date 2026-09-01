@@ -55,8 +55,8 @@ DISPLAY filter (set AFTER capturing):         ip.addr == 198.51.100.9
 
 You should now be able to:
 
-- Why does Wireshark show a packet as nested layers, and what does a display filter target?
-- You need to read one HTTP conversation out of thousands of packets. What two features get you there?
+- Explain why Wireshark presents a packet as nested layers, and what a display filter targets.
+- Read one HTTP conversation out of thousands of packets using the two features that get you there.
 - Explain the difference between a capture filter and a display filter, and why capturing broad then filtering the view is the safe habit.
 
 ---

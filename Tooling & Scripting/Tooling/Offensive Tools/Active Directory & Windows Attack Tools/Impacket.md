@@ -55,8 +55,8 @@ corp.local\krbtgt:502:aad3b...:1a59b...
 
 You should now be able to:
 
-- Why can a Linux box run AD attacks with no Windows host and no malware?
-- You Kerberoast a service account and crack it. Which Impacket script gives you a shell on a target, and what's the credential syntax?
+- Explain how a Linux host runs AD attacks with no Windows host and no malware.
+- Choose the Impacket script that gives a shell on a target after a Kerberoasted service account is cracked, and give the credential syntax.
 - Explain pass-the-hash with `-hashes`, why it needs no password, and why an NT hash ≠ a NetNTLMv2 hash.
 
 ---

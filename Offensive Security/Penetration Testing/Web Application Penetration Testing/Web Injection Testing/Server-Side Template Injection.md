@@ -173,8 +173,8 @@ The engineering team moved localization and user values into a fixed template co
 
 You should now be able to:
 
-- Why does `{{7*7}}` become `49` here but would stay literal if `name` were a context variable?
-- You get `49` back. What is the very next *non-destructive* step to identify which engine (Jinja2 vs Twig vs Freemarker) you are in, and why does the engine matter?
+- Explain why `{{7*7}}` becomes `49` here but would stay literal if `name` were a context variable.
+- Take the next *non-destructive* step after `49` comes back to identify the engine — Jinja2, Twig or Freemarker — and explain why the engine matters.
 - Sandboxed engines still get broken. Explain the general shape of a sandbox escape (attribute/method traversal to a callable) and why denylists of attribute names fail.
 
 ---

@@ -52,8 +52,8 @@ Interpretation: strong differential — but still verify manually
 
 You should now be able to:
 
-- What manual technique does SQLmap automate, and why does it target one parameter rather than the whole server?
-- How do `--risk` and `--level` plus a captured request keep a run bounded and safe?
+- Name the manual technique SQLmap automates, and explain why it targets one parameter rather than the whole server.
+- Keep a run bounded and safe with `--risk`, `--level` and a captured request.
 - Explain why a time-based result needs many samples, and why a negative SQLmap run is not proof of safety.
 
 ---

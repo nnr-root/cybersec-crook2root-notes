@@ -111,8 +111,8 @@ side-channels — which are a firmware-version question rather than a protocol o
 
 You should now be able to:
 
-- Why can't you "capture once, crack forever" against WPA3 the way you can against WPA2?
-- A WPA3 network runs transition mode for legacy devices. What do you test, and what is the realistic finding?
+- Explain why "capture once, crack forever" does not work against WPA3 as it does against WPA2.
+- Identify what to test on a WPA3 network running transition mode for legacy devices, and the realistic finding.
 - Summarise the Dragonblood class of flaws and explain why a PAKE's security still depends on a constant-time implementation.
 
 ---

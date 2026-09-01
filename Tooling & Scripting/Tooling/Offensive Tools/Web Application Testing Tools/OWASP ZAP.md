@@ -55,8 +55,8 @@ FAIL-NEW: 1   (High: SQL Injection - /search?q=)
 
 You should now be able to:
 
-- What is the difference between a passive and an active web scan?
-- Your CI must gate on web risks without attacking the app. Which ZAP mode do you wire in, and what will it necessarily miss?
+- Distinguish a passive web scan from an active one.
+- Wire the right ZAP mode into CI to gate on web risks without attacking the app, and state what it necessarily misses.
 - Explain why an automated High finding still requires manual confirmation, and how you'd verify it safely.
 
 ---

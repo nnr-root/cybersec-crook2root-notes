@@ -61,8 +61,8 @@ Cap depth with `-d` on large sites (unbounded recursion brute-forces every disco
 
 You should now be able to:
 
-- What does feroxbuster's automatic recursion do that a flat brute-forcer doesn't?
-- Every path returns `200`. What's happening, and how do you recover the real files?
+- Explain what feroxbuster's automatic recursion does that a flat brute-forcer does not.
+- Diagnose a run in which every path returns `200`, and recover the real files.
 - Explain why a soft-404 is *worse* for a recursive scanner than a flat one, and how filtering fixes both problems.
 
 ---

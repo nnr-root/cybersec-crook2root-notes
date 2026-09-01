@@ -107,7 +107,7 @@ because an attacker always attacks the floor, never the ceiling.
 
 You should now be able to:
 
-- If an account has MFA, why would an attacker attack "forgot my device" instead of the login?
+- Explain why an attacker targets "forgot my device" rather than the login on an account protected by MFA.
 - Design a canary-based test proving whether your help desk will re-enrol MFA for an unverified caller.
 - Rank SMS, email, backup codes, and help-desk re-enrolment by residual risk, and justify the ordering with the specific bypass each enables.
 

@@ -65,7 +65,7 @@ Progress.........: 47104/14344385 (0.33%)
 
 You should now be able to:
 
-- What do `-m` and `-a` each select, and why do you always set both?
+- Explain what `-m` and `-a` each select, and why both are always set.
 - A wordlist misses `Summer2024`. Write the mask that finds it and explain why it beats blind brute force.
 - Given the MD5-vs-bcrypt benchmark gap, justify the storage-hashing choice and salt/cost you'd mandate.
 

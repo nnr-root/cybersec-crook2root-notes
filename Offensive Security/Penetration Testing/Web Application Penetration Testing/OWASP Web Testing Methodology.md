@@ -143,7 +143,7 @@ Common failures include testing one account, equating UI absence with authorizat
 
 You should now be able to:
 
-- Why does a methodology start with mapping architecture, routes, and roles *before* sending any payload?
+- Explain why a methodology maps architecture, routes and roles *before* any payload is sent.
 - Given the route inventory above, design the two-identity baseline/differential test that proves an object-level authorization bug with a canary rather than real data.
 - OWASP categories are prompts, not proof of coverage. Explain how a traceability matrix (component × role × objective × evidence) turns "we ran the checklist" into a defensible coverage claim.
 

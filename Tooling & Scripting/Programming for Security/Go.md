@@ -68,7 +68,7 @@ for _, p := range allPorts {         // 65,535 goroutines
 
 You should now be able to:
 
-- What two properties make Go ideal for deployable security tools?
+- Name the two properties that make Go well suited to deployable security tools.
 - Write a bounded worker-pool scanner, and show how you'd cross-compile it for Windows.
 - Explain why cheap goroutines still need bounding, and what `-race` catches.
 

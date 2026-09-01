@@ -75,7 +75,7 @@ Internals worth knowing: Postman variables have a **scope chain** (global → co
 
 You should now be able to:
 
-- What do collections, environments, and `{{variables}}` each solve that raw curl does not?
+- Explain what collections, environments and `{{variables}}` each solve that raw curl does not.
 - You have two users' tokens. Describe the two-click IDOR test Postman makes trivial.
 - Explain how a Newman assertion turns a manual authorization check into a CI gate, using the cross-tenant 404 example.
 

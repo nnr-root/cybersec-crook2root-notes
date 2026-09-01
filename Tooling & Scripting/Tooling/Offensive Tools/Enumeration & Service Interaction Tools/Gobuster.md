@@ -60,8 +60,8 @@ Defensively, a Gobuster run is a recognizable burst of `404`s (or `403`s) from o
 
 You should now be able to:
 
-- Gobuster reports a `403` on `/server-status`. Is that a finding, and why?
-- Why must you calibrate against random paths before trusting a `dir` run?
+- Judge whether a `403` on `/server-status` from Gobuster is a finding, and explain why.
+- Explain why a `dir` run must be calibrated against random paths before its results are trusted.
 - Explain soft-404 detection and why response-size (not status alone) is required to trust results.
 
 ---

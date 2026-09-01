@@ -67,8 +67,8 @@ CertUtil: -URLCache command completed successfully.
 
 You should now be able to:
 
-- Why do attackers abuse built-in Windows binaries instead of uploading their own tools?
-- You need to download a payload but `.exe`s are blocked. Which LOLBin do you look up, and what's the command?
+- Explain why attackers abuse built-in Windows binaries instead of uploading their own tools.
+- Choose the LOLBin that downloads a payload where `.exe`s are blocked, and give the command.
 - Explain why application allow-listing can't stop LOLBins, and what detection approach does.
 
 ---

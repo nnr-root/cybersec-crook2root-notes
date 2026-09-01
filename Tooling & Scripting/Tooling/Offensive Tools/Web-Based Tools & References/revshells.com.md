@@ -79,8 +79,8 @@ Understanding *why* (a reverse shell is a byte pipe, not a terminal — no PTY m
 
 You should now be able to:
 
-- Why does a reverse shell have the victim connect *out* to you instead of you connecting in?
-- The target has python but not `nc`. How does revshells.com still get you a shell?
+- Explain why a reverse shell has the victim connect *out* rather than you connecting in.
+- Get a shell from revshells.com on a target that has python but no `nc`.
 - Explain why `sudo` and `Ctrl-C` misbehave in a raw reverse shell, and what a TTY upgrade fixes.
 
 ---

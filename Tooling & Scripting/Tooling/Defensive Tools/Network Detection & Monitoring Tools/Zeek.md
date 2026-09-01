@@ -56,7 +56,7 @@ analyst@sensor:~$ cat conn.log | zeek-cut id.resp_h ts | sort | \
 
 You should now be able to:
 
-- How does Zeek differ from Snort/Suricata, and why does it work on encrypted traffic?
+- Explain how Zeek differs from Snort and Suricata, and why it still works on encrypted traffic.
 - Name four Zeek logs and what each is used to hunt for.
 - Explain why Zeek emits no alerts by design, and show how a C2 beacon surfaces in `conn.log` when no signature would catch it.
 

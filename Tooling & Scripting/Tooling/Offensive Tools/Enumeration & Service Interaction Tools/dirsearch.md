@@ -81,8 +81,8 @@ Deeper internals: dirsearch auto-detects some wildcard/soft-404 behaviour and wa
 
 You should now be able to:
 
-- How does a content-discovery tool infer that a path exists without being given a list?
-- dirsearch reports a `403` on `/server-status`. Is that a finding, and why?
+- Explain how a content-discovery tool infers that a path exists without being given a list.
+- Judge whether a `403` on `/server-status` from dirsearch is a finding, and explain why.
 - Every path returns `200`. Explain what the server is doing and the two ways you recover the real hits.
 
 ---

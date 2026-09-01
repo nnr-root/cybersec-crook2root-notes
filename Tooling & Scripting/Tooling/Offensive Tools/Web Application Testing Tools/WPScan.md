@@ -52,8 +52,8 @@ operator@lab:~$ wpscan --url https://blog.example.test --enumerate vp --api-toke
 
 You should now be able to:
 
-- Why are plugins and themes, not the WordPress core, usually the real risk?
-- WPScan reports a vulnerable plugin. What must you check before asserting the CVE is exploitable?
+- Explain why plugins and themes, rather than the WordPress core, are usually the real risk.
+- Check what must be confirmed before asserting that a plugin CVE WPScan reported is exploitable.
 - Explain why the API token is required for CVE mapping, and how the CVE count gives an objective remediation metric.
 
 ---

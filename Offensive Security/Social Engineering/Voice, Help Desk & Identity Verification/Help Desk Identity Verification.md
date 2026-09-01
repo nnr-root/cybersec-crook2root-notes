@@ -104,8 +104,8 @@ still hands over the account.
 
 You should now be able to:
 
-- Why is "what's your employee ID and manager's name?" a weak identity check?
-- Design a scoped test of a help desk's reset process using a canary account — what proves a pass, and what must you never do?
+- Explain why "what's your employee ID and manager's name?" is a weak identity check.
+- Design a scoped test of a help desk's reset process using a canary account, stating what proves a pass and what must never be done.
 - Explain why a directory callback resists even a perfect-OSINT attacker, and where it still fails (e.g. a compromised or attacker-updated directory number).
 
 ---

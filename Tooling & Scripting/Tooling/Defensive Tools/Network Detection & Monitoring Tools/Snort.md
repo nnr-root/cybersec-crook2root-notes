@@ -57,7 +57,7 @@ Evades:  GET /cgi?cmd=/bin/${x}sh      ✗   (shell var — same effect, differe
 
 You should now be able to:
 
-- Why is Snort fast and low-effort, and what can it fundamentally not catch?
+- Explain why Snort is fast and low-effort, and what it fundamentally cannot catch.
 - Read a Snort rule and name what `content:`, `flow:`, and `sid:` do.
 - Show three ways a content signature for `/bin/sh` is evaded, and explain why that motivates behavioural detection.
 

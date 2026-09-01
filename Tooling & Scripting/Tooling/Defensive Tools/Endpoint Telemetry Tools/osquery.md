@@ -57,7 +57,7 @@ osquery> SELECT name FROM processes WHERE name LIKE '%mimikatz%';   -- 0 rows
 
 You should now be able to:
 
-- Why is modelling an endpoint as SQL tables powerful, and what question does osquery answer?
+- Explain why modelling an endpoint as SQL tables is powerful, and what question osquery answers.
 - Write the query that finds processes running from a deleted binary, and name three other useful tables.
 - Explain the snapshot blind spot with the mimikatz example, and why osquery and Sysmon are complements.
 

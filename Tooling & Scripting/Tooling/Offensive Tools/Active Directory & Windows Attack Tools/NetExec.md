@@ -58,8 +58,8 @@ SMB  DC01  [+] corp.local\jsmith:Spring2026!
 
 You should now be able to:
 
-- Why is "where is this credential admin?" the question NetExec exists to answer?
-- What does the `(Pwned!)` marker mean, and how do you dump SAM hashes from a box where you have it?
+- Explain why "where is this credential admin?" is the question NetExec exists to answer.
+- Interpret the `(Pwned!)` marker, and dump SAM hashes from a host where you have it.
 - Explain why spraying one password across many users is safe but many passwords against one user is not.
 
 ---

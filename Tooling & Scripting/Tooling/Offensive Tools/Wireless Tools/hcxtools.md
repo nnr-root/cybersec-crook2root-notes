@@ -53,7 +53,7 @@ operator@kali:~$ sudo hcxdumptool -i wlan0mon -o cap.pcapng --enable_status=1
 
 You should now be able to:
 
-- How does the PMKID attack improve on the aircrack handshake method?
+- Explain how the PMKID attack improves on the aircrack handshake method.
 - Walk the hcxdumptool → hcxpcapngtool → hashcat flow, and say what `-m 22000` unifies.
 - Explain why an AP might yield no PMKID, what you do then, and why a strong PSK defeats both methods.
 

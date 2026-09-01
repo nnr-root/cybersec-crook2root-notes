@@ -59,7 +59,7 @@ operator@server:~$ sudo tcpdump -i eth0 -nn host 198.51.100.9
 
 You should now be able to:
 
-- Why is tcpdump the right tool on a headless server, and what does its BPF filter do at the kernel level?
+- Explain why tcpdump is the right tool on a headless server, and what its BPF filter does at the kernel level.
 - Write a tcpdump command that saves only host-X:443 traffic to a pcap for later Wireshark analysis.
 - Explain what omitting `-nn` does to your capture, and why `-w` output can't be grepped.
 

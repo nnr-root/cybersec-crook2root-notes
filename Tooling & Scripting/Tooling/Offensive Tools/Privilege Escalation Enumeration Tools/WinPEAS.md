@@ -67,8 +67,8 @@ Operational internals: prefer the `.exe` (the `.bat` misses many checks); `log=`
 
 You should now be able to:
 
-- Why are Windows privesc vectors (services, tokens, registry) different from Linux's (SUID, sudo)?
-- WinPEAS shows `SeImpersonatePrivilege` enabled. What tool family escalates it, and to which account?
+- Explain how Windows privesc vectors — services, tokens, registry — differ from Linux's SUID and sudo.
+- Identify the tool family that escalates `SeImpersonatePrivilege`, and the account it escalates to.
 - Explain why an "unquoted service path" is only exploitable with a second condition, and what a careless tester gets wrong.
 
 ---

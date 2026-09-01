@@ -72,8 +72,8 @@ Reply bandwidth is tiny — but firewall STATE tables and IDS event volume are n
 
 You should now be able to:
 
-- Why can Masscan sweep the internet at rates Nmap cannot, and why is a hit only a lead?
-- How do you choose a safe `--rate`, and what is the discover-then-validate pipeline?
+- Explain why Masscan sweeps at rates Nmap cannot, and why a hit is only a lead.
+- Choose a safe `--rate`, and describe the discover-then-validate pipeline.
 - Explain how a stateless scanner re-associates replies with no connection table, and how excessive rate produces false negatives.
 
 ---

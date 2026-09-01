@@ -108,8 +108,8 @@ account-wide backstop that catches the next mistake.
 
 You should now be able to:
 
-- Why is `Principal: "*"` with no condition the classic cloud data breach?
-- You suspect a bucket is public. What single canary-object check proves it without reading real data?
+- Explain why `Principal: "*"` with no condition is the classic cloud data breach.
+- Prove a bucket is public with one canary-object check, without reading real data.
 - Explain the evaluation order of account "Block Public Access", bucket policy, and object ACL, and how a conflict resolves.
 
 ---

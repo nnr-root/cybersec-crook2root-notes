@@ -168,8 +168,8 @@ The remediation disabled SSI for the user-content location, moved published uplo
 
 You should now be able to:
 
-- Why is `<!--#exec cmd="id"-->` dangerous but `<!--#echo var=name-->` inert?
-- You control a profile field rendered on an `.shtml` page. What safe canary directive confirms SSI processing without executing a command?
+- Explain why `<!--#exec cmd="id"-->` is dangerous while `<!--#echo var=name-->` is inert.
+- Confirm SSI processing in a profile field rendered on an `.shtml` page using a safe canary directive, without executing a command.
 - SSI, ESI (edge-side includes), and template injection are all "second-pass parser" bugs. Explain what they share and why a WAF rule for `<!--#` misses the ESI and template variants.
 
 ---

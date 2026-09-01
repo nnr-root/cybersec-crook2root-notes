@@ -53,8 +53,8 @@ The most surprising Kismet capability isn't about networks — it's about **peop
 
 You should now be able to:
 
-- Why do you run Kismet *before* aircrack-ng, and why is it invisible on the air?
-- What does Kismet show you about an environment, and how does it double as a wireless IDS?
+- Explain why Kismet runs *before* aircrack-ng, and why it is invisible on the air.
+- Describe what Kismet shows about an environment, and how it doubles as a wireless IDS.
 - Explain how probe requests fingerprint a device/person, and why that's both an offensive and a privacy concern.
 
 ---

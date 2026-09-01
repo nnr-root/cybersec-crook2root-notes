@@ -64,7 +64,7 @@ operator@kali:~$ amass enum -brute -d acme-corp.com -w big-wordlist.txt
 
 You should now be able to:
 
-- How does Amass differ from theHarvester (depth vs. breadth), and why does it produce a *graph*?
+- Distinguish Amass from theHarvester on depth versus breadth, and explain why Amass produces a *graph*.
 - Write the command for a quiet, in-scope first pass, and name what turns it active.
 - Explain exactly what changes between `amass enum -passive` and `-brute`, and why the distinction is a scope/OPSEC decision.
 

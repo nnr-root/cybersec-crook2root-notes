@@ -59,8 +59,8 @@ operator@kali:~$ host 198.51.100.4
 
 You should now be able to:
 
-- Why is theHarvester "passive" when it returns the target's emails and hosts?
-- A run returns nothing from Shodan/SecurityTrails sources. What's the most likely cause?
+- Explain why theHarvester counts as passive even though it returns the target's emails and hosts.
+- Diagnose the most likely cause when a run returns nothing from the Shodan and SecurityTrails sources.
 - Explain why a harvested subdomain can be a scope hazard, and what you verify before acting on it.
 
 ---

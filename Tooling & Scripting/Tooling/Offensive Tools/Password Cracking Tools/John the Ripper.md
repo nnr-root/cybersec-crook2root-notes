@@ -58,8 +58,8 @@ Winter2025!       (?)
 
 You should now be able to:
 
-- Why can offline cracking run at full speed without ever contacting the target?
-- A wordlist alone fails but the password is `Summer2024!`. Which JtR feature recovers it?
+- Explain why offline cracking runs at full speed without ever contacting the target.
+- Choose the JtR feature that recovers `Summer2024!` when a wordlist alone fails.
 - Explain why "complexity requirements" barely slow a rules-based attack, and what defense actually does.
 
 ---

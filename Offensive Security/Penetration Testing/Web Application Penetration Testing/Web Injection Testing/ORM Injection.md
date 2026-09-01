@@ -192,8 +192,8 @@ The engineering fix replaced generic object translation with a typed DTO, applie
 
 You should now be able to:
 
-- Both functions use SQLAlchemy. Why is only one vulnerable?
-- ORMs also let users pick a sort column. Why can't `:param` binding protect `ORDER BY <user>`, and what must you do instead?
+- Explain why, of two functions both using SQLAlchemy, only one is vulnerable.
+- Explain why `:param` binding cannot protect `ORDER BY <user>` when an ORM lets users choose a sort column, and state what to do instead.
 - Describe a case where the ORM emits safe value-bound SQL but the application is still injectable through *identifier* or *association* control.
 
 ---
