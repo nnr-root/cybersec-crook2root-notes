@@ -22,6 +22,10 @@ macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File Syste
 
 ## Follow One Packet
 
+> *Your `pf` rules permit the traffic and it still does not flow. Where do you look next?*
+>
+> Hold your answer — the section below is the response.
+
 ### Vocabulary & First Mental Model
 
 A **packet** is a network-layer unit, while a link-layer **frame** carries it across one local medium. An **interface** is the operating system's attachment point to a network path. A macOS **network service** is user-facing configuration associated with an interface, not the interface itself. An IP **address** identifies an endpoint in a network scope; a transport **port** identifies a service endpoint inside that host. A **socket** is the kernel object an application uses for communication. A **route** chooses the next hop and interface. A **resolver** converts a name into addresses. A stateful **firewall** remembers flows and applies policy to packets in context.

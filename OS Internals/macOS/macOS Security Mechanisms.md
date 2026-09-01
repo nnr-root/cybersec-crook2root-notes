@@ -22,6 +22,10 @@ macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File Syste
 
 ## Layered Trust From Download to Data
 
+> *You `curl` a signed, notarised app onto a Mac and run it. What did Gatekeeper check?*
+>
+> Hold your answer — the section below is the response.
+
 ### Vocabulary & First Mental Model
 
 **Provenance** describes where an artifact came from. **Identity** describes who signed or is running it. **Integrity** asks whether protected bytes changed. **Authorization** decides whether a particular actor may perform an operation. **Containment** limits what already-running code can reach. **Confidentiality** keeps data unreadable to unauthorized actors. **Attestation** is evidence about software or device state supplied to another decision-maker. A **policy decision point** evaluates evidence; an **enforcement point** allows, denies, prompts, or constrains the operation.

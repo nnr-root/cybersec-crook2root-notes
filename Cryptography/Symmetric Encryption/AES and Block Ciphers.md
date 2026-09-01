@@ -21,6 +21,10 @@ AES and Block Ciphers -> Block Cipher Modes -> Stream Ciphers
 
 ## What a Block Cipher Actually Is
 
+> *You encrypt a 27-byte message with AES. How many bytes of ciphertext come back?*
+>
+> Hold your answer — the section below is the response.
+
 A block cipher is a function that takes a fixed-size block of bits and a key, and produces a block of the same size — reversibly. For a given key it is a **permutation**: every possible input block maps to exactly one output block and back, with no collisions. Change the key and you get a completely different permutation. There are astronomically many possible permutations of a 128-bit block, and the key selects which one is in effect.
 
 Two design goals, named by Claude Shannon, make that permutation secure:

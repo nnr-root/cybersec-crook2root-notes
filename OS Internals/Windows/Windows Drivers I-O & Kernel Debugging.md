@@ -21,6 +21,10 @@ Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations 
 
 ## Why Drivers Exist
 
+> *A bug in a printer driver — how far can it reach?*
+>
+> Hold your answer — the section below is the response.
+
 Applications ask for operations such as “read this file” or “send this frame,” but hardware speaks device-specific protocols. A **driver** translates between Windows I/O conventions and a device or virtual facility. A **device object** represents an endpoint in the kernel object namespace; an **IRP** carries one I/O operation through a stack of drivers; an **IOCTL** is a device-specific control request; and a **device stack** lets bus, function, and filter drivers cooperate. Kernel drivers share the operating system’s privilege, so one unchecked length or stale pointer can become a system-wide integrity failure.
 
 > [!tip] The analogy, and where it breaks

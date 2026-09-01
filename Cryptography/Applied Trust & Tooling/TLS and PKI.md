@@ -21,6 +21,10 @@ TLS and PKI -> JWT Security -> CyberChef and the Crypto Toolkit
 
 ## The Problem PKI Solves
 
+> *The padlock is showing. What has your browser just proved?*
+>
+> Hold your answer — the section below is the response.
+
 The **Diffie-Hellman** note ended on a gap: key exchange agrees a secret with *someone*, but not with a *verified* someone, so an unauthenticated exchange falls to a machine-in-the-middle. Encryption without identity is a padlock with no idea whose door it is on. PKI — Public Key Infrastructure — fills the gap by binding a public key to an identity in a way anyone can verify, so that when your browser agrees a key with `bank.example`, it *knows* the public key it used really belongs to the bank and not to an attacker in the path.
 
 **The deliberate break:** the padlock is read, almost universally, as "this site is safe." It does not say that, and the worked example below shows precisely what it does say.

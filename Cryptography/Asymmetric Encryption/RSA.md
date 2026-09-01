@@ -21,6 +21,10 @@ RSA -> Diffie Hellman and ECC -> Digital Signatures
 
 ## The Trapdoor Idea
 
+> *When your browser loads an HTTPS page, what does RSA actually encrypt?*
+>
+> Hold your answer — the section below is the response.
+
 Symmetric encryption has one key that both sides must already share. RSA breaks that requirement with a **trapdoor**: a pair of keys where one direction is easy and the reverse is infeasible without a secret. The public key `(n, e)` is published to the world; the private key `d` is kept secret. Anyone can encrypt to you with your public key; only you can decrypt with your private key.
 
 The trapdoor is factoring. The modulus `n` is the product of two large secret primes `p` and `q`. Multiplying `p × q` to get `n` is instant; recovering `p` and `q` from `n` alone — factoring — is infeasible for a large enough `n`. Everything RSA offers rests on that asymmetry of effort: easy to multiply, ruinous to factor.

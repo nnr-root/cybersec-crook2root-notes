@@ -21,6 +21,10 @@ Hexadecimal & Binary -> Base64 and the Base Family -> XOR and Classical Ciphers
 
 ## Why Encoding Exists At All
 
+> *You Base64-encode a 300 KB file. How big is the result?*
+>
+> Hold your answer — the section below is the response.
+
 Many channels cannot carry raw bytes. Email bodies, URLs, JSON strings, HTTP headers and cookies are text, and a raw byte like `0x00` or `0xFF` either has no textual meaning or actively breaks the format. **Base64** solves this by re-expressing any bytes using only 64 characters that every text channel accepts: `A–Z`, `a–z`, `0–9`, and `+` and `/`.
 
 The mechanism is pure regrouping. Base64 takes the input three bytes (24 bits) at a time and re-slices those 24 bits into four groups of six bits. Six bits index a value from 0 to 63, which selects one character from the alphabet. So three input bytes always become four output characters, and the output is about 33% larger than the input — the price of using only safe characters.

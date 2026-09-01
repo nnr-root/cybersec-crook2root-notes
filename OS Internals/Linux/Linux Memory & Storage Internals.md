@@ -22,6 +22,10 @@ Linux Introduction & Distributions -> Linux CLI & Core Commands -> Linux I-O Red
 
 ## Start from zero — working bytes versus persistent bytes
 
+> *`free -h` reports 200 MB free out of 64 GB on a server nobody is complaining about. Do you need more RAM?*
+>
+> Hold your answer — the section below is the response.
+
 **Memory** is the fast working state used while instructions execute; **storage** is the durable medium expected to retain data across power loss. A process does not normally address physical RAM directly. It sees a private **virtual address space** divided into pages. The kernel and CPU translate virtual pages to physical page frames, create mappings on demand, and reclaim or move data under pressure. Storage is reached through filesystems and block devices rather than by ordinary applications choosing disk sectors.
 
 Four similar words must remain distinct. A **page** is a fixed-size virtual-memory unit; a **frame** is its physical-RAM backing. A **cache** keeps a reusable copy to avoid slower work. A **buffer** temporarily holds data moving between components. A **filesystem** organizes persistent objects and metadata, while a **block layer** schedules requests to block-addressable devices. `free` reporting low unused RAM is not automatically a problem because Linux deliberately uses spare memory as cache.

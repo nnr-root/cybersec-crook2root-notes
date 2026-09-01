@@ -21,6 +21,10 @@ Theory of Processes & Threads -> CPU Scheduling Algorithms -> Memory Management 
 
 ## Prerequisites & First Mental Model
 
+> *You double-click the same program twice. What do the two things now running share?*
+>
+> Hold your answer — the section below is the response.
+
 No operating-system knowledge is required before beginning this note. You only need to know that a **CPU** executes instructions, **memory** holds code and data, and an operating system mediates access to hardware. Begin with a simple distinction:
 
 - A **program** is a file containing instructions, such as an executable stored on disk.

@@ -21,6 +21,10 @@ Theory of Processes & Threads -> CPU Scheduling Algorithms -> Memory Management 
 
 ## Prerequisites & First Mental Model
 
+> *Shortest-Job-First provably minimises average waiting time. Why does no operating system use it?*
+>
+> Hold your answer — the section below is the response.
+
 Before studying an algorithm, picture one CPU and three ready tasks. Only one task can execute on that CPU at a time. The operating system therefore needs a policy for deciding **who runs next**, **how long it runs**, and **when it may be interrupted**. That policy is scheduling. On a multicore machine the same problem exists per logical CPU, with added decisions about migration, affinity, shared caches, and NUMA locality.
 
 The minimum vocabulary is:

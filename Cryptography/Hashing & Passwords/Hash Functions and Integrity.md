@@ -21,6 +21,10 @@ Hash Functions and Integrity -> Salting and KDFs -> Password Cracking
 
 ## What a Hash Function Is
 
+> *Two files differ by exactly one bit. How much of their SHA-256 output differs?*
+>
+> Hold your answer — the section below is the response.
+
 A cryptographic hash function takes an input of any size and produces a fixed-size output — the **digest** or **hash** — with three defining behaviours:
 
 - **Deterministic** — the same input always gives the same digest.
