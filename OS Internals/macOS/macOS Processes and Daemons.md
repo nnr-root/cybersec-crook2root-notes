@@ -21,6 +21,10 @@ macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File Syste
 
 ## Process Lifecycle & PID 1
 
+> *A daemon's property list is present and correctly written. Is the daemon running?*
+>
+> Hold your answer — the section below is the response.
+
 ### Vocabulary & First Mental Model
 
 A **program** is executable code stored on disk; a **process** is a running instance with memory, credentials, open resources, and a process identifier. A **daemon** is a background service not tied to one interactive terminal. A **LaunchDaemon** is normally system-scoped, while a **LaunchAgent** runs in a user or graphical-login context. A job's **property list** is its configuration, not proof that it is running. A **bootstrap domain** is a namespace in which service names are registered. **XPC** is Apple's higher-level message system built largely over Mach IPC. A **socket-activated** or **Mach-activated** job can remain stopped until a client requests its published endpoint.

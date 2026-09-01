@@ -22,6 +22,10 @@ macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File Syste
 
 ## From Physical Store to Namespace
 
+> *Two APFS volumes on one 500 GB disk each report 400 GB free. Are they lying?*
+>
+> Hold your answer — the section below is the response.
+
 ### Vocabulary & First Mental Model
 
 A **disk** is the storage device presented to the operating system. A **partition map** divides its address space into regions. An APFS **container** is a storage pool built on one or more physical stores; an APFS **volume** is a mountable filesystem that shares the container's free space. A **mount point** attaches a volume to the pathname tree. A file's **metadata** describes it—name, owner, permissions, timestamps, attributes, and allocation—while its **extents** identify storage ranges containing data. A **clone** shares extents through copy-on-write; a **snapshot** preserves a volume's earlier logical state.

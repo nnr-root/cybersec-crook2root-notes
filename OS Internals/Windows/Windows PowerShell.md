@@ -24,6 +24,10 @@ Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations 
 
 ## Objects, Not Text
 
+> *`Get-Process` prints a neat table of processes. What did the command actually return?*
+>
+> Hold your answer — the section below is the response.
+
 Open PowerShell (`Win+R`, type `powershell`, Enter) and run your first command:
 
 ```powershell

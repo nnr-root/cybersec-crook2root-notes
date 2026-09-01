@@ -22,6 +22,10 @@ macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File Syste
 
 ## Identity Is More Than a Username
 
+> *Authentication succeeded. Does the system now know what you are allowed to do?*
+>
+> Hold your answer — the section below is the response.
+
 ### Vocabulary & First Mental Model
 
 An **identity** is the entity a system believes is acting. An **account** is a stored record representing a user or service. **Authentication** proves a claimed identity; **authorization** decides what that identity may do. A **credential** is evidence used during authentication, such as a password, key, certificate, token, or biometric-backed assertion. A **principal** is an identity named by an authentication system. A Unix **UID** and **GID** identify users and groups to BSD access checks. A **session** is an authenticated operating context. A Keychain **item** combines secret material, searchable attributes, and an access-control policy. An application **entitlement** is a signed capability claim evaluated by a platform service.

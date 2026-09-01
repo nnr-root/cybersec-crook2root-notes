@@ -21,6 +21,10 @@ Hexadecimal & Binary -> Base64 and the Base Family -> XOR and Classical Ciphers
 
 ## XOR: The Operation Underneath Everything
 
+> *One operation encrypts and decrypts using the same key and the same line of code. Which operation, and why does that work?*
+>
+> Hold your answer — the section below is the response.
+
 Exclusive-or (XOR, written `⊕` or `^`) compares two bits and returns 1 when they differ, 0 when they match. It has one property that makes it the workhorse of cryptography: **applying the same value twice returns the original**. If `c = p ⊕ k`, then `c ⊕ k = p`. Encryption and decryption are the *same operation* with the same key.
 
 ```mermaid

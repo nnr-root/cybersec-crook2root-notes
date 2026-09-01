@@ -21,6 +21,10 @@ macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File Syste
 
 ## Read the Mach-O Map
 
+> *What tells macOS how the bytes sitting in a file become running code?*
+>
+> Hold your answer — the section below is the response.
+
 ### Vocabulary & First Mental Model
 
 An **executable format** is the structured contract that tells the operating system how bytes on disk become code and data in memory. A Mach-O **header** identifies architecture and file type. A **load command** describes mappings, dependencies, entry information, fixups, or signature data. A **segment** is a virtual-memory region with protections; a **section** is a compiler/linker subdivision within a segment. A **symbol** names code or data. A **relocation** or **fixup** adjusts an address for its runtime location. A dynamic library's **install name** is the path-like identity used by the loader. A universal binary **slice** is one complete Mach-O image for one CPU architecture.

@@ -22,6 +22,10 @@ Linux Introduction & Distributions -> Linux CLI & Core Commands -> Linux I-O Red
 
 ## Start from zero — memory is not evidence
 
+> *Your notes read "the server was compromised at 03:12". Is that an observation?*
+>
+> Hold your answer — the section below is the response.
+
 A useful technical note converts a fleeting action into something another person can understand, reproduce, challenge, and safely repeat. Begin by separating four record types. An **observation** states what a source directly showed. An **interpretation** explains what the observation may mean. A **procedure** lists actions and prerequisites. **Evidence** is preserved source material with provenance and integrity. Mixing these produces confident but unauditable stories.
 
 You do not need a specialized application to start. A UTF-8 text file, clear headings, UTC timestamps, exact commands, verbatim output, and cryptographic hashes are enough. Record identity, host, current directory, version, scope, and time because command behavior depends on context. Mark secrets and personal data at capture time so storage, sharing, and retention follow policy.

@@ -22,6 +22,10 @@ Linux Introduction & Distributions -> Linux CLI & Core Commands -> Linux I-O Red
 
 ## Start from zero — hardening is controlled reduction
 
+> *You apply every switch in the hardening benchmark. Is the host now safer?*
+>
+> Hold your answer — the section below is the response.
+
 **Security hardening** means deliberately reducing the ways a system can be misused while preserving its required function. It is not a checklist of switches that always make a host safer. Every control starts from an asset, threat, trust boundary, required behavior, and failure consequence. The same restriction can be valuable on a single-purpose server and disruptive on a research workstation.
 
 Distinguish prevention, containment, detection, recovery, and assurance. **Prevention** rejects an action. **Containment** limits blast radius after something runs. **Detection** creates evidence of unexpected behavior. **Recovery** restores a trusted state. **Assurance** provides justified confidence that controls remain effective. Least privilege narrows identity authority; attack-surface reduction removes unnecessary reachable code; defense in depth prevents one failed control from deciding the entire outcome.

@@ -22,6 +22,10 @@ Linux Introduction & Distributions -> Linux CLI & Core Commands -> Linux I-O Red
 
 ## Start from zero — names, paths, filesystems & mounts
 
+> *Is `/home` on the same disk as `/`?*
+>
+> Hold your answer — the section below is the response.
+
 A **file** is a kernel-managed object containing data and metadata. A **directory** maps names to filesystem objects. A **path** is a sequence of directory names used to locate an object: an absolute path begins at `/`, while a relative path begins at the process's current working directory. `.` means the current directory, `..` means its parent, and `~` is shell shorthand for a user's home. Names are case-sensitive and may contain spaces or newlines, which is why safe quoting matters.
 
 The visible tree is not one physical disk. A **filesystem** defines how objects and metadata are stored; a **mount** attaches a filesystem at a directory in the unified namespace. Traversing that directory crosses into the mounted filesystem without changing path syntax. Pseudo-filesystems such as `/proc` and `/sys` expose live kernel state rather than persistent disk blocks. The Filesystem Hierarchy Standard describes conventional purpose, not an unbreakable security boundary.

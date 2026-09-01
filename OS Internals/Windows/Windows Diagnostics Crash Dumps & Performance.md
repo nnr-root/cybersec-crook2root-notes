@@ -21,6 +21,10 @@ Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations 
 
 ## Symptom, Evidence & Cause
 
+> *"The application froze." Is that the symptom, the fault, or the root cause?*
+>
+> Hold your answer — the section below is the response.
+
 A **symptom** is what a user observes; a **fault** is the incorrect state that produced it; the **root cause** is the earliest actionable condition in the chain. A crash is abrupt termination, a hang is failure to make progress, and a performance problem is progress at unacceptable latency or resource cost. A **counter** samples a changing quantity, a **trace** records events over time, and a **dump** freezes selected memory state. Experts choose evidence according to the question instead of collecting everything indiscriminately.
 
 > [!tip] The analogy, and where it breaks

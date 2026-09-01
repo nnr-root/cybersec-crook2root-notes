@@ -21,6 +21,10 @@ Theory of Processes & Threads -> CPU Scheduling Algorithms -> Memory Management 
 
 ## Prerequisites & First Mental Model
 
+> *Two processes both read address `0x400000` and get entirely different data. Neither is buggy. How?*
+>
+> Hold your answer — the section below is the response.
+
 Start with two facts. Programs refer to bytes by **address**, and the machine has a finite amount of physical RAM. If every program used raw physical addresses, applications could overwrite one another and would need to know exactly where RAM was free. Virtual memory solves both problems by giving each process its own address space and translating its addresses through tables controlled by the kernel.
 
 The beginner vocabulary is:

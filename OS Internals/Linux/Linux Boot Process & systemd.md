@@ -22,6 +22,10 @@ Linux Introduction & Distributions -> Linux CLI & Core Commands -> Linux I-O Red
 
 ## Start from zero — why boot exists
 
+> *Power arrives and RAM contains no operating system at all. What runs first, and how does it know where to find a kernel?*
+>
+> Hold your answer — the section below is the response.
+
 When power arrives, RAM contains no operating system and the CPU begins at a firmware-defined reset location. **Booting** is the staged process that discovers hardware, selects trusted code, places a kernel and its initial data in memory, establishes the real root filesystem, and starts the long-running services that make the machine useful. Each stage has only enough knowledge to load the next one; no single component performs the entire job.
 
 Learn five roles before their implementation details. **Firmware** initializes the platform and chooses a boot entry. A **bootloader** selects and loads a kernel. The **kernel** initializes privileged execution, memory, devices, and scheduling. An **initramfs** is a temporary early userspace that can unlock or assemble the storage containing `/`. **PID 1** is the first process in the real userspace and supervises service startup and shutdown; on most current distributions it is systemd.

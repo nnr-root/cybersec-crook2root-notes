@@ -25,6 +25,10 @@ Linux Introduction & Distributions -> Linux CLI & Core Commands -> Linux I-O Red
 
 ## Start from zero — privilege boundaries & trust paths
 
+> *Which command is the privilege-escalation vulnerability?*
+>
+> Hold your answer — the section below is the response.
+
 **Privilege** is authority to perform an operation. **Privilege escalation** occurs when a subject gains authority beyond its intended role by crossing a flawed trust boundary. On Linux, the boundary may involve user IDs, groups, capabilities, SUID execution, `sudo`, service managers, scheduled tasks, writable configuration, namespaces, or the kernel. The vulnerability is rarely “a command”; it is a trusted higher-privilege component consuming something a lower-privilege subject can influence.
 
 Separate enumeration, hypothesis, validation, impact, and remediation. **Enumeration** collects facts without assuming exploitability. A **trust path** names the lower-privilege-controlled object, the privileged consumer, the trigger, and the resulting authority. **Validation** proves the path with an approved, reversible canary. A finding is incomplete until ownership, preconditions, reproducibility, evidence, cleanup, and the control that should break the path are documented.

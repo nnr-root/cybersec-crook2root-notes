@@ -22,6 +22,10 @@ Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations 
 
 ## Event, Provider, Channel & Policy
 
+> *You enable an audit policy today to investigate something that happened last week. What do you get?*
+>
+> Hold your answer — the section below is the response.
+
 An **event** is a timestamped record emitted by a **provider**. A **channel** is a routed stream of related events, and an EVTX file persists channel records. An **audit policy** decides which security-relevant successes and failures Windows asks providers to record; it does not retroactively recover events that were never enabled. ETW is the general event transport beneath many diagnostics, while Event Log channels, Sysmon, and forwarded subscriptions package selected data for retention. Event IDs only have meaning together with provider, version, fields, host, and time context.
 
 > [!tip] The analogy, and where it breaks

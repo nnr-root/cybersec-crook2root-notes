@@ -22,6 +22,10 @@ macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File Syste
 
 ## Evidence Sources & Time
 
+> *A suspect Mac is in front of you and still powered on. What do you collect first, and why does the order matter?*
+>
+> Hold your answer — the section below is the response.
+
 ### Vocabulary & First Mental Model
 
 An **event** is something that happened; an **artifact** is durable or recoverable state left behind; **telemetry** is data intentionally emitted about activity; **evidence** is information collected and interpreted for a question. **Volatile** evidence disappears or changes quickly, while **persistent** evidence survives shutdown or process exit. A **timeline** places observations on a normalized clock. **Provenance** records where an artifact came from and how it was obtained. **Chain of custody** records control and transfer. A **hash** detects later byte changes but does not prove the source was complete, authentic, or correctly interpreted.

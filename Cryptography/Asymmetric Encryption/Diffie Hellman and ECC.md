@@ -21,6 +21,10 @@ RSA -> Diffie Hellman and ECC -> Digital Signatures
 
 ## The Problem: A Shared Key Without a Shared Meeting
 
+> *Two machines that have never communicated need to end up holding the same secret key, and everything they send each other is public. Is that possible?*
+>
+> Hold your answer — the section below is the response.
+
 Symmetric encryption is fast and does the real work, but both sides need the same key first. On the internet, two parties who have never communicated cannot simply *send* a key — anyone watching the channel would capture it. **Diffie-Hellman (DH)** solves exactly this: it lets them construct a shared secret through a public exchange, such that an eavesdropper who sees every message still cannot compute the secret. It does not encrypt anything itself; it *agrees a key*, which a symmetric cipher then uses.
 
 ## Worked Example: Agreeing a Secret in the Open

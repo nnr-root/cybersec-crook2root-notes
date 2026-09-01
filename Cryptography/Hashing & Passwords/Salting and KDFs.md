@@ -21,6 +21,10 @@ Hash Functions and Integrity -> Salting and KDFs -> Password Cracking
 
 ## Why a Raw Password Hash Is Broken
 
+> *You store SHA-256 of each password rather than the password itself. Two users independently choose `password123`. What does your database show?*
+>
+> Hold your answer — the section below is the response.
+
 The intuition "hash the password so we never store it in plaintext" is right in spirit and dangerous in practice, for two separate reasons.
 
 First, a plain hash is **fast**, and fast is the attacker's friend when the input is guessable. Second, a plain hash is **unsalted**, so identical passwords produce identical hashes:

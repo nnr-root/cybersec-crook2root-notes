@@ -21,6 +21,10 @@ Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations 
 
 ## Identity Is Not a Password
 
+> *You reset a user's password. Does that end the access they already have?*
+>
+> Hold your answer — the section below is the response.
+
 An **identity** is a principal the system can name; a **credential** is evidence used to authenticate it; a **logon session** is local state created after authentication; and a **token** carries authorization data to access checks. Passwords are only one credential form alongside keys, certificates, PIN-backed keys, and federated assertions. Authentication proves or asserts who initiated a session. Authorization separately decides what that session may do. Keeping these stages separate makes Kerberos tickets, NTLM challenge-response, DPAPI protection, Windows Hello, and access tokens much easier to reason about.
 
 > [!tip] The analogy, and where it breaks

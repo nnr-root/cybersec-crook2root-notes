@@ -25,6 +25,10 @@ Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations 
 
 ## What a Command Prompt Is
 
+> *You open a Command Prompt and type something. What is the difference between the window and the thing interpreting what you typed?*
+>
+> Hold your answer — the section below is the response.
+
 A **shell** is a program that reads text you type, figures out what command you meant, runs it, and shows you the result. The **Command Prompt** — the program `cmd.exe` — is the traditional Windows shell. When you open it you see a **prompt** like `C:\Users\you>` followed by a blinking cursor waiting for a command.
 
 Open one by pressing `Win+R`, typing `cmd`, and pressing Enter. You now have a window where you type one command per line. Try the three commands every beginner should know first:

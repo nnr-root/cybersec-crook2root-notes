@@ -21,6 +21,10 @@ Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations 
 
 ## From Name to Packet
 
+> *An application wants to reach a host called `fileserver`. How many translations happen before a frame leaves the adapter?*
+>
+> Hold your answer — the section below is the response.
+
 An application usually starts with a **name** and a service intent, not a packet. Name resolution produces an address; routing selects an interface and next hop; a **socket** binds application state to a transport endpoint; TCP or UDP forms transport units; IP carries them between networks; and an adapter emits frames on a link. Windows inserts authorization and filtering at several layers. Distinguish a **listening endpoint** from an established connection, an **interface** from an IP address, and a **route** from a DNS answer—the same word “network problem” can describe failure at any of those boundaries.
 
 > [!tip] The analogy, and where it breaks

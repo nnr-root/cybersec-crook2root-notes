@@ -22,6 +22,10 @@ macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File Syste
 
 ## Zsh, Unix Semantics & Safe Command Work
 
+> *You type a command name and press Enter. Where does the shell look for it, and in what order?*
+>
+> Hold your answer — the section below is the response.
+
 ### Vocabulary & First Mental Model
 
 A **terminal emulator** is the window that displays a text session. A **shell** is the program inside that session that reads commands; modern macOS uses Zsh by default. A **command** resolves to a shell keyword, function, alias, built-in, script, or executable. An **argument** is one value passed to that command. The **working directory** is the process's current location in the filesystem. An **environment variable** is inherited process configuration; `PATH` is the ordered list of directories searched for executable names. **Standard input**, **standard output**, and **standard error** are streams numbered 0, 1, and 2. An **exit status** of zero conventionally means success; a nonzero value describes failure or a special result.

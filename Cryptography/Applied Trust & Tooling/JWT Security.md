@@ -21,6 +21,10 @@ TLS and PKI -> JWT Security -> CyberChef and the Crypto Toolkit
 
 ## What a JWT Is
 
+> *A JWT carries the user's role in its payload, and the payload is only Base64. Can the user change it to `admin`?*
+>
+> Hold your answer — the section below is the response.
+
 A JWT is three Base64url-encoded parts joined by dots: **header.payload.signature**. The header names the algorithm; the payload carries the claims (who the user is, their role, an expiry); the signature is computed over the first two parts with a key. A server that issues a JWT can later trust it *without server-side session storage*, because it re-verifies the signature — the token carries its own proof. That statelessness is the appeal, and the source of every pitfall.
 
 ## Worked Example: Anatomy of a Token

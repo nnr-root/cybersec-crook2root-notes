@@ -21,6 +21,10 @@ AES and Block Ciphers -> Block Cipher Modes -> Stream Ciphers
 
 ## Why a Mode Is Needed At All
 
+> *AES encrypts exactly 16 bytes at a time. Your message is 160 bytes. Why not run AES ten times and concatenate the results?*
+>
+> Hold your answer — the section below is the response.
+
 AES turns one 16-byte block into one 16-byte block. A message of several blocks needs a rule relating them, and the obvious rule — encrypt each block independently with the same key — is a trap. The reason is the block cipher's own determinism: with a fixed key, identical input blocks always produce identical output blocks. That determinism is correct and necessary at the block level, but applied naively across a message it turns into a plaintext leak.
 
 ## ECB: Where the Pattern Leaks

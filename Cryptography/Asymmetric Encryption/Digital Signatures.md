@@ -21,6 +21,10 @@ RSA -> Diffie Hellman and ECC -> Digital Signatures
 
 ## Inverting the Keys
 
+> *Public key locks, private key unlocks. What do you get if you run it the other way round?*
+>
+> Hold your answer — the section below is the response.
+
 Encryption uses the public key to lock and the private key to unlock. A signature does the reverse: the private key **signs**, and the public key **verifies**. Because only the owner holds the private key, a valid signature proves three things at once:
 
 - **Authenticity** — it came from the holder of that private key.

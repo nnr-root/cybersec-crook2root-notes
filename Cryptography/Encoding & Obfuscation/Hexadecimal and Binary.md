@@ -21,6 +21,10 @@ Hexadecimal & Binary -> Base64 and the Base Family -> XOR and Classical Ciphers
 
 ## Everything Is Bits, Hex Is How We Read Them
 
+> *Why does every hex dump you have ever seen group its digits in pairs?*
+>
+> Hold your answer — the section below is the response.
+
 A computer stores everything as bits. Eight bits make a **byte**, which holds a value from 0 to 255. Writing a byte as eight ones and zeros is accurate but unreadable, and writing it as a decimal number (0–255) hides the bit structure. **Hexadecimal** — base 16 — is the compromise everyone settled on, because it maps to bits with no arithmetic: each hex digit is exactly four bits, so **two hex digits are exactly one byte**.
 
 | Form | The letter `H` |

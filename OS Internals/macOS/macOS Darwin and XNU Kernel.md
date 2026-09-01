@@ -21,6 +21,10 @@ macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File Syste
 
 ## Build the Kernel Mental Model
 
+> *An application asks to read a file. Which boundary must that request cross, and who decides whether it may?*
+>
+> Hold your answer — the section below is the response.
+
 ### Vocabulary & First Mental Model
 
 A **kernel** is the privileged software that shares the CPU, memory, and devices among programs. **User space** is where ordinary applications run with restricted authority; **kernel space** is where XNU enforces system-wide policy. A **process** is the Unix-visible container for a running program, while a **thread** is one schedulable path of execution inside it. A **system call** is a controlled request from user space to the kernel. A **virtual address** is the address a process sees; the memory-management unit translates it to physical memory. **IPC** means inter-process communication. A **driver** translates generic operating-system requests into device-specific operations.

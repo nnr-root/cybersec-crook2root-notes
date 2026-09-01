@@ -21,6 +21,10 @@ Hash Functions and Integrity -> Salting and KDFs -> Password Cracking
 
 ## The Attacker Already Has the Hash
 
+> *Your login form locks an account after five failed attempts. How much does that slow an attacker cracking your users' passwords?*
+>
+> Hold your answer — the section below is the response.
+
 Cracking begins after a breach: the attacker has a database of hashes and wants the passwords. Because hashes are one-way, they cannot be reversed — so the attacker instead **guesses**: hash a candidate, compare to the target, repeat. This is **offline** cracking, and it has no rate limit, no lockout, and no logging, because it happens entirely on the attacker's own hardware against a stolen file. It is the opposite of **online** guessing (typing passwords at a live login), which is slow and noisy and easily blocked.
 
 Offline cracking is why password *storage* is the whole game. The login form's rate limiting is irrelevant once the hash is stolen; only the cost of each guess and the uniqueness of each salt stand between the attacker and the plaintext.

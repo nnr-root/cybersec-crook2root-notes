@@ -22,6 +22,10 @@ TLS and PKI -> JWT Security -> CyberChef and the Crypto Toolkit
 
 ## Two Tools for the Same Jobs
 
+> *You are handed a blob and have no idea how many layers of encoding are wrapped around it. Which tool finds out fastest, and why is it not a script?*
+>
+> Hold your answer — the section below is the response.
+
 Applied crypto work is mostly transforming data between representations, hashing it, and identifying or cracking hashes. Two kinds of tool cover this, and knowing when to reach for each is the skill:
 
 - **CyberChef** — an open-source, browser-based "Cyber Swiss Army Knife" (originally from GCHQ). You build a **recipe**: a chain of operations (From Base64 → From Hex → Gunzip → …) that runs left to right on the input, with the output of each feeding the next. It is ideal for *exploration* — you can see each intermediate result, drag operations around, and its "Magic" operation guesses what encoding a blob is. It runs entirely in the browser (or offline as a downloaded page), so pasted data never leaves your machine.

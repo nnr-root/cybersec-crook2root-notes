@@ -21,6 +21,10 @@ Theory of Processes & Threads -> CPU Scheduling Algorithms -> Memory Management 
 
 ## Prerequisites & First Mental Model
 
+> *Your program reads a file and the CPU sits idle for several milliseconds. What is it waiting for, and why does the operating system allow the wait?*
+>
+> Hold your answer — the section below is the response.
+
 **Input/output (I/O)** is how a program exchanges data with anything outside its immediate CPU instructions: files, disks, keyboards, displays, network interfaces, sensors, and other processes. Devices are much slower and less predictable than CPUs, so the operating system hides hardware differences behind stable abstractions and lets threads wait while devices work asynchronously.
 
 Begin with this vocabulary:

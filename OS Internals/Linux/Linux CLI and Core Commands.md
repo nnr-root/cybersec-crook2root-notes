@@ -21,6 +21,10 @@ Linux Introduction & Distributions -> Linux CLI & Core Commands -> Linux I-O Red
 
 ## Start from zero — terminal, shell, command & session
 
+> *You type `cd /tmp` and press Enter. Which program ran?*
+>
+> Hold your answer — the section below is the response.
+
 A **terminal** is the text interface carrying your keystrokes and displaying program output. A terminal emulator is an application that provides that interface in a graphical desktop. A **shell**—commonly Bash—runs inside the terminal, parses the line you type, performs expansions and redirections, and launches programs. A **command** may be a shell builtin, function, alias, script, or executable file. A **session** is the environment around that shell: identity, current directory, variables, terminal device, job table, and resource limits.
 
 The prompt is not part of the command. In examples, `$` means an unprivileged prompt and `#` means a root prompt; type only what follows it. Linux is case-sensitive: `Report.txt` and `report.txt` are different names. A command normally reports success with exit status `0` and failure with a nonzero value. Read output before copying the next command, and inspect `echo $?` when correctness matters.

@@ -22,6 +22,10 @@ Linux Introduction & Distributions -> Linux CLI & Core Commands -> Linux I-O Red
 
 ## Start from zero — event, telemetry, evidence & inference
 
+> *There is no log line for the event you are investigating. Does that prove it did not happen?*
+>
+> Hold your answer — the section below is the response.
+
 An **event** is something that happened; **telemetry** is a recorded representation of activity; **evidence** is information preserved with enough provenance and integrity to support a conclusion; an **inference** is the analyst's interpretation. These are not interchangeable. A missing log line does not prove an event did not occur, and a process name does not prove the process contained the expected code.
 
 **Logging** records selected messages. **Metrics** aggregate numeric behavior over time. **Tracing** follows execution or requests across operations. **Observability** uses these signals to infer internal state. **Digital forensics** acquires, preserves, examines, and reports artifacts while controlling alteration. Every source has a producer, clock, format, retention period, privilege boundary, and failure mode. Trust must be evaluated, not assumed.

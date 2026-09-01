@@ -21,6 +21,10 @@ AES and Block Ciphers -> Block Cipher Modes -> Stream Ciphers
 
 ## Encryption One Byte at a Time
 
+> *A one-time pad is provably unbreakable. Why does nobody use one?*
+>
+> Hold your answer — the section below is the response.
+
 A block cipher transforms fixed blocks. A **stream cipher** takes a different route: from the key and a **nonce** (number used once) it generates a pseudorandom **keystream** as long as the message, and XORs that keystream against the plaintext. Because XOR is self-inverse (the **XOR** note), decryption is the identical operation with the identical keystream.
 
 This is a direct descendant of the one-time pad. The pad is provably unbreakable because its key is truly random, message-length, and never reused. A stream cipher cannot supply a truly random message-length key, so it *derives* a long keystream from a short key — trading the pad's perfect secrecy for practicality. Everything good and everything dangerous about stream ciphers follows from that trade: the keystream is only as unique as the key-and-nonce pair that generated it.
