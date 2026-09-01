@@ -25,6 +25,14 @@ The mindset: every open service is a small program with a protocol, and that pro
 
 **Prerequisites:** port scanning and version detection (the active-recon leaf), which produce the open-service list this leaf interrogates.
 
+**The deliberate break:** after a port scan the instinct is to hunt for a vulnerability in each service — find the CVE, find the exploit, move on. Enumeration gets treated as a short step between scanning and exploitation.
+
+The valuable output of enumeration is usually **not a vulnerability at all**. It is information the service hands over to an anonymous stranger because it was designed to: a user list, a password policy with no lockout threshold, share names, the domain name, an SNMP community string, a mail server that confirms which addresses exist. None of that is a CVE, none of it will appear in a scanner's severity list, and all of it is what makes the *next* phase possible. A password spray is only safe and effective because enumeration established the lockout policy first.
+
+Read enumeration as the phase where you learn what the environment will tell you for free — and note that everything it yields is also a finding for the report, because the fix is configuration rather than a patch.
+
+**How you'd spot the finding:** a null session or anonymous bind that *succeeds* is the finding, even though nothing was reported as vulnerable and nothing was exploited. The system did exactly what it was configured to do, for someone with no credentials.
+
 ## The Enumeration Playbook by Service
 
 Each common service has a characteristic set of "tell me about yourself" queries. The high-value ones:
