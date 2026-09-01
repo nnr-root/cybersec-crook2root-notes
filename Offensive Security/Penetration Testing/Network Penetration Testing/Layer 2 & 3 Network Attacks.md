@@ -3,6 +3,9 @@ title: "Layer 2 & 3 Network Attacks"
 aliases: ["Layer 2 Network Attacks", "Layer 3 Network Attacks", "L2 Attacks", "ARP Spoofing Testing"]
 tags: [tree/offensive, cyber/offensive/network-pentest, type/technique, difficulty/medium]
 Domain: "[[Network Penetration Testing]]"
+thread-exempt:
+  - "4a:1b: a spoofed MAC inside an ip-netns lab on the reader's own machine — the LA bit is deliberate"
+  - "8a:9b: the second spoofed MAC in the same local reproduction"
 Color: "#DC143C"
 ---
 

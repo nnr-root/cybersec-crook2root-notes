@@ -83,7 +83,7 @@ done
 ```
 
 ```text
-www.example.com -> 93.184.216.34
+www.example.com -> 203.0.113.20
 ```
 
 Only `www` resolves for the reserved documentation domain; against a real target this list would grow. A serious enumeration uses a large wordlist and a dedicated tool, but the mechanism is exactly this loop — resolve each candidate, keep the hits.

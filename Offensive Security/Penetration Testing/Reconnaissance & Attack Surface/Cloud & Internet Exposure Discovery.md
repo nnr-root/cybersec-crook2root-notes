@@ -54,11 +54,11 @@ The API is queryable read-only:
 
 ```bash
 # host lookup for a public IP (read-only; reveals what Shodan already saw)
-curl -s "https://internetdb.shodan.io/93.184.216.34"
+curl -s "https://internetdb.shodan.io/203.0.113.20"
 ```
 
 ```text
-{"cpes":[],"hostnames":["example.com"],"ip":"93.184.216.34","ports":[80,443],"tags":[],"vulns":[]}
+{"cpes":[],"hostnames":["example.com"],"ip":"203.0.113.20","ports":[80,443],"tags":[],"vulns":[]}
 ```
 
 `internetdb.shodan.io` is a free, unauthenticated endpoint returning ports, hostnames, and known CVEs Shodan already observed for an IP — all without you scanning anything. `"ports":[80,443]` and an empty `"vulns"` is the clean result; a real finding would list open management ports and CVE identifiers.

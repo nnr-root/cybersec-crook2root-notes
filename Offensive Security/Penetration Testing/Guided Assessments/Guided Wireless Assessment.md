@@ -56,8 +56,8 @@ Observe beacon and probe behavior without association. Inventory BSSID, SSID, ba
 
 ```text
 time,bssid,ssid,band,channel,security,pmf,rssi
-09:14:02,02:00:5e:10:00:01,CORP-EAP,5GHz,44,WPA3-Enterprise,required,-48
-09:15:31,02:00:5e:10:00:09,CORP-EAP,2.4GHz,6,WPA2-PSK,optional,-61
+09:14:02,00:00:5E:00:53:C0,CORP-EAP,5GHz,44,WPA3-Enterprise,required,-48
+09:15:31,00:00:5E:00:53:C1,CORP-EAP,2.4GHz,6,WPA2-PSK,optional,-61
 ```
 
 ## Authentication and onboarding

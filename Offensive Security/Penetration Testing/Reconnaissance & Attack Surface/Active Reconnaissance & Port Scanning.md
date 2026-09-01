@@ -30,11 +30,11 @@ Active recon answers three questions in order: **which hosts are up** (host disc
 Before scanning ports, find live hosts. The naive approach — ping — fails often because hosts drop ICMP:
 
 ```bash
-nmap -sn 192.168.56.0/24
+nmap -sn 10.10.20.0/24
 ```
 
 ```text
-Nmap scan report for 192.168.56.101
+Nmap scan report for 10.10.20.30
 Host is up (0.00042s latency).
 Nmap done: 256 IP addresses (1 host up) scanned in 2.35 seconds
 ```
@@ -54,7 +54,7 @@ The core scan interprets TCP handshake responses:
 The **SYN scan** (`-sS`) sends SYN and, on SYN/ACK, replies RST instead of completing — learning "open" without a full connection, which is slightly stealthier and does not always appear in application logs. The **connect scan** (`-sT`) completes the handshake and is more visible.
 
 ```bash
-sudo nmap -sS -p 22,80,443,3306 192.168.56.101
+sudo nmap -sS -p 22,80,443,3306 10.10.20.30
 ```
 
 ```text
@@ -72,7 +72,7 @@ Three different facts: `open` (test it), `closed` (host alive, no service — us
 An open port is a starting point; the *service and version* is what maps to vulnerabilities:
 
 ```bash
-sudo nmap -sV -p 22,80 192.168.56.101
+sudo nmap -sV -p 22,80 10.10.20.30
 ```
 
 ```text
