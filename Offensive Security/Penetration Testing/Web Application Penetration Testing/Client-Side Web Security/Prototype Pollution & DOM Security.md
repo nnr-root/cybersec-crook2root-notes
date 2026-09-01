@@ -87,6 +87,12 @@ flowchart TD
 - **Client vs. server.** Client-side pollution escalates to DOM XSS; server-side (Node.js) can reach RCE. Identify where the vulnerable merge runs.
 - **Framework nuance.** Modern libraries increasingly reject `__proto__`, so a failed payload may mean a patched library — try `constructor.prototype` and other paths before concluding safe.
 
+**The deliberate break:** pollution with no demonstrated impact reads as not a finding — a property was changed and nothing happened, so there is nothing to report.
+
+The vulnerability is the **write to the shared prototype**, and it is complete at that point. The gadget that converts it into impact lives elsewhere — in application code or in a dependency — and may not exist today and may arrive with the next `npm update`. Reporting only where a gadget was found describes the current dependency tree rather than the defect, and understates something durable as something conditional.
+
+**How you'd spot it:** prove the write on its own terms: set a property through `__proto__` and observe it appearing on an unrelated, freshly created object. That demonstration is the finding, whole, and it does not depend on finding impact. Hunt gadgets afterwards as a separate exercise, and state plainly that a gadget-free result is a statement about this dependency set on this date rather than about the application.
+
 ## Security Implications — Detection & Defense
 
 - **Reject dangerous keys** (`__proto__`, `constructor`, `prototype`) when merging or setting properties from untrusted input — the direct fix. Use `Object.create(null)` for maps (no prototype to pollute), or a `Map` instead of a plain object.

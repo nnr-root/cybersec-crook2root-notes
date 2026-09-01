@@ -83,6 +83,12 @@ flowchart TD
 - **Fingerprint errors** lead to trying the wrong known-bypasses. Confirm the WAF product before applying product-specific techniques.
 - **Rate/behavior triggers.** Aggressive bypass fuzzing can trigger the WAF's rate limiting or IP blocking, ending the test. Throttle.
 
+**The deliberate break:** "protected by a WAF" reads as a mitigating control, and a finding behind one reads as lower severity.
+
+A WAF is a signature matcher with no model of the application, so it changes how much effort exploitation takes and **nothing about whether the vulnerability exists**. Downgrading a SQL injection because the first payload was blocked reports the filter's coverage against your payload set on that day — a fact about your testing, not about the code. The vulnerable query is still there, and the next encoding is a research problem rather than a barrier.
+
+**How you'd spot it:** report the vulnerability and the filter as two separate items: one is a defect in the application, the other a compensating control with a measurable and temporary bypass rate. The tell of a WAF-shaped assessment is a report whose severities track which payloads happened to get through rather than what the underlying code does with input.
+
 ## Security Implications — Detection & Defense
 
 - **Fix the vulnerability, not just deploy a WAF.** The WAF is defense-in-depth; the durable control is the secure code (parameterized queries, output encoding) behind it. A WAF alone is a temporary shield over an open wound.

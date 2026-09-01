@@ -158,6 +158,12 @@ finding: only the server-parsed handler evaluates stored input
 
 This matrix identifies the configuration boundary. Additional approved tests compare HTML entities, percent encoding in the write API, content-type changes, filename normalization, and preview-versus-publish paths. A representation that becomes active only after publishing indicates a dangerous second decode or render pass. Avoid token-fragment recipes; document the observed transformation and remove SSI processing from untrusted content.
 
+**The deliberate break:** escaping on output reads as the fix, exactly as it is for cross-site scripting — encode the content and it renders as text.
+
+Server-Side Includes run in a **second pass**, after the content has been stored and rendered correctly. The server's include processor evaluates directives in a resource whose handler enables SSI, and it does so on the output your escaping produced. The escaping happened at the wrong stage entirely: it protected the browser's parse of the page and had no bearing on the server's own parse of it beforehand.
+
+**How you'd spot it:** the condition to look for is a parser crossing — untrusted content reaching a resource that the server evaluates for directives before sending. In practice that means an `.shtml` extension or a handler with SSI enabled, and stored user content rendered into such a page. The remediation is to stop evaluating directives in resources containing untrusted content, rather than to escape more aggressively on the way out.
+
 ## Red Team OpSec & Impact
 
 An authorized CMS assessment found that editors could create preview pages which were later published under a `.shtml` route. In preview, an SSI comment rendered literally. After publication, the `echo SERVER_NAME` canary became `C2R-LAB-SERVER`, proving server-side directive evaluation. The tester used no include or execution directive and deleted the synthetic object through the agreed cleanup procedure. Configuration review showed that a broad location rule enabled SSI for the entire published directory.

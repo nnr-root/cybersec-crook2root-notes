@@ -161,6 +161,12 @@ The harness establishes that predicate evaluation creates a stable response orac
 
 Remediation uses an XPath API with variables where available, precompiled constant expressions, exact schemas, and no dynamic path or function construction. For simple identity lookup, parse XML once and use a safe node API rather than building source. Password verification belongs in a modern identity store, not an XPath predicate.
 
+**The deliberate break:** the fix for XPath injection reads as escaping quotes, since quote termination is how the example payload works.
+
+Input reaches an expression by two structurally different routes, and only one of them can be broken. Concatenated in as **source**, the value becomes part of the expression tree and quote handling decides the parse; supplied as a **bound variable**, it is data to the engine and no amount of quoting in it changes the tree at all. Escaping is an attempt to make the first route safe one character class at a time; variable binding removes the route. And note that the language's own `substring()` and `string-length()` make a boolean oracle available whenever the first route exists, so blindness is no protection.
+
+**How you'd spot it:** check whether the expression is assembled by concatenation or by variable binding — that single question decides whether the class is present, and it is answerable from the code in seconds. From the defender's side, blind exploitation leaves a distinctive trace: many near-identical requests differing in one index or one character, each producing a consistent binary difference in the response, running far longer than any human would browse.
+
 ## Red Team OpSec & Impact
 
 An authorized review found a legacy partner portal using an XML file for a small synthetic migration fixture. A quote in the username produced a generic server error. The tester reconstructed the expression from a lab trace, then used a Boolean branch that could select only `C2R-CANARY`. A paired false condition returned 401 while the canary condition returned a dedicated validation marker. No arbitrary node extraction was attempted because semantic control was already proven.

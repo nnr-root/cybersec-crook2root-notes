@@ -89,6 +89,12 @@ flowchart TD
 - **JSON APIs are often safer by accident.** An API requiring `Content-Type: application/json` and a custom header resists simple form-based CSRF (forms can't set those), but this is incidental, not a designed control.
 - **CSRF vs. XSS.** If the site has XSS, CSRF protections are moot (the injected script runs same-origin and can read the token). Report them together — XSS defeats CSRF defenses.
 
+**The deliberate break:** SameSite cookies read as having closed CSRF. Browsers default to Lax now, so the class is historical.
+
+Lax still permits **top-level GET navigations** to carry cookies, so any state change reachable by a GET remains exposed exactly as before. And the protection lives in the browser, which means it varies by client: an older browser, a non-browser client, and a request originating from a subdomain you also control each behave differently. The default reduced the class substantially and closed none of it, which is a different claim from the one usually made.
+
+**How you'd spot it:** hunt for state changes reachable by GET first, since that is where the modern default does not reach. Then test behaviourally rather than by reading configuration: issue a cross-origin request with cookies attached and see whether the state changed. An endpoint that accepts a request carrying no token and no custom header has no CSRF defence, whatever the cookie attributes say.
+
 ## Security Implications — Detection & Defense
 
 - **CSRF tokens on every state-changing request** — random, per-session, validated server-side, unreadable cross-origin. This is the robust application-level fix.

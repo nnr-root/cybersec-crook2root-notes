@@ -80,6 +80,12 @@ sequenceDiagram
 - **State reset between tests.** After exploiting a one-time action, the state is consumed; reset it (or use a fresh coupon/account) before retesting.
 - **Distinguish from missing rate-limit.** A race bypasses a *correctness* check under concurrency; a missing rate limit is *volume* abuse. They can look similar — the race produces an inconsistent *state* (double-spend), not just many requests.
 
+**The deliberate break:** a test suite that exercises the endpoint and passes reads as evidence the logic is correct.
+
+Sequential testing **cannot reach this bug at all**. The window exists only while two requests overlap, so every request-after-request run observes the application in the state where it behaves properly and confirms exactly that. "We tested it" and "we tested it concurrently" are different claims, and almost every test suite makes only the first — which is why this class survives thorough testing and appears in production the first time two users act at once.
+
+**How you'd spot it:** any check-then-act sequence in application code carries the window; what varies is whether it is wide enough to hit and whether the datastore closes it. In code the tell is a balance, quota or coupon check with no transaction, row lock or unique constraint behind it — the correctness is being enforced by the order the developer imagined rather than by anything the database guarantees.
+
 ## Security Implications — Detection & Defense
 
 - **Atomic operations are the fix.** The check and the update must be a single indivisible operation — a database transaction with proper isolation, a `SELECT ... FOR UPDATE` lock, or an atomic compare-and-set. This closes the check-to-use gap entirely, which is the only real defense.

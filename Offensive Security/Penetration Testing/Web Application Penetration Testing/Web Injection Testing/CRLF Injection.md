@@ -152,6 +152,12 @@ finding: one decode occurs before unsafe header serialization
 
 The output maps transformations; it is not a bypass cookbook. Repeat through each approved ingress path and record HTTP version. Reverse proxies may reject the origin response, normalize it, or close the connection, so collect both origin-side and edge-side evidence with the same request ID.
 
+**The deliberate break:** preventing CRLF injection reads as stripping carriage returns and newlines from the input.
+
+Those bytes arrive in more forms than a filter enumerates — `%0d%0a`, a lone `%0a`, double-encoded variants, and whatever the framework decodes on your behalf after your check has already run. Filtering characters therefore chases the encoding, and the encoding always has one more form. The defect is structural rather than lexical: a value that the application never validated is being placed into a **line-oriented protocol field**, and the boundary between header and content is decided by bytes that value may contain.
+
+**How you'd spot it:** look at how the header is constructed rather than at how the input is cleaned. Building a response header by string concatenation is the vulnerable shape; using an API that encodes or rejects control characters is the safe one. A framework that raises an error on a header value containing a newline is doing this correctly — one that silently strips is still guessing which encodings it will see.
+
 ## Red Team OpSec & Impact
 
 During a scoped portal assessment, a tester noticed that a redirect parameter was copied to `Location`. An encoded CRLF plus the inert `X-C2R-Validation` header appeared in the raw HTTP/1.1 response from a laboratory hostname. The CDN-facing response returned 502 because the edge rejected the malformed origin response, showing that defense in depth reduced exposure but the origin defect remained. No shared-cache or cookie behavior was tested.

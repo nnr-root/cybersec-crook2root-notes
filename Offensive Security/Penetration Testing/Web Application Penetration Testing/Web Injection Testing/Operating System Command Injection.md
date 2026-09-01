@@ -153,6 +153,12 @@ Encoding tests answer where interpretation changes. Compare `%3B`, `%253B`, lite
 
 The secure implementation uses an absolute executable and argument vector, validates the hostname with a strict parser, rejects leading options, applies timeout and resource limits, clears unnecessary environment variables, runs as a dedicated low-privilege identity, and captures only bounded output. If the task can be implemented with a library call rather than an external utility, remove process execution entirely.
 
+**The deliberate break:** preventing command injection reads as escaping shell metacharacters — enumerate the dangerous characters and neutralise them.
+
+The root cause is the **choice of execution API**. `system()`, `popen()`, backticks and `shell=True` hand a single combined string to an interpreter whose job is to find structure in it; an argument-vector call like `execve` with an array hands the kernel a program and a list of arguments, and no shell parses anything at any point. With the second, there is nothing to escape because nothing is being parsed — which is why the fix is a different call rather than a better filter.
+
+**How you'd spot it:** read the call rather than the input handling. Anything invoking a shell is the vulnerable shape regardless of how carefully the input was cleaned, and anything passing an argument array is not. Then check the residual risk the safe form still carries: argument injection, where a value beginning with `-` is read as an option by the program you invoked, which is why `--` and value validation continue to matter after the shell is gone.
+
 ## Red Team OpSec & Impact
 
 During an authorized assessment of an operations portal, a DNS troubleshooting route returned the output of a system utility. An encoded semicolon followed by `printf C2R-CANARY` appended the marker to the response. The tester repeated the request once with a negative control, captured the process tree in the agreed lab replica, and stopped. Code review showed a convenience wrapper invoking `/bin/sh -c`; the application team had relied on a hostname regular expression that was applied before a second URL decode.

@@ -128,6 +128,12 @@ off, and recovery is usually that way.
 - **Host-header reset.** A reset link built from the `Host` header lets an attacker receive a victim's reset — test whether the reset domain is attacker-influenceable.
 - **Client-trusted MFA state.** A `mfa_required: false` the client can flip is a bypass; test whether MFA state is enforced server-side.
 
+**The deliberate break:** an MFA prompt appearing reads as MFA being enforced — the second factor was demanded, so it is required.
+
+Prompting and enforcing are separate things implemented in separate places. The prompt is interface behaviour; enforcement is a server-side check on the session before it is honoured, and applications routinely have the first without the second. The result is a session that is fully usable against the API while the browser is still displaying the code entry screen — the factor was requested, never completed, and never required.
+
+**How you'd spot it:** complete the first factor, decline to complete the second, and use the resulting session directly against the API. If it is accepted, the prompt was decoration. Then test the recovery path as a separate route to the same session, because it is built to reach an account whose factors are unavailable and is therefore frequently held to weaker requirements than the login it exists to replace.
+
 ## Security Implications — Detection & Defense
 
 - **Enforce MFA server-side, on every authenticated path** — never let a client-side flag or a skipped step reach authenticated resources. The half-authenticated state must gate everything until MFA completes.

@@ -81,6 +81,12 @@ flowchart TD
 - **Reading ≠ breaking.** Decoding a JWT proves nothing about its security — it's *supposed* to be readable. The finding is *forging* an accepted token, not reading one.
 - **Sensitive data in the payload.** Because the payload is not encrypted, secrets placed in it are exposed — a JWT should never carry sensitive data in its claims.
 
+**The deliberate break:** `alg:none` being patched reads as JWT handling being sound — the famous bug is closed, so the tokens are fine.
+
+It is one member of a family whose members are independent of each other. Algorithm confusion, an expiry that is never checked, a `kid` parameter that reaches a file path or a query, an HMAC secret short enough to brute force, and tokens accepted from an issuer the service does not use are all still available, and a server that correctly rejects one of them tells you nothing about the next. Each is a separate check the implementation either performs or omits.
+
+**How you'd spot it:** test each property on its own rather than generalising from one result: change `alg`, change the signature, change `exp`, change `iss`, change `kid`, and observe each independently. The HMAC secret is testable entirely offline against a single captured token, which makes it the cheapest of the set — and a short or dictionary secret converts every other control into decoration.
+
 ## Security Implications — Detection & Defense
 
 - **Verify the signature with a strong key, and pin the algorithm.** The definitive fixes: reject `alg: none`, do not accept an algorithm different from what the app expects (defeating confusion), and use a long random HMAC secret or proper RSA keys.

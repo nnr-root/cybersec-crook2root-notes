@@ -86,6 +86,12 @@ flowchart TD
 - **TTL and eviction.** A poisoned entry lasts only until it expires; the impact window is the TTL. Note it, and re-poisoning may be needed for sustained impact.
 - **Benign proof.** Demonstrate with a harmless reflected marker (a canary hostname) that gets cached, not a working XSS against real users.
 
+**The deliberate break:** testing a cache attack reads as testing an endpoint — send a request, read the response, note the behaviour.
+
+A poisoned entry is served **to everyone who requests that key** until it expires. The blast radius is not the tester and never was: an unbounded test against a production cache is a defacement or an outage delivered to real users, and it persists after you stop. This is one of the few web techniques where a successful proof of concept is itself the incident.
+
+**How you'd spot it:** bound the cache key before sending anything at all. Use a cache buster in a parameter you control so the poisoned entry is keyed to a request only you will ever make, then confirm both halves — that you can retrieve it, and that an ordinary request does not. The signature of an unsafe test is a payload sent to the canonical URL of a page real users load.
+
 ## Security Implications — Detection & Defense
 
 - **Key the cache on everything the response depends on.** The definitive fix: if the server uses a header to build the response, that header must be part of the cache key (or the server must not reflect it). The mismatch is the vulnerability.

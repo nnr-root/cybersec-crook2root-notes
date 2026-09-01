@@ -182,6 +182,12 @@ The script performs differential validation, not general enumeration. Similar te
 
 Remediation uses explicit data-transfer objects, runtime schemas, per-route allowed filter fields, fixed sort mappings, immutable tenant predicates applied after user-filter construction, no raw helpers on request data, and least-privilege database credentials. Automated tests should inspect both resulting records and generated query shape.
 
+**The deliberate break:** using an ORM reads as being safe from injection, because the ORM parameterises queries and that is the whole point of it.
+
+It parameterises **values**. Structure cannot be parameterised — column and table identifiers, ordering, operators, associations, projections, raw fragments and nested filter keys are assembled into the query text itself, and every mainstream ORM offers routes for user input to reach them. The abstraction is genuinely protective for the case it covers and silent about the case it does not, which is a more dangerous shape than no protection at all.
+
+**How you'd spot it:** trace user input to anything that is not a bound value: a sort column, a filter key, an operator name, a `raw` or `literal` call, or a nested filter object constructed straight from request JSON. The safe pattern is an allow-list mapping user-supplied names onto known identifiers — if the code interpolates the user's string into an identifier position at any point, parameterisation elsewhere in the query does not help.
+
 ## Red Team OpSec & Impact
 
 In an approved review of a SaaS billing service, the tester compared the public API schema with runtime behavior. The schema described `status` as a string, yet a nested object returned a seeded canary invoice. Instrumentation showed a generic helper translating arbitrary request objects into Prisma-style filters. A separate sort parameter reached a raw ordering helper and caused a controlled unknown-column error. Neither test accessed another tenant; the evidence established two structural entry points into the ORM AST.

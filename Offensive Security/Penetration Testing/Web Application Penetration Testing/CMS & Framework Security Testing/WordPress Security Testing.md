@@ -83,6 +83,12 @@ flowchart TD
 - **Managed WordPress.** Hosted platforms patch core and sometimes plugins automatically, so a version string may be misleading. Confirm the actual patch state where possible.
 - **False attribution.** A flaw may be in a custom theme's PHP, not a distributable plugin — attribute the finding to the right component so remediation targets it.
 
+**The deliberate break:** a long list of outdated plugins reads as a long list of findings, and the plugin count reads as the risk.
+
+Exploitability varies enormously across that list. An outdated plugin with no published vulnerability, one whose vulnerable code path is not reachable in this configuration, or one whose CVE requires an authenticated role the site does not issue, is not a finding however old it is. A report ordered by version age produces a hundred items nobody can action and buries the two that matter.
+
+**How you'd spot it:** establish reachability before severity, plugin by plugin: is the vulnerable endpoint actually present, is the feature enabled, does the CVE need a role this site grants. And confirm the version from the plugin's own `readme.txt` rather than from a fingerprint — a partial install or a deliberately hidden version turns the fingerprint into a guess, and a CVE asserted on a guess is the finding that gets your report dismissed.
+
 ## Security Implications — Detection & Defense
 
 - **Plugin hygiene is the whole game.** Removing unused plugins, updating the rest, and avoiding abandoned ones closes the dominant WordPress attack surface. A vulnerability-scanning schedule that includes plugins is essential.

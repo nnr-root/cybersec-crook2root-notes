@@ -79,6 +79,12 @@ flowchart TD
 - **Unexpected XML surfaces.** Missing XXE because the input was an SVG or DOCX (not an obvious XML endpoint) is a common gap — test every place XML could be parsed.
 - **Encoding and DTD tricks.** Character encodings and parameter entities can bypass naive filters; test variants as with any parser fix.
 
+**The deliberate break:** XXE reads as an XML problem, so an application that "does not use XML" reads as out of scope for it.
+
+XML sits underneath a great deal that is never described as XML: SOAP services, SAML assertions, SVG images, Office documents in every `.docx` and `.xlsx`, RSS and Atom feeds, and configuration uploads of many kinds. The vulnerable component is the **parser**, and it is reached through whichever of those formats the application accepts — which is why the finding so often lands on an endpoint whose developers would have told you truthfully that they do not handle XML.
+
+**How you'd spot it:** inventory by parser rather than by content type: anything accepting an office document, an SVG, a feed or an assertion is running an XML parser over untrusted input. Aim the probe safely when you test — an out-of-band callback to infrastructure you control proves the parser resolved your entity without reading a single file you were not authorised to read, which keeps the proof and drops the risk.
+
 ## Security Implications — Detection & Defense
 
 - **Disable external entity and DTD processing** in every XML parser — the definitive, zero-cost fix that closes the entire class. This is a parser configuration flag, and its default-off in modern libraries is why XXE has declined.

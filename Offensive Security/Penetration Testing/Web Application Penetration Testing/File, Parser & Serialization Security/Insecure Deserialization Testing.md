@@ -64,6 +64,12 @@ flowchart TD
 - **Internal vs. external input.** Deserializing internal, trusted data is lower risk; the finding requires attacker-controllable input reaching the deserializer. Trace the data source.
 - **Encoding layers.** Serialized blobs are often base64-encoded in cookies or parameters; decode to identify and craft.
 
+**The deliberate break:** deserialization risk reads as a parsing problem — malformed input reaching a parser — so the fix reads as validating the input.
+
+The input is **perfectly well formed**. Reconstructing an object runs constructors, setters and lifecycle hooks because that is what deserialization is for, and a gadget chain assembles those entirely legitimate behaviours into execution. Nothing is malformed at any point, so validation of the serialized blob has nothing to reject — the blob is valid, and validity is precisely the problem.
+
+**How you'd spot it:** the question is whether untrusted bytes reach a deserializer at all, not whether they look reasonable, so find the deserializing call and trace its input backwards to the request. The safe pattern is the tell in reverse: a format that reconstructs *data* into a declared schema, rather than one that reconstructs arbitrary typed objects chosen by the sender.
+
 ## Security Implications — Detection & Defense
 
 - **Do not deserialize untrusted input** — the definitive control. If data must cross a trust boundary, use a **data-only format** (JSON, with a schema) that reconstructs plain values, not arbitrary objects, so no code runs.

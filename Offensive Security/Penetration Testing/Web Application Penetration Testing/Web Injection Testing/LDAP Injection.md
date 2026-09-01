@@ -147,6 +147,12 @@ validation stopped at known synthetic prefix
 
 Test literal, percent-encoded, and double-encoded metacharacters only to map transformations. JSON scalar-to-array/object changes can expose framework coercion but are not inherently LDAP injection. Also verify malformed filter handling: the public service should return a generic 400, while restricted logs capture a parser category without echoing the complete filter.
 
+**The deliberate break:** LDAP escaping reads as one job, handled by one helper function, the way SQL escaping is usually imagined.
+
+There are **two grammars with different metacharacters and different rules**. Search filters need `(`, `)`, `*`, `\` and NUL escaped in one scheme; distinguished names need `,`, `+`, `"`, `\`, `<`, `>`, `;`, and leading or trailing spaces escaped in another. A single escaping routine applied to both is silently wrong in one of them, and it fails quietly — the output looks escaped, passes review, and is interpreted as grammar in the context it was not written for.
+
+**How you'd spot it:** check which of the two contexts each interpolation lands in before reading the escaping at all. A shared `escape()` helper used for both filter values and DN components is the tell, and so is a codebase where the same sanitised variable is used to build both. The safe shape is separate, context-specific encoders — or better, a library API that takes the value as a parameter rather than as text.
+
 ## Red Team OpSec & Impact
 
 An authorized identity-platform assessment reviewed a legacy people-search route backed by Active Directory Lightweight Directory Services. The tester used a nonexistent UID, then a balanced filter that could match only `C2R-CANARY` under a dedicated organizational unit. The result count changed from zero to one. Application tracing showed request data concatenated directly into an RFC 4515 filter; the generic LDAP helper had escaped DNs, not filter values.

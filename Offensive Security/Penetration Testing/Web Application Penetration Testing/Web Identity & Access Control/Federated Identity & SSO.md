@@ -120,6 +120,12 @@ OIDC library encodes and an afternoon's own code does not.
 - **Token audience.** A token that validates cryptographically may still be misused if its *audience* (intended app) isn't checked — cryptographic validity ≠ correct usage.
 - **Provider vs. relying party.** The flaw is usually in the *relying party's* validation, not the IdP. Attribute correctly — "SAML is broken" is wrong if the IdP is fine and the app skips validation.
 
+**The deliberate break:** SSO reads as delegating authentication to a stronger provider, so adopting it reads as an improvement by construction.
+
+Delegation moves the check; it does not remove it. The relying party still has to **verify what comes back** — that the signature is valid and covers the assertion, that the audience is itself, that the issuer is the expected one, that the token has not expired, that the nonce matches the request it made. The recurring, well-documented failure is a relying party that reads claims it never verified, which turns a strong identity provider into a decorative one.
+
+**How you'd spot it:** the finding is a claim consumed without validation, so test it directly: alter a claim and see whether the application notices. An assertion with a changed subject that still logs you in is the entire result and needs no further argument. In code, look for parsing that extracts claims before or without a verification call, and for signature checks that confirm a signature *exists* rather than that it covers the element being trusted.
+
 ## Security Implications — Detection & Defense
 
 - **Validate everything the assertion claims:** signature (over the correct element), issuer, audience, expiry, and — for OAuth — `state` and an exact-match `redirect_uri`. Skipping any is the vulnerability.

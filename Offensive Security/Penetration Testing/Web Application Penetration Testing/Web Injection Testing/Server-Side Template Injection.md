@@ -163,6 +163,12 @@ conclusion: Jinja/Twig-family expression evaluation; stopped at arithmetic
 
 Remediation uses immutable template files or trusted source stored outside user control, data-only context, minimal registered functions, autoescaping for the destination, and sandboxing as defense in depth. Remove dynamic rendering helpers from request paths. If user-authored presentation is a product requirement, use a deliberately limited non-Turing-complete grammar with explicit AST validation and isolated rendering.
 
+**The deliberate break:** template injection reads as cross-site scripting inside a template — user input appearing in a page, executing in a browser.
+
+It executes in the **template engine, on the server**, with the engine's object graph within reach. The distinction is not one of severity but of location: XSS runs in the victim's browser with the victim's session, and SSTI runs in your infrastructure with your application's privileges. The defect is rendering user input *as template source* rather than passing it *into* a template as a value, and that single structural difference is what separates a client-side bug from server-side code execution.
+
+**How you'd spot it:** distinguish the two call shapes, because everything follows from them: `render_template_string(user_input)` is the vulnerability, while `render_template("page.html", value=user_input)` is not, whatever the value contains. Confirm with arithmetic inside the delimiters rather than with a payload — a response containing `49` where you sent `{{7*7}}` is a statement about the server having evaluated it, which is exactly the fact in question.
+
 ## Red Team OpSec & Impact
 
 An authorized tester assessed an email-preview feature that accepted a display name. Ordinary HTML was encoded, suggesting output escaping, but `{{7*7}}` became `49`. The tester tried a malformed closing delimiter to obtain a controlled template exception, confirmed a Jinja-family parser in restricted logs, and stopped without object traversal. Code review showed that developers concatenated user fields into a template string before rendering because the preview supported dynamic localization.
