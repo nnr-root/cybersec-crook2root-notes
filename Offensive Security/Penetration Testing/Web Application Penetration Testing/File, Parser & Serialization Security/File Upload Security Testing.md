@@ -38,6 +38,16 @@ Servers try to restrict uploads, and each naive check has a bypass:
 
 The robust approach is an **allowlist** of permitted extensions/types *and* — critically — ensuring the upload directory cannot execute anything. Most upload defenses fail because they blocklist (endless bypasses) instead of allowlist, or because they validate the file but store it in an executable location.
 
+**The deliberate break:** "we validate the file type on upload." Which type, decided by whom?
+
+At least three components each answer that question from a different signal, and they routinely disagree. The **browser** declares a `Content-Type` that the client fully controls. The **application** usually looks at the extension, or at magic bytes, or both. The **web server** decides how to *execute* the file from its own handler mapping — which may key on `.php` anywhere in the name, or on a configuration you did not write. A file is dangerous exactly when the component that **executes** it uses a different signal from the component that **validated** it, which is why `shell.php.jpg`, `shell.phtml` and a valid JPEG with PHP appended all keep working against filters that are individually reasonable.
+
+**This is the Parser Differential pattern**, with three readers rather than two.
+
+**The Twin — compare this with File Inclusion & Path Traversal.** Both notes are about the server deciding what to do with a file *by reading its name*, and in both the attacker's leverage is that the name is read more than once by parties that disagree. In traversal the disagreement is about **where** the name points; in upload it is about **what** the name means. The defensive shape is identical: stop deriving behaviour from an attacker-controlled string — store with a generated name, serve from a path with no execution handler.
+
+**How you'd spot it:** the upload succeeds and the stored file is reachable under the webroot. Request it and read the response — served as `text/plain` it is inert, *executed* it is a finding. The upload was never the vulnerability; the execution mapping is.
+
 ## The Execution Chain Is the Real Flaw
 
 A malicious file that lands where nothing executes it is harmless. The severity comes from the *combination*: an upload the server will execute. So testing asks two questions:

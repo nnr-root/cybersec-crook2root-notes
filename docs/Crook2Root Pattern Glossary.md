@@ -37,6 +37,18 @@ payload fixes nothing.
 **The Tell:** two components in the path that both interpret the same input, with
 only one of them validating. Ask which one *acts*, and whether it re-reads.
 
+**The Twin pairings written into the corpus.** Each note compares itself to one
+surface-different sibling, so the pattern is a web rather than a hub — a reader
+arriving from any of the five meets the shape twice:
+
+| Note | compares itself with | the divergence |
+|:--|:--|:--|
+| SQL Injection | HTTP Request Smuggling | application says data / parser says grammar — vs — front-end says finished / back-end says continues |
+| NoSQL Injection | File Upload Security Testing | a type decided by the driver — vs — a type decided by the execution handler |
+| File Inclusion & Path Traversal | SQL Injection | validator reads a string, resolver reads a path |
+| File Upload Security Testing | File Inclusion & Path Traversal | *what* the name means — vs — *where* it points |
+| HTTP Request Smuggling | SQL Injection | different layer, different protocol, identical shape |
+
 **Why it transfers:** these look nothing alike on the surface — a header, a quote
 mark, a `../`, a JSON object. Compare where the two readers diverge in any two of
 them and the shared shape is unmistakable. That instructed comparison is the

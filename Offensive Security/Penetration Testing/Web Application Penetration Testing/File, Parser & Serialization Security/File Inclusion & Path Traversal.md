@@ -44,6 +44,16 @@ Each `../` climbs one level; enough of them reach the filesystem root, then desc
 
 The variant neighborhood matters enormously (from the retest leaf): a naive filter blocking `../` is bypassed by URL-encoding (`..%2f`), double-encoding (`..%252f`), or overlong sequences (`....//`). A "fixed" traversal must be retested against all of these.
 
+**The deliberate break:** "we strip `../` from the input, so traversal is blocked." It is the most common fix and one of the least effective, because stripping is not the same operation as **normalising**.
+
+A single-pass strip is a filter that runs once; path resolution runs afterwards and follows completely different rules. `....//` survives one removal pass and becomes `../` in the leftovers. `%2e%2e%2f` is not `../` when the check reads it and is by the time the filesystem does, because decoding happened in between. Absolute paths sidestep traversal entirely — no `../` required. And a null byte or an appended extension can end the string somewhere the validator did not expect. In every case the validator read a **string** and the filesystem resolved a **path**, and those are different languages.
+
+**This is the Parser Differential pattern.**
+
+**The Twin — compare this with SQL Injection.** A `../` in a filename and a `'` in a search box look like different problems and get different remediation advice. They are the same failure: a component inspected the value as text, and a second component — the filesystem resolver, the SQL parser — interpreted the same characters as structure. Notice that both "fixes by escaping" fail for the same reason, and both real fixes have the same shape: stop passing the value into a place where it can become structure. Parameterise the query; resolve the path and confirm it is inside the permitted directory.
+
+**How you'd spot it:** the response differs between a path that exists and one that does not — a different error, a different length, a different timing — even when no file content is returned. That difference is a file-existence oracle, and it confirms your input reached the resolver.
+
 ## LFI: From Reading to Executing
 
 LFI is traversal into a context where the file is *included* (executed), most classically in PHP's `include($_GET['page'])`. Reading `/etc/passwd` proves the flaw, but the escalation to code execution is what makes LFI severe:

@@ -27,6 +27,16 @@ Type confusion is as important as operator injection. An endpoint designed for a
 
 Safe construction combines strict schemas, scalar type checks, operator allowlists, and explicit query assembly. For a username, the accepted type should be a bounded string; objects and arrays should fail before database access. User-selectable filters should be translated from a small external vocabulary into fixed internal operators. Recursive key sanitization can add defense in depth, but stripping `$` or `.` characters alone is fragile if alternate encodings, nested arrays, or another datastore syntax remain.
 
+**The deliberate break:** "we moved to MongoDB, so SQL injection does not apply to us." True, and beside the point — the database changed and the boundary problem did not.
+
+NoSQL injection is usually not a *string* attack at all, which is why escaping defences miss it completely. The application expects `{"user": "alice"}` and receives `{"user": {"$ne": null}}` — no quote to escape, no comment sequence, nothing an SQL-shaped filter would notice. What crossed the boundary is a **type**: a scalar was expected and an object arrived, and the driver faithfully turned that object into a query operator. The vulnerable line is the one that passed user-controlled JSON straight into the query document.
+
+**This is the Parser Differential pattern**, in its type-confusion form.
+
+**The Twin — compare this with File Upload Security Testing.** An uploaded file and a JSON login body have nothing visibly in common. But in both, the flaw is that *what the value is* gets decided by a different component from the one that checked it: the upload validator reads an extension while the web server consults its own handler mapping, and the login handler expects a string while the driver reads an operator. Neither is defeated by sanitising characters, because in neither case was a character the problem — the **type** was.
+
+**How you'd spot it:** send a JSON object where the application expects a string. If the response changes at all — a different error, a different status, a successful login — the input is reaching the query document rather than being coerced to text.
+
 ## Visual Attack Flow
 
 ```mermaid

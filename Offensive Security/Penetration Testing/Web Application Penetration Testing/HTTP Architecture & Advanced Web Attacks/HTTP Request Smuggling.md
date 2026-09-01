@@ -42,6 +42,18 @@ The RFC says `Transfer-Encoding` takes precedence, but implementations disagree,
 
 The attack crafts a request where the two servers parse the body boundary differently, leaving bytes that the back-end interprets as the beginning of a *new* request.
 
+**The deliberate break:** a request is a request. You send one thing, the server receives one thing, and if a proxy sits in between it forwards what it got.
+
+Two servers on the same connection can disagree about **where your request ended**, and when they do, the bytes after the boundary become the beginning of the *next* person's request. That is the entire attack. It needs no memory corruption and no cryptography — only `Content-Length` and `Transfer-Encoding` both being present, and the front-end and back-end following different rules about which one wins. RFC 7230 says `Transfer-Encoding` takes precedence, but implementations vary, and any pair that disagrees is exploitable.
+
+The consequence is what makes this one different from every other flaw in this branch: **the victim is someone else**. You are not attacking your own session, you are prepending bytes to a stranger's request.
+
+**This is the Parser Differential pattern**, in its purest form — no cleverness about the payload at all, just two parsers and one stream.
+
+**The Twin — compare this with SQL Injection.** In SQLi the application says "this is data" and the database parser says "this is grammar." In smuggling the front-end says "this request is finished" and the back-end says "it continues." Different layer, different protocol, identical shape: **the component that validated is not the component that acted, and they disagree about where a value ends.** If SQLi already feels obvious to you, that intuition transfers here directly — and to XXE, to NoSQL operators, and to path resolution.
+
+**How you'd spot it:** send a request whose two length headers disagree and watch the **timing**. A back-end still waiting for body bytes that the front-end already considers sent will hang until timeout. A delay where there should be none is the classic first signal, before any payload is attempted.
+
 ## What Smuggling Achieves
 
 The smuggled request prepends to the next user's request, enabling:

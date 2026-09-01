@@ -25,6 +25,16 @@ For `input = 42` the predicate is `AND(EQUAL(id,"42"), EQUAL(tenant_id,$1))`. Fo
 
 **Prepared statements** fix value-context injection because the SQL text is parsed first and placeholders become typed value nodes; the bound value is never re-lexed as query text. Parameters cannot represent table names, columns, sort direction, or operators, so dynamic identifiers need a fixed allow-map (`sort=name -> products.name`), never concatenation.
 
+**The deliberate break:** SQL injection is caused by special characters, so escaping the special characters fixes it. That is the intuition almost everyone arrives at, and it is why escaping libraries keep being written and keep failing.
+
+The cause is not the quote mark. The cause is that the query was **assembled as a string**, so the boundary between grammar and data is decided at parse time by the database rather than at build time by you. Escaping tries to patch that after the fact, and it breaks in every context where quoting is not the rule: a numeric parameter needs no quotes at all, a table or column name cannot be parameterised or quoted the same way, a `LIKE` clause has its own metacharacters, and second-order injection stores a payload that is escaped on the way *in* and concatenated on the way *out*. Parameterisation fixes the class because it never asks the question — the query structure is sent separately from the values, so no value can become grammar.
+
+**This is the Parser Differential pattern** — one of the named patterns in the project's **Pattern Glossary**, and the one you will meet most often.
+
+**The Twin — compare this with HTTP Request Smuggling.** They share nothing on the surface: one is a quote mark in a form field, the other is two headers in an HTTP request, and they are taught in different branches. Look at where the two readers diverge in each. In SQL injection the *application* thinks it is handling data and the *database parser* reads grammar. In smuggling the *front-end proxy* thinks the body ended and the *back-end server* thinks it continues. Both are one component validating and a different component acting on its own reading of the same bytes. Once you can see that, you will find the shape in file paths, XML entities and JSON operators too — which is exactly where the next four notes go.
+
+**How you'd spot it:** a parameter whose value changes the *shape* of the response — the number of rows, the ordering, the presence of an error — rather than only its content. Shape changes mean the input reached the query structure, not just the data.
+
 ## The Subtypes as One Root Cause
 
 Every observable form is the same defect seen through a different channel:
