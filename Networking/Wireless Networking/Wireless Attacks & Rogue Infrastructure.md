@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/wireless
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Wireless Networking]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Wireless Fundamentals & 802.11 -> Wi-Fi Security & WPA -> Wireless Attacks & Rogue Infrastructure -> Cellular & Long-Range Wireless -> Bluetooth & Personal-Area Networks -> Wireless Reconnaissance & Defense
 
-## Start at Zero: Don't Break In, Be the Door
+## Don't Break In, Be the Door
 
 Cracking a strong WPA3 passphrase is hard. Convincing a victim to connect to *your* access point is easy, and yields the same on-path position without touching the encryption. This is the strategic insight of wireless attacks: **impersonate the infrastructure rather than defeat the cryptography.**
 
@@ -63,6 +63,62 @@ For **WPA-Enterprise**, the picture improves *if configured correctly*: the clie
 
 The general principle: the evil twin succeeds wherever the client cannot, or does not, cryptographically verify the AP's identity. Strong, correctly configured mutual authentication is what defeats it; anything less leaves the door open.
 
+## Worked Example: Two Access Points, One Name
+
+An evil twin is not subtle in a capture. It is subtle only to the client, which
+selects by name.
+
+> [!note] Representative output
+> Reconstructed from a lab of this shape rather than copied from one capture. Field layouts and flag names match the named tool; addresses and identifiers are synthetic.
+
+**The airspace, with both APs present:**
+
+```shell-session
+analyst@lab:~$ sudo airodump-ng wlan0mon
+
+ CH  6 ][ Elapsed: 2 mins ][ 2026-04-12 15:04
+
+ BSSID              PWR  Beacons  #Data, #/s  CH   MB   ENC  CIPHER AUTH ESSID
+
+ A4:2B:8C:11:0D:E2  -62      184      12    0   6  130   WPA2 CCMP   PSK  corp-wifi
+ 00:11:22:33:44:55  -31      612     104    3  11   54e  WPA2 CCMP   PSK  corp-wifi
+ A4:2B:8C:11:0D:E3  -63      181       0    0   6  130   WPA2 CCMP   MGT  corp-guest
+```
+
+Two rows advertise `corp-wifi` with different BSSIDs, and four fields separate
+them. The second is **31 dB stronger**, which at these levels means far closer.
+Its **max rate is 54e**, the signature of a software access point on a generic
+adapter rather than the 130 Mbit/s of the real enterprise hardware. It sits on a
+**different channel**, and its **beacon count is more than triple** the
+legitimate AP's over the same window — an impatient transmitter advertising hard.
+The first three octets also differ: `A4:2B:8C` is a real vendor allocation shared
+with the guest SSID on the same physical AP, while `00:11:22` is a placeholder
+that appears in no vendor registry.
+
+**The client moving across.** A deauthentication frame arrives, and the
+association that follows lands on the wrong BSSID:
+
+```shell-session
+analyst@lab:~$ sudo tcpdump -i wlan0mon -e -n 'wlan type mgt' -c 4
+15:06:22.104881 BSSID:a4:2b:8c:11:0d:e2 SA:a4:2b:8c:11:0d:e2 DA:9c:b6:d0:44:1f:07
+    DeAuthentication (7): Class 3 frame received from nonassociated STA
+15:06:22.118440 BSSID:00:11:22:33:44:55 SA:9c:b6:d0:44:1f:07 DA:00:11:22:33:44:55
+    Assoc Request (corp-wifi) [1.0 2.0 5.5 11.0 Mbit]
+15:06:22.121973 BSSID:00:11:22:33:44:55 SA:00:11:22:33:44:55 DA:9c:b6:d0:44:1f:07
+    Assoc Response AID(1) :: Successful
+```
+
+The deauthentication claims to come from the legitimate AP — the source address
+is simply written, exactly as with an Ethernet frame, and management frames on an
+open or PSK network carry no authentication of their own. Fourteen milliseconds
+later the client has associated with the impostor and its user has noticed
+nothing, because from the client's perspective it reconnected to a network it
+knows by name.
+
+The decisive detail is what the client compared before choosing: an SSID string
+and a signal strength. It never asked the access point to prove it was the same
+one as yesterday, because on a PSK network there is nothing it could have asked.
+
 ## Security Implications
 
 **The client's automatic behaviour is the root vulnerability.** Auto-reconnect and probing for remembered networks are conveniences that let an attacker impersonate a network the victim trusts. The user does nothing wrong and often nothing visible — the device connects silently. This is why user education alone is a weak defense and why technical controls (certificate validation, disabling auto-join for open networks) matter more.
@@ -75,34 +131,13 @@ The general principle: the evil twin succeeds wherever the client cannot, or doe
 
 Every technique in this note must be performed only against networks and devices you own or are explicitly authorized to test. Standing up a rogue AP that lures other people's devices, forging deauthentication frames on networks you do not own, and harvesting credentials are unlawful outside a controlled, authorized lab.
 
-## Authorized Lab: Lure a Device You Own
+## Summary
 
-Use an isolated lab with an AP you control as the "legitimate" network, a second radio as the attacker, and a test client that is yours. No production or third-party devices may be in scope.
+You should now be able to:
 
-1. **Set up the legitimate network** and connect your test client so it remembers the SSID.
-2. **Stand up an evil twin** on the attacker radio with the same SSID and a stronger signal. Observe whether the client prefers or reconnects to it.
-3. **Add a deauthentication push.** Forge deauth frames against your own client on the legitimate AP and confirm it disconnects and then reconnects — to the evil twin if it presents the stronger matching SSID.
-4. **Confirm the on-path position.** With the client on the evil twin, confirm the attacker sees the client's traffic, then confirm that properly validated HTTPS from the client yields only encrypted content to the attacker — the backstop holding.
-5. **Demonstrate the captive portal.** Present a fake portal to the connected client and confirm it can capture typed input (use only synthetic test credentials).
-6. **Test Enterprise certificate validation.** With a WPA-Enterprise lab AP, first misconfigure the client to skip server-certificate validation and confirm it authenticates to a rogue Enterprise AP; then enforce validation and confirm the rogue AP is now rejected — demonstrating the decisive control.
-7. **Cleanup.** Tear down the rogue AP, restore the client's configuration, and remove any remembered rogue networks.
-
-Expected interpretation:
-
-```text
-Evil twin        -> client prefers/reconnects to the matching SSID by name alone
-Deauth push      -> forces the reconnection actively, not just passively
-On-path          -> attacker sees traffic; validated HTTPS still yields only ciphertext
-Captive portal   -> harvests typed input after the connection
-Enterprise, no cert check -> rogue AP captures the authentication
-Enterprise, cert enforced -> rogue AP rejected; the control that actually works
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why impersonating a network beats cracking its encryption, and how auto-reconnect lets an evil twin work.
-- **Operator:** Describe the evil twin, deauthentication, karma, and captive-portal techniques and how they chain; explain why open networks are the softest target.
-- **Root:** Explain why the evil twin succeeds wherever the client cannot verify the AP, and why enforced RADIUS server-certificate validation is the decisive Enterprise control; connect the on-path outcome to the encryption backstop and the recommendation to use a VPN on untrusted Wi-Fi.
+- Explain why impersonating a network beats cracking its encryption, and how auto-reconnect lets an evil twin work.
+- Describe the evil twin, deauthentication, karma, and captive-portal techniques and how they chain; explain why open networks are the softest target.
+- Explain why the evil twin succeeds wherever the client cannot verify the AP, and why enforced RADIUS server-certificate validation is the decisive Enterprise control; connect the on-path outcome to the encryption backstop and the recommendation to use a VPN on untrusted Wi-Fi.
 
 ---
 > 🔼 Up: [[Wireless Networking]]

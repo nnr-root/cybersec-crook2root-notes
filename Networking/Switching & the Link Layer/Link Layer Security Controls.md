@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/layer2
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Switching & the Link Layer]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbor Discovery -> VLANs & Trunking -> Spanning Tree & Loop Prevention -> Link Layer Security Controls
 
-## Start at Zero: The Common Root Cause
+## The Common Root Cause
 
 The link-layer attacks covered in this branch look different but share one weakness:
 
@@ -126,36 +126,13 @@ The controls above prevent forgery but do not provide confidentiality; a device 
 
 All configuration and validation described here must be performed on an isolated lab or on production infrastructure you are explicitly authorized to change; enabling these controls incorrectly (DAI without snooping, aggressive port security) can itself cause outages.
 
-## Authorized Lab: Build the Stack, Attack Each Layer
+## Summary
 
-Use a managed lab switch (or a virtualized equivalent), a DHCP server, a client, and an attacker VM. Record the baseline configuration.
+You should now be able to:
 
-1. **No controls.** Confirm each attack works: MAC-flood the table and intercept, run a rogue DHCP server and win a lease, and ARP-spoof the client's gateway. Establish that the segment is fully exposed.
-2. **Enable DHCP snooping**, marking only the real server's port trusted. Repeat the rogue DHCP attack and confirm the offer is dropped. Inspect the binding table and confirm the client's legitimate lease is recorded.
-3. **Enable Dynamic ARP Inspection** on untrusted ports. Repeat the ARP spoof and confirm the forged reply is dropped and logged, and the client's gateway mapping stays correct.
-4. **Enable IP Source Guard.** Have the attacker attempt to send traffic with a spoofed source IP and confirm it is dropped.
-5. **Enable port security** with a low maximum on the attacker's port. Repeat the MAC flood and confirm the port restricts or shuts down instead of learning thousands of addresses.
-6. **Enable BPDU Guard** on access ports. Have the attacker inject a BPDU and confirm the port is disabled immediately.
-7. **Review the evidence.** Collect the DAI drops, port-security violations, and BPDU Guard events, and confirm each attack left a distinct, attributable log entry.
-8. **Cleanup.** Restore the baseline configuration, re-enable any disabled ports, and confirm normal connectivity for the legitimate client.
-
-Expected interpretation:
-
-```text
-No controls   -> every link-layer attack succeeds
-DHCP snooping -> rogue offers dropped; binding table now populated
-DAI           -> forged ARP dropped, validated against the binding table
-IP Source Guard-> spoofed source IP dropped
-Port security -> flood cannot present many MACs through one port
-BPDU Guard    -> BPDU on an access port disables it instantly
-Logs          -> each caught lie is an attributable security event
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** State the common weakness all link-layer attacks share, and name the control that stops each one.
-- **Operator:** Explain what the DHCP snooping binding table contains and which controls depend on it; deploy the controls in the correct order and verify each by repeating the attack it stops.
-- **Root:** Explain why 802.1X is the strongest control and where its exceptions leak; justify the deployment order from the binding-table dependency, describe what MACsec adds that the forgery-prevention controls do not, and argue why monitoring control violations turns prevention into detection.
+- State the common weakness all link-layer attacks share, and name the control that stops each one.
+- Explain what the DHCP snooping binding table contains and which controls depend on it; deploy the controls in the correct order and verify each by repeating the attack it stops.
+- Explain why 802.1X is the strongest control and where its exceptions leak; justify the deployment order from the binding-table dependency, describe what MACsec adds that the forgery-prevention controls do not, and argue why monitoring control violations turns prevention into detection.
 
 ---
 > 🔼 Up: [[Switching & the Link Layer]]

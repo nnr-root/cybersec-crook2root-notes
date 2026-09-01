@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/macos
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[macOS]]"
 Color: "#FFA500"
@@ -19,7 +19,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File System -> macOS Processes & Daemons -> macOS Identity, Keychain & Credentials -> macOS Networking Internals -> macOS Security Mechanisms -> macOS Binaries & Runtime Loading -> macOS Observability, Incident Response & Forensics
 
-## Crook — Process Lifecycle & PID 1
+## Process Lifecycle & PID 1
 
 ### Vocabulary & First Mental Model
 
@@ -82,7 +82,7 @@ system = {
 > [!tip] The analogy, and where it breaks
 > A facilities manager who starts staff on demand, restarts them if they collapse, and keeps some permanently on duty. The analogy breaks because work can be requested from a service that is not yet running and it will be started automatically to answer — an on-demand model that makes 'is it running?' a less meaningful question than on other systems.
 
-## Operator — Job Definitions, Domains & Debugging
+## Job Definitions, Domains & Debugging
 
 ### Agents, Daemons & Search Paths
 
@@ -143,7 +143,7 @@ sudo fs_usage -w -f filesystem 4912
 
 `sample` captures user-space stack traces and is useful for hangs. `spindump` provides broader system diagnostics. `fs_usage` shows live filesystem calls but can be noisy and requires privilege. Activity Monitor provides a graphical view but should not replace recorded command output during an investigation.
 
-## Root — XPC, Privileged Helpers & Persistence Analysis
+## XPC, Privileged Helpers & Persistence Analysis
 
 **XPC** wraps Mach IPC in typed dictionaries, arrays, primitives, file descriptors, and endpoint objects. A service advertises a name, `launchd` brokers activation, and the client sends messages over an XPC connection. The service obtains an **audit token** describing the peer's effective identity and code-signing context. Secure privileged services authorize each sensitive request; they do not trust a caller-supplied username, PID, path, or “isAdmin” field.
 
@@ -213,107 +213,6 @@ log show --last 30m --predicate 'process == "launchd" AND eventMessage CONTAINS[
 
 XPC transactions can keep a demand-launched process alive while work is outstanding, after which it may exit normally. This is not necessarily instability. Analysts should distinguish on-demand idle exit, clean completion, signal termination, jetsam/resource pressure, and crash. A service's expected lifecycle is part of its baseline.
 
-## Hands-On Lab: launchd, On-Demand Services and XPC
-
-> [!info] Runs on any Mac — read-only plus one temporary LaunchAgent removed in Step 6
-> `launchd` is macOS's init and service manager. This lab shows its on-demand model, which differs from systemd.
-
-### Step 1 — PID 1 is launchd, and everything descends from it
-
-```bash
-ps -p 1 -o pid,comm
-launchctl print system 2>/dev/null | grep -E 'state|active count' | head -2
-```
-
-```text
-  PID COMM
-    1 /sbin/launchd
-	state = running
-	active count = 3
-```
-
-Unlike Linux's many boot scripts, a single `launchd` manages all system and user services, on demand.
-
-### Step 2 — List loaded services in a domain
-
-```bash
-launchctl list | grep -v '^-' | head -5
-```
-
-```text
-PID	Status	Label
-742	0	com.apple.Spotlight
-88	0	com.apple.logd
--	0	com.apple.ManagedClient.startup
-```
-
-A `PID` means running; a `-` means loaded but **not currently running** — registered to start on demand. That on-demand model is the key difference: "is it running?" is a less meaningful question than on other systems.
-
-### Step 3 — Create a LaunchAgent and load it
-
-```bash
-PLIST=~/Library/LaunchAgents/com.lab.demo.plist
-cat > "$PLIST" << 'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict>
-  <key>Label</key><string>com.lab.demo</string>
-  <key>ProgramArguments</key><array><string>/bin/sh</string><string>-c</string><string>echo lab ran at $(date) >> /tmp/lab-demo.log</string></array>
-  <key>RunAtLoad</key><true/>
-</dict></plist>
-EOF
-launchctl load "$PLIST" && sleep 1 && cat /tmp/lab-demo.log
-```
-
-```text
-lab ran at Tue Aug  4 18:40:02 PDT 2026
-```
-
-`RunAtLoad` ran the job once on load. A LaunchAgent in `~/Library/LaunchAgents` is also a **persistence location** — malware's favourite, which is why this directory is a triage target.
-
-### Step 4 — Inspect the job launchd knows about
-
-```bash
-launchctl print gui/$(id -u)/com.lab.demo 2>/dev/null | grep -E 'state|program|runatload' | head -3
-```
-
-```text
-	state = waiting
-	program = /bin/sh
-	runatload = 1
-```
-
-`state = waiting` shows the job is registered and idle, ready to run on its trigger — the essence of the on-demand model.
-
-### Step 5 — See XPC services (the modern IPC)
-
-```bash
-ls /System/Library/XPCServices 2>/dev/null | head -3
-launchctl list | grep -c xpc
-```
-
-```text
-com.apple.audio.SandboxHelper.xpc
-15
-```
-
-XPC is how macOS processes request work from privileged helpers under `launchd`'s mediation — the modern, sandboxed replacement for ad-hoc IPC, and the reason a service can be started merely by something asking it for work.
-
-### Step 6 — Cleanup
-
-```bash
-launchctl unload "$PLIST" && rm -f "$PLIST" /tmp/lab-demo.log
-launchctl print gui/$(id -u)/com.lab.demo 2>&1 | tail -1
-```
-
-```text
-Could not find service "com.lab.demo" in domain for gui
-```
-
-The "could not find" confirms the agent is unloaded and removed — essential, since a stray LaunchAgent is exactly the persistence artifact to never leave behind.
-
-**What you should now be able to do:** explain launchd's on-demand model, distinguish running from loaded-but-waiting services, create and remove a LaunchAgent, and recognize it as a persistence location.
-
 ## Cybersecurity Implications
 
 - Job definitions are durable configuration; bootstrap namespaces are runtime authority; processes are evidence of execution.
@@ -322,11 +221,13 @@ The "could not find" confirms the agent is unloaded and removed — essential, s
 - `ProgramArguments`, environment, writable paths, and helper validation are high-value audit points.
 - Investigation should preserve state before unloading, killing, or deleting a suspicious service.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Distinguish a process, launch job, agent, daemon, and XPC service.
-- **Operator:** Navigate system, user, and GUI domains; validate plists; inspect lifecycle state; and debug a harmless user job.
-- **Root:** Trace client lookup through bootstrap namespace and XPC transport into a privileged helper, prove the caller-authorization boundary, and reconstruct persistence from configuration, registration, process, signature, and log evidence.
+You should now be able to:
+
+- Distinguish a process, launch job, agent, daemon, and XPC service.
+- Navigate system, user, and GUI domains; validate plists; inspect lifecycle state; and debug a harmless user job.
+- Trace client lookup through bootstrap namespace and XPC transport into a privileged helper, prove the caller-authorization boundary, and reconstruct persistence from configuration, registration, process, signature, and log evidence.
 
 ---
 > 🔼 Up: [[macOS]]

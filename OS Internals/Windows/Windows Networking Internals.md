@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/windows
   - type/concept
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
@@ -19,7 +19,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations -> Windows Drivers I-O & Kernel Debugging -> Windows Processes, Services & Boot -> Windows File System & Registry -> Windows Networking Internals -> Windows Security & Access Control -> Windows Identity, Credentials & Authentication -> Windows Active Directory & Domains -> Windows Command Prompt & Batch -> Windows PowerShell -> Windows Logging & Auditing -> Windows Diagnostics, Crash Dumps & Performance -> Windows Sysinternals & Troubleshooting
 
-## Start at Zero: From Name to Packet
+## From Name to Packet
 
 An application usually starts with a **name** and a service intent, not a packet. Name resolution produces an address; routing selects an interface and next hop; a **socket** binds application state to a transport endpoint; TCP or UDP forms transport units; IP carries them between networks; and an adapter emits frames on a link. Windows inserts authorization and filtering at several layers. Distinguish a **listening endpoint** from an established connection, an **interface** from an IP address, and a **route** from a DNS answer—the same word “network problem” can describe failure at any of those boundaries.
 
@@ -161,138 +161,13 @@ Attack surface is the combination of listener, reachable interface, routing, fil
 
 Network telemetry supports both detection and root-cause analysis. Correlating process identity with destination, DNS query, user session, firewall decision, and packet capture distinguishes an approved management connection from unexpected beaconing. WFP callout drivers and endpoint filters are themselves privileged software; bugs or incompatible ordering can cause outages or security bypasses. Operational baselines should include expected listeners, remote-management paths, DNS servers, routes, profiles, and policy sources.
 
-## Hands-On Lab: Trace a Connection Through the Windows Stack
+## Summary
 
-> [!info] Runs on any Windows machine — read-only, plus one temporary firewall rule removed in Step 6
-> Uses only built-in PowerShell networking cmdlets.
+You should now be able to:
 
-### Step 1 — Map listeners to owning processes
-
-```powershell
-Get-NetTCPConnection -State Listen |
-  Select-Object LocalAddress,LocalPort,@{n='Process';e={(Get-Process -Id $_.OwningProcess).Name}} |
-  Sort-Object LocalPort | Select-Object -First 4
-```
-
-```text
-LocalAddress LocalPort Process
------------- --------- -------
-0.0.0.0            135 svchost
-0.0.0.0            445 System
-0.0.0.0           3389 svchost
-127.0.0.1         5939 TeamViewer
-```
-
-`0.0.0.0` means exposed on every interface; `127.0.0.1` means local-only. Port 445 owned by `System` (PID 4) is SMB in the kernel. Tying a port to its process is the first step in "what is listening and should it be?"
-
-### Step 2 — Read the firewall profiles
-
-```powershell
-Get-NetFirewallProfile | Select-Object Name,Enabled,DefaultInboundAction,DefaultOutboundAction
-```
-
-```text
-Name    Enabled DefaultInboundAction DefaultOutboundAction
-----    ------- -------------------- ---------------------
-Domain     True                Block                 Allow
-Private    True                Block                 Allow
-Public     True                Block                 Allow
-```
-
-Inbound is blocked by default, outbound allowed — the standard posture, and the reason egress control is the neglected direction on Windows too.
-
-### Step 3 — Test reachability the Windows way
-
-```powershell
-Test-NetConnection 127.0.0.1 -Port 445 -InformationLevel Detailed |
-  Select-Object ComputerName,RemotePort,TcpTestSucceeded
-```
-
-```text
-ComputerName    RemotePort TcpTestSucceeded
-------------    ---------- ----------------
-127.0.0.1              445             True
-```
-
-`Test-NetConnection` is the Windows equivalent of `nc -vz` — a genuine TCP handshake test, far stronger evidence than ping (which many hosts block).
-
-### Step 4 — Block a port and watch the difference
-
-```powershell
-New-NetFirewallRule -DisplayName 'netlab-block' -Direction Inbound -LocalPort 445 -Protocol TCP -Action Block | Out-Null
-(Test-NetConnection 127.0.0.1 -Port 445 -WarningAction SilentlyContinue).TcpTestSucceeded
-```
-
-```text
-False
-```
-
-The same test now fails — a rule, not a topology change, closed the path. Note the connection was fine one command ago; only policy changed.
-
-### Step 5 — Inspect the DNS client cache
-
-```powershell
-Resolve-DnsName microsoft.com -Type A -DnsOnly | Select-Object -First 1 Name,IPAddress
-Get-DnsClientCache | Select-Object -First 2 Entry,RecordType,Data
-```
-
-```text
-Name          IPAddress
-----          ---------
-microsoft.com 20.70.246.20
-
-Entry           RecordType Data
------           ---------- ----
-microsoft.com   A          20.70.246.20
-```
-
-Windows caches resolutions in the DNS Client service. A poisoned cache entry here redirects the host regardless of the real DNS server — which is why `Get-DnsClientCache` is a compromise check.
-
-### Step 6 — Cleanup
-
-```powershell
-Remove-NetFirewallRule -DisplayName 'netlab-block'
-(Test-NetConnection 127.0.0.1 -Port 445 -WarningAction SilentlyContinue).TcpTestSucceeded
-```
-
-```text
-True
-```
-
-Reachability returns, confirming the rule was the only change.
-
-**What you should now be able to do:** map listeners to processes, read firewall profiles, test a port with a real handshake, and demonstrate that a firewall rule (not the network) closed a path.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain sockets, listeners, routes, DNS, TCP state, and host-firewall profiles.
-- **Operator:** Trace a connection through Winsock, AFD, WFP, TCP/IP, NDIS, and the adapter; distinguish DNS, routing, filtering, transport, authentication, and application failures.
-- **Root:** Design least-privilege enterprise network policy, validate WFP decisions with packet and process evidence, harden SMB/RPC/WinRM/name resolution, and diagnose failures without disabling security controls globally.
-
-### IPv6, IPsec & Virtual Networking
-
-IPv6 is a first-class Windows protocol, not an optional curiosity. Link-local addresses, router advertisements, Neighbor Discovery, temporary addresses, DNS AAAA records, and transition mechanisms can produce paths that an IPv4-only review misses. Disabling IPv6 without understanding domain and platform dependencies is unsupported in many scenarios; govern it with equivalent routes, firewall policy, monitoring, and name resolution.
-
-Windows IPsec integrates with WFP to authenticate and protect IP traffic. Connection Security Rules negotiate security associations through IKE or AuthIP, then apply integrity or encryption. IPsec policy is distinct from an ordinary permit rule: a packet may match routing and firewall policy yet fail because peer authentication, certificate trust, proposal suites, or identity policy disagree.
-
-Hyper-V virtual switches connect virtual NICs to internal, private, or external networks. Extensions can filter, capture, or forward frames. Container networking adds namespaces, host-network service policy, NAT, overlays, and virtual endpoints. Troubleshooting must identify the network compartment and virtual switch rather than assume every endpoint belongs to the default host stack.
-
-```powershell
-Get-NetIPConfiguration -AllCompartments
-Get-NetIPsecMainModeSA
-Get-VMSwitch -ErrorAction SilentlyContinue | Select-Object Name,SwitchType
-```
-
-Expected interpretation:
-
-```text
-Compartment 1: host management interfaces
-Additional compartment: container or isolated network stack
-Main-mode SA present: authenticated IPsec peer and negotiated cryptographic suite
-External vSwitch: VM traffic can reach the physical network through bound adapter
-```
-
-Root-level troubleshooting correlates every result with its owning process, compartment, policy source, route, and packet path.
+- Explain sockets, listeners, routes, DNS, TCP state, and host-firewall profiles.
+- Trace a connection through Winsock, AFD, WFP, TCP/IP, NDIS, and the adapter; distinguish DNS, routing, filtering, transport, authentication, and application failures.
+- Design least-privilege enterprise network policy, validate WFP decisions with packet and process evidence, harden SMB/RPC/WinRM/name resolution, and diagnose failures without disabling security controls globally.
 
 ---
 > 🔼 Up: [[Windows]]

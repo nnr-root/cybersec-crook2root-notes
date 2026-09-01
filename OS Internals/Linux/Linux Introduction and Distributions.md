@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/linux
   - type/concept
-  - level/crook
+  - difficulty/easy
 Domain:
   - "[[Linux]]"
 Color: "#FFA500"
@@ -14,7 +14,7 @@ Color: "#FFA500"
 # 🐧 Linux Introduction & Distributions
 
 > [!abstract] Master Note of [[Linux]]
-> Before a single command, understand *why* nearly all offensive and defensive security runs on Linux — and which flavour to run, where, and on what hardware. This is the Crook's first step onto solid ground.
+> Before a single command, understand *why* nearly all offensive and defensive security runs on Linux — and which flavour to run, where, and on what hardware. This is the beginner's first step onto solid ground.
 
 ## Parent Learning Order
 Linux Introduction & Distributions -> Linux CLI & Core Commands -> Linux I-O Redirection & Piping -> Linux File System Hierarchy & Editors -> Linux Boot Process & systemd -> Linux Permissions & Process Management -> Linux Memory & Storage Internals -> Linux Networking, Transfers & Curl -> Linux Security Controls & Hardening -> Linux Observability, Logging & Forensics -> Linux Advanced Mechanics & Privilege Escalation -> Linux Kernel Internals -> Linux Documentation & Note-Taking
@@ -88,8 +88,8 @@ Running your attack OS **natively on the hardware** instead of inside a VM matte
 > [!info] The pro setup
 > Often **both**: bare-metal Kali/Arch as the daily attack host for real wireless + GPU cracking, and VMs for sacrificial targets and risky samples. Use a VM to *learn* safely; go bare-metal when you need real hardware or maximum performance.
 
-> [!tip] Crook → Root
-> **Crook** installs Kali because a tutorial said so. **Root** picks the tool for the job — Kali/Parrot for a ready arsenal, Arch/BlackArch for a lean custom rig, Ubuntu for a rock-solid server — and can rebuild any of them from memory.
+> [!tip] Beginner → Expert
+> **A beginner** installs Kali because a tutorial said so. **An expert** picks the tool for the job — Kali/Parrot for a ready arsenal, Arch/BlackArch for a lean custom rig, Ubuntu for a rock-solid server — and can rebuild any of them from memory.
 
 ## Architecture choices that matter in security
 
@@ -155,112 +155,17 @@ When software behaves differently from its documentation, identify the platform 
 
 For missing hardware, compare `lspci -nnk`, `lsusb`, `dmesg`, and `ip link`. In a VM, confirm that the hypervisor presented or passed through the device before searching for drivers. For package failures, inspect repository origin, release compatibility, signature status, and system clock before bypassing verification. Never “fix” a trust error with unauthenticated downloads. The diagnostic outcome should name the incompatible layer—CPU, kernel feature, libc, package source, device exposure, or release policy—not merely state that the distribution is unsupported.
 
-## Hands-On Lab: Identify Exactly What You Are Running
-
-> [!info] Runs on any Linux machine — entirely read-only
-> Before you can secure or troubleshoot a system you must be able to state precisely what it is. Every command here answers one identification question.
-
-### Step 1 — Name the distribution and release
-
-```bash
-cat /etc/os-release | head -5
-```
-
-```text
-PRETTY_NAME="Ubuntu 24.04.1 LTS"
-NAME="Ubuntu"
-VERSION_ID="24.04"
-VERSION="24.04.1 LTS (Noble Numbat)"
-ID=ubuntu
-```
-
-`/etc/os-release` is the one file present on essentially every modern distribution — the reliable answer where `lsb_release` may be missing. `ID=ubuntu` is what scripts should branch on, not the marketing name.
-
-### Step 2 — Separate the kernel from the distribution
-
-```bash
-uname -srm
-```
-
-```text
-Linux 6.8.0-45-generic x86_64
-```
-
-This is the **kernel**, and it is a different thing from the distribution above. Ubuntu 24.04 is a packaging of userland; `6.8.0` is the kernel it currently boots. Understanding that split is the whole point of the kernel/userland boundary — you can run the same kernel under different distributions and vice versa.
-
-### Step 3 — Identify the package manager, which defines the family
-
-```bash
-for m in apt dnf yum pacman zypper apk; do command -v $m >/dev/null && echo "found: $m"; done
-```
-
-```text
-found: apt
-```
-
-The package manager tells you the family: `apt` → Debian/Ubuntu, `dnf`/`yum` → RHEL/Fedora, `pacman` → Arch, `apk` → Alpine. This single fact predicts config file locations, service names, and default paths more reliably than the distribution name.
-
-```bash
-apt list --installed 2>/dev/null | wc -l
-```
-
-```text
-2184
-```
-
-### Step 4 — Determine where you are actually running
-
-```bash
-systemd-detect-virt
-cat /proc/1/cgroup | head -2
-```
-
-```text
-kvm
-0::/init.scope
-```
-
-`kvm` means a virtual machine; `none` means bare metal; `docker` or `lxc` means a container. This matters enormously — inside a container the "kernel" you saw in Step 2 belongs to the **host**, so kernel tuning and module loading behave differently from what you might expect.
-
-### Step 5 — Confirm the init system and default target
-
-```bash
-ps -p 1 -o comm=
-systemctl get-default 2>/dev/null
-```
-
-```text
-systemd
-graphical.target
-```
-
-PID 1 is the process the kernel started first and the parent of everything else. Knowing it is `systemd` (versus `init`, `openrc`, or `s6`) determines every service-management command you will use on this host.
-
-### Step 6 — Assemble a one-line identity statement
-
-```bash
-echo "$(. /etc/os-release; echo $PRETTY_NAME) | kernel $(uname -r) | $(systemd-detect-virt) | init=$(ps -p 1 -o comm=)"
-```
-
-```text
-Ubuntu 24.04.1 LTS | kernel 6.8.0-45-generic | kvm | init=systemd
-```
-
-This is the sentence to record at the start of any investigation or report. Every later finding is interpreted against it — a vulnerability, a config path, or a command's availability all depend on these four facts.
-
-**Cleanup:** none required. Every command in this lab was read-only and created no files.
-
-**What you should now be able to do:** state a host's distribution, kernel, package family, virtualization, and init system from first principles, and explain why the kernel version is independent of the distribution release.
-
 ## Security implications
 
 The strongest distribution choice is the one that can be patched, audited, rebuilt, and operated correctly. Preinstalled tools do not replace repository hygiene, disk encryption, least privilege, or isolation. Native hardware expands capability and blast radius simultaneously; virtualization reduces blast radius but can hide hardware behavior. The professional decision is explicit, documented, and matched to the workload.
 
-### Crook → Operator → Root checkpoint
+## Summary
 
-- **Crook:** distinguish kernel, userland, shell, distribution, and desktop; identify the host accurately.
-- **Operator:** choose native, VM, container, or remote execution based on isolation, timing, and device requirements; verify package provenance.
-- **Root:** design a reproducible, encrypted, measured, recoverable Linux platform and explain how hardware, kernel configuration, libc, and release policy alter security.
+You should now be able to:
+
+- distinguish kernel, userland, shell, distribution, and desktop; identify the host accurately.
+- choose native, VM, container, or remote execution based on isolation, timing, and device requirements; verify package provenance.
+- design a reproducible, encrypted, measured, recoverable Linux platform and explain how hardware, kernel configuration, libc, and release policy alter security.
 
 ---
 > 🔼 Up: [[Linux]]

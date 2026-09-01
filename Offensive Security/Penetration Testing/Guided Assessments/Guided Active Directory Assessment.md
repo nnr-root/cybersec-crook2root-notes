@@ -5,6 +5,7 @@ aliases:
 tags:
   - tree/offensive
   - cyber/offensive/guided
+  - difficulty/hard
 Domain: "[[Guided Assessments]]"
 Color: "#DC143C"
 ---
@@ -88,11 +89,13 @@ Assess tiering, privileged access workstations, local administrator password man
 
 Remove test memberships, certificates, tickets, scheduled actions, and temporary objects. Compare the after-state to the baseline. Retesting should show the path is severed at a durable control point and that the intended administrative workflow still works.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Explain why AD assessment models a *graph* of principals/permissions, and why the goal is proving trust-failures, not "domain admin at any cost."
-- **Operator:** Baseline a test identity, collect directory relationships, validate one edge at a time with reversible canary proofs, and demonstrate bounded privilege.
-- **Root:** Map each validated edge to the control layer that should have stopped it (tiering, LAPS, delegation review, LDAP signing, cert-template governance) and retest that the path is severed durably.
+You should now be able to:
+
+- Explain why AD assessment models a *graph* of principals/permissions, and why the goal is proving trust-failures, not "domain admin at any cost."
+- Baseline a test identity, collect directory relationships, validate one edge at a time with reversible canary proofs, and demonstrate bounded privilege.
+- Map each validated edge to the control layer that should have stopped it (tiering, LAPS, delegation review, LDAP signing, cert-template governance) and retest that the path is severed durably.
 
 ---
 > 🔼 Up: [[Guided Assessments]]

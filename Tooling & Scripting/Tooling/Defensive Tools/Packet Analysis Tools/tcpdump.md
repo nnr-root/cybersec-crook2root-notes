@@ -1,7 +1,7 @@
 ---
 title: "tcpdump"
 aliases: ["tcpdump"]
-tags: [tree/tooling, cyber/tooling/defensive/tcpdump, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/defensive/tcpdump, type/tool, difficulty/medium]
 Domain: "[[Packet Analysis Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ tcpdump is the command-line packet capturer. No GUI, tiny footprint, on every Un
 ## Parent Learning Order
 Wireshark -> tcpdump
 
-## Crook — The Mental Model
+## Deciding in the kernel which packets are worth keeping
 
 Same layered packet as Wireshark — but tcpdump lives at the **capture** end, deciding (via a kernel BPF filter) which packets are worth saving at all.
 
-![[tool_packet_layers.svg]]
-
 Its filters target the lower layers efficiently (`host`, `port`, `tcp[13]` flag bits) because BPF runs *in the kernel* before the packet is ever copied to userspace — so a tight filter means the machine barely notices the capture. tcpdump's job is to grab exactly the right bytes with minimal overhead; deep decoding is Wireshark's job.
 
-## Operator — Make It Work
+## The canonical capture, written to a file
 
 The canonical capture: numeric, filtered, written to a file for later analysis.
 
@@ -38,7 +36,7 @@ operator@server:~$ tcpdump -nn -r cap.pcap 'tcp[tcpflags] & tcp-syn != 0' | head
 
 `-i` interface, `-nn` no name/port resolution, `-w` write pcap, `-r` read pcap, `-c N` stop after N, `-s0` full snaplen, `-A`/`-X` show ASCII/hex payload. The filter is **BPF** (same syntax as Wireshark's *capture* filter): `host`, `net`, `port`, `and`/`or`/`not`, and flag tests.
 
-## Root — Internals & The Deliberate Break
+## How omitting -n pollutes your own capture
 
 The `-n` flags are not cosmetic — omitting them makes tcpdump *pollute its own capture*:
 
@@ -55,11 +53,13 @@ operator@server:~$ sudo tcpdump -i eth0 -nn host 10.0.0.5
 
 **The deliberate break:** without `-n` (IPs) and `-nn` (also ports), tcpdump does a **reverse-DNS lookup for every address it sees** — which is slow, and worse, those lookups are *new packets your capture host sends*, so on a busy link they appear in your own capture and can even feed back (an observer effect). Always capture with `-nn`. Two more Root essentials: on old versions the default **snaplen** truncated packets (use `-s0` for full payload), and `-w` writes **binary pcap** — piping it to `grep` fails, so write to a file and read it back with `-r` or open it in Wireshark. The division of labour is the whole point: tcpdump captures cheaply and precisely at the edge; Wireshark does the deep dissection afterward.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why is tcpdump the right tool on a headless server, and what does its BPF filter do at the kernel level?
-- **Operator:** Write a tcpdump command that saves only host-X:443 traffic to a pcap for later Wireshark analysis.
-- **Root:** Explain what omitting `-nn` does to your capture, and why `-w` output can't be grepped.
+You should now be able to:
+
+- Why is tcpdump the right tool on a headless server, and what does its BPF filter do at the kernel level?
+- Write a tcpdump command that saves only host-X:443 traffic to a pcap for later Wireshark analysis.
+- Explain what omitting `-nn` does to your capture, and why `-w` output can't be grepped.
 
 ---
 > 🔼 Up: [[Packet Analysis Tools]]

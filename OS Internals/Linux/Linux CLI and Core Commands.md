@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/linux
   - type/cheatsheet
-  - level/crook
+  - difficulty/easy
 Domain:
   - "[[Linux]]"
 Color: "#FFA500"
@@ -333,127 +333,17 @@ exit=78
 
 Read the program's own diagnostics and exit status first, then consult `--help`, the relevant manual page, service logs, and `strace` only when the failing boundary remains unclear. Preserve the original command, quoting, environment, and working directory; changing several simultaneously destroys causality.
 
-## Hands-On Lab: A Twenty-Minute Operator Circuit
-
-> [!info] Runs on any Linux machine — everything happens under a disposable directory
-> Each command is complete and shows its real output. Step 6 removes everything.
-
-### Step 1 — Make a sandbox and know where you are
-
-```bash
-mkdir -p /tmp/cli-lab/logs && cd /tmp/cli-lab && pwd
-```
-
-```text
-/tmp/cli-lab
-```
-
-`pwd` answers the question every other command depends on: relative paths are resolved from here. Create material to work on:
-
-```bash
-printf 'ok\nerror: disk full\nok\nerror: timeout\n' > logs/app.log
-printf 'ok\nok\n' > logs/db.log
-ls -l logs
-```
-
-```text
-total 8
--rw-r--r-- 1 you you 38 Aug  4 16:20 app.log
--rw-r--r-- 1 you you  6 Aug  4 16:20 db.log
-```
-
-Read the columns: permissions, link count, owner, group, size, mtime, name. `-rw-r--r--` means you can write it and everyone can read it.
-
-### Step 2 — Find things by name and by content
-
-```bash
-find . -name '*.log' -type f
-grep -rn 'error' logs/
-```
-
-```text
-./logs/app.log
-./logs/db.log
-logs/app.log:2:error: disk full
-logs/app.log:4:error: timeout
-```
-
-`find` matches **names**, `grep` matches **contents** — the two questions beginners most often confuse. `-n` gives line numbers, which turns a match into something you can point at.
-
-### Step 3 — Read a failure correctly
-
-```bash
-cat logs/missing.log
-echo "exit status: $?"
-```
-
-```text
-cat: logs/missing.log: No such file or directory
-exit status: 1
-```
-
-Two separate signals: the human-readable message, and `$?` — the **exit status** every script actually branches on. `0` means success, anything else is failure. This is the single most important variable in shell scripting.
-
-### Step 4 — Compose small tools into an answer
-
-```bash
-grep -h 'error' logs/*.log | cut -d: -f1 | sort | uniq -c | sort -rn
-```
-
-```text
-      2 error
-```
-
-Read the pipeline left to right: find matching lines, cut the first colon-field, sort so duplicates are adjacent, count them, then order by count. **`uniq` only collapses *adjacent* duplicates**, which is why `sort` must come first — omit it and the count is silently wrong.
-
-### Step 5 — Two habits that save real time
-
-```bash
-!!
-```
-
-```text
-grep -h 'error' logs/*.log | cut -d: -f1 | sort | uniq -c | sort -rn
-      2 error
-```
-
-`!!` re-runs the previous command — invaluable after forgetting `sudo`. Now find a command you half-remember:
-
-```bash
-history | grep -m2 'find'
-```
-
-```text
-  512  find . -name '*.log' -type f
-  518  history | grep -m2 'find'
-```
-
-### Step 6 — Cleanup
-
-```bash
-cd /tmp && rm -rf /tmp/cli-lab && ls -d /tmp/cli-lab 2>&1
-```
-
-```text
-ls: cannot access '/tmp/cli-lab': No such file or directory
-```
-
-The error is the confirmation. Note `cd /tmp` first — removing the directory you are standing in leaves your shell in a deleted path.
-
-**What you should now be able to do:** read `ls -l` columns, distinguish `find` from `grep`, check `$?` after any command, and explain why `sort` must precede `uniq`.
-
 ## Security implications
 
 Command fluency includes restraint. Quote variables, inspect paths before recursive operations, prefer package signatures, avoid secrets in arguments or history, validate downloads by hash/signature, and understand the privilege of every command. `sudo`, raw disk tools, firewall changes, ownership recursion, and force deletion can cross irreversible boundaries. Test destructive syntax against disposable paths and capture evidence before altering a system.
 
-### Crook → Operator → Root checkpoint
+## Summary
 
-- **Crook:** navigate, inspect, edit, search, archive, and request help without copying unknown commands blindly.
-- **Operator:** compose commands safely, interpret outputs and exit status, manage users/processes/services/networking, and preserve artifacts.
-- **Root:** select the smallest correct utility, predict shell expansion and kernel effects, automate repeatably, and recognize when a command crosses a security or recovery boundary.
+You should now be able to:
 
-> [!tip] Crook → Root
-> **Crook** memorises a handful of commands. **Root** knows this whole map *exists*, reaches for the right tool instantly, composes them into one-liners (see **I/O Redirection & Piping**), and never types a full path when `Tab` and `Ctrl+R` will do it.
+- navigate, inspect, edit, search, archive, and request help without copying unknown commands blindly.
+- compose commands safely, interpret outputs and exit status, manage users/processes/services/networking, and preserve artifacts.
+- select the smallest correct utility, predict shell expansion and kernel effects, automate repeatably, and recognize when a command crosses a security or recovery boundary.
 
 ---
 > 🔼 Up: [[Linux]]

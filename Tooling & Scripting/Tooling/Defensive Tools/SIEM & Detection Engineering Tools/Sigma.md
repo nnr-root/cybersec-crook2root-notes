@@ -1,7 +1,7 @@
 ---
 title: "Sigma"
 aliases: ["sigma", "sigma rules"]
-tags: [tree/tooling, cyber/tooling/defensive/sigma, type/tool, level/root]
+tags: [tree/tooling, cyber/tooling/defensive/sigma, type/tool, difficulty/hard]
 Domain: "[[SIEM & Detection Engineering Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ Sigma is the **vendor-neutral detection rule format** — "the YARA of logs, the
 ## Parent Learning Order
 Splunk Basics -> Sigma
 
-## Crook — The Mental Model
+## The portable half of the detection pipeline
 
 Sigma is the **rule**, not the platform — the portable half of the pipeline.
 
-![[tool_siem_pipeline.svg]]
-
 The insight: a detection like "Office spawned PowerShell" is the *same idea* everywhere, but Splunk expresses it in SPL, Elastic in KQL, Sentinel in its own KQL. Sigma writes the idea **once** in YAML and lets a compiler translate it to each backend — so a rule shared on GitHub can be deployed by anyone, on any SIEM, without a rewrite. That's the whole value proposition: detection logic that isn't hostage to one vendor.
 
-## Operator — Make It Work
+## Logsource, detection, condition, then compile
 
 A Sigma rule is `logsource` (where) + `detection` (what) + `condition` (how they combine):
 
@@ -50,7 +48,7 @@ ParentImage:*\\winword.exe AND Image:*\\powershell.exe
 
 One YAML, two backends, identical logic. The public **SigmaHQ** repo ships thousands of community rules mapped to MITRE ATT&CK.
 
-## Root — Internals & The Deliberate Break
+## The field taxonomy that makes a valid rule never fire
 
 "Write once, run anywhere" has a crucial asterisk — the **field taxonomy**:
 
@@ -64,11 +62,13 @@ ParentImage="*\\winword.exe" ...
 
 **The deliberate break:** the Sigma rule compiles to perfectly valid SPL, yet it **never fires** — because your SIEM stored the parent-process field as `parent_process_path`, not `ParentImage`. Sigma translates the *query syntax* across vendors, but it cannot know how *your* logs are named or normalized; if the field names don't line up, the rule is silent. This is why real Sigma deployment hinges on a **pipeline/field-mapping** (pySigma "processing pipelines") that maps the rule's canonical field names onto your actual log schema — and why log normalization is the unglamorous foundation of detection engineering. The portability is real and valuable, but it moves the hard problem from "rewrite the query" to "normalize the data" — solve that once and a whole library of community detections lights up at once.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** What problem does Sigma solve that writing SPL directly does not?
-- **Operator:** Name the three parts of a Sigma rule, and how you turn one into a Splunk query.
-- **Root:** Explain why a valid compiled Sigma rule can still match nothing, and what makes it actually fire.
+You should now be able to:
+
+- What problem does Sigma solve that writing SPL directly does not?
+- Name the three parts of a Sigma rule, and how you turn one into a Splunk query.
+- Explain why a valid compiled Sigma rule can still match nothing, and what makes it actually fire.
 
 ---
 > 🔼 Up: [[SIEM & Detection Engineering Tools]]

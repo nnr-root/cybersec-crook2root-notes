@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/appproto
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Web & Application Protocols]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 HTTP Fundamentals -> HTTPS & the TLS Handshake -> Web Architecture & Proxies -> WebSockets & Real-Time Protocols -> REST & Modern API Transport -> Application Delivery & Load Balancing
 
-## Start at Zero: There Is No Single Server
+## There Is No Single Server
 
 A beginner imagines a browser talking to one web server. Reality is a chain, and each hop has a job:
 
@@ -115,33 +115,13 @@ Both share a lesson: **each component parses and keys requests slightly differen
 
 All testing described here must target only systems within an authorized scope. Header forgery, smuggling, and cache-poisoning techniques are intrusive and must be confined to systems you are authorized to assess.
 
-## Authorized Lab: Trace a Request Through the Chain
+## Summary
 
-Use a lab with a reverse proxy in front of a backend application, plus a cache, all under your control.
+You should now be able to:
 
-1. **Establish the chain.** Configure a reverse proxy forwarding to a backend, and confirm the client connects to the proxy while the backend receives the forwarded request.
-2. **Observe the identity change.** On the backend, log the connection's source address and confirm it is the proxy's, not the client's. Then have the proxy add `X-Forwarded-For` and confirm the backend can now recover the client address from it.
-3. **Forge the header.** From the client, send a request with a spoofed `X-Forwarded-For` and confirm whether the backend believes it. Then configure the proxy to overwrite the header for inbound requests and confirm the forgery no longer works — the difference between appending and overwriting made concrete.
-4. **Compare HTTP versions.** Request the same resource over HTTP/1.1 and HTTP/2 and capture both; confirm the text versus binary framing while the semantics are identical.
-5. **Demonstrate a caching key gap.** Configure the cache to ignore a header that the backend uses to vary its response. Send a request that causes an attacker-influenced response to be cached, then request as a normal user and confirm the poisoned response is served. Fix the cache key and confirm the poisoning stops.
-6. **Add correlation.** Inject a request ID at the proxy and confirm it appears in both proxy and backend logs, letting one request be traced end to end.
-7. **Cleanup.** Restore the cache configuration, remove any forged-header trust, and confirm the baseline behaviour.
-
-Expected interpretation:
-
-```text
-Backend source = proxy   -> the reverse proxy terminated and re-originated the connection
-X-Forwarded-For appended -> client identity recoverable, but forgeable if trusted blindly
-Proxy overwrites header  -> forgery defeated; trust only what a known proxy set
-Cache ignores vary header-> poisoned response served to later users (boundary disagreement)
-Request ID               -> one request correlated across every component in the chain
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Distinguish a forward proxy from a reverse proxy by what each represents, and explain why "the server" a browser reaches is usually an intermediary.
-- **Operator:** Explain why the backend sees the proxy's address and how `X-Forwarded-For` recovers the client identity; configure a proxy to set it safely and demonstrate the forgery it prevents.
-- **Root:** Explain how request smuggling and cache poisoning arise from parsing and keying disagreements between components rather than from any single server; argue why trust boundaries must be explicit and why cross-chain correlation is required to attribute activity.
+- Distinguish a forward proxy from a reverse proxy by what each represents, and explain why "the server" a browser reaches is usually an intermediary.
+- Explain why the backend sees the proxy's address and how `X-Forwarded-For` recovers the client identity; configure a proxy to set it safely and demonstrate the forgery it prevents.
+- Explain how request smuggling and cache poisoning arise from parsing and keying disagreements between components rather than from any single server; argue why trust boundaries must be explicit and why cross-chain correlation is required to attribute activity.
 
 ---
 > 🔼 Up: [[Web & Application Protocols]]

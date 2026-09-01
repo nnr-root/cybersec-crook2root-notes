@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/osi
   - type/concept
-  - level/crook
+  - difficulty/easy
 Domain:
   - "[[Network Foundations]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation & Protocol Data Units -> Network Devices & Traffic Paths -> Reachability Testing & ICMP
 
-## Start at Zero: The Model That Shipped
+## The Model That Shipped
 
 OSI was designed by committee as a complete reference architecture. TCP/IP was built by implementers who needed working code, and it won because the code worked. The suite is formally described in RFC 1122 and RFC 1123 as four layers.
 
@@ -129,51 +129,13 @@ The pattern to internalize: **every layer trusts the layer beneath it to have do
 
 All traffic generation described here belongs on systems within an authorized scope. Crafted packets and scans are recorded by network telemetry, and probing outside an agreed boundary is out of scope regardless of intent.
 
-## Authorized Lab: Watch the Four Layers in One Exchange
+## Summary
 
-On an isolated lab host you control, capture a single exchange and identify each layer's header.
+You should now be able to:
 
-1. Start a capture limited to a few packets so the output stays readable:
-
-```bash
-sudo tcpdump -i eth0 -nn -e -c 6 'port 53'
-```
-
-2. In a second shell, trigger exactly one name lookup:
-
-```bash
-dig +short lab.internal.example @192.168.10.53
-```
-
-3. Read the captured header stack from the outside in.
-
-Expected excerpt:
-
-```text
-00:1a:2b:3c:4d:5e > 00:50:56:aa:bb:cc, ethertype IPv4 (0x0800), length 84:
-192.168.10.24.41823 > 192.168.10.53.53: 39821+ A? lab.internal.example. (42)
-00:50:56:aa:bb:cc > 00:1a:2b:3c:4d:5e, ethertype IPv4 (0x0800), length 100:
-192.168.10.53.53 > 192.168.10.24.41823: 39821 1/0/0 A 10.10.20.15 (58)
-```
-
-Expected interpretation:
-
-```text
-Link layer     -> the two hardware addresses and ethertype 0x0800 ("IPv4 follows")
-Internet layer -> 192.168.10.24 and 192.168.10.53
-Transport layer-> UDP ports 41823 (ephemeral) and 53 (service)
-Application    -> query ID 39821, an A record request, and the answer 10.10.20.15
-```
-
-4. Confirm the reply reuses query ID 39821 and the same ephemeral port. That pairing is the only thing binding the answer to the question — which is precisely why off-path spoofing of DNS responses is a real attack and why source-port randomization matters.
-
-5. Stop the capture. Nothing persists, so no cleanup is required beyond ending the process.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Name the four layers, map them to OSI, and explain why the top three OSI layers were collapsed into one.
-- **Operator:** Read a capture and attribute each header to its layer; use `ss` to identify the five-tuple of a live connection and explain what the ephemeral port is for.
-- **Root:** Explain the hourglass model and its consequences for both innovation and security; describe why ARP, TLS, and QUIC resist clean placement, and how tunnelling turns the layer stack into a recursive structure that layer-assuming controls fail to inspect.
+- Name the four layers, map them to OSI, and explain why the top three OSI layers were collapsed into one.
+- Read a capture and attribute each header to its layer; use `ss` to identify the five-tuple of a live connection and explain what the ephemeral port is for.
+- Explain the hourglass model and its consequences for both innovation and security; describe why ARP, TLS, and QUIC resist clean placement, and how tunnelling turns the layer stack into a recursive structure that layer-assuming controls fail to inspect.
 
 ---
 > 🔼 Up: [[Network Foundations]]

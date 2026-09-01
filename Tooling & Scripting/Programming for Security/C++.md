@@ -1,7 +1,7 @@
 ---
 title: "C++ for Security Engineering"
 aliases: ["C++ Security", "C++"]
-tags: [tree/tooling, cyber/tooling/programming/cpp, type/concept, level/root]
+tags: [tree/tooling, cyber/tooling/programming/cpp, type/concept, difficulty/hard]
 Domain: "[[Programming for Security]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ C++ is the bottom of the ladder — maximum performance and byte-exact control, 
 ## Parent Learning Order
 Python -> Go -> C++ -> Bash
 
-## Crook — The Mental Model
+## Maximum control, and no memory-safety net
 
 C++ is the **maximum-control** corner — and the one place on the map with no memory-safety net.
 
-![[tool_language_choice.svg]]
-
 Reach for C++ only when the problem genuinely needs it: every cycle, every byte, no garbage-collector pauses, direct memory layout. The defining tradeoff is stark — the same low-level control that makes C++ fast is exactly what lets a mistake become a **buffer overflow or use-after-free**, the memory-corruption bugs that the Exploit-Development branch weaponises. Writing safe C++ means understanding those failure modes and structurally preventing them.
 
-## Operator — Make It Work
+## RAII, smart pointers, and bounding every access
 
 Modern C++ replaces manual `new`/`delete` with **RAII** and smart pointers, and bounds every buffer access:
 
@@ -40,7 +38,7 @@ std::span<const std::byte> view{buf.data() + offset, n};         // bounded view
 
 Use `std::unique_ptr`/`shared_ptr` (no manual `delete`), `std::span`/`string_view` for bounded views, and a reproducible toolchain (pinned compiler, `-Wall -Wextra`). Build with **sanitizers** in CI: `-fsanitize=address,undefined`.
 
-## Root — Internals & The Deliberate Break
+## Why the worst bugs stay silent until someone exploits them
 
 The reason C++ demands sanitizers and fuzzing is that its worst bugs are **silent** until exploited:
 
@@ -56,11 +54,13 @@ $ clang++ -fsanitize=address parser.cpp -o parser && ./parser sample.bin
 
 **The deliberate break:** the plain build prints "parsed OK" — the use-after-free reads freed heap memory but happens not to crash *this time*, so testing passes and the bug ships. That is the entire danger of C++: memory errors are **undefined behaviour** that may work by luck until an attacker supplies the input that turns them into a crash or code execution (the exact primitive the Heap-Exploitation note attacks). **AddressSanitizer** makes the invisible bug loud and pinpoints it (`parser.cpp:88`), and **fuzzing** (libFuzzer/AFL) feeds malformed input until it finds the crash you didn't. This is the discipline that separates a security tool from a liability: in a language with no safety net, the net is your tooling — RAII to prevent leaks/UAF by construction, `std::span`/bounds checks to prevent overflows, sanitizers to catch what slips through, and fuzzing to find it before the adversary does. Use C++ only when the performance/control is truly required, and never without that harness.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** When is C++ the right choice, and what safety does it give up?
-- **Operator:** Rewrite an unsafe `strcpy` parse into bounds-checked modern C++.
-- **Root:** Explain why a use-after-free can pass tests, and how sanitizers + fuzzing catch it before it ships.
+You should now be able to:
+
+- When is C++ the right choice, and what safety does it give up?
+- Rewrite an unsafe `strcpy` parse into bounds-checked modern C++.
+- Explain why a use-after-free can pass tests, and how sanitizers + fuzzing catch it before it ships.
 
 ---
 > 🔼 Up: [[Programming for Security]]

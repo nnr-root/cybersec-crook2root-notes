@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/routing
   - type/concept
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Routing & the Network Layer]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interior Gateway Protocols -> BGP & Internet Routing -> First-Hop Redundancy & Gateway Failover -> Routing Security & Path Validation
 
-## Start at Zero: Telling a Device Exactly Where to Send
+## Telling a Device Exactly Where to Send
 
 A **static route** is a forwarding instruction an administrator configures directly: "to reach network X, use next hop Y." The device does not learn it, calculate it, or share it — it simply obeys it until someone changes it.
 
@@ -115,37 +116,13 @@ The route resolves perfectly — the configuration is intact — but the next ho
 
 All routing configuration described here must be performed on systems within an authorized scope. Adding or altering routes on shared infrastructure affects every device whose traffic traverses it, and a blackhole route can silently deny service.
 
-## Authorized Lab: Configure, Break, and Blackhole
+## Summary
 
-Use a lab host and at least one lab router, with two reachable lab destinations. Record the baseline routing table.
+You should now be able to:
 
-1. Add a specific static route to a lab network through a chosen next hop, and confirm with `ip route get` that traffic to that network uses it while other traffic uses the default.
-2. **Break the next hop.** Disable the interface or device serving that next hop. Observe that the route remains in the table (`ip route` still lists it) while `ping` to destinations through it fails — the route is healthy, the next hop is not.
-3. Confirm the distinction explicitly: `ip route get <destination>` still resolves to the dead next hop, proving the device will keep sending into the black hole with no self-correction.
-4. Restore the next hop and confirm connectivity returns without any configuration change — proving the outage was the next hop, not the route.
-5. **Blackhole a destination.** Add a `blackhole` route for one lab address:
-
-```bash
-sudo ip route add <lab address>/32 blackhole
-```
-
-Confirm traffic to it is silently dropped while every other destination is unaffected, and note that no error is returned to the sender.
-6. **Cleanup.** Remove every route added during the lab, confirm the blackholed destination is reachable again, and verify the table matches the baseline.
-
-Expected interpretation:
-
-```text
-Static route added   -> deterministic path, no protocol involved
-Next hop down        -> route persists pointing at a dead gateway; no auto-recovery
-Route vs next hop    -> ip route get resolves fine while ping fails; they are different facts
-Blackhole            -> silent discard; a control when intended, an outage when not
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what a static route is and why the default gateway is just the least specific static route; state when static routing is appropriate.
-- **Operator:** Configure static and default routes, diagnose a dead next hop by distinguishing route health from next-hop health, and explain how asymmetric routing arises from inconsistent configuration.
-- **Root:** Argue both sides of static routing's security posture — immunity to protocol poisoning versus persistence of an attacker-installed route; explain blackhole routing as both a volumetric-attack defense and a stealthy denial-of-service, and why the default gateway is the highest-value route on a host.
+- Explain what a static route is and why the default gateway is just the least specific static route; state when static routing is appropriate.
+- Configure static and default routes, diagnose a dead next hop by distinguishing route health from next-hop health, and explain how asymmetric routing arises from inconsistent configuration.
+- Argue both sides of static routing's security posture — immunity to protocol poisoning versus persistence of an attacker-installed route; explain blackhole routing as both a volumetric-attack defense and a stealthy denial-of-service, and why the default gateway is the highest-value route on a host.
 
 ---
 > 🔼 Up: [[Routing & the Network Layer]]

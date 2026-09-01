@@ -1,7 +1,7 @@
 ---
 title: "Splunk Basics"
 aliases: ["Splunk", "SPL"]
-tags: [tree/tooling, cyber/tooling/defensive/splunk, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/defensive/splunk, type/tool, difficulty/medium]
 Domain: "[[SIEM & Detection Engineering Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ Splunk is the reference SIEM: it ingests enormous volumes of logs, indexes them,
 ## Parent Learning Order
 Splunk Basics -> Sigma
 
-## Crook — The Mental Model
+## Where the logs go to be searched at scale
 
 Splunk is the **platform** in the detection pipeline — the place logs go to be stored and searched at scale.
 
-![[tool_siem_pipeline.svg]]
-
 Read the pipeline: sources feed Splunk, Splunk indexes them (by `source`, `sourcetype`, `host`), and you search with SPL. SPL is a **pipeline language** — data flows left to right through `|` commands, each transforming the stream: `search → stats → eval → table`. Once "everything is a searchable event and I pipe it through transforms" clicks, Splunk stops being a log viewer and becomes an analytics engine.
 
-## Operator — Make It Work
+## Start narrow, then transform
 
 A search *always* starts narrow (index + time) and then transforms:
 
@@ -41,7 +39,7 @@ C:\...\winword.exe     C:\...\powershell.exe  3      ← Office spawning PowerSh
 
 The workhorses: `stats`/`chart`/`timechart` (aggregate), `eval` (compute fields), `rex` (regex-extract), `lookup` (enrich), `dedup`, `sort`. Save a search as an **alert** with a schedule and threshold → it becomes a live detection feeding the SOC.
 
-## Root — Internals & The Deliberate Break
+## Bounding a search before it scans everything
 
 The first lesson every Splunk user learns the hard way is **bound your search**:
 
@@ -54,11 +52,13 @@ index=windows sourcetype=Sysmon EventCode=1 process_name=mimikatz.exe earliest=-
 
 **The deliberate break:** a bare search like `* mimikatz` (no `index=`, no time bound) tells Splunk to scan *every event ever indexed* — minutes of runtime, huge resource cost, and on a busy cluster it can degrade the whole SIEM. The discipline is: lead with `index=` and `sourcetype=`, add a time range, and only then transform. The deeper Root point ties to the next note: SPL is **powerful but Splunk-specific** — a detection you carefully craft here does *not* run on Elastic or Sentinel, so a shop that changes SIEM rewrites its whole rule library. That vendor lock-in is precisely the problem **Sigma** exists to solve: express the *logic* in a portable format and compile it to SPL (or any backend) rather than hand-writing SPL you can never take with you.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why is SPL described as a "pipeline language," and what does `|` do?
-- **Operator:** Write a bounded search that counts Office-spawns-PowerShell events, and name three transforming commands.
-- **Root:** Explain why an unbounded search is dangerous, and why SPL's power is also a portability problem.
+You should now be able to:
+
+- Why is SPL described as a "pipeline language," and what does `|` do?
+- Write a bounded search that counts Office-spawns-PowerShell events, and name three transforming commands.
+- Explain why an unbounded search is dangerous, and why SPL's power is also a portability problem.
 
 ---
 > 🔼 Up: [[SIEM & Detection Engineering Tools]]

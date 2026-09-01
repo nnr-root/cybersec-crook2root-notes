@@ -1,7 +1,7 @@
 ---
 title: "osquery"
 aliases: ["osquery", "osqueryi"]
-tags: [tree/tooling, cyber/tooling/defensive/osquery, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/defensive/osquery, type/tool, difficulty/medium]
 Domain: "[[Endpoint Telemetry Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ osquery exposes an operating system as a **SQL database**. Running processes, li
 ## Parent Learning Order
 Sysmon -> osquery
 
-## Crook — The Mental Model
+## The flashlight: what is true right now
 
 The other shape of endpoint visibility: osquery answers **what is true right now**.
 
-![[tool_endpoint_telemetry.svg]]
-
 Where Sysmon *streams* events over time, osquery is a **flashlight** — you point a question at an endpoint (or all of them) and get the current state back as query results. "Which hosts have a process running from a path that no longer exists on disk?" is one SQL statement, and because the OS is modelled as tables, everything you know about databases transfers directly to endpoint analysis.
 
-## Operator — Make It Work
+## Interactive queries first, scheduled ones after
 
 `osqueryi` is the interactive shell; the same queries run scheduled via `osqueryd`:
 
@@ -41,7 +39,7 @@ osquery> SELECT address, port, pid FROM listening_ports WHERE port = 4444;
 
 High-value tables: `processes`, `listening_ports`, `users`, `logged_in_users`, `startup_items`/`autoexec`, `crontab`, `kernel_modules`, `installed_applications`, `file` (with hashes). A **manager** (FleetDM, Kolide) fans one query out to thousands of hosts — a live IR sweep in seconds.
 
-## Root — Internals & The Deliberate Break
+## A snapshot cannot see what already exited
 
 osquery's model is a **snapshot**, and that is its critical limitation:
 
@@ -55,11 +53,13 @@ osquery> SELECT name FROM processes WHERE name LIKE '%mimikatz%';   -- 0 rows
 
 **The deliberate break:** osquery only sees what exists *at the moment it runs*. A malicious process that started and exited **between** two scheduled queries is completely invisible — the point-in-time model has gaps that a fast attacker slips through. This is exactly why osquery and **Sysmon** are complements, not substitutes: Sysmon's continuous *event stream* would have recorded the `ProcessCreate` for `mimikatz.exe` even though it lived for three minutes, while osquery is unbeatable for "what is the current state across my whole fleet?" (persistence, inventory, live IR). Use osquery for state and hunting sweeps; use Sysmon (or an EDR) for the ordered history — the diagram's "you want both." (osquery *does* have an evented-tables mode that narrows this gap, but the core shell is snapshot-based.)
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why is modelling an endpoint as SQL tables powerful, and what question does osquery answer?
-- **Operator:** Write the query that finds processes running from a deleted binary, and name three other useful tables.
-- **Root:** Explain the snapshot blind spot with the mimikatz example, and why osquery and Sysmon are complements.
+You should now be able to:
+
+- Why is modelling an endpoint as SQL tables powerful, and what question does osquery answer?
+- Write the query that finds processes running from a deleted binary, and name three other useful tables.
+- Explain the snapshot blind spot with the mimikatz example, and why osquery and Sysmon are complements.
 
 ---
 > 🔼 Up: [[Endpoint Telemetry Tools]]

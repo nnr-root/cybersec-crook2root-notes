@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/secarch
   - type/concept
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Network Security Architecture]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Firewall Architecture & Policy -> Network Segmentation & Zero Trust -> VPNs & Encrypted Tunnels -> Intrusion Detection & Network Monitoring -> Egress Control & Web Proxies -> Network Access Control
 
-## Start at Zero: A Decision on Every Packet
+## A Decision on Every Packet
 
 A **firewall** enforces a policy about which traffic may pass a boundary. For every packet or connection, it asks a question — "does a rule permit this?" — and either forwards or drops. That is the entire concept; everything else is how sophisticated the question can be and how well the rules are written.
 
@@ -106,34 +107,13 @@ flowchart TD
 
 All firewall configuration and testing described here must target only systems within an authorized scope. Modifying rules on a shared firewall affects every flow it governs, and probing a firewall's policy is reconnaissance that is logged.
 
-## Authorized Lab: Build a Default-Deny Policy
+## Summary
 
-Use a lab firewall (a Linux host with nftables is ideal) between two segments you control.
+You should now be able to:
 
-1. **Start with default-deny.** Configure the input and forward policies to drop, with no allow rules, and confirm all traffic is blocked — the correct starting point.
-2. **Add stateful return handling.** Add the `established,related accept` rule and one specific allow (SSH from an internal address). Confirm that outbound-initiated connections get their replies automatically, and that the permitted service works only from the intended source.
-3. **Demonstrate ordering.** Place a broad `accept` above a specific `drop` and confirm the drop never fires; then reorder and confirm the drop now takes effect. This makes first-match-wins concrete.
-4. **Demonstrate rule bloat.** Add several overlapping and redundant rules, then audit the base by testing which rules actually fire for representative traffic, identifying the dead and redundant ones.
-5. **Log the denies.** Add logging to the default-deny path, generate some blocked traffic (a scan from the other segment), and confirm each blocked attempt appears in the log — turning silent drops into telemetry.
-6. **Add egress control.** Set the outbound policy to default-deny and permit only required outbound traffic. Confirm that an unexpected outbound connection (simulating malware calling home) is now blocked and logged.
-7. **Cleanup.** Restore the baseline ruleset and confirm expected connectivity.
-
-Expected interpretation:
-
-```text
-Default-deny      -> nothing passes until explicitly allowed; the sound foundation
-Stateful accept   -> replies permitted by connection state, not by trusting an address
-Rule order        -> first match wins; a broad accept above a drop kills the drop
-Bloat audit       -> overlapping and dead rules revealed by testing what actually fires
-Logged denies     -> blocked attempts become investigable telemetry
-Egress deny       -> outbound malware/exfil connection blocked, not just inbound attacks
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what a firewall decides on every packet and the difference between a stateless packet filter and a stateful firewall; state why default-deny is the sound posture.
-- **Operator:** Read a stateful ruleset, explain the `established,related` rule and first-match-wins ordering, and diagnose a dead rule caused by a broader rule above it.
-- **Root:** Explain why default-allow is unwinnable and default-deny is finite; argue why egress control and deny-logging are high-value and neglected, and why a firewall is one layer rather than a complete boundary — motivating segmentation and zero trust.
+- Explain what a firewall decides on every packet and the difference between a stateless packet filter and a stateful firewall; state why default-deny is the sound posture.
+- Read a stateful ruleset, explain the `established,related` rule and first-match-wins ordering, and diagnose a dead rule caused by a broader rule above it.
+- Explain why default-allow is unwinnable and default-deny is finite; argue why egress control and deny-logging are high-value and neglected, and why a firewall is one layer rather than a complete boundary — motivating segmentation and zero trust.
 
 ---
 > 🔼 Up: [[Network Security Architecture]]

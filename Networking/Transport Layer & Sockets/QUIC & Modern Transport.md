@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/transport
   - type/concept
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Transport Layer & Sockets]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Control -> UDP & Connectionless Transport -> QUIC & Modern Transport -> Transport Layer Threats & Controls
 
-## Start at Zero: Why Replace Something That Works
+## Why Replace Something That Works
 
 TCP works. It has carried the Internet for decades. But three specific problems proved unfixable within TCP itself, and understanding them explains everything QUIC does.
 
@@ -129,60 +129,13 @@ HTTP/3 200
 
 All testing described here should target systems within an authorized scope; QUIC's opacity does not change scoping obligations, and probing it generates the same telemetry as any other traffic.
 
-## Authorized Lab: Compare the Two Transports
+## Summary
 
-Use a lab client and a server supporting both HTTP/2 over TCP and HTTP/3 over QUIC, with a link whose loss you can control.
+You should now be able to:
 
-1. **Baseline both transports.** Fetch the same resource over each and record the time:
-
-```bash
-curl -sw '%{http_version} %{time_total}\n' -o /dev/null --http2 https://<server>/
-curl -sw '%{http_version} %{time_total}\n' -o /dev/null --http3 https://<server>/
-```
-
-2. **Compare visibility.** Capture each transfer and contrast what is readable:
-
-```bash
-sudo tcpdump -i eth0 -nn -c 6 'tcp port 443'
-sudo tcpdump -i eth0 -nn -c 6 'udp port 443'
-```
-
-Confirm the TCP capture exposes flags, sequence numbers, and window sizes, while the QUIC capture shows opaque UDP payloads.
-
-3. **Demonstrate head-of-line blocking.** Introduce packet loss and request several resources concurrently over each transport:
-
-```bash
-sudo tc qdisc add dev eth0 root netem loss 3%
-```
-
-Measure completion times for all concurrent requests. Over HTTP/2, expect all streams to be affected by loss on any one. Over HTTP/3, expect unaffected streams to complete normally.
-
-4. **Demonstrate connection migration.** Start a long transfer over QUIC, then change the client's source address (switch interfaces or change the address). Confirm the QUIC transfer survives while an equivalent TCP transfer is severed and must restart.
-
-5. **Demonstrate the fallback.** Block UDP/443 on the client and repeat the HTTP/3 request. Confirm the client silently falls back to TCP and note the added latency — the "works but slower" symptom.
-
-6. **Cleanup.** Remove the traffic-control impairment and the UDP block, and confirm baseline timings return:
-
-```bash
-sudo tc qdisc del dev eth0 root
-```
-
-Expected interpretation:
-
-```text
-TCP capture   -> flags, sequence, window all readable by any mid-path device
-QUIC capture  -> opaque payload; kernel shows UNCONN with no transport state
-Loss + HTTP/2 -> one lost packet stalls every multiplexed stream
-Loss + HTTP/3 -> only the affected stream stalls; others complete
-Address change-> QUIC session survives via connection ID; TCP session dies
-UDP blocked   -> silent fallback to TCP; not an outage, just slower
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Name the three TCP limitations QUIC was designed to fix, and explain in plain language what head-of-line blocking is.
-- **Operator:** Identify QUIC traffic, verify which transport a client actually used, and recognize the "works but slower" signature of blocked UDP/443 with silent fallback.
-- **Root:** Explain protocol ossification and why it made fixing TCP in place infeasible; describe how connection migration invalidates five-tuple flow tracking, how QUIC's address validation limits amplification inherited from UDP, and why mandatory encryption forces detection strategy from mid-path inspection toward endpoint telemetry.
+- Name the three TCP limitations QUIC was designed to fix, and explain in plain language what head-of-line blocking is.
+- Identify QUIC traffic, verify which transport a client actually used, and recognize the "works but slower" signature of blocked UDP/443 with silent fallback.
+- Explain protocol ossification and why it made fixing TCP in place infeasible; describe how connection migration invalidates five-tuple flow tracking, how QUIC's address validation limits amplification inherited from UDP, and why mandatory encryption forces detection strategy from mid-path inspection toward endpoint telemetry.
 
 ---
 > 🔼 Up: [[Transport Layer & Sockets]]

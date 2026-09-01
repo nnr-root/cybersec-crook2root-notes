@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/foundations
   - type/concept
+  - difficulty/easy
   - level/apprentice
 Domain:
   - "[[Network Foundations]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation & Protocol Data Units -> Network Devices & Traffic Paths -> Reachability Testing & ICMP
 
-## Start at Zero: One Question per Device
+## One Question per Device
 
 Every forwarding device answers a single question, and the question determines which header it reads.
 
@@ -172,39 +173,13 @@ Every device is also a **management surface**. Administrative interfaces reachab
 
 Enumeration of network devices must stay inside an authorized scope; probing infrastructure generates telemetry and, in the case of unstable devices, can affect availability.
 
-## Authorized Lab: Attribute Every Change to a Device
+## Summary
 
-Build a three-segment lab you fully control: two host VMs and a router VM with a firewall, each host on its own virtual switch.
+You should now be able to:
 
-1. From Host-A, run `ip route get <Host-B address>` and record the gateway and source address chosen.
-2. Capture on Host-A's interface while pinging Host-B:
-
-```bash
-sudo tcpdump -i eth0 -nn -e -c 4 icmp
-```
-
-Record the destination hardware address and the TTL.
-
-3. Capture simultaneously on Host-B's interface. Compare the two captures.
-4. Confirm three findings: the IP addresses are identical in both captures; the hardware addresses are completely different; the TTL at Host-B is one lower than at Host-A.
-5. On the router, add a rule dropping ICMP between the two subnets. Repeat the ping and observe it fail while `ip route get` still reports a valid path — proving that a route and a permission are different things.
-6. Replace the drop with a reject and repeat. Observe the difference between silence and an explicit ICMP administratively-prohibited message.
-7. Remove both lab rules and confirm the baseline ping succeeds again.
-
-Expected interpretation:
-
-```text
-Same IPs, different MACs   -> the router rebuilt the frame; the switch did not
-TTL decremented by one     -> exactly one routing decision occurred
-Route present, ping fails  -> policy denied, topology unchanged
-Drop vs reject             -> silence looks like a dead host; reject identifies the control
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** State which header each device reads and what question it answers; explain why a switch creates one broadcast domain per VLAN while a router separates them.
-- **Operator:** Use `ip route get`, a two-sided capture, and `traceroute` to describe a packet's path; explain why the hardware addresses differ at each end while the IP addresses do not, and why asterisks in traceroute are not a failure.
-- **Root:** Explain how MAC table exhaustion degrades a switch's behaviour, how connection-tracking limits turn a firewall into an availability risk, and why a proxy's logs are the only reliable source of true client attribution once `X-Forwarded-For` is attacker-influenced.
+- State which header each device reads and what question it answers; explain why a switch creates one broadcast domain per VLAN while a router separates them.
+- Use `ip route get`, a two-sided capture, and `traceroute` to describe a packet's path; explain why the hardware addresses differ at each end while the IP addresses do not, and why asterisks in traceroute are not a failure.
+- Explain how MAC table exhaustion degrades a switch's behaviour, how connection-tracking limits turn a firewall into an availability risk, and why a proxy's logs are the only reliable source of true client attribution once `X-Forwarded-For` is attacker-influenced.
 
 ---
 > 🔼 Up: [[Network Foundations]]

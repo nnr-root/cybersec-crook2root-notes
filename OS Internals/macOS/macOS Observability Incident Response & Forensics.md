@@ -6,7 +6,7 @@ tags:
   - cyber/foundations/macos
   - cyber/defense/dfir
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[macOS]]"
 Color: "#FFA500"
@@ -20,7 +20,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File System -> macOS Processes & Daemons -> macOS Identity, Keychain & Credentials -> macOS Networking Internals -> macOS Security Mechanisms -> macOS Binaries & Runtime Loading -> macOS Observability, Incident Response & Forensics
 
-## Crook — Evidence Sources & Time
+## Evidence Sources & Time
 
 ### Vocabulary & First Mental Model
 
@@ -75,7 +75,7 @@ Network Time: On
 > [!tip] The analogy, and where it breaks
 > Reconstructing an event from several partial records — the door log, the CCTV, and a delivery manifest — none of which alone tells the story. The analogy breaks because some of these records are privacy-protected by the system itself, so an investigator may need explicit authorisation to read evidence that exists on a machine they already control.
 
-## Operator — Unified Logging & Live Triage
+## Unified Logging & Live Triage
 
 ### Unified Logging
 
@@ -130,7 +130,7 @@ shasum -a 256 "$exe"
 
 Memory acquisition may be constrained by entitlements, Hardened Runtime, SIP, and product capability. Document inability as a collection limitation rather than weakening platform protections on an active case.
 
-## Root — Filesystem, Persistence & Correlation
+## Filesystem, Persistence & Correlation
 
 ### FSEvents
 
@@ -219,93 +219,6 @@ shasum -a 256 "$case_dir.tar.gz"
 
 Record collector, authority, host identifier, commands, tool versions, start/end times, timezone, errors, transformations, storage location, and transfers. A hash proves later bytes match; it does not prove the original collection was complete or correct.
 
-## Hands-On Lab: Reconstruct Activity From Multiple Records
-
-> [!info] Runs on any Mac — read-only collection; some records are TCC-protected and may prompt
-> The lesson is the *order* of collection and correlating independent sources on one timeline.
-
-### Step 1 — Collect volatile state first
-
-```bash
-ps -Ao pid,ppid,user,comm | wc -l | awk '{print $1, "processes running"}'
-sudo lsof -iTCP -sTCP:ESTABLISHED -n -P 2>/dev/null | awk 'NR>1{print $1, $9}' | head -3
-```
-
-```text
-487 processes running
-Google    142.250.80.14:443
-Messages  17.57.144.22:443
-```
-
-Established connections and process state vanish on reboot, so they are collected **first** — the same volatility-ordering principle as any forensic collection.
-
-### Step 2 — Query the unified log by predicate, not by scrolling
-
-```bash
-log show --last 5m --predicate 'eventMessage CONTAINS "Failed"' --style compact 2>/dev/null | tail -3
-```
-
-```text
-2026-08-04 18:55:12 loginwindow  Failed authentication for user labtest
-2026-08-04 18:55:14 opendirectoryd  Failed to authenticate: labtest
-```
-
-The unified log replaces scattered text logs; a **predicate** filters millions of entries to the few that matter. Two subsystems independently recorded the same failed authentication — corroboration from separate sources.
-
-### Step 3 — Check quarantine history (what was downloaded)
-
-```bash
-DB=~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV2
-[ -f "$DB" ] && sqlite3 "$DB" 'SELECT LSQuarantineTimeStamp, LSQuarantineAgentName FROM LSQuarantineEvent ORDER BY LSQuarantineTimeStamp DESC LIMIT 2' 2>/dev/null || echo "quarantine DB not accessible"
-```
-
-```text
-2026-08-04 12:03:11|Safari
-2026-08-03 22:41:55|Google Chrome
-```
-
-The quarantine database is a downloaded-file history — a forensic record of what arrived on the machine and via which app, persisting long after the file itself.
-
-### Step 4 — Read FSEvents for filesystem activity
-
-```bash
-sudo fs_usage -w -f filesys 2>/dev/null | head -3 &
-sleep 2; touch /tmp/fsevent-probe; sleep 1; kill %1 2>/dev/null
-echo "fs_usage shows live filesystem syscalls; FSEvents on disk records historical changes per volume"
-```
-
-```text
-18:56:03  open   /tmp/fsevent-probe   touch
-18:56:03  close  /tmp/fsevent-probe   touch
-fs_usage shows live filesystem syscalls; FSEvents on disk records historical changes per volume
-```
-
-`fs_usage` is the live view; the on-disk FSEvents store is the historical one. Together they answer "what changed on this filesystem, and when."
-
-### Step 5 — Correlate sources onto one timeline
-
-```bash
-echo "=== reconstructed timeline ==="
-echo "12:03:11  Safari downloaded a file (quarantine DB)"
-echo "18:55:12  failed auth for labtest (unified log, 2 subsystems)"
-echo "18:56:03  /tmp file activity (fs_usage)"
-last -3 | head -2
-```
-
-```text
-=== reconstructed timeline ===
-12:03:11  Safari downloaded a file (quarantine DB)
-18:55:12  failed auth for labtest (unified log, 2 subsystems)
-18:56:03  /tmp file activity (fs_usage)
-you   console  Tue Aug  4 08:12   still logged in
-```
-
-No single record told the story — the download, the failed authentication, the file activity, and the login came from **four independent sources** joined by synchronized timestamps. That correlation is the whole craft of incident reconstruction.
-
-**Cleanup:** `rm -f /tmp/fsevent-probe`. The log, quarantine, and FSEvents records are system history and are left intact — in a real engagement they are evidence to preserve.
-
-**What you should now be able to do:** collect volatile state first, filter the unified log by predicate, read quarantine and FSEvents history, and correlate independent sources onto one timeline.
-
 ## Troubleshooting Workflow
 
 If evidence sources disagree, normalize time zone and clock offset, preserve the original query, and determine each source’s retention and collection boundary. Unified Log absence can mean expiration, privacy redaction, disabled persistence, or an incorrect predicate—not proof that an action never occurred. Corroborate process, file, quarantine, FSEvents, TCC, launchd, network, and APFS evidence by stable identifiers and time windows. Re-run collection on a known benign event to validate the method before drawing an incident conclusion.
@@ -319,11 +232,13 @@ If evidence sources disagree, normalize time zone and clock offset, preserve the
 - APFS snapshots can recover prior states but are mutable evidence subject to purging.
 - Evidence handling must protect credentials, personal data, and enterprise secrets encountered during collection.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Identify Unified Logs, FSEvents, quarantine, TCC, launch items, APFS snapshots, and process/network state.
-- **Operator:** Perform non-destructive live triage, preserve context, query targeted logs, hash evidence, and build a sourced timeline.
-- **Root:** Reconstruct a multi-stage incident across volatile state, code identity, persistence, privacy decisions, filesystem history, snapshots, and network evidence while quantifying every gap, contradiction, and confidence level.
+You should now be able to:
+
+- Identify Unified Logs, FSEvents, quarantine, TCC, launch items, APFS snapshots, and process/network state.
+- Perform non-destructive live triage, preserve context, query targeted logs, hash evidence, and build a sourced timeline.
+- Reconstruct a multi-stage incident across volatile state, code identity, persistence, privacy decisions, filesystem history, snapshots, and network evidence while quantifying every gap, contradiction, and confidence level.
 
 ---
 > 🔼 Up: [[macOS]]

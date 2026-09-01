@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/addressing
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Addressing & Subnetting]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IPv4 Addressing -> Subnetting & CIDR -> VLSM & Route Summarization -> IPv6 Addressing -> Address Assignment & DHCP -> NAT & Address Translation
 
-## Start at Zero: 128 Bits and Its Notation
+## 128 Bits and Its Notation
 
 An **IPv6 address** is 128 bits, written as eight groups of four hexadecimal digits separated by colons. Each group represents 16 bits.
 
@@ -153,59 +153,13 @@ IPv6's security problems are overwhelmingly problems of *unmanaged* IPv6 rather 
 
 All discovery and probing described here must stay within an authorized scope. Multicast enumeration is quiet but not invisible, and it reaches every host on the segment.
 
-## Authorized Lab: Find the Path IPv4 Review Missed
+## Summary
 
-Use two lab VMs on an isolated segment you control, plus a router VM capable of sending advertisements.
+You should now be able to:
 
-1. Confirm IPv6 appears "unused": ensure no global IPv6 addresses are configured and no advertisements are being sent.
-2. On both hosts, run `ip -6 addr show`. Each has an `fe80::` address regardless. Record them.
-3. From Host-A, enumerate the segment using the all-nodes multicast group:
-
-```bash
-ping6 -c 3 ff02::1%eth0
-```
-
-Expected excerpt:
-
-```text
-64 bytes from fe80::20c:29ff:fe4a:9b31%eth0: icmp_seq=1 ttl=64 time=0.31 ms
-64 bytes from fe80::20c:29ff:fe7b:2c14%eth0: icmp_seq=1 ttl=64 time=0.62 ms
-```
-
-Every IPv6-capable host on the link answers. No configuration was required by anyone.
-
-4. Start a service on Host-B bound to all interfaces, then connect from Host-A over link-local:
-
-```bash
-nmap -6 -p 22 fe80::20c:29ff:fe7b:2c14%eth0
-```
-
-Expected excerpt:
-
-```text
-PORT   STATE SERVICE
-22/tcp open  ssh
-```
-
-5. Apply an IPv4-only firewall rule on Host-B denying the service, verify IPv4 access is blocked, then repeat step 4. The IPv6 path remains open — the finding this lab exists to demonstrate.
-6. Add the equivalent `ip6tables` or `nft inet` rule and confirm both families are now denied.
-7. Enable a Router Advertisement on the lab router, observe global addresses and a default route appear on both hosts with `proto ra`, then disable it.
-8. Remove every rule and service added, and confirm each host returns to the state recorded in step 2.
-
-Expected interpretation:
-
-```text
-"IPv6 not deployed" -> link-local connectivity exists on every host anyway
-ff02::1 sweep       -> instant enumeration without any scanning of address space
-IPv4-only rule      -> service still reachable over IPv6; policy parity is the fix
-RA enabled          -> prefix and default gateway accepted with no authentication
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Compress and expand an IPv6 address correctly, explain why `::` may appear only once, and name the link-local, unique-local, global, and multicast ranges.
-- **Operator:** Read `ip -6 addr`, `ip -6 route`, and `ip -6 neigh` to identify temporary versus stable addresses, EUI-64 derivation, and a gateway learned from an advertisement; use a zone index correctly when addressing link-local.
-- **Root:** Explain why `/64` is the fixed subnet size and what breaks otherwise; describe how unauthenticated Router Advertisements enable a rogue gateway and which switch control prevents it; and justify policy parity over disablement when addressing a dual-stack blind spot.
+- Compress and expand an IPv6 address correctly, explain why `::` may appear only once, and name the link-local, unique-local, global, and multicast ranges.
+- Read `ip -6 addr`, `ip -6 route`, and `ip -6 neigh` to identify temporary versus stable addresses, EUI-64 derivation, and a gateway learned from an advertisement; use a zone index correctly when addressing link-local.
+- Explain why `/64` is the fixed subnet size and what breaks otherwise; describe how unauthenticated Router Advertisements enable a rogue gateway and which switch control prevents it; and justify policy parity over disablement when addressing a dual-stack blind spot.
 
 ---
 > 🔼 Up: [[Addressing & Subnetting]]

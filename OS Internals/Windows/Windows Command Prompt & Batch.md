@@ -5,6 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/windows
   - type/technique
+  - difficulty/easy
   - level/apprentice
 Domain:
   - "[[Windows]]"
@@ -22,7 +23,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations -> Windows Drivers I-O & Kernel Debugging -> Windows Processes, Services & Boot -> Windows File System & Registry -> Windows Networking Internals -> Windows Security & Access Control -> Windows Identity, Credentials & Authentication -> Windows Active Directory & Domains -> Windows Command Prompt & Batch -> Windows PowerShell -> Windows Logging & Auditing -> Windows Diagnostics, Crash Dumps & Performance -> Windows Sysinternals & Troubleshooting
 
-## Start at Zero: What a Command Prompt Is
+## What a Command Prompt Is
 
 A **shell** is a program that reads text you type, figures out what command you meant, runs it, and shows you the result. The **Command Prompt** — the program `cmd.exe` — is the traditional Windows shell. When you open it you see a **prompt** like `C:\Users\you>` followed by a blinking cursor waiting for a command.
 
@@ -243,112 +244,13 @@ SERVICE_NAME: EventLog
 
 **CMD is a favourite of "living off the land"** because its utilities are always present and trusted. `certutil` can download files, `bcdedit` can weaken boot integrity, `reg` can alter security-relevant keys, and `wevtutil cl` can clear logs. Each is legitimate for administration and abusable for intrusion, which is why their use is worth logging and baselining rather than blocking outright.
 
-## Hands-On Lab: The Three Batch Mistakes Everyone Makes Once
+## Summary
 
-> [!info] Runs on any Windows machine — creates files under `%TEMP%\cmdlab`, removed in Step 6
-> Every command is complete. Paste them into a Command Prompt window in order.
+You should now be able to:
 
-### Step 1 — A sandbox and the exit-code habit
-
-```cmd
-mkdir "%TEMP%\cmdlab" & cd /d "%TEMP%\cmdlab"
-whoami & echo exit code: %ERRORLEVEL%
-```
-
-```text
-win-lab01\analyst
-exit code: 0
-```
-
-`%ERRORLEVEL%` is the variable every batch decision branches on — `0` means success. Capture it **immediately**, because the very next command overwrites it.
-
-### Step 2 — The redirection-order trap
-
-```cmd
-dir nosuchfile.txt 2>&1 > wrong.txt & echo --- wrong.txt --- & type wrong.txt
-dir nosuchfile.txt > right.txt 2>&1 & echo --- right.txt --- & type right.txt
-```
-
-```text
-File Not Found
---- wrong.txt ---
- Volume in drive C has no label.
---- right.txt ---
-File Not Found
-```
-
-Identical-looking syntax, different result. In `wrong.txt` the error went to the console because `2>&1` was aimed at stdout **before** stdout was redirected. `2>&1` must come **after** `>file`. This one rule explains most "my log is missing the errors" bugs.
-
-### Step 3 — The delayed-expansion trap
-
-```cmd
-setlocal EnableDelayedExpansion
-set COUNT=0
-for %F in (a b c) do (
-    set /a COUNT+=1
-    echo Frozen: %COUNT%   Live: !COUNT!
-)
-```
-
-```text
-Frozen: 0   Live: 1
-Frozen: 0   Live: 2
-Frozen: 0   Live: 3
-```
-
-`%COUNT%` is stuck at `0` because the whole parenthesized block was parsed once, freezing every `%VAR%`. `!COUNT!` uses delayed expansion, evaluated as each line runs. Any loop that counts or accumulates needs this.
-
-### Step 4 — Parse command output with `for /f`
-
-```cmd
-for /f "tokens=2 delims=:" %A in ('findstr /c:"SERVICE_NAME" ^< nul 2^>nul ^& sc query eventlog ^| findstr STATE') do echo State token:%A
-sc query eventlog | findstr /c:"STATE"
-```
-
-```text
-State token: 4  RUNNING
-        STATE              : 4  RUNNING
-```
-
-`for /f` runs the command in another CMD parse, which is why `|`, `<`, `&` inside it must be escaped with `^`. That nested parsing is where batch becomes fragile and where injected data can change meaning.
-
-### Step 5 — A validated mini-script
-
-```cmd
-(echo @echo off
-echo if "%%~1"=="" ^(echo Usage: %%~nx0 NAME ^& exit /b 64^)
-echo echo Hello %%~1 from %%COMPUTERNAME%%
-echo exit /b 0) > greet.cmd
-call greet.cmd
-call greet.cmd World
-```
-
-```text
-Usage: greet.cmd NAME
-Hello World from WIN-LAB01
-```
-
-Called with no argument it exits with code 64 and a usage message; with an argument it works. Argument validation is the difference between a script and a foot-gun.
-
-### Step 6 — Cleanup
-
-```cmd
-cd /d "%TEMP%" & rmdir /s /q "%TEMP%\cmdlab" & if exist "%TEMP%\cmdlab" (echo still there) else (echo removed)
-```
-
-```text
-removed
-```
-
-Note `cd /d "%TEMP%"` first — you cannot remove the directory you are standing in.
-
-**What you should now be able to do:** explain why `2>&1 >file` and `>file 2>&1` differ, why a loop counter needs delayed expansion, and why `for /f` requires escaping.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Open a Command Prompt, explain what the prompt and current directory mean, run `whoami`/`cd`/`dir`, and state the difference between a built-in and an external command.
-- **Operator:** Chain commands with `&&`/`||`, redirect both streams correctly, write a validated batch script with `for` loops and delayed expansion, and diagnose the common parsing and encoding failures.
-- **Root:** Explain why Windows' single-command-line model makes quoting parser-dependent, how re-expansion in compound lines and `for /f` enables batch injection, and why native utilities are both administration tools and living-off-the-land tradecraft that must be logged rather than trusted.
+- Open a Command Prompt, explain what the prompt and current directory mean, run `whoami`/`cd`/`dir`, and state the difference between a built-in and an external command.
+- Chain commands with `&&`/`||`, redirect both streams correctly, write a validated batch script with `for` loops and delayed expansion, and diagnose the common parsing and encoding failures.
+- Explain why Windows' single-command-line model makes quoting parser-dependent, how re-expansion in compound lines and `for /f` enables batch injection, and why native utilities are both administration tools and living-off-the-land tradecraft that must be logged rather than trusted.
 
 ---
 > 🔼 Up: [[Windows]]

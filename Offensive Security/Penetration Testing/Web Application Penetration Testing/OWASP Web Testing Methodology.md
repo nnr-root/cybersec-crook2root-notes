@@ -5,7 +5,7 @@ tags:
   - tree/offensive
   - cyber/offensive/web
   - type/methodology
-  - level/operator
+  - difficulty/medium
 Domain: "[[Web Application Penetration Testing]]"
 Color: "#DC143C"
 ---
@@ -127,11 +127,13 @@ Assess a deliberately vulnerable multi-role service without starting from scanne
 
 Common failures include testing one account, equating UI absence with authorization, reporting headers without exploitability/context, using only payload lists, missing asynchronous side effects, overlooking mobile/API surfaces, and assigning severity before business impact. Correct them through explicit models and evidence, not more automated traffic.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why does a methodology start with mapping architecture, routes, and roles *before* sending any payload?
-- **Operator:** Given the route inventory above, design the two-identity baseline/differential test that proves an object-level authorization bug with a canary rather than real data.
-- **Root:** OWASP categories are prompts, not proof of coverage. Explain how a traceability matrix (component × role × objective × evidence) turns "we ran the checklist" into a defensible coverage claim.
+You should now be able to:
+
+- Why does a methodology start with mapping architecture, routes, and roles *before* sending any payload?
+- Given the route inventory above, design the two-identity baseline/differential test that proves an object-level authorization bug with a canary rather than real data.
+- OWASP categories are prompts, not proof of coverage. Explain how a traceability matrix (component × role × objective × evidence) turns "we ran the checklist" into a defensible coverage claim.
 
 ---
 > 🔼 Up: [[Web Application Penetration Testing]]

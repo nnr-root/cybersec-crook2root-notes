@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/services
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Core Network Services]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 DNS Resolution & Records -> DNS Security & Encrypted Transports -> Local Name Resolution & Service Discovery -> Network Time Synchronization -> Email Transport Protocols -> Network Management Protocols
 
-## Start at Zero: Resolution Before DNS
+## Resolution Before DNS
 
 Name resolution is not a single lookup to DNS. The operating system consults sources in a configured order, and understanding that order is the key to both diagnosis and the security problems here.
 
@@ -112,33 +112,13 @@ A particularly dangerous case combines these protocols with proxy autoconfigurat
 
 All interception described here must be confined to an isolated lab you own. Answering name queries on a network you do not control captures other users' authentication material and is unauthorized.
 
-## Authorized Lab: Answer a Name First
+## Summary
 
-Use an isolated Windows-and-Linux lab: a victim (Windows is ideal for the credential portion), an attacker VM, and no dependence on any production network.
+You should now be able to:
 
-1. **Observe the resolution order.** On the victim, examine the hosts file and the resolution configuration, and confirm the order in which sources are consulted.
-2. **Trigger a fallback.** From the victim, attempt to reach a name that DNS cannot resolve — an unqualified or mistyped host name. Capture the resulting LLMNR/mDNS/NBT-NS query on the segment with the tcpdump filter above.
-3. **Answer as the attacker.** Run a name-spoofing responder tool on the attacker VM that answers these multicast/broadcast queries. Repeat the victim's failed lookup and confirm the victim now resolves the name to the attacker's address.
-4. **Capture the authentication exchange.** Have the victim attempt to connect to the spoofed "server." Confirm the attacker receives the authentication material, and note how little the attacker did — only listen and answer.
-5. **Demonstrate the WPAD path.** Configure the victim to auto-discover a proxy, trigger the `wpad` lookup, answer it from the attacker, and confirm the victim's web requests now traverse the attacker's proxy.
-6. **Apply the controls.** Disable LLMNR, NBT-NS, and WPAD on the victim (and ensure the name resolves correctly via DNS). Repeat every step and confirm no fallback query is emitted and the attack no longer functions.
-7. **Cleanup.** Restore the victim's original configuration if a baseline is required, stop the responder, and confirm normal name resolution.
-
-Expected interpretation:
-
-```text
-Failed DNS lookup -> host falls back to multicast/broadcast and trusts any answer
-Attacker answers  -> victim resolves a name to the attacker with no authentication
-Connection made   -> authentication material captured passively
-WPAD answered     -> victim's web traffic routed through the attacker
-Protocols disabled-> no fallback query emitted; the attack surface is gone
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Describe the resolution order from hosts file through fallback protocols to DNS, and explain what mDNS, LLMNR, and NetBIOS have in common.
-- **Operator:** Identify LLMNR/mDNS/NBT-NS queries in a capture, explain why their presence on an enterprise segment is a finding, and recognize the failed DNS lookup as the trigger.
-- **Root:** Explain how an unauthenticated name answer leads to NTLM credential capture and how WPAD extends it to web-traffic redirection; argue why disabling the fallbacks and fixing DNS hygiene are the durable controls, and why the hosts file is a distinct persistence vector overriding them all.
+- Describe the resolution order from hosts file through fallback protocols to DNS, and explain what mDNS, LLMNR, and NetBIOS have in common.
+- Identify LLMNR/mDNS/NBT-NS queries in a capture, explain why their presence on an enterprise segment is a finding, and recognize the failed DNS lookup as the trigger.
+- Explain how an unauthenticated name answer leads to NTLM credential capture and how WPAD extends it to web-traffic redirection; argue why disabling the fallbacks and fixing DNS hygiene are the durable controls, and why the hosts file is a distinct persistence vector overriding them all.
 
 ---
 > 🔼 Up: [[Core Network Services]]

@@ -1,6 +1,6 @@
 ---
 title: "ORM Injection"
-tags: [tree/offensive, cyber/offensive/web/injection/orm, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/web/injection/orm, type/technique, difficulty/hard]
 Domain: "[[Web Injection Testing]]"
 Color: "#DC143C"
 ---
@@ -188,55 +188,13 @@ A useful correlation joins an edge request with an application event where `expe
 
 The engineering fix replaced generic object translation with a typed DTO, applied tenant scope as an immutable final conjunction, mapped four supported sort names to model metadata, and prohibited raw ORM helpers in the web layer through static analysis. Purple-team replay confirmed that object, array, null, duplicate-key, and unknown-sort cases fail before an ORM span begins. The team retained query-shape monitoring to catch future framework upgrades or new generic helpers.
 
-## Runnable Lab (one machine, SQLAlchemy)
+## Summary
 
-An ORM is not immunity. The moment you drop to a **raw textual fragment** built by concatenation, you reopen the SQL grammar boundary the ORM normally closes. This lab uses SQLAlchemy 2.x against an in-memory SQLite database.
+You should now be able to:
 
-**Step 1 — vulnerable vs. safe query builders (`orm.py`).**
-
-```python
-from sqlalchemy import create_engine, text
-e = create_engine("sqlite:///:memory:")
-with e.begin() as c:
-    c.execute(text("CREATE TABLE u(id INT,name TEXT,role TEXT)"))
-    c.execute(text("INSERT INTO u VALUES (1,'alice','user'),(2,'admin','admin')"))
-
-def vuln(name):   # raw fragment built by concatenation
-    with e.connect() as c:
-        return c.execute(text("SELECT name,role FROM u WHERE name='"+name+"'")).fetchall()
-
-def fixed(name):  # bound parameter: input stays a value node
-    with e.connect() as c:
-        return c.execute(text("SELECT name,role FROM u WHERE name=:n"), {"n": name}).fetchall()
-```
-
-**Step 2 — normal use, then the injection.**
-
-```console
->>> vuln("x' OR '1'='1")
-[('alice', 'user'), ('admin', 'admin')]
-```
-
-The `OR '1'='1'` tautology returns every row — the ORM's `text()` fragment was concatenated, so the string became SQL grammar.
-
-**Step 3 — the deliberate break: the bound parameter defeats it.**
-
-```console
->>> fixed("x' OR '1'='1")
-[]
-```
-
-Identical payload, zero rows: `:n` is a typed value node, never re-lexed as query text. The difference between the two functions is the entire lesson of ORM injection.
-
-**Step 4 — cleanup:** in-memory database is discarded on process exit — no cleanup required.
-
-**What you should now be able to do:** spot the ORM anti-patterns (raw `text()`/`raw()`, dynamic `order_by` from user input, string-built filters) and show that binding, not the ORM itself, is what protects you.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Both functions use SQLAlchemy. Why is only one vulnerable?
-- **Operator:** ORMs also let users pick a sort column. Why can't `:param` binding protect `ORDER BY <user>`, and what must you do instead?
-- **Root:** Describe a case where the ORM emits safe value-bound SQL but the application is still injectable through *identifier* or *association* control.
+- Both functions use SQLAlchemy. Why is only one vulnerable?
+- ORMs also let users pick a sort column. Why can't `:param` binding protect `ORDER BY <user>`, and what must you do instead?
+- Describe a case where the ORM emits safe value-bound SQL but the application is still injectable through *identifier* or *association* control.
 
 ---
 > 🔼 Up: [[Web Injection Testing]]

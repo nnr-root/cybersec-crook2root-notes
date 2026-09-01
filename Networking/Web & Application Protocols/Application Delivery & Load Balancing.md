@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/appproto
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Web & Application Protocols]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 HTTP Fundamentals -> HTTPS & the TLS Handshake -> Web Architecture & Proxies -> WebSockets & Real-Time Protocols -> REST & Modern API Transport -> Application Delivery & Load Balancing
 
-## Start at Zero: One Name, Many Servers
+## One Name, Many Servers
 
 A popular site receives far more requests than one machine can serve, and one machine is a single point of failure. The solution is to run many identical servers and place a **load balancer** in front that distributes incoming requests across them. Clients connect to one address; the load balancer decides which backend actually handles each request.
 
@@ -104,34 +104,13 @@ The CDN is also a security boundary. It is where TLS is often terminated, where 
 
 All testing described here must target only infrastructure within an authorized scope. Probing health endpoints, load-testing, and attempting origin discovery are intrusive and require authorization.
 
-## Authorized Lab: Distribute, Fail, and Route Around
+## Summary
 
-Use a lab load balancer in front of several identical backend servers, all under your control.
+You should now be able to:
 
-1. **Observe distribution.** Send many requests through the balancer and, by having each backend identify itself in the response, confirm requests spread across backends per the configured algorithm.
-2. **Trigger a failure.** Stop one backend and confirm the balancer's health check detects it and removes it from rotation, so subsequent requests avoid it with no client-visible error. Restart it and confirm it rejoins.
-3. **Compare check depth.** Configure a shallow (port-only) health check, then break the application while leaving the port open, and confirm the balancer keeps sending traffic to the broken backend. Switch to a deep check that exercises the real path and confirm it now detects the failure.
-4. **Demonstrate the deep-check risk.** Point the deep check at a shared dependency, then make that dependency fail, and confirm every backend drops out of rotation at once — showing how a deep check can amplify a single failure.
-5. **Test TLS termination.** Terminate TLS at the balancer and capture traffic on the internal segment to the backend; confirm it is readable. Then enable re-encryption and confirm the internal traffic is now protected.
-6. **Protect the origin.** Configure a backend to accept connections only from the balancer, then attempt to connect to it directly and confirm the attempt is refused — demonstrating why origin concealment matters.
-7. **Cleanup.** Restore the baseline configuration, restart any stopped backends, and confirm normal distribution.
-
-Expected interpretation:
-
-```text
-Distribution   -> requests spread across backends per algorithm
-Backend down   -> health check removes it; clients see no error
-Shallow check  -> port open but app broken; traffic still sent (false healthy)
-Deep check on shared dep -> one dependency failure drops all backends at once
-TLS termination-> internal hop readable unless re-encrypted
-Origin locked  -> direct connection refused; the edge is a real boundary
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why services run behind a load balancer, the three benefits it provides, and the difference between Layer 4 and Layer 7 balancing.
-- **Operator:** Configure distribution and health checks, explain why a shallow check can report a broken server as healthy, and describe what a CDN does for latency, load, and attack absorption.
-- **Root:** Explain why the delivery tier concentrates both trust and availability defense; analyze the trade-offs in health-check depth, TLS-termination location, and session affinity, and why protecting the origin from direct access is what makes the edge a genuine boundary.
+- Explain why services run behind a load balancer, the three benefits it provides, and the difference between Layer 4 and Layer 7 balancing.
+- Configure distribution and health checks, explain why a shallow check can report a broken server as healthy, and describe what a CDN does for latency, load, and attack absorption.
+- Explain why the delivery tier concentrates both trust and availability defense; analyze the trade-offs in health-check depth, TLS-termination location, and session affinity, and why protecting the origin from direct access is what makes the edge a genuine boundary.
 
 ---
 > 🔼 Up: [[Web & Application Protocols]]

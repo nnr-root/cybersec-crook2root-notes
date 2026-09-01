@@ -1,7 +1,7 @@
 ---
 title: "feroxbuster"
 aliases: ["feroxbuster"]
-tags: [tree/tooling, cyber/tooling/offensive/enumeration/feroxbuster, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/offensive/enumeration/feroxbuster, type/tool, difficulty/medium]
 Domain: "[[Enumeration & Service Interaction Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ feroxbuster is a fast, Rust-based content-discovery tool whose signature feature
 ## Parent Learning Order
 Gobuster -> ffuf -> feroxbuster -> dirsearch -> Netcat -> enum4linux
 
-## Crook — The Mental Model
+## Recursion as the one added idea
 
 feroxbuster reads the same signals as every content-discovery tool — the HTTP status code and response size — but adds one idea: **when a directory turns up, dig into it automatically.**
 
-![[tool_content_discovery_status.svg]]
-
 A `301` redirect to `/admin/` isn't an endpoint, it's a *door*; feroxbuster walks through it and keeps brute-forcing `/admin/*` without you lifting a finger. That recursion is powerful and dangerous in equal measure — it also multiplies your request count and your exposure to the soft-404 trap at every level.
 
-## Operator — Make It Work
+## Watching it dig into what it finds
 
 ```shell-session
 operator@lab:~$ feroxbuster -u http://app.example.test -w raft-medium.txt
@@ -45,7 +43,7 @@ Notice it found `/admin`, then **auto-recursed** to `/admin/login.php` and `/adm
 | `--filter-size 1520` | drop a constant soft-404 body |
 | `-t` / `--rate-limit` | threads / throttle |
 
-## Root — Internals & The Deliberate Break
+## How a soft-404 makes recursion explode
 
 ```shell-session
 operator@lab:~$ feroxbuster -u http://app.example.test -w list.txt
@@ -59,11 +57,13 @@ operator@lab:~$ feroxbuster -u http://app.example.test -w list.txt --filter-size
 
 Cap depth with `-d` on large sites (unbounded recursion brute-forces every discovered directory forever), and emit a report rather than scraping the console so status, size, and redirect target survive for the finding.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** What does feroxbuster's automatic recursion do that a flat brute-forcer doesn't?
-- **Operator:** Every path returns `200`. What's happening, and how do you recover the real files?
-- **Root:** Explain why a soft-404 is *worse* for a recursive scanner than a flat one, and how filtering fixes both problems.
+You should now be able to:
+
+- What does feroxbuster's automatic recursion do that a flat brute-forcer doesn't?
+- Every path returns `200`. What's happening, and how do you recover the real files?
+- Explain why a soft-404 is *worse* for a recursive scanner than a flat one, and how filtering fixes both problems.
 
 ---
 > 🔼 Up: [[Enumeration & Service Interaction Tools]]

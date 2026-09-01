@@ -1,7 +1,7 @@
 ---
 title: "CSRF & SameSite Testing"
 aliases: ["CSRF", "Cross-Site Request Forgery", "SameSite Testing"]
-tags: [tree/offensive, cyber/offensive/web/client-side/csrf, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/web/client-side/csrf, type/technique, difficulty/medium]
 Domain: "[[Client-Side Web Security]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 CORS & Clickjacking -> Cross-Site Scripting -> CSRF & SameSite Testing -> Prototype Pollution & DOM Security
 
-## Start at Zero: Making the Victim's Browser Act for You
+## Making the Victim's Browser Act for You
 
 **Cross-Site Request Forgery (CSRF)** exploits a simple browser behavior: when your browser makes a request to a site, it *automatically attaches that site's cookies* — including the session cookie — regardless of where the request originated. So if an attacker's page can cause your browser to send a request to `bank.example/transfer`, your browser helpfully includes your bank session cookie, and the bank processes the transfer *as you*. The attacker never sees your session; they simply cause your authenticated browser to act.
 
@@ -77,7 +77,7 @@ flowchart TD
     X --> P["Prove with a benign action on a synthetic account"]
 ```
 
-## Failure Modes and Interpretation
+## Proving state change without a real transfer
 
 - **Proving with a damaging action.** The finding is proven by a benign state change on a synthetic account (toggling a harmless setting), never a real transfer or destructive action.
 - **Token theater.** A CSRF token that exists but is not *validated*, or is static/predictable, provides no protection. Test that changing/removing the token actually breaks the request.
@@ -93,103 +93,13 @@ flowchart TD
 - **Custom-header requirement** for APIs (a header a cross-site form cannot set) is an effective additional control for JSON APIs.
 - **Detection is limited** — a CSRF request looks like a legitimate authenticated request; the defense is prevention (tokens + SameSite), and a defender auditing their own state-changing endpoints for token validation is the practical control.
 
-## Authorized Lab: Forge a Request Against Your Own App
+## Summary
 
-> [!info] Runs on one Linux machine — builds an app with a CSRF-vulnerable action, then forges it with a session cookie
-> Loopback-bound, synthetic account. The forged action is a benign setting change. Step 5 removes it.
+You should now be able to:
 
-### Step 1 — Build an app with a state-changing action and no CSRF protection
-
-```bash
-cat > /tmp/csrf.py << 'EOF'
-import http.server
-settings={"theme":"light"}
-class H(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        if self.path=="/login":
-            self.send_response(200); self.send_header("Set-Cookie","session=abc123; HttpOnly; Path=/"); self.end_headers()
-            self.wfile.write(b"logged in"); return
-        if self.path.startswith("/set-theme"):
-            # VULNERABLE: state change on GET, only checks the cookie, NO csrf token
-            cookie=self.headers.get("Cookie","")
-            if "session=abc123" in cookie:
-                import urllib.parse
-                t=urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("theme",["light"])[0]
-                settings["theme"]=t
-                self.send_response(200); self.end_headers(); self.wfile.write(f"theme set to {t}".encode())
-            else:
-                self.send_response(401); self.end_headers()
-            return
-        self.send_response(200); self.end_headers(); self.wfile.write(f"current theme: {settings['theme']}".encode())
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8110),H).serve_forever()
-EOF
-python3 /tmp/csrf.py &>/dev/null &
-sleep 1; echo "app up; current theme: $(curl -s http://127.0.0.1:8110/)"
-```
-
-```text
-app up; current theme: current theme: light
-```
-
-### Step 2 — Confirm the cookie lacks SameSite
-
-```bash
-curl -s -I http://127.0.0.1:8110/login | grep -i set-cookie
-```
-
-```text
-Set-Cookie: session=abc123; HttpOnly; Path=/
-```
-
-No `SameSite` attribute — the browser may attach this cookie cross-site. Combined with no CSRF token, the action is forgeable.
-
-### Step 3 — Forge the request (as the attacker's page would, with the victim's cookie)
-
-```bash
-# this simulates the victim's browser firing the attacker's crafted request, cookie auto-attached
-curl -s -b "session=abc123" "http://127.0.0.1:8110/set-theme?theme=CANARY-HACKED"
-echo ""
-echo "state now: $(curl -s http://127.0.0.1:8110/)"
-```
-
-```text
-theme set to CANARY-HACKED
-state now: current theme: CANARY-HACKED
-```
-
-The forged request changed the victim's setting to a canary value — using only their session cookie, with no token required. That is CSRF: a benign action performed *as the victim*. A real attack would change an email or transfer funds; the canary proves the forgery works.
-
-### Step 4 — Show the token would have stopped it
-
-```bash
-echo "Fix: require a per-session CSRF token on /set-theme, validated server-side, that the attacker's page cannot read (SOP)."
-echo "Also: SameSite=Lax cookie would block the cross-site send; and state changes should be POST, not GET."
-```
-
-```text
-Fix: require a per-session CSRF token on /set-theme, validated server-side, that the attacker's page cannot read (SOP).
-Also: SameSite=Lax cookie would block the cross-site send; and state changes should be POST, not GET.
-```
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/csrf.py; wait 2>/dev/null
-curl -s -o /dev/null -w "app gone: %{http_code}\n" --max-time 2 http://127.0.0.1:8110/ 2>&1 | grep -o 'gone.*' || echo "app gone: connection refused"
-```
-
-```text
-app gone: connection refused
-```
-
-**What you should now be able to do:** explain why CSRF works (automatic cookie attachment + no intent check), forge a state-changing request with a session cookie, test for CSRF tokens and SameSite protection, and name the token + SameSite fixes.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why the browser's automatic cookie attachment enables CSRF, and why the attacker never sees the session.
-- **Operator:** Forge a state-changing request with a session cookie, test for CSRF-token validation and SameSite attributes, and prove the flaw with a benign action.
-- **Root:** Explain the three CSRF requirements and how tokens vs. SameSite each remove one; explain why GET state-changes remain CSRF-able under SameSite=Lax, and why XSS defeats CSRF defenses.
+- Explain why the browser's automatic cookie attachment enables CSRF, and why the attacker never sees the session.
+- Forge a state-changing request with a session cookie, test for CSRF-token validation and SameSite attributes, and prove the flaw with a benign action.
+- Explain the three CSRF requirements and how tokens vs. SameSite each remove one; explain why GET state-changes remain CSRF-able under SameSite=Lax, and why XSS defeats CSRF defenses.
 
 ---
 > 🔼 Up: [[Client-Side Web Security]]

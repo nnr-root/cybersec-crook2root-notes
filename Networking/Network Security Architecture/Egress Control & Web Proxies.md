@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/secarch
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Network Security Architecture]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Firewall Architecture & Policy -> Network Segmentation & Zero Trust -> VPNs & Encrypted Tunnels -> Intrusion Detection & Network Monitoring -> Egress Control & Web Proxies -> Network Access Control
 
-## Start at Zero: The Neglected Direction
+## The Neglected Direction
 
 Firewall attention overwhelmingly goes to **ingress** — keeping bad traffic out. Outbound traffic, **egress**, is usually permitted by default: internal hosts may connect anywhere on the Internet. This asymmetry feels natural and is a serious gap.
 
@@ -106,35 +106,13 @@ No single layer is sufficient; together they make exfiltration and C2 meaningful
 
 All egress configuration and testing described here must target only networks within an authorized scope. Deploying egress controls affects every outbound connection, and testing exfiltration paths must be confined to an authorized lab.
 
-## Authorized Lab: Close the Back Door
+## Summary
 
-Use a lab with internal hosts, a forward proxy, and a simulated external "attacker server," all under your control.
+You should now be able to:
 
-1. **Baseline default-allow.** With unrestricted egress, from an internal host connect outbound to an arbitrary external destination and transfer data, confirming exfiltration and C2 paths are wide open.
-2. **Force traffic through the proxy.** Configure the network so outbound web traffic must use the proxy, and block direct outbound web connections. Confirm direct connections now fail and proxied ones succeed.
-3. **Apply category and domain filtering.** Block a category and a specific known-bad domain, then attempt to reach them and confirm the proxy denies and logs the attempt, attributed to the user.
-4. **Demonstrate exfiltration over an allowed channel.** Exfiltrate data over HTTPS to an *allowed* destination and confirm the proxy permits it (content is encrypted) — showing the limit of destination filtering.
-5. **Catch it behaviourally.** Detect that same exfiltration by its volume, timing, or the fact that DNS filtering blocks the tunnelling variant — demonstrating why layers are needed.
-6. **Add outbound default-deny.** Move to permitting only required outbound destinations and confirm that a novel outbound connection (simulated C2) is now blocked because it is not on the allowlist.
-7. **Review the logs.** Use the proxy logs to reconstruct which host contacted which destinations, demonstrating the investigative value even for allowed traffic.
-8. **Cleanup.** Restore the baseline egress policy.
-
-Expected interpretation:
-
-```text
-Default-allow egress -> exfiltration and C2 paths wide open
-Proxy enforced       -> direct outbound blocked; web traffic observable and controllable
-Category/domain block-> known-bad destinations denied, logged, attributed
-HTTPS to allowed dest-> permitted; destination filtering cannot see inside
-Behavioural + DNS    -> catch what content filtering misses
-Outbound default-deny-> novel C2 connection blocked because not allowlisted
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why the damaging phases of an attack are outbound and what egress filtering is; describe what a forward web proxy controls and records.
-- **Operator:** Configure a proxy to filter and log outbound web traffic, explain why destination filtering works on encrypted traffic while content inspection does not, and read a proxy log to attribute a denied connection.
-- **Root:** Argue egress control as a high-value containment aligned with assume-breach; explain why it must layer with behavioural analysis, DNS filtering, and DLP to counter tunnelling over allowed channels, and why egress logs are investigative gold even for permitted traffic.
+- Explain why the damaging phases of an attack are outbound and what egress filtering is; describe what a forward web proxy controls and records.
+- Configure a proxy to filter and log outbound web traffic, explain why destination filtering works on encrypted traffic while content inspection does not, and read a proxy log to attribute a denied connection.
+- Argue egress control as a high-value containment aligned with assume-breach; explain why it must layer with behavioural analysis, DNS filtering, and DLP to counter tunnelling over allowed channels, and why egress logs are investigative gold even for permitted traffic.
 
 ---
 > 🔼 Up: [[Network Security Architecture]]

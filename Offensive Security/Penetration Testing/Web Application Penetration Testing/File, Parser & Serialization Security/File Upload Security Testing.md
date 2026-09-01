@@ -1,7 +1,7 @@
 ---
 title: "File Upload Security Testing"
 aliases: ["File Upload Testing", "Malicious Upload"]
-tags: [tree/offensive, cyber/offensive/web/files/upload, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/web/files/upload, type/technique, difficulty/medium]
 Domain: "[[File, Parser & Serialization Security]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 File Inclusion & Path Traversal -> File Upload Security Testing -> Insecure Deserialization Testing -> XML External Entity Testing
 
-## Start at Zero: Letting Strangers Put Files on Your Server
+## Letting Strangers Put Files on Your Server
 
 Any feature that accepts an uploaded file — a profile picture, a document, a CSV import — lets an untrusted party place bytes on the server's filesystem. The security question is: *what happens to those bytes?* If the server stores them somewhere they can later be **executed** (a `.php` in a web-accessible directory), a file upload becomes remote code execution — the highest-severity web flaw. The whole discipline is about breaking the chain between "attacker uploads a file" and "that file runs."
 
@@ -57,7 +57,65 @@ flowchart TD
     RCE --> P["Prove with a BENIGN marker, not a live shell"]
 ```
 
-## Failure Modes and Interpretation
+## Worked Example: A Blocklist That Blocks One Extension
+
+File-upload flaws are usually not "uploads are allowed" but "the *wrong* uploads
+are allowed", and the gap is almost always a blocklist that enumerates bad instead
+of permitting good. The specimen blocks exactly one extension:
+
+```python
+name = os.path.basename(item.filename)
+if name.lower().endswith(".php"):          # NAIVE: blocks only literal .php
+    return blocked(403)
+open(os.path.join(UPLOAD_DIR, name), "wb").write(item.file.read())
+```
+
+**The blocked case** is what a shallow test sees and stops at:
+
+```shell-session
+analyst@lab:~$ curl -s -F "file=@shell.php" http://127.0.0.1:8103/
+blocked: .php
+```
+
+`.php` is rejected. A tester who tries one payload, sees the block, and writes
+"upload validation present" has missed the vulnerability entirely — the control
+exists, it is just the wrong control.
+
+**The bypass** uses an extension the blocklist never named but the server still
+executes:
+
+```shell-session
+analyst@lab:~$ cp shell.php shell.phtml
+analyst@lab:~$ curl -s -F "file=@shell.phtml" http://127.0.0.1:8103/
+stored: shell.phtml
+```
+
+`.phtml` is a PHP extension too — as are `.php3`, `.php5`, `.phar`, and on a
+mis-set server a trailing dot or a double extension like `.php.jpg`. The blocklist
+knew about one spelling of the danger and admitted the rest.
+
+**The finding** is that the stored file executes:
+
+```shell-session
+analyst@lab:~$ curl -s "http://127.0.0.1:8103/shell.phtml"
+EXECUTED: CANARY-UPLOAD-4419
+```
+
+Requesting the upload ran it, and the canary came back. That is upload-to-code-
+execution: two conditions together — a bypassable filter *and* an upload directory
+the server will execute from. Either alone is survivable; the combination is remote
+code execution. Note the restraint that keeps this a safe demonstration — the
+payload was a canary string, not a working web shell, so the flaw is proven with
+nothing left behind to find later.
+
+The fix follows the same shape as every other input-validation lesson: allowlist
+the handful of extensions and content types actually needed, verify the real file
+type rather than trusting the name, store uploads outside the web root or on a
+host that never executes them, and rename to a server-chosen identifier so the
+attacker never controls the path. Blocklisting spellings of `.php` is a game with
+no last move.
+
+## A marker file, not a working web shell
 
 - **Proving with a live shell.** The temptation is to upload a functioning web shell; the *finding* is proven by uploading a benign marker (a file that echoes a canary string when requested), demonstrating execution without leaving a backdoor.
 - **Blocklist whack-a-mole.** Testing one bad extension and concluding "blocked" misses `.phtml`, `.php5`, etc. Test the neighborhood.
@@ -73,104 +131,13 @@ flowchart TD
 - **Scan uploads** for malware and dangerous content (embedded scripts in SVGs/PDFs), and cap size to prevent resource exhaustion.
 - **Detection** looks for executable content in upload directories and requests to uploaded files with suspicious names — but the architectural no-execute-storage fix makes detection a backstop rather than the primary defense.
 
-## Authorized Lab: Bypass an Upload Filter You Build
+## Summary
 
-> [!info] Runs on one Linux machine — builds an upload endpoint with a naive extension blocklist, then bypasses it
-> Loopback-bound; the "executed" file is a benign canary, not a real shell. Step 5 removes it.
+You should now be able to:
 
-### Step 1 — Build an upload app that blocklists `.php` and "executes" uploads
-
-```bash
-mkdir -p /tmp/uplab/uploads
-cat > /tmp/uplab/app.py << 'EOF'
-import http.server, cgi, os, re
-UP="/tmp/uplab/uploads"
-class H(http.server.BaseHTTPRequestHandler):
-    def do_POST(self):
-        form=cgi.FieldStorage(fp=self.rfile, headers=self.headers,
-              environ={'REQUEST_METHOD':'POST','CONTENT_TYPE':self.headers['Content-Type']})
-        item=form['file']; name=os.path.basename(item.filename)
-        # NAIVE: block only the literal ".php" extension
-        if name.lower().endswith(".php"):
-            self.send_response(403); self.end_headers(); self.wfile.write(b"blocked: .php"); return
-        open(os.path.join(UP,name),"wb").write(item.file.read())
-        self.send_response(200); self.end_headers(); self.wfile.write(f"stored: {name}".encode())
-    def do_GET(self):
-        # simulate that .phtml/.php* files in uploads get "executed" (echo their canary)
-        f=os.path.join(UP, os.path.basename(self.path.lstrip("/")))
-        if os.path.exists(f) and re.search(r'\.(php\d?|phtml|pht)$', f):
-            data=open(f).read()
-            m=re.search(r'CANARY-[A-Z0-9]+', data)
-            self.send_response(200); self.end_headers()
-            self.wfile.write(f"EXECUTED: {m.group(0) if m else 'ran'}".encode())
-        else:
-            self.send_response(404); self.end_headers()
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8103),H).serve_forever()
-EOF
-python3 /tmp/uplab/app.py &>/dev/null &
-sleep 1; echo "upload app up on 127.0.0.1:8103 (blocks .php, executes .php*/.phtml in uploads)"
-```
-
-```text
-upload app up on 127.0.0.1:8103 (blocks .php, executes .php*/.phtml in uploads)
-```
-
-### Step 2 — The blocked payload (baseline)
-
-```bash
-echo 'CANARY-UPLOAD-4419' > /tmp/shell.php
-curl -s -F "file=@/tmp/shell.php" http://127.0.0.1:8103/
-```
-
-```text
-blocked: .php
-```
-
-The literal `.php` is blocked — a lazy tester stops here and reports "upload is safe."
-
-### Step 3 — Bypass with an alternate extension
-
-```bash
-cp /tmp/shell.php /tmp/shell.phtml
-curl -s -F "file=@/tmp/shell.phtml" http://127.0.0.1:8103/
-```
-
-```text
-stored: shell.phtml
-```
-
-`.phtml` slipped past the blocklist and was stored — the blocklist bypass.
-
-### Step 4 — Trigger execution (the finding, via benign canary)
-
-```bash
-curl -s "http://127.0.0.1:8103/shell.phtml"
-```
-
-```text
-EXECUTED: CANARY-UPLOAD-4419
-```
-
-Requesting the uploaded `.phtml` **executed** it, echoing the canary — proof of upload-to-code-execution. Because the payload was a benign canary (not a working shell), the flaw is demonstrated with no backdoor left behind. The finding: blocklist bypass + executable upload directory.
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -rf /tmp/uplab /tmp/shell.php /tmp/shell.phtml; wait 2>/dev/null; ls -d /tmp/uplab 2>&1
-```
-
-```text
-ls: cannot access '/tmp/uplab': No such file or directory
-```
-
-**What you should now be able to do:** explain why the upload flaw is the execution chain (not the upload itself), bypass an extension blocklist, prove upload-to-RCE with a benign canary, and articulate why no-execute storage is the durable fix.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why accepting uploads is only dangerous when the file can later be executed, and why blocklists fail.
-- **Operator:** Bypass an extension blocklist, prove upload-to-execution with a benign canary, and classify a finding by where the file lands and whether that location executes.
-- **Root:** Explain why no-execute storage outside the web root is the durable fix regardless of filtering, why all client-supplied file metadata is untrustworthy, and how allowlisting plus renaming closes attacker control.
+- Explain why accepting uploads is only dangerous when the file can later be executed, and why blocklists fail.
+- Bypass an extension blocklist, prove upload-to-execution with a benign canary, and classify a finding by where the file lands and whether that location executes.
+- Explain why no-execute storage outside the web root is the durable fix regardless of filtering, why all client-supplied file metadata is untrustworthy, and how allowlisting plus renaming closes attacker control.
 
 ---
 > 🔼 Up: [[File, Parser & Serialization Security]]

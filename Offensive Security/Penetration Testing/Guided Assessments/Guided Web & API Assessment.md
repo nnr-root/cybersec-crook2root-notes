@@ -9,7 +9,7 @@ tags:
   - tree/offensive
   - cyber/offensive/guided
   - type/walkthrough
-  - level/operator
+  - difficulty/medium
 Domain: "[[Guided Assessments]]"
 Color: "#DC143C"
 ---
@@ -22,7 +22,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Guided Network Pentest Walkthrough -> Guided Active Directory Assessment -> Guided Web & API Assessment -> Guided Wireless Assessment -> Guided Cloud Security Assessment -> Guided Social Engineering Exercise -> Guided Red Team & Purple Team Operation -> Guided Retest & Closure
 
-## Start at Zero: One Application, Two Surfaces
+## One Application, Two Surfaces
 
 A modern application is tested through two surfaces that share one security model: the **browser-facing web app** (pages, sessions, forms, workflows) and the **API** underneath (REST/GraphQL/gRPC/WebSocket endpoints the client and mobile apps call). Assessing them together is correct because *the API is where authorization actually lives* — the UI merely hides buttons, while the API is what an attacker calls directly. This walkthrough converts a URL and a set of test identities into a defensible assessment of **architecture, authorization, session handling, input boundaries, and business workflows** across both surfaces.
 
@@ -131,7 +131,7 @@ stateDiagram-v2
 
 If the server accepts an illegal `Draft -> Fulfilled` transition, capture **one** canary transaction and stop.
 
-## Failure Modes and Interpretation
+## The setup failure that makes authorization untestable
 
 - **Testing with one account.** Horizontal/vertical authorization is unassessable without multiple tenants and roles — this is the most common setup failure.
 - **Trusting a `403` on one verb/route.** Authorization must be tested per method, per nested resource, per API version, and per equivalent endpoint; fixes are frequently partial.
@@ -146,96 +146,13 @@ If the server accepts an illegal `Draft -> Fulfilled` transition, capture **one*
 - **Defense in depth at the edge and origin:** WAFs blunt generic input attacks, but parser/deserialization sinks must be fixed at the origin (parameterized queries, safe deserializers, allow-listed templates).
 - **Observability:** request IDs surviving gateway→service, measurable authorization denials, and redaction of sensitive values let defenders distinguish ordinary validation errors from attack patterns.
 
-## Authorized Lab: Prove Broken Object-Level Authorization Locally
+## Summary
 
-> [!info] Runs on one machine with Python — a tiny multi-tenant API with an IDOR flaw; you prove it with a canary, then apply the fix and confirm
-> No real data or third party. Step 5 removes everything.
+You should now be able to:
 
-### Step 1 — A minimal multi-tenant invoice API (with the flaw)
-
-```bash
-mkdir -p /tmp/webapi-lab && cat > /tmp/webapi-lab/app.py <<'PY'
-from http.server import BaseHTTPRequestHandler, HTTPServer
-INVOICES={"A-7412":("tenant-A","CANARY-INV-A"),"B-2201":("tenant-B","CANARY-INV-B")}
-TOKENS={"tokA":"tenant-A","tokB":"tenant-B"}
-FIX=False  # flip to True in step 4
-class H(BaseHTTPRequestHandler):
-    def log_message(self,*a): pass
-    def do_GET(self):
-        tok=self.headers.get("Authorization","").replace("Bearer ","")
-        tenant=TOKENS.get(tok)
-        iid=self.path.rsplit("/",1)[-1]
-        rec=INVOICES.get(iid)
-        if not tenant or not rec: self.send_response(401); self.end_headers(); return
-        if FIX and rec[0]!=tenant:   # object-level authz check
-            self.send_response(403); self.end_headers(); self.wfile.write(b"forbidden"); return
-        self.send_response(200); self.end_headers(); self.wfile.write(rec[1].encode())
-HTTPServer(("127.0.0.1",8099),H).serve_forever()
-PY
-python3 /tmp/webapi-lab/app.py &>/tmp/webapi-lab/srv.log & sleep 1
-echo "multi-tenant API up on 127.0.0.1:8099 (FIX=False)"
-```
-
-```text
-multi-tenant API up on 127.0.0.1:8099 (FIX=False)
-```
-
-### Step 2 — Control request: Tenant A reads its own invoice
-
-```bash
-curl -s -H "Authorization: Bearer tokA" http://127.0.0.1:8099/api/invoice/A-7412; echo "  <- expected (own record)"
-```
-
-```text
-CANARY-INV-A  <- expected (own record)
-```
-
-### Step 3 — The IDOR proof: Tenant B reads Tenant A's invoice
-
-```bash
-curl -s -o /dev/null -w "HTTP %{http_code}\n" -H "Authorization: Bearer tokB" http://127.0.0.1:8099/api/invoice/A-7412
-curl -s -H "Authorization: Bearer tokB" http://127.0.0.1:8099/api/invoice/A-7412; echo "  <- BROKEN: cross-tenant read"
-```
-
-```text
-HTTP 200
-CANARY-INV-A  <- BROKEN: cross-tenant read
-```
-
-### Step 4 — Apply the fix (server-side ownership check) and re-test
-
-```bash
-sed -i.bak 's/FIX=False/FIX=True/' /tmp/webapi-lab/app.py
-pkill -f webapi-lab/app.py; python3 /tmp/webapi-lab/app.py &>/tmp/webapi-lab/srv.log & sleep 1
-curl -s -o /dev/null -w "Tenant B -> A: HTTP %{http_code}\n" -H "Authorization: Bearer tokB" http://127.0.0.1:8099/api/invoice/A-7412
-curl -s -o /dev/null -w "Tenant A -> A: HTTP %{http_code} (own still works)\n" -H "Authorization: Bearer tokA" http://127.0.0.1:8099/api/invoice/A-7412
-```
-
-```text
-Tenant B -> A: HTTP 403
-Tenant A -> A: HTTP 200 (own still works)
-```
-
-The server-side ownership predicate blocks the cross-tenant read **and** preserves legitimate access — the closure standard a retest must confirm.
-
-### Step 5 — Cleanup
-
-```bash
-pkill -f webapi-lab/app.py 2>/dev/null; rm -rf /tmp/webapi-lab
-ls -d /tmp/webapi-lab 2>&1 | tail -1
-```
-
-```text
-ls: cannot access '/tmp/webapi-lab': No such file or directory
-```
-
-**What you should now be able to do:** scope an app/API test with the identities it requires, map both surfaces into a role-action matrix, test authentication/authorization/input/workflow with one-variable-at-a-time discipline, prove broken object-level authorization with a canary, and verify a centralized server-side fix without breaking legitimate use.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why the API (not the UI) is where authorization lives, and why you need multiple tenants/roles to test it.
-- **Operator:** Build a role-action matrix, prove a BOLA/IDOR flaw with a single canary record, and test authentication, input sinks, and business-workflow logic safely.
-- **Root:** Explain why centralized server-side authorization (not ID hiding) is the durable fix, why `403` on one verb never generalizes, and how token verification, origin-side parser fixes, and observability defend both surfaces.
+- Explain why the API (not the UI) is where authorization lives, and why you need multiple tenants/roles to test it.
+- Build a role-action matrix, prove a BOLA/IDOR flaw with a single canary record, and test authentication, input sinks, and business-workflow logic safely.
+- Explain why centralized server-side authorization (not ID hiding) is the durable fix, why `403` on one verb never generalizes, and how token verification, origin-side parser fixes, and observability defend both surfaces.
 
 ---
 > 🔼 Up: [[Guided Assessments]]

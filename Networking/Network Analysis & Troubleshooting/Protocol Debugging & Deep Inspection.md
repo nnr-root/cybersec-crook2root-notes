@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/analysis
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Network Analysis & Troubleshooting]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Packet Capture & Analysis -> Structured Network Troubleshooting -> Traffic Analysis & Flow Inspection -> Performance & Latency Analysis -> Connectivity Diagnostics -> Protocol Debugging & Deep Inspection
 
-## Start at Zero: When Connectivity Is Fine but Behaviour Is Wrong
+## When Connectivity Is Fine but Behaviour Is Wrong
 
 The diagnostics so far answer whether traffic can flow. But a whole class of problems has perfect connectivity and wrong *behaviour*: a TLS handshake that fails for one client, an application that works for small responses and hangs for large, an authentication that succeeds then immediately breaks, a protocol negotiation that silently degrades. Ping succeeds, the port answers, the name resolves — and it still does not work.
 
@@ -107,33 +107,13 @@ Debugging malformed traffic also arises innocently: a buggy implementation emits
 
 All deep inspection described here must target only traffic you are authorized to examine. Crafting malformed packets and inspecting protocol content are intrusive and sensitive, confined to authorized systems, and captured content may require careful handling.
 
-## Authorized Lab: Find the Deviation
+## Summary
 
-Use a lab with a client, a server, and the ability to introduce protocol-level faults, plus captures to analyze.
+You should now be able to:
 
-1. **Debug a failed handshake.** Configure a TLS server and client with no shared cipher so the handshake fails. Capture and dissect it, and confirm you can localize the failure to the exact step (ServerHello never sent) and explain it by comparing offered versus accepted ciphers.
-2. **Read Expert Information.** Capture a transfer over a lossy link and run the Expert analysis; interpret each flagged event (retransmission, dup ACK, zero window) by what it means at the transport layer, distinguishing a path problem from an endpoint bottleneck.
-3. **Diagnose a capture-point artifact.** Deliberately capture at a point that misses some packets and confirm Expert reports "previous segment not captured" — recognizing this as a capture problem, not necessarily network loss.
-4. **Observe a protocol violation.** Use a tool or a deliberately buggy configuration to emit packets that violate a protocol's rules, and confirm a strict peer rejects them while a lenient one accepts — the "works with A, fails with B" pattern, resolved by reading the bytes against the spec.
-5. **Demonstrate a parser discrepancy.** In the lab, craft an ambiguous message (for example conflicting length indicators) and confirm two different parsers interpret it differently — making the evasion surface concrete — then confirm that a normalizing intermediary removes the ambiguity.
-6. **Tie it together.** Take one hard "connectivity is fine but it does not work" symptom and solve it end to end using deep inspection, narrating which earlier branch's knowledge each step required.
-7. **Cleanup.** Delete lab captures containing sensitive content.
-
-Expected interpretation:
-
-```text
-Failed handshake  -> deviation localized to the exact step; cause follows from which
-Expert Info       -> each flag interpreted by its protocol meaning
-Missing segments  -> a capture-point artifact, not necessarily loss
-Protocol violation-> strict vs lenient peers; resolved by reading bytes vs spec
-Parser discrepancy-> two parsers disagree = evasion surface; normalization removes it
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what protocol debugging addresses that connectivity testing does not, and why you cannot debug a protocol you do not understand.
-- **Operator:** Dissect a protocol exchange, compare it against the protocol's expected behaviour to find the first deviation, and interpret Wireshark Expert Information by each event's protocol meaning.
-- **Root:** Explain parser discrepancy as a pervasive structural vulnerability class spanning fragments, HTTP, and TLS, why normalization is the defense and its cost; articulate how deep inspection is the domain using all of itself at once, and how the encryption backstop appears here one final time.
+- Explain what protocol debugging addresses that connectivity testing does not, and why you cannot debug a protocol you do not understand.
+- Dissect a protocol exchange, compare it against the protocol's expected behaviour to find the first deviation, and interpret Wireshark Expert Information by each event's protocol meaning.
+- Explain parser discrepancy as a pervasive structural vulnerability class spanning fragments, HTTP, and TLS, why normalization is the defense and its cost; articulate how deep inspection is the domain using all of itself at once, and how the encryption backstop appears here one final time.
 
 ---
 > 🔼 Up: [[Network Analysis & Troubleshooting]]

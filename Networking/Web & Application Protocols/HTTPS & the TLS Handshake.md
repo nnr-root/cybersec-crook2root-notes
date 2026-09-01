@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/appproto
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Web & Application Protocols]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 HTTP Fundamentals -> HTTPS & the TLS Handshake -> Web Architecture & Proxies -> WebSockets & Real-Time Protocols -> REST & Modern API Transport -> Application Delivery & Load Balancing
 
-## Start at Zero: Three Guarantees, Not One
+## Three Guarantees, Not One
 
 Plain HTTP is readable and modifiable by anyone on the path. **HTTPS** fixes this by running HTTP over **TLS (Transport Layer Security)**, which provides three distinct properties. Conflating them is the most common misunderstanding in web security.
 
@@ -115,39 +115,13 @@ nmap --script ssl-enum-ciphers -p 443 <server>
 
 All testing described here must target only servers within an authorized scope; certificate and cipher enumeration is reconnaissance and is logged.
 
-## Authorized Lab: Establish, Inspect, and Break Trust
+## Summary
 
-Use a lab server with a certificate and a client, plus a private CA you control for the inspection portion.
+You should now be able to:
 
-1. **Watch the handshake.** Capture a TLS connection and identify the ClientHello, ServerHello, and Certificate messages; confirm the SNI is visible in cleartext before encryption begins:
-
-```bash
-sudo tcpdump -i eth0 -nn -A -c 10 'tcp port 443' | grep -i -A2 "example"
-```
-
-2. **Inspect the certificate** with the `openssl s_client` command above and confirm the hostname, issuer, chain, and validity dates.
-3. **Break hostname validation.** Present a certificate valid for one name while connecting with a different `-servername`, and confirm validation fails with a hostname mismatch.
-4. **Break the dates.** Set the client clock past the certificate's `notAfter` and confirm the connection now fails as expired — demonstrating the TLS-time dependency directly.
-5. **Demonstrate the padlock's limit.** Issue a valid certificate for a deliberately deceptive hostname you control (`secure-lab-login.internal`) and confirm the connection is fully "secure" with a valid padlock while being a hostname a user could be fooled by.
-6. **Demonstrate sanctioned inspection.** Install your private CA as trusted on the client, place a terminating proxy in the path, and confirm the proxy can now read the plaintext while the client still shows a valid padlock — signed by your CA. Then remove the CA and confirm the client rejects the proxy's certificate.
-7. **Test server configuration.** Run the cipher enumeration against the lab server and identify any weak protocol versions or ciphers offered.
-8. **Cleanup.** Remove the private CA from the client trust store, restore the clock, and confirm normal validation.
-
-Expected interpretation:
-
-```text
-Handshake      -> SNI visible before encryption; keys derived; certificate presented
-Hostname match -> a certificate for the wrong name is rejected
-Expired        -> clock skew alone breaks TLS validation
-Valid + deceptive name -> padlock authenticates the hostname, not the site's honesty
-Private CA installed   -> sanctioned interception; visibility at the cost of the guarantee
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Name TLS's three guarantees and explain why authentication, not encryption, defeats an active attacker; state precisely what the padlock does and does not prove.
-- **Operator:** Inspect a certificate and its chain, explain the four validation checks and why clock skew breaks TLS, and enumerate a server's offered ciphers.
-- **Root:** Explain forward secrecy and why it protects recorded traffic against later key compromise; describe how HSTS defeats stripping, how Certificate Transparency detects misissuance, and why enterprise TLS inspection is a deliberate reduction of the guarantee TLS exists to provide.
+- Name TLS's three guarantees and explain why authentication, not encryption, defeats an active attacker; state precisely what the padlock does and does not prove.
+- Inspect a certificate and its chain, explain the four validation checks and why clock skew breaks TLS, and enumerate a server's offered ciphers.
+- Explain forward secrecy and why it protects recorded traffic against later key compromise; describe how HSTS defeats stripping, how Certificate Transparency detects misissuance, and why enterprise TLS inspection is a deliberate reduction of the guarantee TLS exists to provide.
 
 ---
 > 🔼 Up: [[Web & Application Protocols]]

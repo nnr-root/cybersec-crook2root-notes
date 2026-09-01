@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/windows
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
@@ -22,7 +22,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations -> Windows Drivers I-O & Kernel Debugging -> Windows Processes, Services & Boot -> Windows File System & Registry -> Windows Networking Internals -> Windows Security & Access Control -> Windows Identity, Credentials & Authentication -> Windows Active Directory & Domains -> Windows Command Prompt & Batch -> Windows PowerShell -> Windows Logging & Auditing -> Windows Diagnostics, Crash Dumps & Performance -> Windows Sysinternals & Troubleshooting
 
-## Start at Zero: Who, What & Which Operation
+## Who, What & Which Operation
 
 Windows access control answers a three-part question: which **subject** is requesting which **operation** on which **object**? The subject is represented by a token containing SIDs, privileges, integrity state, and restrictions. The object carries a security descriptor containing owner, control flags, and access-control lists. An **ACE** is one rule inside an ACL; a **right** is permission defined by the object type; a **privilege** is system-wide authority held in a token. Rights and privileges are not interchangeable, and authentication alone grants neither.
 
@@ -61,8 +61,8 @@ Processes run at an **integrity level**: Low → Medium (normal user) → High (
 ## UAC
 UAC splits an admin logon into **two tokens**: a filtered Medium token for normal use and a full High token available only after an **elevation** consent. UAC is a convenience boundary, not a security one — **bypasses** abuse auto-elevating binaries and hijacked registry keys (e.g. `fodhelper.exe`). **Defense:** set UAC to "Always Notify", monitor auto-elevation abuse.
 
-> [!tip] Crook → Root
-> **Crook** clicks "Run as administrator". **Root** reads `whoami /priv`, spots `SeImpersonate` or `SeDebug`, and turns a service account into SYSTEM — while the defender who understands tokens has already alarmed on the LSASS handle.
+> [!tip] Beginner → Expert
+> **A beginner** clicks "Run as administrator". **An expert** reads `whoami /priv`, spots `SeImpersonate` or `SeDebug`, and turns a service account into SYSTEM — while the defender who understands tokens has already alarmed on the LSASS handle.
 
 ## Security Reference Monitor & Access Checks
 
@@ -169,102 +169,13 @@ Privilege escalation usually exploits one of four conditions: an overpowered tok
 
 Security events 4672, 4673, and 4674 can illuminate privileged logons and sensitive privilege use; 4656 and 4663 can audit object access when SACLs are configured; 4688 records process creation. Excessive object auditing can overwhelm systems, so protect high-value objects and correlate subject SID, logon ID, process, requested rights, result, and downstream effect.
 
-## Hands-On Lab: Tokens, SIDs, Privileges and DACLs
+## Summary
 
-> [!info] Runs on any Windows machine — read-only, plus a test file removed in Step 6
-> This is how Windows authorization is actually computed, made visible.
+You should now be able to:
 
-### Step 1 — Read your own token
-
-```powershell
-$id = [System.Security.Principal.WindowsIdentity]::GetCurrent()
-"User: {0}" -f $id.Name
-"SID:  {0}" -f $id.User.Value
-"Groups: {0}" -f $id.Groups.Count
-```
-
-```text
-User: WIN-LAB01\analyst
-SID:  S-1-5-21-1004336348-1177238915-682003330-1001
-Groups: 14
-```
-
-Your access is your **token** — an identity plus every group SID plus privileges. Authorization is computed from this token, not from your username. The SID, not the name, is what Windows actually checks.
-
-### Step 2 — See privileges, the powers beyond file permissions
-
-```powershell
-whoami /priv | Select-String -Pattern 'Se.*Privilege' | Select-Object -First 5
-```
-
-```text
-SeShutdownPrivilege           Shut down the system           Disabled
-SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
-SeUndockPrivilege             Remove computer from dock       Disabled
-```
-
-Privileges are account-wide powers independent of any file's permissions. Certain ones (impersonation, backup, debug) are effectively paths to SYSTEM — which is why `whoami /priv` is a core privilege-escalation check.
-
-### Step 3 — Watch integrity levels
-
-```powershell
-whoami /groups | Select-String 'Mandatory Level'
-```
-
-```text
-Mandatory Label\Medium Mandatory Level  Label  S-1-16-8192
-```
-
-`Medium` is a normal process; an elevated (admin) process runs at `High`. Integrity levels are why a Medium process cannot write to a High process's resources even as the same user — the basis of UAC.
-
-### Step 4 — Read a file's DACL
-
-```powershell
-$f = "$env:TEMP\acltest.txt"; "data" | Set-Content $f
-(Get-Acl $f).Access | Select-Object IdentityReference,FileSystemRights,AccessControlType -First 3
-```
-
-```text
-IdentityReference     FileSystemRights AccessControlType
------------------     ---------------- -----------------
-BUILTIN\Administrators     FullControl             Allow
-WIN-LAB01\analyst          FullControl             Allow
-NT AUTHORITY\SYSTEM        FullControl             Allow
-```
-
-The DACL is the per-object list checked against your token. Access is granted when a token SID matches an Allow entry with the needed right — and an explicit Deny always wins over any Allow.
-
-### Step 5 — Prove the token is computed once, at logon
-
-```powershell
-"Current group count in token: {0}" -f ([System.Security.Principal.WindowsIdentity]::GetCurrent()).Groups.Count
-"Note: adding your account to a group now will NOT change this number until you sign out and back in."
-```
-
-```text
-Current group count in token: 14
-Note: adding your account to a group now will NOT change this number until you sign out and back in.
-```
-
-This explains the classic "I was added to the group but still get Access Denied" — the token was built at logon and does not refresh live.
-
-### Step 6 — Cleanup
-
-```powershell
-Remove-Item "$env:TEMP\acltest.txt" -Force; Test-Path "$env:TEMP\acltest.txt"
-```
-
-```text
-False
-```
-
-**What you should now be able to do:** read your token's SID, groups, privileges and integrity level; interpret a DACL against a token; and explain why group changes need a new logon.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Define SID, token, privilege, security descriptor, DACL, SACL, ACE, integrity level, and UAC.
-- **Operator:** Decode SDDL, distinguish primary and impersonation tokens, calculate an access decision, inspect inheritance, and explain filtered versus elevated tokens.
-- **Root:** Model an entire authorization boundary, identify handle or impersonation confusion, prove exploitability without destructive action, and redesign descriptors, privileges, service identities, isolation, and auditing as one coherent control system.
+- Define SID, token, privilege, security descriptor, DACL, SACL, ACE, integrity level, and UAC.
+- Decode SDDL, distinguish primary and impersonation tokens, calculate an access decision, inspect inheritance, and explain filtered versus elevated tokens.
+- Model an entire authorization boundary, identify handle or impersonation confusion, prove exploitability without destructive action, and redesign descriptors, privileges, service identities, isolation, and auditing as one coherent control system.
 
 ---
 > 🔼 Up: [[Windows]]

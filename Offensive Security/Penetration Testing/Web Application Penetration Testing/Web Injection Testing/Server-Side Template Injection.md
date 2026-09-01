@@ -1,7 +1,7 @@
 ---
 aliases: [SSTI]
 title: "Server-Side Template Injection"
-tags: [tree/offensive, cyber/offensive/web/injection/ssti, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/web/injection/ssti, type/technique, difficulty/hard]
 Domain: "[[Web Injection Testing]]"
 Color: "#DC143C"
 ---
@@ -169,49 +169,13 @@ The SOC also monitors for application workers spawning child processes or making
 
 The engineering team moved localization and user values into a fixed template context, removed the dynamic render-string helper, restricted registered functions, and added unit tests asserting that delimiters render literally. Purple-team replay tested percent encoding, double encoding, duplicate fields, alternate content types, and a second rendering pass. All produced literal output, a constant source hash, and no compiler exception.
 
-## Runnable Lab (one machine, Jinja2)
+## Summary
 
-SSTI is the difference between putting user input **into the template context** (safe) and putting it **into the template source** (catastrophic). This lab uses Jinja2, the engine behind Flask.
+You should now be able to:
 
-**Step 1 — the vulnerable render (`ssti.py`).**
-
-```python
-from jinja2 import Environment
-env = Environment()
-def render(name):
-    # VULNERABLE: user input concatenated into template SOURCE
-    return env.from_string("Hello " + name + "!").render()
-```
-
-**Step 2 — normal input renders literally; the `{{7*7}}` canary evaluates.**
-
-```console
->>> render("Alice")
-'Hello Alice!'
->>> render("{{7*7}}")
-'Hello 49!'
-```
-
-`49` is the canonical SSTI proof: the engine *evaluated* your expression, so `name` reached the compiler, not just the context. The safe pattern — `env.from_string("Hello {{ name }}!").render(name=name)` — would print the literal `{{7*7}}`.
-
-**Step 3 — the deliberate break.** An unbalanced delimiter makes the engine reveal itself with a compile error:
-
-```console
->>> Environment().from_string("Hi {{7*").render()
-jinja2.exceptions.TemplateSyntaxError: unexpected 'end of template'
-```
-
-A `TemplateSyntaxError` (not a rendered string) is strong evidence that input reaches template compilation — a finding on its own, even before `{{7*7}}`.
-
-**Step 4 — cleanup:** in-memory rendering only — no cleanup required.
-
-**What you should now be able to do:** tell context-injection from source-injection, use `{{7*7}}` as an engine-agnostic canary, and read a template compile error as proof — while stopping short of the object-graph traversal that leads to RCE.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Why does `{{7*7}}` become `49` here but would stay literal if `name` were a context variable?
-- **Operator:** You get `49` back. What is the very next *non-destructive* step to identify which engine (Jinja2 vs Twig vs Freemarker) you are in, and why does the engine matter?
-- **Root:** Sandboxed engines still get broken. Explain the general shape of a sandbox escape (attribute/method traversal to a callable) and why denylists of attribute names fail.
+- Why does `{{7*7}}` become `49` here but would stay literal if `name` were a context variable?
+- You get `49` back. What is the very next *non-destructive* step to identify which engine (Jinja2 vs Twig vs Freemarker) you are in, and why does the engine matter?
+- Sandboxed engines still get broken. Explain the general shape of a sandbox escape (attribute/method traversal to a callable) and why denylists of attribute names fail.
 
 ---
 > 🔼 Up: [[Web Injection Testing]]

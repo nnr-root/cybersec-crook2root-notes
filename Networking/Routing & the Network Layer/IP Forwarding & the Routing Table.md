@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/routing
   - type/concept
+  - difficulty/easy
   - level/apprentice
 Domain:
   - "[[Routing & the Network Layer]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interior Gateway Protocols -> BGP & Internet Routing -> First-Hop Redundancy & Gateway Failover -> Routing Security & Path Validation
 
-## Start at Zero: Every Host Routes
+## Every Host Routes
 
 Routing is not something only routers do. Every device with an IP stack consults a routing table for every packet it sends, to answer one question: **is this destination directly reachable, or must I hand the packet to a gateway?**
 
@@ -114,53 +115,13 @@ The forwarding rule that makes routing work is exactly what makes route injectio
 
 Inspecting and modifying routing tables must be confined to systems within an authorized scope. Routing tables reveal internal topology, and altering a route on a shared device affects everyone whose traffic it carries.
 
-## Authorized Lab: Watch the Most Specific Route Win
+## Summary
 
-Use one lab host, or a host plus a lab router for the forwarding portion. Record the baseline table first.
+You should now be able to:
 
-1. Display the baseline table and confirm you can explain every line's type (connected, default, static).
-2. Add overlapping routes of increasing specificity toward a lab destination through different (lab) next hops:
-
-```bash
-sudo ip route add 10.8.0.0/8   via <next hop A>
-sudo ip route add 10.8.0.0/24  via <next hop B>
-sudo ip route add 10.8.0.50/32 via <next hop C>
-```
-
-3. Query the decision for several destinations and confirm longest-prefix match each time:
-
-```bash
-ip route get 10.8.0.50
-ip route get 10.8.0.77
-ip route get 10.9.0.5
-```
-
-Expected excerpt:
-
-```text
-10.8.0.50 via <next hop C>   # /32 wins
-10.8.0.77 via <next hop B>   # /24 wins
-10.9.0.5  via <next hop A>   # /8 wins
-```
-
-4. **Simulate injection.** Add a single more-specific route for a destination currently using the default, and confirm `ip route get` immediately shows the new next hop — with no error and no change to the default route, which is still present and still correct.
-5. **Simulate a poisoned default.** Change the default route to a lab next hop and confirm every off-segment `ip route get` now points there. Observe that a directly connected destination is unaffected, because it matches a more specific connected route.
-6. **Cleanup.** Delete every route added during the lab, restore the original default, and confirm `ip route` and a few `ip route get` queries match the baseline exactly.
-
-Expected interpretation:
-
-```text
-Overlapping routes -> the most specific is always chosen, regardless of order added
-Injected /32       -> silently overrides the default with no visible failure
-Poisoned default   -> redirects the host's entire off-segment world
-Connected route    -> immune, because it is more specific than any injected default
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain that every host routes, not just routers, and describe the direct-versus-gateway decision a host makes for each packet.
-- **Operator:** Read a routing table and classify each route; use `ip route get` to predict the exact next hop for any destination and explain the choice by longest-prefix match.
-- **Root:** Distinguish the RIB from the FIB and explain "the route is known but not used"; describe why longest-prefix match lets an injected specific route redirect traffic invisibly, and why a poisoned default route has a host-wide blast radius.
+- Explain that every host routes, not just routers, and describe the direct-versus-gateway decision a host makes for each packet.
+- Read a routing table and classify each route; use `ip route get` to predict the exact next hop for any destination and explain the choice by longest-prefix match.
+- Distinguish the RIB from the FIB and explain "the route is known but not used"; describe why longest-prefix match lets an injected specific route redirect traffic invisibly, and why a poisoned default route has a host-wide blast radius.
 
 ---
 > 🔼 Up: [[Routing & the Network Layer]]

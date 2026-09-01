@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/appproto
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Web & Application Protocols]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 HTTP Fundamentals -> HTTPS & the TLS Handshake -> Web Architecture & Proxies -> WebSockets & Real-Time Protocols -> REST & Modern API Transport -> Application Delivery & Load Balancing
 
-## Start at Zero: The Problem With Request/Response
+## The Problem With Request/Response
 
 HTTP's model is strict: the client asks, the server answers, done. The server cannot speak first. For a chat message, a stock tick, a live notification, or a multiplayer game, the server needs to send data the moment it has it — but it has no open channel to do so.
 
@@ -99,39 +99,13 @@ SSE is a single long-lived HTTP response that the server keeps writing to, strea
 
 All testing described here must target only systems within an authorized scope. WebSocket hijacking and flooding are intrusive and belong in an authorized lab.
 
-## Authorized Lab: Upgrade, Push, and Probe
+## Summary
 
-Use a lab application exposing a WebSocket endpoint and an SSE endpoint, plus a client.
+You should now be able to:
 
-1. **Watch the upgrade.** Perform the handshake with the `curl` command above and confirm the `101 Switching Protocols` response. Capture the exchange and observe that after the 101, the traffic is framed WebSocket, not HTTP:
-
-```bash
-sudo tcpdump -i eth0 -nn -A -c 12 'tcp port <ws port>'
-```
-
-2. **Observe server push.** Connect a WebSocket client and confirm the server can send a message the client never requested — the property HTTP lacks.
-3. **Contrast with SSE.** Connect to the SSE endpoint and confirm it streams server events over one long HTTP response, with no upgrade, and that the client cannot send back over it.
-4. **Show the control gap.** Place a request-inspecting proxy or WAF in front of the app. Send a malicious payload as an ordinary HTTP request and confirm it is caught; send the same payload as a WebSocket message and confirm it passes uninspected to the handler — demonstrating why per-message validation is required.
-5. **Test origin validation.** Open a WebSocket to the app from a page served by a different origin, carrying the victim's cookie. If the server does not validate `Origin`, confirm the connection succeeds as the victim (the hijacking condition). Add `Origin` validation and a per-session token and confirm the cross-origin attempt now fails.
-6. **Test resource limits.** Open many WebSocket connections and confirm the server's behaviour; then apply a connection cap and idle timeout and confirm excess connections are rejected or reaped.
-7. **Cleanup.** Restore the app's baseline configuration and close all test connections.
-
-Expected interpretation:
-
-```text
-101 Switching  -> the connection stops being HTTP; framed WebSocket follows
-Server push    -> the server sends unprompted; the capability HTTP lacks
-WAF gap        -> per-request inspection misses per-message payloads
-No Origin check-> cross-site WebSocket hijacking succeeds as the victim
-Origin + token -> handshake validated; hijacking fails
-Connection cap -> persistent connections are a bounded resource
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why HTTP cannot push to a client, what the WebSocket upgrade accomplishes, and when Server-Sent Events is the simpler right choice.
-- **Operator:** Perform and read a WebSocket handshake, recognize the `101` transition, and explain why `wss://` is mandatory; contrast SSE and WebSocket by direction and transport.
-- **Root:** Explain why per-request controls miss WebSocket messages and where security must move; describe Cross-Site WebSocket Hijacking and its `Origin`/token defenses, and why long-lived connections require bounded resources and periodic authorization re-validation.
+- Explain why HTTP cannot push to a client, what the WebSocket upgrade accomplishes, and when Server-Sent Events is the simpler right choice.
+- Perform and read a WebSocket handshake, recognize the `101` transition, and explain why `wss://` is mandatory; contrast SSE and WebSocket by direction and transport.
+- Explain why per-request controls miss WebSocket messages and where security must move; describe Cross-Site WebSocket Hijacking and its `Origin`/token defenses, and why long-lived connections require bounded resources and periodic authorization re-validation.
 
 ---
 > 🔼 Up: [[Web & Application Protocols]]

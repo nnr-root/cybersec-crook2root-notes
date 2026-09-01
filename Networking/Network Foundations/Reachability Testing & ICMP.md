@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/foundations
   - type/technique
+  - difficulty/easy
   - level/apprentice
 Domain:
   - "[[Network Foundations]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation & Protocol Data Units -> Network Devices & Traffic Paths -> Reachability Testing & ICMP
 
-## Start at Zero: ICMP Is Not a Ping Tool
+## ICMP Is Not a Ping Tool
 
 **ICMP (Internet Control Message Protocol)** is the diagnostic and error-reporting protocol of the Internet layer. It rides directly inside IP with protocol number 1 — it is not carried over TCP or UDP and has no ports. Its job is to let routers and hosts report conditions that IP itself cannot express, because IP is a fire-and-forget delivery mechanism with no feedback channel of its own.
 
@@ -169,45 +170,13 @@ ICMP sits in an awkward position: it is genuinely useful to attackers and genuin
 
 All sweeping, tracing, and probing described here applies only to systems inside an authorized scope. Host discovery is logged by any competent monitoring stack, and enumeration of ranges outside an agreed boundary is out of scope regardless of how benign the payload is.
 
-## Authorized Lab: Build a Defensible Reachability Conclusion
+## Summary
 
-Use two lab VMs on segments you control, with a firewall you can configure between them.
+You should now be able to:
 
-1. **Baseline.** From Host-A, run `ping -c 3 <Host-B>` and `traceroute -n <Host-B>`. Record TTL, RTT, and hop count.
-2. **Drop.** On the firewall, silently drop ICMP echo to Host-B. Repeat both commands. Ping reports 100% loss; traceroute stops at the firewall.
-3. **Prove the host is alive anyway.** Run a transport-layer probe against a port you know is open:
-
-```bash
-nmap -Pn -p 22 <Host-B>
-```
-
-Expected excerpt:
-
-```text
-PORT   STATE SERVICE
-22/tcp open  ssh
-```
-
-`-Pn` skips host discovery entirely, which is the correct flag once you know ICMP is filtered. An open port is positive proof of life that ping could not obtain.
-
-4. **Reject instead of drop.** Change the rule to reject with an ICMP administratively-prohibited response. Repeat the ping and observe the explicit message identifying the control.
-5. **Break PMTU deliberately.** Block ICMP type 3 code 4 on the path, then transfer a large file across a tunnel with a reduced MTU. Observe the handshake succeeding and the transfer stalling. Restore the rule and confirm the transfer completes.
-6. **Cleanup.** Remove every lab rule and re-run step 1, confirming the baseline output returns exactly.
-
-Expected interpretation:
-
-```text
-Silence                     -> "no ICMP response", not "host down"
-Open TCP port with -Pn      -> positive proof of life independent of ICMP
-Administratively prohibited -> a policy exists and identified itself
-Handshake OK, transfer hangs-> PMTU black hole from suppressing type 3 code 4
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what ICMP is, why it has no ports, and what a successful ping does and does not prove about a host.
-- **Operator:** Interpret TTL and RTT correctly, choose a probe protocol suited to a filtered path, and explain why intermediate-hop loss in an `mtr` report that does not persist to the destination is an artefact.
-- **Root:** Justify an ICMP policy that permits Fragmentation Needed and Time Exceeded while rate-limiting echo; describe how ICMP tunnelling evades header-based controls and what behavioural telemetry would detect it; and state a reachability conclusion with the evidence and its limits attached.
+- Explain what ICMP is, why it has no ports, and what a successful ping does and does not prove about a host.
+- Interpret TTL and RTT correctly, choose a probe protocol suited to a filtered path, and explain why intermediate-hop loss in an `mtr` report that does not persist to the destination is an artefact.
+- Justify an ICMP policy that permits Fragmentation Needed and Time Exceeded while rate-limiting echo; describe how ICMP tunnelling evades header-based controls and what behavioural telemetry would detect it; and state a reachability conclusion with the evidence and its limits attached.
 
 ---
 > 🔼 Up: [[Network Foundations]]

@@ -1,7 +1,7 @@
 ---
 title: "HTTP Request Smuggling"
 aliases: ["Request Smuggling", "HTTP Desync", "CL.TE", "TE.CL"]
-tags: [tree/offensive, cyber/offensive/web/http/smuggling, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/web/http/smuggling, type/technique, difficulty/hard]
 Domain: "[[HTTP Architecture & Advanced Web Attacks]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WAF Testing & Bypass Methodology
 
-## Start at Zero: When Two Servers Disagree About Where a Request Ends
+## When Two Servers Disagree About Where a Request Ends
 
 Modern web traffic passes through a chain: a front-end proxy (CDN, load balancer, WAF) forwards requests to a back-end server. Both must agree on where each request *ends* so they can separate one request from the next. **HTTP Request Smuggling** exploits a *disagreement* between them: if the front-end thinks a request ends in one place and the back-end thinks it ends somewhere else, an attacker can hide a second request inside the first. The front-end sees one request; the back-end sees two — and the smuggled second request gets *prepended to the next user's request*, poisoning it.
 
@@ -67,7 +67,66 @@ sequenceDiagram
     B-->>A: Victim's data returned to attacker
 ```
 
-## Failure Modes and Interpretation
+## Worked Example: One Request, Two Readings
+
+Request smuggling does not live in a single server. It lives in the *disagreement*
+between two — a front-end and a back-end that parse the same bytes differently.
+Modelling both parsers over one crafted request makes the desync visible without a
+proxy.
+
+**The request carries two conflicting length signals at once:**
+
+```text
+POST / HTTP/1.1
+Host: lab
+Content-Length: 6
+Transfer-Encoding: chunked
+
+0
+
+SMUGGLED
+```
+
+Both headers describe where the body ends, and they describe different places.
+`Content-Length: 6` says the body is six bytes. `Transfer-Encoding: chunked` says
+the body ends at the zero-size chunk (`0\r\n\r\n`), which comes earlier.
+
+**Each parser, applied to those same bytes:**
+
+```shell-session
+analyst@lab:~$ python3 desync.py
+front-end (Content-Length) body: b'0\r\n\r\n' | leftover: b'SMUGGLED'
+back-end  (chunked)        body: b'0\r\n\r\n' | leftover: b'SMUGGLED'
+```
+
+A front-end honouring `Content-Length` consumes six bytes and considers the
+request complete. A back-end honouring `Transfer-Encoding` ends at the chunk
+terminator. Crucially they disagree about where *this* request stops, and so they
+disagree about whether `SMUGGLED` is part of it or the start of the next one.
+
+**Why the leftover is dangerous:**
+
+```shell-session
+analyst@lab:~$ python3 poison.py
+back-end now reads: b'SMUGGLEDGET /account HTTP/1.1\r\nHost: l' ...
+```
+
+The bytes the front-end thought were surplus sit in the back-end's buffer, and the
+next request to arrive — a different user's — gets prepended with them. That user's
+`GET /account` becomes `SMUGGLEDGET /account`, a request neither they nor the
+front-end composed. In a real attack `SMUGGLED` is a crafted request line that
+redirects the victim, poisons a cache, or captures their session; here it is a
+marker that proves the desync exists.
+
+**How it is found safely.** The first probe is never the impactful payload — it is
+a timing test. A `CL.TE` probe whose chunked body ends early leaves the back-end
+blocking, waiting for bytes that will never arrive, and that measurable response
+delay confirms the two servers disagree before any victim is involved. The fix is
+categorical rather than per-payload: a server that sees both headers must reject
+the request as ambiguous, which is exactly what HTTP/2's single, unambiguous
+length mechanism enforces by construction.
+
+## Why this one belongs in a lab
 
 - **Production risk.** Smuggling affects *other users'* requests, so a careless production test can corrupt real traffic. Prove the parsing disagreement in a lab; production testing needs explicit authorization and extreme care.
 - **Detection of the desync.** The core test is timing-based: a CL.TE probe that leaves the back-end waiting for more bytes causes a measurable delay. A delayed response to a crafted request is the desync signature — before attempting any impactful payload.
@@ -83,102 +142,13 @@ sequenceDiagram
 - **Detection** is difficult because the malicious request looks valid to each server individually; anomaly detection on malformed framing and the correlation of one user's data appearing in another's response are the signals.
 - **This is the web version of parser-discrepancy evasion** — the same class as fragment-reassembly and XML-encoding differences: the fix is always to make the two parsers agree, or to reject ambiguity.
 
-## Authorized Lab: Prove a Parsing Disagreement
+## Summary
 
-> [!info] Runs on one Linux machine — builds two parsers that disagree about a request's body boundary
-> This demonstrates the *desync mechanism* (the root cause) safely in-process, not a full multi-user exploit. No cleanup needed.
+You should now be able to:
 
-### Step 1 — Two parsers, two interpretations of the same bytes
-
-```bash
-python3 - << 'EOF'
-# A raw HTTP/1.1 request that contains BOTH Content-Length and Transfer-Encoding
-raw = (b"POST / HTTP/1.1\r\n"
-       b"Host: lab\r\n"
-       b"Content-Length: 6\r\n"
-       b"Transfer-Encoding: chunked\r\n"
-       b"\r\n"
-       b"0\r\n"          # chunked: zero-size chunk = body ends HERE (per TE)
-       b"\r\n"
-       b"SMUGGLED")       # these bytes are "extra" depending on interpretation
-
-def frontend_CL(data):   # front-end honors Content-Length: 6
-    headers, body = data.split(b"\r\n\r\n",1)
-    cl = 6
-    return body[:cl], body[cl:]
-
-def backend_TE(data):    # back-end honors Transfer-Encoding: chunked
-    headers, body = data.split(b"\r\n\r\n",1)
-    # chunked ends at "0\r\n\r\n"; everything after is a NEW request
-    end = body.index(b"0\r\n\r\n") + len(b"0\r\n\r\n")
-    return body[:end], body[end:]
-
-f_body, f_left = frontend_CL(raw)
-b_body, b_left = backend_TE(raw)
-print("front-end (CL) thinks the request body is:", f_body, "| leftover:", f_left[:20])
-print("back-end  (TE) thinks the request body is:", b_body.strip(), "| leftover:", b_left)
-EOF
-```
-
-```text
-front-end (CL) thinks the request body is: b'0\r\n\r\nS' | leftover: b'MUGGLED'
-back-end  (TE) thinks the request body is: b'0' | leftover: b'SMUGGLED'
-```
-
-The two parsers **disagree**: the front-end (Content-Length) consumes 6 bytes and considers the request done, while the back-end (Transfer-Encoding) ends the body at the zero-chunk and treats `SMUGGLED` as leftover — the start of a *new* request. That leftover is the smuggled data.
-
-### Step 2 — Show why the leftover poisons the next request
-
-```bash
-python3 - << 'EOF'
-# the back-end's leftover "SMUGGLED" prepends to whatever comes next
-leftover = b"SMUGGLED"
-victim_next_request = b"GET /account HTTP/1.1\r\nHost: lab\r\n\r\n"
-what_backend_sees = leftover + victim_next_request
-print("back-end now reads:", what_backend_sees[:40], "...")
-print("-> the victim's request is now prefixed with the attacker's SMUGGLED bytes")
-EOF
-```
-
-```text
-back-end now reads: b'SMUGGLEDGET /account HTTP/1.1\r\nHost: l' ...
-```
-
-```text
--> the victim's request is now prefixed with the attacker's SMUGGLED bytes
-```
-
-The smuggled bytes prepend to the victim's next request — the mechanism by which one user's request is corrupted by another's. In a real exploit `SMUGGLED` would be a crafted request line that hijacks or redirects the victim; here it is a benign marker demonstrating the desync.
-
-### Step 3 — State the timing-based detection
-
-```bash
-echo "Real-world detection: send a CL.TE probe whose TE-body ends early, leaving the back-end waiting for more bytes."
-echo "A measurable RESPONSE DELAY (the back-end blocking for data that won't come) confirms the desync — before any impactful payload."
-```
-
-```text
-Real-world detection: send a CL.TE probe whose TE-body ends early, leaving the back-end waiting for more bytes.
-A measurable RESPONSE DELAY (the back-end blocking for data that won't come) confirms the desync — before any impactful payload.
-```
-
-### Step 4 — No cleanup needed
-
-```bash
-echo "All steps ran in short-lived python processes that have exited; nothing persists."
-```
-
-```text
-All steps ran in short-lived python processes that have exited; nothing persists.
-```
-
-**What you should now be able to do:** explain that smuggling lives in the *disagreement* between front-end and back-end parsers, describe CL.TE/TE.CL desync, demonstrate how a leftover prepends to the next request, and explain the timing-based detection and the reject-ambiguity fix.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why two servers must agree on where a request ends, and what happens when they disagree.
-- **Operator:** Demonstrate a CL/TE parsing disagreement, explain how leftover bytes poison the next request, and describe timing-based desync detection.
-- **Root:** Explain why the vulnerability is a property of the server *pair* not either alone, why HTTP/2 end-to-end and rejecting ambiguous framing are the fixes, and how this is the web instance of the parser-discrepancy evasion class.
+- Explain why two servers must agree on where a request ends, and what happens when they disagree.
+- Demonstrate a CL/TE parsing disagreement, explain how leftover bytes poison the next request, and describe timing-based desync detection.
+- Explain why the vulnerability is a property of the server *pair* not either alone, why HTTP/2 end-to-end and rejecting ambiguous framing are the fixes, and how this is the web instance of the parser-discrepancy evasion class.
 
 ---
 > 🔼 Up: [[HTTP Architecture & Advanced Web Attacks]]

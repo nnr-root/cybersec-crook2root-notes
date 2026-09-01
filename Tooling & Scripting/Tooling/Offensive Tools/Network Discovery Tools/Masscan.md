@@ -1,7 +1,7 @@
 ---
 title: "Masscan"
 aliases: ["Mass IP Port Scanner"]
-tags: [tree/tooling, cyber/tooling/offensive/masscan, type/tool, level/root]
+tags: [tree/tooling, cyber/tooling/offensive/masscan, type/tool, difficulty/hard]
 Domain: "[[Network Discovery Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ Masscan is an asynchronous, stateless, Internet-scale SYN scanner. It can probe 
 ## Parent Learning Order
 Nmap -> Masscan -> RustScan
 
-## Crook — The Mental Model
+## The first move of a SYN scan, and nothing else
 
 Masscan sends the same first move as Nmap's SYN scan — but only the first move.
 
-![[tool_port_scan_states.svg]]
-
 It fires a `SYN` at every target/port and listens for the `SYN-ACK` (open) or `RST` (closed) from the diagram. What it does **not** do is the rest: no version detection, no handshake completion, no follow-up. It is a firehose of the top row of that table, which is why the mental model is "discover fast, then validate slow." A Masscan hit is a *lead*, never a conclusion.
 
-## Operator — Make It Work
+## Scope in a config file, reviewed before it runs
 
 Masscan needs raw-packet privilege. Put scope in a config file, review it with `--echo`, then run:
 
@@ -57,7 +55,7 @@ operator@lab:~$ sudo masscan --conf approved.conf -oB evidence/discovery.scan
 operator@lab:~$ masscan --readscan evidence/discovery.scan -oJ evidence/discovery.json
 ```
 
-## Root — Internals & The Deliberate Break
+## Statelessness, and what it encodes into the packet
 
 Statelessness is the whole design. Nmap remembers every probe it sent; Masscan cannot, so it encodes what it needs to recognise a reply **into the packet itself** — the target IP/port are reconstructed from the response, and a `--seed` randomises the address ordering so a `/8` sweep doesn't hammer one subnet at a time. That is how it re-associates answers with no connection table, and why it scales to the whole internet on one host.
 
@@ -70,11 +68,13 @@ Reply bandwidth is tiny — but firewall STATE tables and IDS event volume are n
 
 **The deliberate break:** run at an aggressive `--rate` and results can *drop* — not because ports closed, but because a NAT/firewall state table filled, a router's ARP cache thrashed, or the sensor's ingestion dropped packets. Silence from Masscan is the diagram's `filtered` ambiguity multiplied by loss: a missed port may mean "closed" or "I flooded the path." The fix is to lower the rate, re-sample a small slice, and compare a known-open **canary** service — if the canary disappears at high rate, your optimisation invalidated the whole scan.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why can Masscan sweep the internet at rates Nmap cannot, and why is a hit only a lead?
-- **Operator:** How do you choose a safe `--rate`, and what is the discover-then-validate pipeline?
-- **Root:** Explain how a stateless scanner re-associates replies with no connection table, and how excessive rate produces false negatives.
+You should now be able to:
+
+- Why can Masscan sweep the internet at rates Nmap cannot, and why is a hit only a lead?
+- How do you choose a safe `--rate`, and what is the discover-then-validate pipeline?
+- Explain how a stateless scanner re-associates replies with no connection table, and how excessive rate produces false negatives.
 
 ---
 > 🔼 Up: [[Network Discovery Tools]]

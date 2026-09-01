@@ -1,6 +1,6 @@
 ---
 title: "NoSQL Injection"
-tags: [tree/offensive, cyber/offensive/web/injection/nosql, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/web/injection/nosql, type/technique, difficulty/hard]
 Domain: "[[Web Injection Testing]]"
 Color: "#DC143C"
 ---
@@ -169,55 +169,13 @@ The SOC correlated three requests from one assessment identity: an absent scalar
 
 The engineering team added runtime JSON Schema validation at the route, constructed filters field by field, disabled unused JavaScript evaluation, and tested JSON, form, and duplicate-key variants. Purple-team replay confirmed that operator objects now receive HTTP 400 before a database span is created. The detection remains enabled because alternate endpoints and future regressions can reintroduce unsafe object construction.
 
-## Runnable Lab (one machine, pure Python)
+## Summary
 
-No database to install: this models a document store where a query is a dict and values may be `$`-operator objects — the exact shape that makes NoSQL auth bypass work. The classic bug is a JSON body that lets `password` arrive as `{"$ne":"x"}` (matches *anything not equal to x*) instead of a string.
+You should now be able to:
 
-**Step 1 — the vulnerable matcher (`nosql.py`).**
-
-```python
-users=[{"user":"alice","pass":"wonderland"},{"user":"admin","pass":"S3cr3t!"}]
-def match(cond,doc):
-    for k,v in cond.items():
-        if isinstance(v,dict):                 # operator object, e.g. {"$ne":"x"}
-            for op,operand in v.items():
-                if op=="$ne" and not(doc.get(k)!=operand): return False
-        elif doc.get(k)!=v: return False
-    return True
-def login(q): return [u["user"] for u in users if match(q,u)]
-```
-
-**Step 2 — baseline and the bypass.**
-
-```console
->>> login({"user":"alice","pass":"wonderland"})   # normal
-['alice']
->>> login({"user":"admin","pass":"guess"})        # wrong password
-[]
->>> login({"user":"admin","pass":{"$ne":"x"}})    # operator injection
-['admin']
-```
-
-The last call authenticates as `admin` without the password — `pass != "x"` is true for the real password.
-
-**Step 3 — the deliberate break: the fix that stops it.** Coercing every field to a string before matching turns the operator object into the literal text `{'$ne': 'x'}`, which equals no password:
-
-```console
->>> login_fixed({"user":"admin","pass":{"$ne":"x"}})   # str() coercion applied
-[]
-```
-
-Seeing the bypass *fail* under type coercion is the lesson: NoSQL injection is a **type** confusion, not a character-escaping problem.
-
-**Step 4 — cleanup:** read-only, in-memory — no cleanup required.
-
-**What you should now be able to do:** explain why `{"$ne":...}` bypasses a login, and why input-type enforcement (not quote escaping) is the fix.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Why does `{"$ne":"x"}` log in when `"guess"` does not?
-- **Operator:** The endpoint accepts JSON. What one property of the request lets an operator object reach the query, and how would you prove control with a canary rather than dumping the collection?
-- **Root:** Contrast this with SQL injection: why does parameterization fix SQLi but *type/schema validation* is the right fix here?
+- Why does `{"$ne":"x"}` log in when `"guess"` does not?
+- The endpoint accepts JSON. What one property of the request lets an operator object reach the query, and how would you prove control with a canary rather than dumping the collection?
+- Contrast this with SQL injection: why does parameterization fix SQLi but *type/schema validation* is the right fix here?
 
 ---
 > 🔼 Up: [[Web Injection Testing]]

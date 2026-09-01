@@ -1,7 +1,7 @@
 ---
 title: "enum4linux"
 aliases: ["enum4linux", "enum4linux-ng"]
-tags: [tree/tooling, cyber/tooling/offensive/enumeration/enum4linux, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/offensive/enumeration/enum4linux, type/tool, difficulty/medium]
 Domain: "[[Enumeration & Service Interaction Tools]]"
 Color: "#708090"
 ---
@@ -16,7 +16,7 @@ enum4linux (and its rewrite `enum4linux-ng`) wraps the Samba client tools to har
 ## Parent Learning Order
 Gobuster -> ffuf -> feroxbuster -> dirsearch -> Netcat -> enum4linux
 
-## Crook — The Mental Model
+## SMB defaults built to be helpful
 
 Windows file sharing (SMB) was built to be *helpful*: legacy defaults let an **anonymous** client — a "null session," empty username and password — ask "who are your users? what do you share? what's your password policy?" and get answers. enum4linux automates every one of those questions.
 
@@ -32,7 +32,7 @@ flowchart LR
 
 The mental model: SMB is a chatty service, and enum4linux is the megaphone that makes it repeat everything it will tell an unauthenticated stranger.
 
-## Operator — Make It Work
+## What a null session hands you
 
 ```shell-session
 operator@lab:~$ enum4linux-ng -A 10.0.0.20
@@ -45,7 +45,7 @@ operator@lab:~$ enum4linux-ng -A 10.0.0.20
 
 The gold: a null session leaked the user list **and** a policy with **no lockout threshold** — meaning a downstream password spray (see **NetExec**) can run without locking accounts. That one line reshapes the engagement. When direct enumeration is blocked, **RID cycling** walks the SID space to recover accounts anyway (`-R 500-1050`).
 
-## Root — Internals & The Deliberate Break
+## One registry value, two completely different answers
 
 ```shell-session
 operator@lab:~$ enum4linux-ng -U 10.0.0.20       # legacy/misconfigured
@@ -60,11 +60,13 @@ operator@lab:~$ enum4linux-ng -U 10.0.0.99       # hardened host
 
 Internals: `enum4linux-ng` speaks more protocols and outputs JSON (better than the legacy Perl script); RID cycling is slow over wide ranges, so bound it around known RIDs (500–1500); and an empty share list with a populated user list means anonymous can enumerate accounts but not shares — note the *exact* anonymous exposure, not a blanket "SMB is open."
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** What is a "null session" and why does SMB allow it?
-- **Operator:** enum4linux reports "lockout threshold: none." How does that single fact shape your next step?
-- **Root:** Explain why a `STATUS_ACCESS_DENIED` result is itself a finding, and which setting produces it.
+You should now be able to:
+
+- What is a "null session" and why does SMB allow it?
+- enum4linux reports "lockout threshold: none." How does that single fact shape your next step?
+- Explain why a `STATUS_ACCESS_DENIED` result is itself a finding, and which setting produces it.
 
 ---
 > 🔼 Up: [[Enumeration & Service Interaction Tools]]

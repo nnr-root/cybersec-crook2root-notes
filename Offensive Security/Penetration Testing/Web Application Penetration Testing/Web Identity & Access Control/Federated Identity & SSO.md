@@ -1,7 +1,7 @@
 ---
 title: "Federated Identity & SSO"
 aliases: ["OAuth 2.0 & OpenID Connect Testing", "SAML Security Testing", "OAuth Testing", "SAML Testing", "SSO Testing", "Single Sign-On"]
-tags: [tree/offensive, cyber/offensive/web/identity, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/web/identity, type/technique, difficulty/medium]
 Domain: "[[Web Identity & Access Control]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Web Authentication Testing -> Broken Access Control -> JWT Security Testing -> Federated Identity & SSO -> MFA, Recovery & Session Bypass Testing
 
-## Start at Zero: Logging In With Someone Else's Identity Provider
+## Logging In With Someone Else's Identity Provider
 
 **Single Sign-On (SSO)** lets a user authenticate once with a trusted **identity provider (IdP)** — Google, an enterprise directory, Okta — and then access many applications (the **relying parties**) without logging in again. Two protocols dominate: **SAML** (XML-based, common in enterprise) and **OAuth 2.0 / OpenID Connect** (JSON/token-based, common on the web). Both work by the IdP issuing a signed **assertion** or **token** that says "this is user X," which the application trusts.
 
@@ -61,7 +61,54 @@ flowchart TD
     F1 --> P["Prove with synthetic identities, benign markers"]
 ```
 
-## Failure Modes and Interpretation
+## Worked Example: A Relying Party That Trusts a Claim It Never Verified
+
+Federated identity works because the relying party trusts assertions signed by the
+identity provider. Every SSO vulnerability of consequence is the relying party
+trusting the *claim* while skipping the *signature check* that is supposed to earn
+that trust. The specimen makes exactly that omission:
+
+```python
+assertion = json.loads(base64.b64decode(body))   # {"user": ..., "sig": ...}
+user = assertion.get("user")                      # BUG: uses the claim...
+return {"logged_in_as": user}                     # ...without verifying sig
+```
+
+**A legitimate assertion** logs the right user in:
+
+```shell-session
+analyst@lab:~$ echo -n '{"user":"alice","sig":"valid-idp-sig"}' | base64 | \
+>   xargs -I{} curl -s -X POST -d '{}' http://127.0.0.1:8115/sso
+{"logged_in_as": "alice"}
+```
+
+Nothing looks wrong, because on the happy path a real IdP produced the assertion
+and the claimed user is the true one. The bug is invisible until someone lies.
+
+**A forged assertion** carries an obviously bogus signature and a chosen identity:
+
+```shell-session
+analyst@lab:~$ echo -n '{"user":"admin","sig":"FORGED-not-from-idp"}' | base64 | \
+>   xargs -I{} curl -s -X POST -d '{}' http://127.0.0.1:8115/sso
+{"logged_in_as": "admin"}
+```
+
+`admin`, with a signature that reads `FORGED-not-from-idp`. The relying party
+accepted it because it never asked whether the signature verified against the
+IdP's public key — it read the `user` field and believed it. That is the entire
+class: SAML response tampering, unsigned-assertion acceptance, and the XML
+signature-wrapping attacks are all elaborations of "the RP trusted a claim it did
+not authenticate."
+
+The correctness condition is narrow and non-negotiable: verify the assertion's
+signature against the IdP's key *before* reading any claim from it, and then check
+that the issuer, audience and expiry are the ones you expect — a valid signature
+on an assertion minted for a different service is still the wrong assertion. The
+reason hand-rolled validation fails here so reliably is that the checks must all
+pass and must happen in the right order, which is exactly what a vetted SAML or
+OIDC library encodes and an afternoon's own code does not.
+
+## Forging assertions without impersonating real people
 
 - **Impersonating real users.** Forging an assertion to log in as a real person is over the line; prove with synthetic identities in a lab.
 - **`redirect_uri` strictness.** A partial-match validation (`startsWith`, `contains`) is bypassable (`https://app.com.evil.com`); test exact-match enforcement, and test open-redirect chains.
@@ -77,95 +124,13 @@ flowchart TD
 - **Disable XML external entities** in SAML parsing (the XXE fix) and use a validator that binds signature-validation to data-extraction (XSW resistance).
 - **Detection** looks for assertions from unexpected issuers, tokens used at the wrong audience, and redirect anomalies — but the durable defense is correct validation, since a forged-but-accepted assertion looks legitimate to a poorly-configured relying party.
 
-## Authorized Lab: Forge an Unsigned Assertion the App Accepts
+## Summary
 
-> [!info] Runs on one Linux machine — builds a relying party that skips signature validation, then forges an identity
-> Loopback, synthetic identities. Step 5 removes it.
+You should now be able to:
 
-### Step 1 — Build a relying party that trusts an assertion WITHOUT checking its signature
-
-```bash
-cat > /tmp/sso.py << 'EOF'
-import http.server, json, base64
-class H(http.server.BaseHTTPRequestHandler):
-    def do_POST(self):
-        n=int(self.headers.get("Content-Length",0)); body=self.rfile.read(n).decode()
-        # assertion is base64 JSON: {"user":..., "sig":...}. The RP is supposed to verify sig.
-        try:
-            assertion=json.loads(base64.b64decode(body))
-        except: self.send_response(400); self.end_headers(); return
-        # BUG: accepts the asserted user WITHOUT validating the signature
-        user=assertion.get("user")
-        self.send_response(200); self.end_headers()
-        self.wfile.write(json.dumps({"logged_in_as":user}).encode())
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8115),H).serve_forever()
-EOF
-python3 /tmp/sso.py &>/dev/null &
-sleep 1; echo "relying party up on 127.0.0.1:8115 (skips signature validation)"
-```
-
-```text
-relying party up on 127.0.0.1:8115 (skips signature validation)
-```
-
-### Step 2 — Legitimate login (baseline)
-
-```bash
-python3 -c "import json,base64;print(base64.b64encode(json.dumps({'user':'alice','sig':'valid-idp-sig'}).encode()).decode())" | \
-  xargs -I{} curl -s -X POST -d '{}' http://127.0.0.1:8115/sso
-```
-
-```text
-{"logged_in_as": "alice"}
-```
-
-A normal assertion for alice logs her in.
-
-### Step 3 — Forge an assertion for the admin (the finding)
-
-```bash
-# forge an assertion for 'admin' with a BOGUS signature — the RP never checks it
-python3 -c "import json,base64;print(base64.b64encode(json.dumps({'user':'admin','sig':'FORGED-not-from-idp'}).encode()).decode())" | \
-  xargs -I{} curl -s -X POST -d '{}' http://127.0.0.1:8115/sso
-```
-
-```text
-{"logged_in_as": "admin"}
-```
-
-The forged assertion — with an obviously bogus signature — logged in as `admin`. The relying party accepted the *claimed* identity without verifying the signature came from the IdP. That is the SAML/SSO signature-validation flaw, proven with a synthetic identity. A hardened RP would reject `FORGED-not-from-idp` because the signature would not verify against the IdP's public key.
-
-### Step 4 — State the fix
-
-```bash
-echo "Fix: verify the assertion signature against the IdP's public key BEFORE trusting any claim;"
-echo "also check issuer, audience, and expiry. Use a vetted SAML/OIDC library, never hand-rolled validation."
-```
-
-```text
-Fix: verify the assertion signature against the IdP's public key BEFORE trusting any claim;
-also check issuer, audience, and expiry. Use a vetted SAML/OIDC library, never hand-rolled validation.
-```
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/sso.py; wait 2>/dev/null
-curl -s -o /dev/null -w "rp gone: %{http_code}\n" --max-time 2 http://127.0.0.1:8115/sso 2>&1 | grep -o 'gone.*' || echo "rp gone: connection refused"
-```
-
-```text
-rp gone: connection refused
-```
-
-**What you should now be able to do:** explain the SSO trust model and the checks a relying party must make, name the common OAuth (`redirect_uri`, `state`, audience) and SAML (signature, XSW) flaws, forge an unsigned assertion an unvalidating app accepts, and locate the flaw in the relying party's validation.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the SSO trust model — IdP issues a signed assertion, apps trust it — and why validating that assertion is the whole security.
-- **Operator:** Test OAuth `redirect_uri`/`state`/audience and SAML signature validation, and forge an assertion that an unvalidating relying party accepts.
-- **Root:** Explain why XML Signature Wrapping and missing audience checks are parser/usage discrepancies, why the flaw is usually in the relying party, and why vetted libraries plus code-flow-with-PKCE are the durable controls.
+- Explain the SSO trust model — IdP issues a signed assertion, apps trust it — and why validating that assertion is the whole security.
+- Test OAuth `redirect_uri`/`state`/audience and SAML signature validation, and forge an assertion that an unvalidating relying party accepts.
+- Explain why XML Signature Wrapping and missing audience checks are parser/usage discrepancies, why the flaw is usually in the relying party, and why vetted libraries plus code-flow-with-PKCE are the durable controls.
 
 ---
 > 🔼 Up: [[Web Identity & Access Control]]

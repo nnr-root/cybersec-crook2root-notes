@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/addressing
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Addressing & Subnetting]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IPv4 Addressing -> Subnetting & CIDR -> VLSM & Route Summarization -> IPv6 Addressing -> Address Assignment & DHCP -> NAT & Address Translation
 
-## Start at Zero: One Size Does Not Fit
+## One Size Does Not Fit
 
 Suppose you are given `172.16.8.0/22` and must serve four networks:
 
@@ -201,45 +201,13 @@ The routing behaviour above transfers directly into two security problems.
 
 Any route or rule inspection described here should be performed on infrastructure within an authorized scope; routing tables reveal internal topology and are themselves sensitive.
 
-## Authorized Lab: Allocate, Summarize, and Override
+## Summary
 
-Use a lab router you fully control, with at least two downstream segments.
+You should now be able to:
 
-1. On paper, apply VLSM to `172.16.8.0/22` for the four requirements in the opening table. Record every network, usable range, and broadcast before touching a device.
-2. Verify each block with `ipcalc` and confirm no ranges overlap and none exceed the parent.
-3. Configure two of the subnets on router interfaces and confirm they appear as connected routes in `ip route`.
-4. Add four contiguous static routes for `192.168.4.0/24` through `192.168.7.0/24` pointing at a lab next hop, then replace them with the single `/22` summary. Confirm with `ip route get 192.168.6.20` that forwarding is unchanged.
-5. Demonstrate longest-prefix override by adding a competing specific route:
-
-```bash
-sudo ip route add 192.168.6.20/32 via <second lab next hop>
-ip route get 192.168.6.20
-```
-
-Expected excerpt:
-
-```text
-192.168.6.20 via <second lab next hop> dev eth1
-```
-
-Note that the `/22` summary is still present and still correct. Nothing reports an error. The traffic simply goes elsewhere — which is exactly why this class of change is hard to notice in production.
-
-6. Remove the `/32`, confirm forwarding returns to the summary next hop, then remove every route added during the lab and verify the table matches the baseline recorded in step 3.
-
-Expected interpretation:
-
-```text
-VLSM        -> unequal blocks fit real requirements with contiguous space left over
-Summary     -> four entries become one; forwarding is unchanged; instability is contained
-Specific /32-> silently overrides the summary with no error and no visible failure
-Cleanup     -> table matches baseline, proving each observed change had a single cause
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why equal-size subnets waste space, and state the largest-first rule for VLSM allocation.
-- **Operator:** Perform a full VLSM allocation for mixed requirements, compute a valid summary from a set of contiguous prefixes, and verify both with `ipcalc` and `ip route get`.
-- **Root:** Explain why an unaligned summary advertises space you may not own and what that causes internally and on the Internet; describe how longest-prefix match allows a single injected specific route to redirect traffic invisibly, and why summarizing firewall rules is a silent authorization change rather than a cosmetic one.
+- Explain why equal-size subnets waste space, and state the largest-first rule for VLSM allocation.
+- Perform a full VLSM allocation for mixed requirements, compute a valid summary from a set of contiguous prefixes, and verify both with `ipcalc` and `ip route get`.
+- Explain why an unaligned summary advertises space you may not own and what that causes internally and on the Internet; describe how longest-prefix match allows a single injected specific route to redirect traffic invisibly, and why summarizing firewall rules is a silent authorization change rather than a cosmetic one.
 
 ---
 > 🔼 Up: [[Addressing & Subnetting]]

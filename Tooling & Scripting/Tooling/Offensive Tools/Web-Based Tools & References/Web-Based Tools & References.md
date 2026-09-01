@@ -31,11 +31,13 @@ flowchart LR
 Have an artifact -> look it up / process it in the browser -> get a lead -> verify and use under scope
 ```
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why is a reference site like GTFOBins a "tool" even though it runs nothing on the target?
-- **Operator:** Which of these tools must you never feed real production data, and why?
-- **Root:** Explain the operational-security tradeoff of a public web tool (convenience) versus a self-hosted copy (no data leakage).
+You should now be able to:
+
+- Why is a reference site like GTFOBins a "tool" even though it runs nothing on the target?
+- Which of these tools must you never feed real production data, and why?
+- Explain the operational-security tradeoff of a public web tool (convenience) versus a self-hosted copy (no data leakage).
 
 ---
 > 🔼 Up: [[Offensive Tools]]

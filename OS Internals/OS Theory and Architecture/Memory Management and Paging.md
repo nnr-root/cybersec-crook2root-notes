@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/theory
   - type/concept
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[OS Theory and Architecture]]"
 Color: "#FFA500"
@@ -188,106 +188,6 @@ slabtop -o
 
 Expected fields include active objects, total objects, object size, and slabs. A steadily increasing object count tied to one cache during an authorized stress test suggests a missing release path.
 
-## Hands-On Lab: See Virtual Memory, Faults & Copy-on-Write
-
-> [!info] Runs on one Linux machine — only `python3` and coreutils
-> Each step reads real kernel accounting from `/proc`. Nothing here modifies system state.
-
-### Step 1 — Virtual size is not memory used
-
-```bash
-python3 -c "
-import os, time
-big = bytearray(200*1024*1024)     # 200 MB reserved
-print('PID', os.getpid()); time.sleep(60)" &
-sleep 2; PID=$!
-grep -E 'VmSize|VmRSS' /proc/$PID/status
-```
-
-```text
-VmSize:	  411236 kB
-VmRSS:	  208984 kB
-```
-
-**VmSize** is the address space the process has *claimed*; **VmRSS** is what is genuinely in RAM. They differ because a virtual address is only a promise until it is touched. Confusing these two is the most common misreading of memory usage.
-
-### Step 2 — Touch pages and watch RSS climb
-
-```bash
-python3 -c "
-import os, time
-b = bytearray(200*1024*1024)
-print('PID', os.getpid(), flush=True)
-time.sleep(3)
-for i in range(0, len(b), 4096): b[i] = 1     # touch every page
-time.sleep(60)" &
-sleep 2; PID=$!
-echo \"before: $(grep VmRSS /proc/$PID/status)\"
-sleep 4
-echo \"after : $(grep VmRSS /proc/$PID/status)\"
-```
-
-```text
-before: VmRSS:	   10240 kB
-after : VmRSS:	  215128 kB
-```
-
-Same allocation, but RSS jumped only once the pages were *written*. Each first touch caused a **page fault** that made the kernel supply a real physical page. This is demand paging, measured.
-
-### Step 3 — Count the faults directly
-
-```bash
-/usr/bin/time -v python3 -c "b = bytearray(200*1024*1024); [b.__setitem__(i,1) for i in range(0,len(b),4096)]" 2>&1 | grep -E 'Maximum resident|page faults'
-```
-
-```text
-	Maximum resident set size (kbytes): 205892
-	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 51483
-```
-
-**51,483 minor faults** — one per page touched (200 MB ÷ 4 KB ≈ 51,200). *Minor* means satisfied from RAM; *major* would mean a read from disk. Zero major faults tells you nothing was swapped in, which is exactly what you want to see.
-
-### Step 4 — Prove copy-on-write is real
-
-```bash
-python3 - << 'EOF'
-import os, time
-data = bytearray(100*1024*1024)
-for i in range(0, len(data), 4096): data[i] = 1     # make it resident
-def rss(pid): 
-    return int(open(f"/proc/{pid}/status").read().split("VmRSS:")[1].split()[0])
-pid = os.fork()
-if pid == 0:
-    time.sleep(1)
-    print("child RSS before write:", rss(os.getpid()), "kB")
-    for i in range(0, len(data), 4096): data[i] = 2  # now write
-    print("child RSS after  write:", rss(os.getpid()), "kB")
-    os._exit(0)
-os.wait()
-EOF
-```
-
-```text
-child RSS before write: 8192 kB
-child RSS after  write: 111476 kB
-```
-
-The child started sharing 100 MB with its parent at almost **zero** cost, then paid for it only when it wrote. That is copy-on-write: `fork()` duplicates page *tables*, not pages. It is why forking a large process is fast and why memory can appear to grow long after the fork.
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 %2 2>/dev/null; wait 2>/dev/null; jobs
-```
-
-```text
-```
-
-Empty output confirms the background processes are gone; all allocations were per-process and returned to the kernel on exit.
-
-**What you should now be able to do:** explain from your own numbers why VmSize overstates memory use, what a minor fault costs, and why a forked child's memory grows only when it writes.
-
 ## 11. Troubleshooting & Evidence Interpretation
 
 Memory incidents require classification before remediation. “Out of memory” may mean process address-space exhaustion, cgroup limit enforcement, system-wide commit exhaustion, physical-memory pressure, kernel allocation failure, or fragmentation of a required contiguous order. “Segmentation fault” may mean an unmapped address, a write to read-only memory, execution from an NX page, stack exhaustion, or a lifetime bug.
@@ -325,11 +225,13 @@ High private dirty memory points toward anonymous application allocations rather
 
 For a crash, record the faulting address, attempted operation, instruction pointer, register state, thread, and containing mapping. An address close to zero suggests—but does not prove—a null-derived access. An address immediately after an allocated object supports an out-of-bounds hypothesis; a freed allocation reused for another type suggests use-after-free. Sanitizer output is strongest when paired with source, allocation/free stacks, and a minimal reproducer. The final explanation should trace one invalid operation through virtual translation and object lifetime rather than merely naming the signal.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Translate virtual page plus offset conceptually; distinguish TLB miss from page fault; identify stack, heap, text, data, and shared mappings.
-- **Operator:** Interpret resident versus virtual memory, minor versus major faults, COW behavior, page-replacement pressure, and sanitizer output; explain ASLR, NX, canaries, and hardened allocators as layered controls.
-- **Root:** Reason through multi-level translation, TLB coherence, NUMA placement, buddy/SLUB allocation, exploit primitives, side channels, and memory-exhaustion economics; design an experiment that proves where bytes reside and why a specific access succeeds or faults.
+You should now be able to:
+
+- Translate virtual page plus offset conceptually; distinguish TLB miss from page fault; identify stack, heap, text, data, and shared mappings.
+- Interpret resident versus virtual memory, minor versus major faults, COW behavior, page-replacement pressure, and sanitizer output; explain ASLR, NX, canaries, and hardened allocators as layered controls.
+- Reason through multi-level translation, TLB coherence, NUMA placement, buddy/SLUB allocation, exploit primitives, side channels, and memory-exhaustion economics; design an experiment that proves where bytes reside and why a specific access succeeds or faults.
 
 ---
 > 🔼 Up: [[OS Theory and Architecture]]

@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/theory
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[OS Theory and Architecture]]"
 Color: "#FFA500"
@@ -190,103 +190,6 @@ Average CPU usage can hide scheduling failures. Important signals include runnab
 
 Shared cores also create side channels. Simultaneous multithreading lets mutually untrusted threads contend for execution ports, caches, and predictors. Timing may reveal victim behavior even when page permissions are correct. Mitigations include reducing co-tenancy, core scheduling, disabling SMT for selected threat models, partitioning workloads, and removing secret-dependent control flow.
 
-## Hands-On Lab: Make the Scheduler's Decisions Visible
-
-> [!info] Runs on one Linux machine — uses only coreutils and `taskset`
-> Pinning everything to a single CPU is what makes scheduling *observable*; with many cores the competitors would simply run in parallel and prove nothing.
-
-### Step 1 — Confirm your CPU count, then force contention onto one core
-
-```bash
-nproc
-```
-
-```text
-8
-```
-
-With 8 CPUs, two busy processes never compete. Pin both to CPU 0 so the scheduler must choose between them:
-
-```bash
-taskset -c 0 bash -c 'end=$((SECONDS+10)); while [ $SECONDS -lt $end ]; do :; done' &
-A=$!
-taskset -c 0 bash -c 'end=$((SECONDS+10)); while [ $SECONDS -lt $end ]; do :; done' &
-B=$!
-sleep 5; ps -o pid,psr,ni,pcpu,comm -p $A,$B
-```
-
-```text
-    PID PSR  NI %CPU COMMAND
-  20733   0   0 49.8 bash
-  20734   0   0 49.6 bash
-```
-
-`PSR 0` confirms both are on CPU 0, and each receives **~50%** — equal priority, equal share. This is fairness in action.
-
-### Step 2 — Change one process's niceness and watch the split move
-
-```bash
-wait 2>/dev/null
-taskset -c 0 bash -c 'end=$((SECONDS+10)); while [ $SECONDS -lt $end ]; do :; done' &
-A=$!
-taskset -c 0 nice -n 15 bash -c 'end=$((SECONDS+10)); while [ $SECONDS -lt $end ]; do :; done' &
-B=$!
-sleep 5; ps -o pid,ni,pcpu,comm -p $A,$B
-```
-
-```text
-    PID  NI %CPU COMMAND
-  20791   0 92.4 bash
-  20792  15  7.5 bash
-```
-
-A single `nice -n 15` moved the split from 50/50 to roughly **92/8**. Nothing was blocked — the low-priority task still ran, just far less often. That is a *weight*, not a permission.
-
-### Step 3 — Count the context switches the scheduler performed
-
-```bash
-grep -E 'voluntary|nonvoluntary' /proc/$A/status
-```
-
-```text
-voluntary_ctxt_switches:	3
-nonvoluntary_ctxt_switches:	1147
-```
-
-**Nonvoluntary** switches are the scheduler *preempting* this task against its will — 1,147 times in five seconds. A task that yields willingly (waiting on I/O) shows the opposite profile, and that difference is how you tell a CPU-bound process from an I/O-bound one.
-
-### Step 4 — Watch a real-time priority dominate
-
-```bash
-wait 2>/dev/null
-taskset -c 0 bash -c 'end=$((SECONDS+8)); while [ $SECONDS -lt $end ]; do :; done' &
-A=$!
-sudo taskset -c 0 chrt -f 50 bash -c 'end=$((SECONDS+8)); while [ $SECONDS -lt $end ]; do :; done' &
-B=$!
-sleep 4; ps -o pid,cls,rtprio,pcpu,comm -p $A,$B
-```
-
-```text
-    PID CLS RTPRIO %CPU COMMAND
-  20844  TS      - 0.4 bash
-  20845  FF     50 99.1 bash
-```
-
-Class `FF` (SCHED_FIFO) with priority 50 takes essentially the whole CPU; the normal task gets 0.4%. Real-time class does not *share* — it preempts. This is why a runaway real-time process can make a machine unusable, and why `chrt` needs privilege.
-
-### Step 5 — Cleanup
-
-```bash
-sudo pkill -f 'end=\$((SECONDS' 2>/dev/null; sleep 1; ps -o pid,comm -p $A,$B 2>/dev/null | tail -n +2
-```
-
-```text
-```
-
-No rows returned means every test process has exited. All were self-limiting loops, so nothing persists.
-
-**What you should now be able to do:** explain from your own measurements the difference between a nice weight and a real-time class, and read `nonvoluntary_ctxt_switches` as evidence of preemption.
-
 ## 11. Troubleshooting & Evidence Interpretation
 
 Scheduler problems are frequently misdiagnosed because utilization is easier to see than delay. A host can report 40% average CPU while one latency-sensitive thread waits behind affinity constraints, cgroup throttling, lock contention, or a saturated single core. Troubleshoot from the affected thread outward:
@@ -323,11 +226,13 @@ The PSI `some` value means at least some runnable work was delayed for CPU. The 
 
 Avoid three common errors. First, `nice` is a weight and policy input, not an exact percentage guarantee. Second, process CPU percentage can exceed 100% when reporting aggregates across cores. Third, load average on Linux includes certain uninterruptible waits, so it is not a synonym for CPU demand. A defensible conclusion names the constrained resource, the scheduling class and hierarchy involved, the affected identity, the measured delay, and the policy change that restores bounded service.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Calculate waiting, response, and turnaround time; distinguish preemptive from non-preemptive scheduling; explain FCFS, SJF, SRTF, RR, and priority scheduling.
-- **Operator:** Tune quantum and priority with awareness of context-switch cost; diagnose starvation and inversion; use CPU quotas, task limits, and scheduler telemetry to contain an authorized resource-exhaustion lab.
-- **Root:** Reason about MLFQ gaming, weighted fairness, EEVDF/CFS concepts, SMP/NUMA placement, real-time schedulability, and adversarial workload economics; design policy that preserves availability under hostile multi-tenant demand.
+You should now be able to:
+
+- Calculate waiting, response, and turnaround time; distinguish preemptive from non-preemptive scheduling; explain FCFS, SJF, SRTF, RR, and priority scheduling.
+- Tune quantum and priority with awareness of context-switch cost; diagnose starvation and inversion; use CPU quotas, task limits, and scheduler telemetry to contain an authorized resource-exhaustion lab.
+- Reason about MLFQ gaming, weighted fairness, EEVDF/CFS concepts, SMP/NUMA placement, real-time schedulability, and adversarial workload economics; design policy that preserves availability under hostile multi-tenant demand.
 
 ---
 > 🔼 Up: [[OS Theory and Architecture]]

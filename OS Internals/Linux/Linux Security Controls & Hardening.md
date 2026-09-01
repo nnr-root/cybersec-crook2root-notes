@@ -6,7 +6,7 @@ tags:
   - cyber/foundations/linux
   - cyber/defensive/hardening
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Linux]]"
 Color: "#FFA500"
@@ -184,135 +184,6 @@ ReadWritePaths=/var/lib/invoice /var/log/invoice
 
 The service design and sandbox disagree about where templates live. Move required data into an approved service-owned path or declare the narrow read-only path; do not remove the entire home-directory boundary. Retest allowed behavior, denied behavior, restart, rollback, and evidence generation.
 
-## Hands-On Lab: Remove Privilege Without Breaking the Service
-
-> [!info] Runs on one Linux machine — uses a disposable systemd unit, removed in Step 6
-> The goal is to feel the trade-off: each control you add must be tested against the service still working.
-
-### Step 1 — Start from an over-privileged baseline
-
-```bash
-sudo tee /etc/systemd/system/hardlab.service >/dev/null << 'EOF'
-[Unit]
-Description=Hardening lab service
-[Service]
-ExecStart=/usr/bin/python3 -m http.server 8099 --bind 127.0.0.1
-EOF
-sudo systemctl daemon-reload && sudo systemctl start hardlab
-sleep 1; curl -s -o /dev/null -w 'service HTTP %{http_code}\n' http://127.0.0.1:8099/
-ps -o user,comm -p $(systemctl show -p MainPID --value hardlab)
-```
-
-```text
-service HTTP 200
-USER     COMMAND
-root     python3
-```
-
-It works — and it is running as **root** with no restrictions, for a task that needs neither. That is the starting point most services actually ship in.
-
-### Step 2 — Measure the privilege you are about to remove
-
-```bash
-PID=$(systemctl show -p MainPID --value hardlab)
-grep CapEff /proc/$PID/status
-capsh --decode=$(grep CapEff /proc/$PID/status | awk '{print $2}') 2>/dev/null | tr ',' '\n' | wc -l
-```
-
-```text
-CapEff:	000001ffffffffff
-39
-```
-
-**39 capabilities** — the full root set, including the ability to load kernel modules and override every file permission on the system. Quantifying this before hardening is what makes the improvement demonstrable.
-
-### Step 3 — Apply least privilege and re-test
-
-```bash
-sudo tee /etc/systemd/system/hardlab.service >/dev/null << 'EOF'
-[Unit]
-Description=Hardening lab service
-[Service]
-ExecStart=/usr/bin/python3 -m http.server 8099 --bind 127.0.0.1
-DynamicUser=yes
-CapabilityBoundingSet=
-NoNewPrivileges=yes
-ProtectSystem=strict
-ProtectHome=yes
-PrivateTmp=yes
-PrivateDevices=yes
-EOF
-sudo systemctl daemon-reload && sudo systemctl restart hardlab
-sleep 1; curl -s -o /dev/null -w 'service HTTP %{http_code}\n' http://127.0.0.1:8099/
-PID=$(systemctl show -p MainPID --value hardlab); ps -o user,comm -p $PID; grep CapEff /proc/$PID/status
-```
-
-```text
-service HTTP 200
-USER     COMMAND
-hardlab  python3
-CapEff:	0000000000000000
-```
-
-Still `HTTP 200` — **and now it runs as a generated unprivileged user with zero capabilities.** The functionality is identical; the blast radius of a compromise is not.
-
-### Step 4 — Prove the restrictions actually bite
-
-```bash
-sudo systemctl show hardlab -p ProtectSystem -p PrivateTmp -p NoNewPrivileges
-sudo -u \#$(stat -c %u /proc/$PID) test -w /etc && echo "/etc writable" || echo "/etc NOT writable by service user"
-```
-
-```text
-ProtectSystem=strict
-PrivateTmp=yes
-NoNewPrivileges=yes
-```
-
-```text
-/etc NOT writable by service user
-```
-
-`ProtectSystem=strict` makes the entire filesystem read-only to this unit, `PrivateTmp` gives it a `/tmp` no other process can see, and `NoNewPrivileges` means it can never gain privileges via SUID — even if it executes a SUID binary.
-
-### Step 5 — Break it deliberately to see the trade-off
-
-```bash
-sudo systemctl stop hardlab
-sudo sed -i 's|--bind 127.0.0.1|--bind 127.0.0.1 --directory /var/log|' /etc/systemd/system/hardlab.service
-sudo systemctl daemon-reload && sudo systemctl restart hardlab 2>&1 | tail -1
-sleep 1; systemctl is-active hardlab
-```
-
-```text
-active
-```
-
-```bash
-curl -s http://127.0.0.1:8099/ | head -3
-```
-
-```text
-<!DOCTYPE HTML>
-<title>Directory listing for /</title>
-```
-
-It still serves — because reading `/var/log` is permitted. Hardening restricted **writes and privileges**, not all reads. This is the honest lesson: a control removes a specific capability, and you must know which. Over-assuming protection is its own risk.
-
-### Step 6 — Cleanup
-
-```bash
-sudo systemctl stop hardlab && sudo systemctl disable hardlab 2>/dev/null
-sudo rm /etc/systemd/system/hardlab.service && sudo systemctl daemon-reload
-ss -tlnp 2>/dev/null | grep -c 8099 || echo "port 8099 no longer listening"
-```
-
-```text
-port 8099 no longer listening
-```
-
-**What you should now be able to do:** measure a service's capabilities before and after hardening, apply `DynamicUser`/`NoNewPrivileges`/`ProtectSystem`, and state precisely which risks a control removes and which it does not.
-
 ## Supply-chain, integrity & configuration assurance
 
 Host hardening depends on trustworthy inputs. Use signed distribution repositories, minimize third-party package sources, pin or approve sensitive dependencies, and inventory packages with their origin. Verify package-owned files through the distribution database, but recognize that expected configuration changes and generated state require separate baselines. Protect build pipelines, signing keys, deployment credentials, and update channels as production assets.
@@ -334,11 +205,13 @@ Recovery is a security control. Test bare-metal or VM restoration, LUKS key reco
 
 Hardening fails when controls are broad but untested, when administrators disable enforcement after the first denial, or when recovery is ignored. Effective defense combines minimal software, strong identity, safe delegation, reduced capabilities/syscalls, mandatory policy, exploit mitigations, verified boot, patching, encrypted backups, and observable change management. Measure both prevented behavior and retained business function.
 
-### Crook → Operator → Root checkpoint
+## Summary
 
-- **Crook:** inventory services/accounts, explain DAC versus MAC, and apply safe permissions and update practices.
-- **Operator:** sandbox a service with systemd, capabilities, `no_new_privs`, seccomp, PAM, and active LSM policy while preserving function.
-- **Root:** derive controls from a threat model, reason about kernel/CPU mitigations and policy composition, stage recovery, and prove hardening effectiveness with repeatable tests.
+You should now be able to:
+
+- inventory services/accounts, explain DAC versus MAC, and apply safe permissions and update practices.
+- sandbox a service with systemd, capabilities, `no_new_privs`, seccomp, PAM, and active LSM policy while preserving function.
+- derive controls from a threat model, reason about kernel/CPU mitigations and policy composition, stage recovery, and prove hardening effectiveness with repeatable tests.
 
 ---
 > 🔼 Up: [[Linux]]

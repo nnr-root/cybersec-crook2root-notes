@@ -1,7 +1,7 @@
 ---
 title: "CORS & Clickjacking"
 aliases: ["CORS Misconfiguration", "Clickjacking", "Cross-Origin Resource Sharing", "UI Redressing"]
-tags: [tree/offensive, cyber/offensive/web/client-side, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/web/client-side, type/technique, difficulty/medium]
 Domain: "[[Client-Side Web Security]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 CORS & Clickjacking -> Cross-Site Scripting -> CSRF & SameSite Testing -> Prototype Pollution & DOM Security
 
-## Start at Zero: Two Ways to Abuse Cross-Origin Trust
+## Two Ways to Abuse Cross-Origin Trust
 
 The browser's core security rule is the **Same-Origin Policy**: a page from `evil.example` cannot read data from `bank.example`. Two mechanisms deliberately relax parts of this trust boundary, and both are commonly misconfigured into vulnerabilities:
 
@@ -75,7 +75,7 @@ flowchart TD
     F -->|"frame-ancestors none"| SF["Secure"]
 ```
 
-## Failure Modes and Interpretation
+## The CORS finding that isn't exploitable
 
 - **CORS `*` is not always exploitable.** Browsers block `ACAO: *` combined with credentials, so a `*` on a *public, non-credentialed* endpoint may be harmless. The dangerous case is reflected origin *with* credentials — classify precisely.
 - **Proving CORS needs the credentialed read.** The finding is that an attacker origin can *read authenticated data* — demonstrate the reflected header and the credentialed read, not just the header.
@@ -91,95 +91,13 @@ flowchart TD
 - **Detection is limited** because both exploit legitimate browser behavior; the defense is prevention via headers, and a header-scanning tool (run against yourself) is the practical control.
 - **Sensitive actions deserve extra friction** — a confirmation step or re-authentication for high-impact actions blunts clickjacking even if a page is framed, since a single stolen click cannot complete the action.
 
-## Authorized Lab: Detect Both Misconfigurations
+## Summary
 
-> [!info] Runs on one Linux machine — builds an API with reflected-origin CORS and a page with no frame protection
-> Loopback-bound, synthetic data. Step 5 removes it.
+You should now be able to:
 
-### Step 1 — Build an app with both flaws
-
-```bash
-cat > /tmp/cors.py << 'EOF'
-import http.server
-class H(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        origin = self.headers.get("Origin","")
-        self.send_response(200)
-        # FLAW 1: reflect the request Origin + allow credentials
-        if origin:
-            self.send_header("Access-Control-Allow-Origin", origin)
-            self.send_header("Access-Control-Allow-Credentials","true")
-        # FLAW 2: no X-Frame-Options / frame-ancestors -> framable
-        self.send_header("Content-Type","text/html"); self.end_headers()
-        self.wfile.write(b'{"account":"alice","balance":"CANARY-1000"}' if self.path=="/account" else b'<button>Delete Account</button>')
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8108),H).serve_forever()
-EOF
-python3 /tmp/cors.py &>/dev/null &
-sleep 1; echo "app up (reflected CORS + no frame protection)"
-```
-
-```text
-app up (reflected CORS + no frame protection)
-```
-
-### Step 2 — CORS: does it reflect an attacker origin with credentials?
-
-```bash
-curl -s -I -H "Origin: https://evil.example" http://127.0.0.1:8108/account | grep -i 'access-control'
-```
-
-```text
-Access-Control-Allow-Origin: https://evil.example
-Access-Control-Allow-Credentials: true
-```
-
-The server echoed `evil.example` and allowed credentials — an attacker page can now read the victim's authenticated `/account` response. Finding one confirmed.
-
-### Step 3 — Clickjacking: is framing prevented?
-
-```bash
-curl -s -I http://127.0.0.1:8108/ | grep -iE 'x-frame-options|frame-ancestors' || echo "NO frame protection header present -> page is framable (clickjackable)"
-```
-
-```text
-NO frame protection header present -> page is framable (clickjackable)
-```
-
-No `X-Frame-Options` or `frame-ancestors` — the page can be loaded in an invisible iframe over a decoy. Finding two confirmed, by the *absence* of the header.
-
-### Step 4 — State the fixes
-
-```bash
-echo "CORS fix: allowlist exact trusted origins; never reflect Origin; never permissive-ACAO + credentials."
-echo "Clickjacking fix: Content-Security-Policy: frame-ancestors 'none' on every sensitive page."
-echo "Both are one-line header configurations — cheap to fix, cheap to forget."
-```
-
-```text
-CORS fix: allowlist exact trusted origins; never reflect Origin; never permissive-ACAO + credentials.
-Clickjacking fix: Content-Security-Policy: frame-ancestors 'none' on every sensitive page.
-Both are one-line header configurations — cheap to fix, cheap to forget.
-```
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/cors.py; wait 2>/dev/null
-curl -s -o /dev/null -w "app gone: %{http_code}\n" --max-time 2 http://127.0.0.1:8108/ 2>&1 | grep -o 'gone.*' || echo "app gone: connection refused"
-```
-
-```text
-app gone: connection refused
-```
-
-**What you should now be able to do:** test CORS for reflected-origin-with-credentials, detect missing frame protection as a clickjacking exposure, distinguish exploitable CORS from harmless `*`, and name the one-header fix for each.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the Same-Origin Policy and how CORS relaxes reads while clickjacking abuses framing.
-- **Operator:** Test CORS for reflected-origin-with-credentials and a page for missing frame protection, and classify whether each is genuinely exploitable.
-- **Root:** Explain why reflected origin + credentials is the dangerous CORS case, why only response headers (not framebusting JS) reliably prevent clickjacking, and why both are cheap-to-fix, cheap-to-miss configuration flaws.
+- Explain the Same-Origin Policy and how CORS relaxes reads while clickjacking abuses framing.
+- Test CORS for reflected-origin-with-credentials and a page for missing frame protection, and classify whether each is genuinely exploitable.
+- Explain why reflected origin + credentials is the dangerous CORS case, why only response headers (not framebusting JS) reliably prevent clickjacking, and why both are cheap-to-fix, cheap-to-miss configuration flaws.
 
 ---
 > 🔼 Up: [[Client-Side Web Security]]

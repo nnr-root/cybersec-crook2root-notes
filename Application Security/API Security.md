@@ -5,7 +5,7 @@ tags:
   - tree/appsec
   - cyber/web/api
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Standards & API]]"
 Color: "#911EB4"
@@ -14,7 +14,7 @@ Color: "#911EB4"
 # 🔌 2.4 API Security Masterclass
 
 > [!abstract] The Masterclass
-> Modern apps *are* APIs — a back-end exposing JSON endpoints consumed by web, mobile, and third-party clients simultaneously. That makes the API the critical attack surface: there's no UI to constrain what you send, so an assessor crafts raw requests directly, unlocking vulnerability classes rare in traditional web testing. This chapter covers API fundamentals, a repeatable testing methodology, and the full **OWASP API Security Top 10** in depth. It's the API-specific counterpart to the **web OWASP Top 10**. **`#level/operator`**
+> Modern apps *are* APIs — a back-end exposing JSON endpoints consumed by web, mobile, and third-party clients simultaneously. That makes the API the critical attack surface: there's no UI to constrain what you send, so an assessor crafts raw requests directly, unlocking vulnerability classes rare in traditional web testing. This chapter covers API fundamentals, a repeatable testing methodology, and the full **OWASP API Security Top 10** in depth. It's the API-specific counterpart to the **web OWASP Top 10**. **`#difficulty/medium`**
 
 > [!warning] Authorized Red-Team / Vulnerability-Assessment context
 > All testing below assumes **in-scope, authorized endpoints** (typically delivered as a Postman/Insomnia collection or OpenAPI spec). The framing is **defensive architecture testing**: find the flaw, prove it safely, and remediate.
@@ -28,8 +28,6 @@ Color: "#911EB4"
 ## API Fundamentals
 
 The dominant style is **REST** (Representational State Transfer) — an architectural convention over HTTP, not a strict protocol. A **RESTful API** exposes **resources** (a user, product, order) at **endpoints** in a predictable, hierarchical, versioned structure: `/v1/users`, `/v1/users/42`, `/v1/users/42/orders`.
-
-![[645b19f5d5848d004ab9c9e2-1774422667931.svg]]
 
 **HTTP methods map to CRUD** — and the mapping itself is a test surface (does `DELETE` actually check authorization?):
 
@@ -72,16 +70,12 @@ Decode any JWT you capture and read `user_id`, `role`, `exp` — those claims dr
 
 **API1 — the #1 API risk**, because it's ubiquitous and yields mass data exposure. The API authenticates the user but doesn't verify they're allowed to access the *specific object* requested. (This is **IDOR** in API form.)
 
-![[645b19f5d5848d004ab9c9e2-1774422709746.svg]]
-
 Authenticated as user 4, you request your data — then change the ID:
 ```
 GET /v1/users/4/orders   → 200 OK (yours)
 GET /v1/users/1/orders   → 200 OK (user 1's!)   ← vulnerable: no ownership check
 ```
 A secure API compares the **token's** user ID against the **URL's** and returns `403 Forbidden`:
-
-![[Pasted image 20260302160929.png]]
 
 BOLA appears in path params, query strings (`?owner_id=13`), body fields (`{"user_id":13}`), and headers (`X-User-ID: 13`). **Scaling is trivial** — sequential integer IDs let a `1..10000` loop exfiltrate every user in seconds. UUIDs add obscurity, not security (they leak via other endpoints and logs).
 
@@ -93,8 +87,6 @@ BOLA appears in path params, query strings (`?owner_id=13`), body fields (`{"use
 
 **API2.** Flaws in verifying identity. The most common is **no rate limiting on login/auth endpoints**, enabling brute-force and **credential stuffing** (replaying breach-sourced credential pairs against a password-reusing user base). APIs skip CAPTCHA/lockout more often than web apps because they're built for programmatic access.
 
-![[Pasted image 20260302161313.png]]
-
 Plus the JWT failures — **weak HS256 secrets** (`hashcat -m 16500` / `jwt_tool` → forge tokens), **`alg:none`**, and **missing `exp` validation** (a stolen token valid forever). Full set: **Web Fundamentals (JWT Security)**.
 
 > **Fix:** rate-limit + lockout on all auth endpoints, **MFA**, strong signing secrets, reject `none`, validate `exp`/`aud`, and keep token lifetimes short.
@@ -105,11 +97,7 @@ Plus the JWT failures — **weak HS256 secrets** (`hashcat -m 16500` / `jwt_tool
 
 **API3.** The back-end returns **entire database objects** and trusts the front-end to hide sensitive fields. But the raw JSON already left the server — anyone using **Burp Suite** or browser dev-tools sees everything.
 
-![[645b19f5d5848d004ab9c9e2-1774422771128.svg]]
-
 The UI renders `username`/`email`/avatar; the raw response also carries `password_hash`, `api_key`, `internal_notes`, `last_login_ip`, `is_admin`. Front-end filtering provides **zero** security.
-
-![[Pasted image 20260302170751.png]]
 
 Combined with **BOLA** this escalates from a moderate access-control issue to a **full data breach** — and it also *reveals the field names* an attacker then injects in ****.
 
@@ -120,8 +108,6 @@ Combined with **BOLA** this escalates from a moderate access-control issue to a 
 ## Lack of Resources & Rate Limiting
 
 **API4.** Missing rate limits affect *every* endpoint, not just login: brute-force **4-digit OTPs** (only 10,000 combinations), scrape data at scale, abuse costly actions (SMS/email sends, report generation), or cause **DoS** with heavy queries.
-
-![[Pasted image 20260302170913.png]]
 
 Test it: send a burst of identical requests and watch for `429 Too Many Requests`. Well-built APIs return `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers; their absence usually means no limiting is in place.
 
@@ -138,7 +124,6 @@ GET    /v1/admin/users      → 200 OK for a non-admin?     ← broken function-
 DELETE /v1/users/99          → can a normal user delete another user?
 POST   /v1/users/1/promote   → self-promote to admin?
 ```
-![[Pasted image 20260302171050.png]]
 
 Discovery: take an admin-only request captured from an admin session and replay it with a **low-privilege** token; a `200` instead of `403` is the finding. Also fuzz predictable admin paths (`/admin`, `/internal`, `/v1/manage`).
 
@@ -153,8 +138,6 @@ Discovery: take an admin-only request captured from an admin session and replay 
 PATCH /v1/users/me
 {"email":"new@shop.thm", "role":"admin"}      ← privilege escalation, no auth flaw needed
 ```
-![[645b19f5d5848d004ab9c9e2-1774422819850.svg]]
-![[Pasted image 20260302180421.png]]
 
 You learn injectable field names from the API's own **over-exposed responses** or from OpenAPI `readOnly` hints (which reveal a field exists — the question is whether the server actually enforces the constraint). Prevalent in auto-binding ORMs (Laravel, CodeIgniter, Rails).
 
@@ -165,8 +148,6 @@ You learn injectable field names from the API's own **over-exposed responses** o
 ## Security Misconfiguration
 
 **API7.** Default configs, verbose errors/stack traces (leaking framework, version, file paths), missing security headers, **permissive CORS** (`Access-Control-Allow-Origin: *` *with* credentials lets any site read authenticated responses), unnecessary HTTP methods enabled, and unpatched servers.
-
-![[Pasted image 20260302180540.png]]
 
 Test CORS by sending `Origin: https://evil.com` and checking whether it's reflected back in `Access-Control-Allow-Origin` alongside `Access-Control-Allow-Credentials: true`.
 
@@ -182,7 +163,6 @@ Test CORS by sending `Origin: https://evil.com` and checking whether it's reflec
 {"username": {"$ne": null}, "password": {"$ne": null}}   // "not equal to null" matches any user
 {"username": "admin", "password": {"$gt": ""}}            // "greater than empty" → logs in as admin
 ```
-![[Pasted image 20260302180651.png]]
 
 > **Fix:** parameterised queries, strict input **typing and validation** (reject objects where a string is expected — the root of NoSQL operator injection), ORM-safe methods, and least-privilege DB accounts. Full family: **SQLi**, **command injection**.
 
@@ -191,8 +171,6 @@ Test CORS by sending `Origin: https://evil.com` and checking whether it's reflec
 ## Improper Assets Management
 
 **API9.** APIs sprawl across versions and environments: old versions (`/v1` left running beside the patched `/v3`), undocumented **shadow** endpoints, beta/debug routes, and staging hosts exposed to the internet. Deprecated versions frequently lack the newer security fixes, so attackers *downgrade* to the weak one.
-
-![[Pasted image 20260302180801.png]]
 
 Discovery: enumerate versions (`/v1`, `/v2`, `/v3`, `/beta`, `/internal`), diff their behaviour, and check `Improper` hosts (`api-dev.`, `staging-api.`) found via **subdomain enumeration**.
 
@@ -204,11 +182,17 @@ Discovery: enumerate versions (`/v1`, `/v2`, `/v3`, `/beta`, `/internal`), diff 
 
 **API10.** API attacks are automated and high-volume — without logging of authentication failures, authorization denials (`401`/`403`), and anomalies, they run unseen. This is the API face of **web A09**.
 
-![[Pasted image 20260302180904.png]]
-
 > **Fix:** log security events with context (identity, endpoint, source, outcome — but never the secrets themselves), forward to a tamper-resistant SIEM, and alert on `401`/`403` spikes, sequential-ID enumeration, and rate-limit breaches. Ties to **host logging**.
 
 ---
+
+## Summary
+
+You should now be able to:
+
+- Test an API methodically — enumerate endpoints, map its authentication, and probe each OWASP API risk in turn rather than guessing.
+- Recognise broken object- and function-level authorization (BOLA/BFLA) as the dominant API flaws, and explain why the check must be per-object and server-side.
+- Explain how APIs leak through excessive data exposure and mass assignment, and how rate limiting, asset management and logging close the operational gaps.
 
 ## 🔗 Related Master Notes & Deep-Dives
 - **2.2 OWASP Top 10** — the web-app OWASP Top 10

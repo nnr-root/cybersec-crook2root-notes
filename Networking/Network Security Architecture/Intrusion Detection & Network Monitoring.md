@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/secarch
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Network Security Architecture]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Firewall Architecture & Policy -> Network Segmentation & Zero Trust -> VPNs & Encrypted Tunnels -> Intrusion Detection & Network Monitoring -> Egress Control & Web Proxies -> Network Access Control
 
-## Start at Zero: Detect Versus Prevent
+## Detect Versus Prevent
 
 A firewall enforces policy at a boundary. A **detection system** watches traffic to recognize malicious activity that policy alone did not stop — because the traffic was permitted, or because the attack hid inside allowed protocols.
 
@@ -78,6 +78,69 @@ Signature detection historically read packet contents. Pervasive TLS and QUIC br
 
 The honest state: content-based network detection is in decline as encryption becomes universal, and the future of network detection is behavioural and metadata-driven, complemented by endpoint visibility.
 
+## Worked Example: What a Sensor Sees, Misses, and Infers
+
+Three captures against one Suricata sensor show the whole argument of this note:
+a signature is precise but narrow, a small change defeats it, and encryption
+moves the evidence from content to metadata.
+
+> [!note] Representative output
+> Reconstructed from a lab of this shape rather than copied from one capture. Field layouts and flag names match the named tool; addresses and identifiers are synthetic.
+
+**A known pattern, matched.** A request carrying an obvious SQL injection
+string crosses the sensor, and the signature engine names it exactly:
+
+```shell-session
+analyst@sensor:~$ tail -n 1 /var/log/suricata/fast.log
+04/12/2026-14:22:07.118431  [**] [1:2013028:7] ET WEB_SERVER Possible SQL
+Injection Attempt SELECT FROM [**] [Classification: Web Application Attack]
+[Priority: 1] {TCP} 198.51.100.24:51422 -> 192.0.2.10:80
+```
+
+Every field here is actionable: `1:2013028:7` identifies the exact rule that
+fired, the classification tells an analyst what kind of problem this is, and the
+five-tuple says who did it to whom. This is the strength of signature detection —
+when it fires, it fires with an explanation.
+
+**The same attack, URL-encoded.** The request means the same thing to the web
+server, but no longer matches the literal bytes the rule looks for:
+
+```shell-session
+analyst@sensor:~$ tail -n 1 /var/log/suricata/fast.log
+04/12/2026-14:19:44.902017  [**] [1:2013028:7] ET WEB_SERVER Possible SQL
+Injection Attempt SELECT FROM [**] ... {TCP} 198.51.100.24:51188 -> 192.0.2.10:80
+analyst@sensor:~$ # after re-sending the request as %53%45%4c%45%43%54 ...
+analyst@sensor:~$ tail -n 1 /var/log/suricata/fast.log
+04/12/2026-14:19:44.902017  [**] [1:2013028:7] ET WEB_SERVER Possible SQL
+Injection Attempt SELECT FROM [**] ... {TCP} 198.51.100.24:51188 -> 192.0.2.10:80
+```
+
+**The timestamp did not change** — that is the finding. The last line is still
+the *previous* alert, because the encoded request produced no new one. A rule
+matching raw bytes sees different bytes; whether the target decodes them back to
+the same query is not the rule's concern. This is the known-only limitation made
+concrete, and it is why normalization before matching is a core IDS design
+problem rather than a detail.
+
+**Encrypted traffic, inferred.** Once the same session runs inside TLS the
+sensor cannot read the payload at all — but it can still describe the
+conversation:
+
+```shell-session
+analyst@sensor:~$ jq -c 'select(.event_type=="tls")' /var/log/suricata/eve.json | tail -1
+{"timestamp":"2026-04-12T14:31:55.402113+0000","flow_id":1885274419203371,
+"src_ip":"192.0.2.10","dest_ip":"203.0.113.77","dest_port":443,
+"tls":{"sni":"cdn-updates.example.net","version":"TLS 1.3",
+"ja3":{"hash":"e7d705a3286e19ea42f587b344ee6865"}}}
+```
+
+No payload appears, and none can. What remains is still substantial: the
+requested name in `sni`, the negotiated `version`, and `ja3` — a hash of how the
+client proposed the handshake, which fingerprints the *client software* rather
+than the content. A JA3 hash that matches no browser in the environment, talking
+to a name registered last week, is a detection built entirely from metadata. That
+is the shift this note describes, visible in one log line.
+
 ## Security Implications
 
 **Detection assumes prevention will fail.** The entire premise is that some attacks get past the firewall, so you watch for them. This aligns with assume-breach: detection is how you find the attacker who is already inside, and its value is measured in how fast you detect and how much you can then contain.
@@ -92,34 +155,13 @@ The honest state: content-based network detection is in decline as encryption be
 
 All monitoring described here must be deployed on networks within an authorized scope. Capturing traffic exposes its contents and metadata, and monitoring networks you do not own is unauthorized.
 
-## Authorized Lab: See, Miss, and Tune
+## Summary
 
-Use a lab with a sensor (an IDS such as a signature engine on a mirror port), a target, and an attacker, plus internal segments.
+You should now be able to:
 
-1. **Signature detection.** Run a known attack pattern against the target and confirm the IDS alerts with a specific signature. Note how precise and actionable the alert is.
-2. **Signature evasion.** Alter the attack enough to miss the signature (encoding, fragmentation, or a slight variation) and confirm it now passes undetected — demonstrating the known-only limitation.
-3. **Anomaly detection.** Establish a baseline of normal traffic, then generate anomalous behaviour (a large off-hours transfer, a connection to an unusual destination) and confirm the anomaly detector flags it while producing some false positives on legitimate rare events.
-4. **Prove the placement blind spot.** Place the sensor at the perimeter, then conduct lateral movement between two internal hosts on a segment the sensor does not see, and confirm it is invisible. Add an internal sensor or mirror and confirm the movement now appears.
-5. **Encryption challenge.** Send a malicious payload in cleartext (detected by signature) and then inside TLS (not detected by content), demonstrating why content inspection fails on encrypted traffic. Then detect the same encrypted session by its metadata — destination, volume, timing — showing the behavioural approach.
-6. **IPS mode and its risk.** Switch a high-confidence signature to inline blocking and confirm the attack is dropped; then craft a false positive and confirm legitimate traffic is blocked — demonstrating the inline trade-off.
-7. **Cleanup.** Restore the sensor to detection mode and remove test traffic and rules.
-
-Expected interpretation:
-
-```text
-Signature       -> precise alert for a known attack; nothing for a novel one
-Evasion         -> a slightly altered attack misses the signature entirely
-Anomaly         -> catches the novel behaviour, at the cost of false positives
-Placement       -> lateral movement invisible without an internal sensor
-Encryption      -> content detection fails on TLS; metadata detection still works
-IPS inline      -> blocks the attack, but a false positive blocks legitimate traffic
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the difference between an IDS and an IPS and between signature and anomaly detection, including what each detection method catches and misses.
-- **Operator:** Explain why a sensor sees only traffic that reaches it and how placement determines coverage; demonstrate signature evasion and the false-positive cost of anomaly detection and inline blocking.
-- **Root:** Explain why pervasive encryption pushed network detection from content to metadata and behaviour, and what each response (decryption, NDR, endpoint) costs; describe how attackers exploit blind spots, evasion via parsing differences, and alert flooding, and why triage and correlation are what make detection actionable.
+- Explain the difference between an IDS and an IPS and between signature and anomaly detection, including what each detection method catches and misses.
+- Explain why a sensor sees only traffic that reaches it and how placement determines coverage; demonstrate signature evasion and the false-positive cost of anomaly detection and inline blocking.
+- Explain why pervasive encryption pushed network detection from content to metadata and behaviour, and what each response (decryption, NDR, endpoint) costs; describe how attackers exploit blind spots, evasion via parsing differences, and alert flooding, and why triage and correlation are what make detection actionable.
 
 ---
 > 🔼 Up: [[Network Security Architecture]]

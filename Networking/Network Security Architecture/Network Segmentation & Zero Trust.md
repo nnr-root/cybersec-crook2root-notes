@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/secarch
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Network Security Architecture]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Firewall Architecture & Policy -> Network Segmentation & Zero Trust -> VPNs & Encrypted Tunnels -> Intrusion Detection & Network Monitoring -> Egress Control & Web Proxies -> Network Access Control
 
-## Start at Zero: Why the Castle Fell
+## Why the Castle Fell
 
 The traditional model was a **hard perimeter with a soft interior** — a firewall at the edge, and inside it a large trusted network where systems reached each other freely. The metaphor was a castle with a moat: strong walls, and once inside, free movement.
 
@@ -94,33 +94,13 @@ Zero trust is a direction of travel, not a product. It is implemented incrementa
 
 All architecture testing described here must be confined to systems within an authorized scope. Probing segment boundaries and attempting lateral movement are intrusive and require explicit authorization.
 
-## Authorized Lab: Contain a Compromise
+## Summary
 
-Use a lab with three segments — a DMZ, an internal server zone, and a workstation zone — separated by a firewall you control.
+You should now be able to:
 
-1. **Establish a flat baseline.** Temporarily allow all inter-segment traffic. From a "compromised" host in the DMZ, confirm you can reach internal servers and workstations freely — demonstrating unrestricted lateral movement.
-2. **Apply segmentation.** Configure the firewall so the DMZ can reach only the specific internal services it legitimately needs, and workstations cannot be reached from the DMZ at all. Repeat the lateral-movement attempt and confirm it is now contained to the permitted flows.
-3. **Measure the blast radius.** From the compromised DMZ host, enumerate what is now reachable and confirm it is a small, explicit set rather than the whole network.
-4. **Apply microsegmentation.** Add host-based policy so a specific internal database accepts connections only from its application server, and confirm that even another host within the internal zone cannot reach the database.
-5. **Test against valid credentials.** Give the "attacker" valid credentials for one workstation and confirm that network segmentation alone still limits reach; then add a per-resource authorization check and confirm the credential grants access only to that identity's permitted resources — the zero-trust addition.
-6. **Confirm internal encryption.** Verify that traffic between internal systems is encrypted, so an attacker with a foothold on the segment cannot read it — the assume-hostile-network premise made concrete.
-7. **Cleanup.** Restore the baseline firewall and host policies.
-
-Expected interpretation:
-
-```text
-Flat network    -> DMZ compromise reaches everything: unrestricted lateral movement
-Segmentation    -> movement contained to explicitly permitted inter-zone flows
-Microsegmentation-> even same-zone hosts cannot reach the database
-Valid credential-> segmentation limits reach; per-resource authz limits it further
-Internal encryption -> a foothold on the segment cannot read others' traffic
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the perimeter model's flaw, what lateral movement is, and why segmentation contains it; describe the purpose of a DMZ.
-- **Operator:** Configure segmentation to contain a compromise, measure the resulting blast radius, and explain how microsegmentation shrinks it to individual workloads.
-- **Root:** Explain the progression from perimeter to zero trust as successive answers to "contain an attacker already inside"; argue why segmentation must survive valid credentials and how zero trust's identity-based, least-privilege, encrypt-everything model achieves that, and why it composes with rather than replaces network controls.
+- Explain the perimeter model's flaw, what lateral movement is, and why segmentation contains it; describe the purpose of a DMZ.
+- Configure segmentation to contain a compromise, measure the resulting blast radius, and explain how microsegmentation shrinks it to individual workloads.
+- Explain the progression from perimeter to zero trust as successive answers to "contain an attacker already inside"; argue why segmentation must survive valid credentials and how zero trust's identity-based, least-privilege, encrypt-everything model achieves that, and why it composes with rather than replaces network controls.
 
 ---
 > 🔼 Up: [[Network Security Architecture]]

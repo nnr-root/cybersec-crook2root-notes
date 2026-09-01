@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/windows
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
@@ -22,7 +22,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations -> Windows Drivers I-O & Kernel Debugging -> Windows Processes, Services & Boot -> Windows File System & Registry -> Windows Networking Internals -> Windows Security & Access Control -> Windows Identity, Credentials & Authentication -> Windows Active Directory & Domains -> Windows Command Prompt & Batch -> Windows PowerShell -> Windows Logging & Auditing -> Windows Diagnostics, Crash Dumps & Performance -> Windows Sysinternals & Troubleshooting
 
-## Start at Zero: Objects, Not Text
+## Objects, Not Text
 
 Open PowerShell (`Win+R`, type `powershell`, Enter) and run your first command:
 
@@ -293,177 +293,13 @@ For reproducibility, record `$PSVersionTable`, edition, language mode, module ve
 
 **Remoting is an authorization decision, not a convenience.** Who may connect, to which endpoint configuration, as which identity, with what delegation, and reaching which resources — each is a distinct control. A broadly reachable `Microsoft.PowerShell` endpoint with full language for ordinary administrators is a lateral-movement path; a JEA endpoint exposing five task-specific functions is not.
 
-## Authorized Lab: A Reproducible Host Survey
+## Summary
 
-Perform this in a disposable VM (a second VM optional for the remoting step).
+You should now be able to:
 
-> [!info] Runs on any Windows machine — nothing to install, nothing to break
-> Every command is read-only and complete. Paste them in order into a PowerShell window.
-
-### Step 1 — Prove objects are not text
-
-This is the claim the whole note rests on, so verify it yourself:
-
-```powershell
-$p = Get-Process | Select-Object -First 1
-$p.GetType().FullName
-$p.WorkingSet64 / 1MB
-```
-
-```text
-System.Diagnostics.Process
-118.65625
-```
-
-The first line proves it is a real .NET object, not a string. The second does **arithmetic** on a property — impossible if this were text you had to parse. That is the entire advantage in two lines.
-
-### Step 2 — Watch formatting destroy your data
-
-The most important trap in PowerShell, demonstrated:
-
-```powershell
-Get-Service | Select-Object -First 3 Name,Status | Format-Table | Get-Member | Select-Object -First 2 TypeName
-```
-
-```text
-TypeName
---------
-Microsoft.PowerShell.Commands.Internal.Format.FormatStartData
-Microsoft.PowerShell.Commands.Internal.Format.FormatEntryData
-```
-
-Look at what came out: **`FormatStartData`**, not `ServiceController`. The moment `Format-Table` ran, your service objects became formatting instructions. This is exactly why `Format-Table | Export-Csv` produces a useless file — you exported the layout, not the data.
-
-### Step 3 — Build the survey function (complete, copy it as-is)
-
-```powershell
-function Get-HostSurvey {
-    [CmdletBinding()]
-    param(
-        [ValidateNotNullOrEmpty()]
-        [string]$ProbeService = 'Spooler'
-    )
-
-    $errorNote = $null
-    try {
-        $svc = Get-Service -Name $ProbeService -ErrorAction Stop
-        $svcState = $svc.Status.ToString()
-    } catch {
-        $svcState = 'NOT FOUND'
-        $errorNote = $_.Exception.Message
-    }
-
-    [pscustomobject][ordered]@{
-        ComputerName    = $env:COMPUTERNAME
-        Build           = (Get-CimInstance Win32_OperatingSystem).BuildNumber
-        Listeners       = (Get-NetTCPConnection -State Listen).Count
-        RunningServices = (Get-Service | Where-Object Status -eq 'Running').Count
-        ProbedService   = $ProbeService
-        ProbedState     = $svcState
-        ErrorNote       = $errorNote
-        CollectedAt     = Get-Date
-    }
-}
-```
-
-Run it:
-
-```powershell
-Get-HostSurvey | Format-List
-```
-
-```text
-ComputerName    : WIN-LAB01
-Build           : 26100
-Listeners       : 17
-RunningServices : 142
-ProbedService   : Spooler
-ProbedState     : Running
-ErrorNote       :
-CollectedAt     : 8/4/2026 4:12:55 PM
-```
-
-### Step 4 — Make it fail on purpose, and catch it properly
-
-```powershell
-Get-HostSurvey -ProbeService 'NoSuchService123' | Format-List ProbedState,ErrorNote
-```
-
-```text
-ProbedState : NOT FOUND
-ErrorNote   : Cannot find any service with service name 'NoSuchService123'.
-```
-
-The function did not crash and did not silently swallow the problem — it **recorded** the failure in its output. Now see why `-ErrorAction Stop` was essential. Remove it and the `catch` never fires:
-
-```powershell
-try { Get-Service -Name 'NoSuchService123' } catch { 'CAUGHT' }
-```
-
-```text
-Get-Service : Cannot find any service with service name 'NoSuchService123'.
-```
-
-No `CAUGHT` appears. The error printed but was **non-terminating**, so `catch` was bypassed entirely. This one behaviour is the most common reason a PowerShell `try/catch` "does not work."
-
-### Step 5 — Export objects the right way and see the difference
-
-```powershell
-Get-HostSurvey | Export-Csv "$env:TEMP\survey-good.csv" -NoTypeInformation
-Get-HostSurvey | Format-Table | Export-Csv "$env:TEMP\survey-bad.csv" -NoTypeInformation
-Get-Content "$env:TEMP\survey-good.csv" -TotalCount 2
-Get-Content "$env:TEMP\survey-bad.csv"  -TotalCount 2
-```
-
-```text
-"ComputerName","Build","Listeners","RunningServices","ProbedService","ProbedState",...
-"WIN-LAB01","26100","17","142","Spooler","Running",...
-
-"ClassId2e4f51ef21dd47e99d3c952918aff9cd","pageHeaderEntry","pageFooterEntry",...
-"033ecb2bc07a4d43b5ef94ed5a35d280",,,...
-```
-
-The second file is the failure mode made visible — internal formatting identifiers instead of your data. Compare the two files side by side; this is the lesson people usually learn the hard way in production.
-
-### Step 6 — Find your own commands in the security log
-
-Everything you just ran was recorded if script-block logging is on:
-
-```powershell
-Get-WinEvent -LogName 'Microsoft-Windows-PowerShell/Operational' -MaxEvents 200 -ErrorAction SilentlyContinue |
-  Where-Object Id -eq 4104 |
-  Where-Object { $_.Message -like '*Get-HostSurvey*' } |
-  Select-Object -First 1 TimeCreated,Id | Format-List
-```
-
-```text
-TimeCreated : 8/4/2026 4:12:55 PM
-Id          : 4104
-```
-
-Your function definition is sitting in the event log. If nothing returns, script-block logging is disabled on this host — which is itself the finding, and exactly what a defender should check.
-
-### Step 7 — Cleanup
-
-```powershell
-Remove-Item "$env:TEMP\survey-good.csv","$env:TEMP\survey-bad.csv" -ErrorAction SilentlyContinue
-Remove-Item Function:\Get-HostSurvey -ErrorAction SilentlyContinue
-Test-Path "$env:TEMP\survey-good.csv"
-```
-
-```text
-False
-```
-
-The function existed only in this session, so closing the window would also clear it; removing it explicitly makes the cleanup verifiable.
-
-**What you should now be able to do:** explain why formatting is terminal, why `-ErrorAction Stop` is required for `catch`, and read your own activity back out of the event log.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Run a cmdlet, explain `Verb-Noun` naming, use `Get-Command`/`Get-Help`/`Get-Member`, and state why the pipeline carries objects rather than text.
-- **Operator:** Build filtering pipelines on typed properties, write validated advanced functions with `-WhatIf`, handle non-terminating versus terminating errors, query CIM and events efficiently, and use WinRM sessions correctly.
-- **Root:** Explain why execution policy is not a security boundary and what the real trust stack is; design JEA endpoints and reason about the second hop and delegation; and map PowerShell telemetry (4104, module logging, AMSI, transcription) to what each does and does not capture.
+- Run a cmdlet, explain `Verb-Noun` naming, use `Get-Command`/`Get-Help`/`Get-Member`, and state why the pipeline carries objects rather than text.
+- Build filtering pipelines on typed properties, write validated advanced functions with `-WhatIf`, handle non-terminating versus terminating errors, query CIM and events efficiently, and use WinRM sessions correctly.
+- Explain why execution policy is not a security boundary and what the real trust stack is; design JEA endpoints and reason about the second hop and delegation; and map PowerShell telemetry (4104, module logging, AMSI, transcription) to what each does and does not capture.
 
 ---
 > 🔼 Up: [[Windows]]

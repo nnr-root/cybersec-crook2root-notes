@@ -1,7 +1,7 @@
 ---
 title: "Passive Reconnaissance & OSINT"
 aliases: ["Passive Recon", "OSINT", "Corporate OSINT", "Identity OSINT", "Code Exposure OSINT", "Corporate Reconnaissance"]
-tags: [tree/offensive, cyber/offensive/recon, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/recon, type/technique, difficulty/medium]
 Domain: "[[Reconnaissance & Attack Surface]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Passive Reconnaissance & OSINT -> DNS & Subdomain Reconnaissance -> Active Reconnaissance & Port Scanning -> Cloud & Internet Exposure Discovery
 
-## Start at Zero: Learning Without Touching
+## Learning Without Touching
 
 **Reconnaissance** is building a model of a target before testing it. It splits cleanly in two: **passive** recon reads sources the target does not control and cannot see you reading — search engines, public records, certificate logs, code repositories, breach data — while **active** recon sends packets to the target and is therefore observable. This note is entirely passive, which is why it comes first: it is free, silent, and legal against public data, and it shapes everything active recon does next.
 
@@ -114,7 +114,7 @@ flowchart LR
     M --> A["Attack model: who, what, where to test next"]
 ```
 
-## Failure Modes and Interpretation
+## Findings that describe a decommissioned asset
 
 - **Stale data.** `whois` privacy services and old CT entries mean a finding may describe a decommissioned asset. Passive data is *historical* — confirm liveness later with (authorized) active recon, never assume it.
 - **Attribution errors.** A shared hosting IP or a third-party SaaS subdomain (`example.zendesk.com`) is *not* the target's infrastructure. Testing it is out of scope and possibly illegal.
@@ -130,88 +130,13 @@ Passive recon is, by definition, **undetectable at the target** — no logs are 
 - **Identity exposure is a training and policy matter.** A predictable email format cannot be hidden, but MFA and breach-password screening neutralize the credential-reuse that makes harvested identities dangerous.
 - **Monitoring the collectible surface** — running the same CT, breach, and code searches against yourself, continuously — is the one active defense: you see what an attacker sees and fix it first. This is "attack-surface management," and it is passive recon turned inward.
 
-## Authorized Lab: Map a Footprint You Own
+## Summary
 
-> [!info] Runs on any machine with `curl` and `dig` — targets only public data about a domain you own or a documentation domain
-> Use `example.com` (reserved for documentation) or a domain you control. Every source here is public; nothing touches a private target.
+You should now be able to:
 
-### Step 1 — Corporate anchor
-
-```bash
-whois example.com | grep -Ei 'Registrar:|Creation Date|Name Server' | head -4
-```
-
-```text
-Registrar: RESERVED-Internet Assigned Numbers Authority
-Creation Date: 1992-01-01T00:00:00Z
-Name Server: A.IANA-SERVERS.NET
-```
-
-The registrar and nameservers anchor everything else. `example.com` is IANA-reserved, which is why the registrant is IANA — a real target would show the organization.
-
-### Step 2 — Subdomains from Certificate Transparency (no DNS touched)
-
-```bash
-curl -s "https://crt.sh/?q=%25.example.com&output=json" | \
-  python3 -c "import sys,json;d=json.load(sys.stdin);print(len({n for e in d for n in e['name_value'].split(chr(10))}),'unique names in CT logs')"
-```
-
-```text
-7 unique names in CT logs
-```
-
-You just enumerated hostnames without sending the target a single packet — the essence of passive recon.
-
-### Step 3 — Turn one finding into the next question
-
-```bash
-echo "www.example.com" | dig +short -f - | head -1
-```
-
-```text
-93.184.216.34
-```
-
-A CT hostname resolved to an IP — the bridge from passive intel to the active recon that follows. Note this `dig` *does* touch public DNS, the first observable step, which is why it belongs at the boundary between passive and active.
-
-### Step 4 — Self-assessment: run it against yourself
-
-```bash
-curl -s "https://crt.sh/?q=%25.$(echo yourdomain.example)&output=json" -o /dev/null -w "self-scan status: %{http_code}\n"
-```
-
-```text
-self-scan status: 200
-```
-
-Running this against your *own* domain regularly is the defensive use — you find the forgotten `dev.` subdomain before an attacker does.
-
-### Step 5 — Correlate two sources into one finding
-
-```bash
-# a CT hostname + its resolution = a candidate live asset, assembled from two public sources
-host=$(curl -s "https://crt.sh/?q=%25.example.com&output=json" | \
-  python3 -c "import sys,json;d=json.load(sys.stdin);print(sorted({n for e in d for n in e['name_value'].split(chr(10)) if '*' not in n})[0])")
-echo "CT-discovered host: $host"
-dig +short "$host" | head -1 | sed 's/^/resolves to: /'
-```
-
-```text
-CT-discovered host: api.example.com
-resolves to: 93.184.216.34
-```
-
-This is aggregation in miniature: a certificate log named the host, public DNS resolved it, and neither source alone was a finding — together they are a live asset to investigate. That correlation, scaled across all four categories, *is* OSINT.
-
-**Cleanup:** none — every step read public data only and created no files. This is why passive recon leaves no trace on either side.
-
-**What you should now be able to do:** enumerate an organization's subdomains from CT logs without touching it, infer an email format and check it against breach data ethically, and explain why the only defense against undetectable collection is reducing the collectible surface.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the difference between passive and active recon, name the four passive target categories, and state why passive collection is invisible to the target.
-- **Operator:** Enumerate subdomains from Certificate Transparency, extract a corporate anchor from `whois`, and correlate an email format with breach data — all without touching the target.
-- **Root:** Explain why the only defense against undetectable collection is reducing the collectible surface; describe how CT logs, commit history, and email-format inference each create exposure, and why "we deleted the secret" is not remediation without rotation.
+- Explain the difference between passive and active recon, name the four passive target categories, and state why passive collection is invisible to the target.
+- Enumerate subdomains from Certificate Transparency, extract a corporate anchor from `whois`, and correlate an email format with breach data — all without touching the target.
+- Explain why the only defense against undetectable collection is reducing the collectible surface; describe how CT logs, commit history, and email-format inference each create exposure, and why "we deleted the secret" is not remediation without rotation.
 
 ---
 > 🔼 Up: [[Reconnaissance & Attack Surface]]

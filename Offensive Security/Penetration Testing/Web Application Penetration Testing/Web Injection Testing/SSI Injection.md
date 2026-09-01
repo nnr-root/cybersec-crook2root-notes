@@ -1,6 +1,6 @@
 ---
 title: "SSI Injection"
-tags: [tree/offensive, cyber/offensive/web/injection/ssi, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/web/injection/ssi, type/technique, difficulty/hard]
 Domain: "[[Web Injection Testing]]"
 Color: "#DC143C"
 ---
@@ -164,55 +164,13 @@ Process telemetry provides a critical backstop: a web server spawning a shell or
 
 The remediation disabled SSI for the user-content location, moved published uploads to a separate static origin, removed executable handlers, and disabled the `exec` capability globally. Regression tests cover preview and publish paths, extension and case normalization, MIME overrides, entity decoding, archive extraction, and reverse-proxy routes. Purple-team replay confirmed directives remain inert text and no SSI parser event occurs.
 
-## Runnable Lab (one machine, Python)
+## Summary
 
-Server-Side Includes are directives like `<!--#echo var="x"-->` that a web server evaluates *before* sending a page. If user content is stored/reflected into an SSI-enabled response, a second parser pass turns `<!--#exec cmd="..."-->` into command execution. This lab models that naive second-pass renderer — no Apache config required.
+You should now be able to:
 
-**Step 1 — the vulnerable renderer (`ssi.py`).**
-
-```python
-import re, subprocess
-def render(page):
-    # VULNERABLE: evaluate #exec directives found in user-controlled content
-    def repl(m):
-        return subprocess.run(m.group(1), shell=True, capture_output=True, text=True).stdout.strip()
-    return re.sub(r'<!--#exec cmd="([^"]+)"-->', repl, page)
-```
-
-**Step 2 — ordinary content passes through untouched.**
-
-```console
->>> render("<p>Welcome <!--#echo var=name--></p>")
-'<p>Welcome <!--#echo var=name--></p>'
-```
-
-**Step 3 — a stored `#exec` directive runs a command.**
-
-```console
->>> render('Comment: <!--#exec cmd="id"-->')
-'Comment: uid=501(labuser) gid=20(staff) groups=20(staff),80(admin)'
-```
-
-The user-submitted comment became a command; `id` (the worker's identity) proves execution — on a real server this is the web-server user. That is the whole danger of SSI injection: **stored data crosses into directive grammar on the second pass.**
-
-**Step 4 — the deliberate break / the fix.** Disabling the `exec` capability (or the SSI handler for user content) means the directive is served as literal text:
-
-```console
->>> re.sub(r'<!--#exec cmd="([^"]+)"-->', lambda m: '[exec disabled]', 'Comment: <!--#exec cmd="id"-->')
-'Comment: [exec disabled]'
-```
-
-Serving user uploads from a separate static origin with no SSI handler achieves the same thing in production.
-
-**Step 5 — cleanup:** spawns transient child processes only; no persistent state, no cleanup required.
-
-**What you should now be able to do:** explain the two-pass "store then render" crossing, use the inert `#echo` as a canary before ever touching `#exec`, and name origin separation / `exec` disabling as the fixes.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Why is `<!--#exec cmd="id"-->` dangerous but `<!--#echo var=name-->` inert?
-- **Operator:** You control a profile field rendered on an `.shtml` page. What safe canary directive confirms SSI processing without executing a command?
-- **Root:** SSI, ESI (edge-side includes), and template injection are all "second-pass parser" bugs. Explain what they share and why a WAF rule for `<!--#` misses the ESI and template variants.
+- Why is `<!--#exec cmd="id"-->` dangerous but `<!--#echo var=name-->` inert?
+- You control a profile field rendered on an `.shtml` page. What safe canary directive confirms SSI processing without executing a command?
+- SSI, ESI (edge-side includes), and template injection are all "second-pass parser" bugs. Explain what they share and why a WAF rule for `<!--#` misses the ESI and template variants.
 
 ---
 > 🔼 Up: [[Web Injection Testing]]

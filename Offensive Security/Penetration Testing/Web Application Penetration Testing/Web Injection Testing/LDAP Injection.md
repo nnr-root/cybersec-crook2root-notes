@@ -1,6 +1,6 @@
 ---
 title: "LDAP Injection"
-tags: [tree/offensive, cyber/offensive/web/injection/ldap, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/web/injection/ldap, type/technique, difficulty/hard]
 Domain: "[[Web Injection Testing]]"
 Color: "#DC143C"
 ---
@@ -146,58 +146,13 @@ A SIEM correlation should combine URL-decoded LDAP metacharacters, malformed-fil
 
 The fix used the vendor library’s filter encoder, enforced a bounded UID syntax, fixed the base and attribute list, required exactly one result, and moved authentication to an explicit bind flow. Regression tests cover metacharacters, UTF-8, NUL, percent/double encoding, duplicate fields, malformed filters, and DN-versus-filter escaping. Purple-team replay confirmed HTTP 400 before an LDAP request for invalid input and a constant equality-filter shape for valid users.
 
-## Runnable Lab (one machine, pure Python)
+## Summary
 
-An LDAP search filter is prefix-notation grammar: `(&(uid=alice)(role=user))` means *uid=alice AND role=user*. Concatenating raw input into that string lets an attacker inject `)` `(` `|` `*` and rewrite the Boolean tree. This lab models a tiny filter evaluator over synthetic entries — no directory server needed.
+You should now be able to:
 
-**Step 1 — filter evaluator + the two filter trees (`ldap.py`).**
-
-```python
-entries=[{"uid":"alice","role":"user"},{"uid":"admin","role":"admin"}]
-def ev(n,e):
-    t=n[0]
-    if t=='=' : return True if n[2]=='*' else e.get(n[1])==n[2]   # '*' = presence (any)
-    if t=='|': return any(ev(c,e) for c in n[1])
-    if t=='&': return all(ev(c,e) for c in n[1])
-
-def esc(s):   # RFC 4515 escaping
-    return s.replace('\\','\\5c').replace('*','\\2a').replace('(','\\28').replace(')','\\29')
-```
-
-The app intends `(&(uid=<INPUT>)(role=user))`. Injecting `*)(uid=*` collapses it toward `(|(uid=*))` — a presence filter matching everyone.
-
-**Step 2 — normal vs. injected.**
-
-```console
->>> [e['uid'] for e in entries if ev(('&',[('=','uid','alice'),('=','role','user')]),e)]
-['alice']
->>> [e['uid'] for e in entries if ev(('|',[('=','uid','*')]),e)]   # injected shape
-['alice', 'admin']
-```
-
-The injected presence filter returns *every* entry — the directory equivalent of `OR 1=1`.
-
-**Step 3 — the deliberate break: escaping neutralises it.**
-
-```console
->>> inj="*)(uid=*"
->>> "(&(uid="+esc(inj)+")(role=user))"
-'(&(uid=\\2a\\29\\28uid=\\2a)(role=user))'
->>> [e['uid'] for e in entries if e['uid']==esc(inj)]
-[]
-```
-
-Once `*`, `(`, `)` become `\2a \28 \29`, the input is a literal uid that matches nobody — the metacharacters can no longer restructure the filter.
-
-**Step 4 — cleanup:** in-memory only — no cleanup required.
-
-**What you should now be able to do:** read a prefix-notation filter, see how `*)(` widens it, and explain why RFC 4515 encoding (not quote-stripping) is the fix.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** What does `(uid=*)` match, and why is that dangerous in a login filter?
-- **Operator:** A login form builds `(&(uid=INPUT)(userPassword=INPUT2))`. Sketch the input that authenticates as the first admin without knowing the password.
-- **Root:** DN injection and filter injection need different escaping tables. Explain why, and what breaks if you use filter escaping in a DN context.
+- What does `(uid=*)` match, and why is that dangerous in a login filter?
+- A login form builds `(&(uid=INPUT)(userPassword=INPUT2))`. Sketch the input that authenticates as the first admin without knowing the password.
+- DN injection and filter injection need different escaping tables. Explain why, and what breaks if you use filter escaping in a DN context.
 
 ---
 > 🔼 Up: [[Web Injection Testing]]

@@ -1,7 +1,7 @@
 ---
 title: "WordPress Security Testing"
 aliases: ["WordPress Testing", "WPScan Methodology"]
-tags: [tree/offensive, cyber/offensive/web/cms/wordpress, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/web/cms/wordpress, type/technique, difficulty/medium]
 Domain: "[[CMS & Framework Security Testing]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Framework & CMS Testing Methodology -> WordPress Security Testing
 
-## Start at Zero: The World's Most-Attacked CMS
+## The World's Most-Attacked CMS
 
 WordPress runs a huge fraction of all websites, which makes it the single most-attacked application platform on the internet. It is the concrete worked example of the **Framework & CMS Testing Methodology** — the same fingerprint → version → CVE → config loop, applied to the CMS you will meet most often. Its defining characteristic, and its defining weakness, is the **plugin ecosystem**: the WordPress core is relatively well-maintained, but the tens of thousands of third-party plugins are wildly variable in quality, and an abandoned plugin with a known vulnerability is the classic WordPress breach.
 
@@ -71,7 +71,7 @@ flowchart TD
     V --> R
 ```
 
-## Failure Modes and Interpretation
+## Prioritising by exploitability, not by plugin count
 
 - **Plugin count overwhelm.** A site may run dozens of plugins; enumerate systematically and version each, but prioritize by exploitability (EPSS), not by listing everything.
 - **User enumeration lockout.** Spraying `wp-login.php` with enumerated usernames can lock accounts (with a security plugin) or trigger a WAF. Throttle and coordinate.
@@ -87,85 +87,13 @@ flowchart TD
 - **WAF and login rate-limiting** blunt the automated mass-exploitation that targets WordPress specifically, buying time against the scanner.
 - **The defender scans their own WordPress** with the same plugin-enumeration tooling continuously — because the internet-wide scanners never stop, the exposure window on a vulnerable plugin is measured in hours.
 
-## Authorized Lab: Enumerate a WordPress-Style Site You Build
+## Summary
 
-> [!info] Runs on one Linux machine — builds a static site mimicking WordPress's fingerprints and plugin references
-> No real WordPress is installed; the mock reproduces the exact artifacts you enumerate. Step 5 removes it.
+You should now be able to:
 
-### Step 1 — Build a mock WP site with fingerprints and a vulnerable plugin reference
-
-```bash
-mkdir -p /tmp/wplab/wp-content/plugins/slider-pro
-cat > /tmp/wplab/index.html << 'EOF'
-<html><head>
-<meta name="generator" content="WordPress 6.2">
-<link rel="stylesheet" href="/wp-content/plugins/contact-form/style.css?ver=1.2.0">
-<script src="/wp-content/plugins/slider-pro/slider.js?ver=3.1.4"></script>
-</head><body>Hello</body></html>
-EOF
-echo "author-1 archive" > /tmp/wplab/wp-content/plugins/slider-pro/slider.js
-cd /tmp/wplab && python3 -m http.server 8096 --bind 127.0.0.1 &>/dev/null &
-sleep 1; echo "mock WordPress up on 127.0.0.1:8096"
-```
-
-```text
-mock WordPress up on 127.0.0.1:8096
-```
-
-### Step 2 — Fingerprint core version
-
-```bash
-curl -s "http://127.0.0.1:8096/" | grep -oE 'content="WordPress [0-9.]+"'
-```
-
-```text
-content="WordPress 6.2"
-```
-
-The generator tag pins the core version — the first CVE-lookup input.
-
-### Step 3 — Enumerate plugins and their versions (the key finding)
-
-```bash
-curl -s "http://127.0.0.1:8096/" | grep -oE 'plugins/[^/]+/[^"?]*\?ver=[0-9.]+' | sed -E 's#plugins/([^/]+)/.*ver=(.*)#plugin: \1  version: \2#' | sort -u
-```
-
-```text
-plugin: contact-form  version: 1.2.0
-plugin: slider-pro  version: 3.1.4
-```
-
-Two plugins with exact versions, enumerated from the page source — precisely what an attacker's mass-scanner extracts to match against a vulnerable-plugin database.
-
-### Step 4 — Confirm a plugin directory is browsable (a config finding)
-
-```bash
-curl -s -o /dev/null -w "plugin dir listing: HTTP %{http_code}\n" "http://127.0.0.1:8096/wp-content/plugins/slider-pro/"
-```
-
-```text
-plugin dir listing: HTTP 200
-```
-
-A `200` on the plugin directory means directory listing is enabled — a misconfiguration that leaks the full plugin file structure and aids exploitation. The finding: enumerable plugins + browsable directories.
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; cd /tmp && rm -rf /tmp/wplab; wait 2>/dev/null; ls -d /tmp/wplab 2>&1
-```
-
-```text
-ls: cannot access '/tmp/wplab': No such file or directory
-```
-
-**What you should now be able to do:** apply the framework loop to WordPress, enumerate core version, plugins, and users from public artifacts, recognize a vulnerable plugin version as the classic finding, and identify XML-RPC and user enumeration as WordPress-specific hardening targets.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why WordPress's plugin ecosystem is its defining weakness, and how a plugin runs with full application privileges.
-- **Operator:** Fingerprint core version, enumerate plugins/themes and users, and identify a vulnerable plugin version and a browsable plugin directory as findings.
-- **Root:** Explain why plugin hygiene is the dominant control, why XML-RPC and user enumeration should be disabled where unused, and why the WordPress exposure window is measured in hours because of continuous internet-wide scanning.
+- Explain why WordPress's plugin ecosystem is its defining weakness, and how a plugin runs with full application privileges.
+- Fingerprint core version, enumerate plugins/themes and users, and identify a vulnerable plugin version and a browsable plugin directory as findings.
+- Explain why plugin hygiene is the dominant control, why XML-RPC and user enumeration should be disabled where unused, and why the WordPress exposure window is measured in hours because of continuous internet-wide scanning.
 
 ---
 > 🔼 Up: [[CMS & Framework Security Testing]]

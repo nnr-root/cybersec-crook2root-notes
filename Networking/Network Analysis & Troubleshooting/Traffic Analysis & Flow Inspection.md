@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/analysis
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Network Analysis & Troubleshooting]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Packet Capture & Analysis -> Structured Network Troubleshooting -> Traffic Analysis & Flow Inspection -> Performance & Latency Analysis -> Connectivity Diagnostics -> Protocol Debugging & Deep Inspection
 
-## Start at Zero: From Packets to Conversations
+## From Packets to Conversations
 
 Capturing packets is the raw material; **traffic analysis** is making sense of them. A single packet rarely tells a story — the story is in the *conversation* it belongs to and the *pattern* those conversations form. Analysis operates at three widening scopes:
 
@@ -129,34 +129,13 @@ This is why the management-protocols leaf called flow metadata "the visibility e
 
 All analysis described here must be performed only on traffic you are authorized to inspect. Reassembling and analyzing others' communications without authorization is unlawful, and captures may contain sensitive data requiring careful handling.
 
-## Authorized Lab: See the Shape
+## Summary
 
-Use a capture from a lab network you control, containing a mix of normal traffic and some deliberately anomalous flows you generate.
+You should now be able to:
 
-1. **Follow a cleartext stream.** Reassemble an HTTP conversation from the capture and confirm you can read the full request and response — the power of analysis over unencrypted traffic.
-2. **Contrast with encrypted.** Reassemble a TLS conversation and confirm you get only ciphertext, but that the handshake reveals the SNI and certificate — metadata visible despite encryption.
-3. **Build a conversation view.** Generate the TCP conversation summary and identify the highest-volume and most unusual flows, practicing pattern-scope analysis.
-4. **Establish a baseline.** Characterize the normal traffic — typical endpoints, ports, volumes — so you have a reference.
-5. **Inject anomalies and detect them by shape.** Generate (in the lab) a beaconing pattern, a large outbound transfer, and an internal host scan. For each, confirm you can detect it from metadata alone — timing regularity, volume and direction, connection fan-out — without reading any payload.
-6. **Fingerprint a client.** From two different client tools, capture the TLS handshakes and confirm their cipher/extension ordering differs, showing how the handshake fingerprints the client software.
-7. **Cleanup.** Delete lab captures containing sensitive data.
-
-Expected interpretation:
-
-```text
-Cleartext stream   -> full request/response reassembled and readable
-TLS stream         -> ciphertext only, but SNI and certificate visible
-Conversation view  -> surfaces the high-volume/unusual flow packets hide
-Baseline           -> defines normal so anomalies stand out
-Beacon/exfil/scan  -> all detectable from metadata shape, no payload needed
-TLS fingerprint    -> handshake ordering identifies the client software
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the three scopes of analysis (packet, flow, pattern) and what stream reassembly produces.
-- **Operator:** Reassemble a conversation, build and read a conversation summary to find anomalous flows, and explain why a baseline is required to call anything abnormal.
-- **Root:** Explain why traffic analysis in the encrypted era is behavioural analysis of metadata, what each metadata dimension reveals (endpoints, volume, timing, fingerprint), and why this is the visibility that survives encryption — and how attackers shape traffic to evade it.
+- Explain the three scopes of analysis (packet, flow, pattern) and what stream reassembly produces.
+- Reassemble a conversation, build and read a conversation summary to find anomalous flows, and explain why a baseline is required to call anything abnormal.
+- Explain why traffic analysis in the encrypted era is behavioural analysis of metadata, what each metadata dimension reveals (endpoints, volume, timing, fingerprint), and why this is the visibility that survives encryption — and how attackers shape traffic to evade it.
 
 ---
 > 🔼 Up: [[Network Analysis & Troubleshooting]]

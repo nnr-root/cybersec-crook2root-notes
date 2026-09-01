@@ -1,7 +1,7 @@
 ---
 title: "Framework & CMS Testing Methodology"
 aliases: ["Django Security Testing", "Drupal Security Testing", "Joomla Security Testing", "Laravel Security Testing", "Magento Security Testing", "Spring Security Testing", "Framework Testing", "CMS Testing"]
-tags: [tree/offensive, cyber/offensive/web/cms, type/methodology, level/operator]
+tags: [tree/offensive, cyber/offensive/web/cms, type/methodology, difficulty/medium]
 Domain: "[[CMS & Framework Security Testing]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Framework & CMS Testing Methodology -> WordPress Security Testing
 
-## Start at Zero: You Test the Framework the Same Way, Every Time
+## You Test the Framework the Same Way, Every Time
 
 Modern web applications are built on frameworks (Django, Laravel, Spring) and content-management systems (WordPress, Drupal, Joomla, Magento). It is tempting to think each needs its own bespoke testing knowledge — and the boilerplate that once filled this branch pretended so, with a near-identical stub per product. The truth is the opposite: **the methodology is identical across all of them.** Fingerprint the framework, pin its exact version, look up that version's known vulnerabilities, and test the handful of framework-specific misconfigurations. The product name changes; the process does not.
 
@@ -92,7 +92,7 @@ flowchart TD
     R2 --> P
 ```
 
-## Failure Modes and Interpretation
+## When the absence of a fingerprint proves nothing
 
 - **Version-banner deception.** A hardened app hides its `X-Powered-By` and generator tag. Absence of a fingerprint is not absence of a framework — fall back to behavioral fingerprinting (default paths, cookie names, error formats).
 - **Backported patches.** As everywhere, a version string may lag the actual patch state. The version is a *candidate*; verify the CVE is genuinely present.
@@ -108,96 +108,13 @@ flowchart TD
 - **Change default admin paths and credentials**, and put admin interfaces behind authentication/IP restriction — the same "remove exposed management" lesson as external testing.
 - **The defender runs the same loop inward:** fingerprint your own stack, inventory versions, and track CVEs against them continuously — you find the outdated Drupal before the mass-scanner does.
 
-## Authorized Lab: Fingerprint and Find Debug Mode
+## Summary
 
-> [!info] Runs on one Linux machine — builds a small framework app (Flask stands in for any framework) with debug leaks
-> The app binds to loopback; Step 5 removes it. The methodology is identical for Django/Laravel/Spring/etc.
+You should now be able to:
 
-### Step 1 — Build a "framework" app that leaks its identity and debug info
-
-```bash
-cat > /tmp/fwapp.py << 'EOF'
-from http.server import BaseHTTPRequestHandler, HTTPServer
-class H(BaseHTTPRequestHandler):
-    server_version = "Werkzeug/2.3"; sys_version = "Python/3.11"
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("X-Powered-By","Flask")
-        self.send_header("Set-Cookie","session=eyJhbGciOiJ9; HttpOnly; Path=/")
-        self.send_header("Content-Type","text/html"); self.end_headers()
-        if self.path == "/crash":
-            self.wfile.write(b"<pre>Traceback (most recent call last):\n  File \"/app/main.py\", line 42, in handle\n    result = 1 / 0\nZeroDivisionError: division by zero\nSECRET_KEY=dev-not-for-prod</pre>")
-        else:
-            self.wfile.write(b'<meta name="generator" content="DemoFramework 2.3">')
-    def log_message(self,*a): pass
-HTTPServer(("127.0.0.1",8095),H).serve_forever()
-EOF
-python3 /tmp/fwapp.py &>/dev/null &
-sleep 1; echo "framework app up on 127.0.0.1:8095"
-```
-
-```text
-framework app up on 127.0.0.1:8095
-```
-
-### Step 2 — Fingerprint from headers and cookies
-
-```bash
-curl -sI "http://127.0.0.1:8095/" | grep -iE 'server|x-powered|set-cookie'
-```
-
-```text
-Server: Werkzeug/2.3 Python/3.11
-X-Powered-By: Flask
-Set-Cookie: session=eyJhbGciOiJ9; HttpOnly; Path=/
-```
-
-Three independent tells (Server banner, `X-Powered-By`, cookie shape) identify the framework — step 1 done in one request.
-
-### Step 3 — Pin the version from the generator tag
-
-```bash
-curl -s "http://127.0.0.1:8095/" | grep -oE 'content="[^"]*"'
-```
-
-```text
-content="DemoFramework 2.3"
-```
-
-The generator meta-tag hands you the exact version — the input to a CVE lookup (step 2/3).
-
-### Step 4 — Trigger an error and find the debug jackpot
-
-```bash
-curl -s "http://127.0.0.1:8095/crash" | grep -oE 'Traceback|/app/[^"< ]*|SECRET_KEY=[^< ]*'
-```
-
-```text
-Traceback
-/app/main.py
-SECRET_KEY=dev-not-for-prod
-```
-
-The error page leaked a stack trace, a source path, **and a secret key** — debug mode in production, the highest-value config finding, needing no CVE. On a real Django/Flask/Laravel app this same probe reveals the same class of exposure.
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/fwapp.py; wait 2>/dev/null
-curl -s -o /dev/null -w "app gone: %{http_code}\n" --max-time 2 http://127.0.0.1:8095/ 2>&1 | grep -o 'gone.*' || echo "app gone: connection refused"
-```
-
-```text
-app gone: connection refused
-```
-
-**What you should now be able to do:** apply the identical four-step loop (fingerprint → version → CVEs → config) to any framework or CMS, identify a framework from headers/cookies/generator tags, and recognize debug-mode-in-production as the highest-value config finding regardless of the product.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why the testing methodology is the same across Django, Laravel, WordPress, and Drupal, and name the four steps.
-- **Operator:** Fingerprint a framework from headers/cookies/paths, pin its version, and find a debug-mode disclosure — the highest-value config finding.
-- **Root:** Explain why version hygiene and disabling debug mode are the dominant controls, why plugin/extension surface often matters more than core, and why fingerprint suppression raises effort without stopping a determined tester.
+- Explain why the testing methodology is the same across Django, Laravel, WordPress, and Drupal, and name the four steps.
+- Fingerprint a framework from headers/cookies/paths, pin its version, and find a debug-mode disclosure — the highest-value config finding.
+- Explain why version hygiene and disabling debug mode are the dominant controls, why plugin/extension surface often matters more than core, and why fingerprint suppression raises effort without stopping a determined tester.
 
 ---
 > 🔼 Up: [[CMS & Framework Security Testing]]

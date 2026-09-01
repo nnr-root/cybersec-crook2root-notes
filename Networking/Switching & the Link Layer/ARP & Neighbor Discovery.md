@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/layer2
   - type/technique
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Switching & the Link Layer]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbor Discovery -> VLANs & Trunking -> Spanning Tree & Loop Prevention -> Link Layer Security Controls
 
-## Start at Zero: The Missing Translation
+## The Missing Translation
 
 A host that wants to send to `192.168.10.1` knows the destination *IP* address, but a frame needs a destination *hardware* address. Something must bridge Layer 3 to Layer 2. On IPv4 that something is **ARP (Address Resolution Protocol)**.
 
@@ -152,45 +153,13 @@ Transport-layer security is the backstop that survives an on-path attacker. Even
 
 All poisoning and interception described here must be performed only on an isolated lab you own. ARP spoofing intercepts other parties' traffic and is unlawful on networks you are not authorized to test.
 
-## Authorized Lab: Poison a Cache, Then Stop It
+## Summary
 
-Use three lab VMs on one isolated segment: victim, gateway (or a second host acting as one), and attacker. Record baseline neighbour tables first.
+You should now be able to:
 
-1. On the victim, record the legitimate mapping:
-
-```bash
-ip neigh show | grep <gateway IP>
-```
-
-2. From the attacker, send forged ARP replies poisoning the victim's mapping of the gateway to the attacker's MAC, and the gateway's mapping of the victim likewise (an ARP-spoofing tool in your lab). Enable forwarding on the attacker so connectivity is preserved.
-3. On the victim, re-check the neighbour table and confirm the gateway now resolves to the attacker's MAC. Note that connectivity still works — the attacker is relaying.
-4. From the attacker, capture the victim's traffic to demonstrate the on-path position:
-
-```bash
-sudo tcpdump -i eth0 -nn host <victim IP> and not arp -c 10
-```
-
-Observe the victim's frames arriving at the attacker.
-5. Prove that transport security holds: have the victim make an HTTPS connection and confirm the attacker sees only encrypted bytes and metadata, not plaintext content.
-6. Apply the control. On the lab switch, enable DHCP snooping and Dynamic ARP Inspection so replies are validated against the trusted binding table. Restart the attack.
-7. Confirm the forged replies are now dropped, the victim's neighbour table retains the correct gateway MAC, and the attacker no longer receives the victim's traffic.
-8. Disable the attack, remove the lab controls if your baseline requires it, flush neighbour caches, and confirm both tables return to their step-1 state.
-
-Expected interpretation:
-
-```text
-Baseline        -> gateway has its own unique MAC in the victim's table
-Poisoned        -> gateway resolves to the attacker's MAC; two IPs share one MAC
-Capture         -> attacker receives the victim's frames (on-path achieved)
-HTTPS           -> content stays encrypted; the position is not the plaintext
-DAI enabled     -> forged replies fail validation and never reach the victim
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why ARP exists, describe the request/reply exchange, and state what an ARP table stores.
-- **Operator:** Read a neighbour table, recognize the two-IPs-one-MAC signature of poisoning, and use a monitor to detect a gateway MAC change; explain why connectivity keeps working during the attack.
-- **Root:** Explain why ARP's acceptance of unsolicited and overwriting replies makes on-path attacks trivial; describe how Dynamic ARP Inspection uses the snooping binding table to validate replies, why the attack is confined to one broadcast domain, and why transport-layer security is the backstop that survives an on-path adversary.
+- Explain why ARP exists, describe the request/reply exchange, and state what an ARP table stores.
+- Read a neighbour table, recognize the two-IPs-one-MAC signature of poisoning, and use a monitor to detect a gateway MAC change; explain why connectivity keeps working during the attack.
+- Explain why ARP's acceptance of unsolicited and overwriting replies makes on-path attacks trivial; describe how Dynamic ARP Inspection uses the snooping binding table to validate replies, why the attack is confined to one broadcast domain, and why transport-layer security is the backstop that survives an on-path adversary.
 
 ---
 > 🔼 Up: [[Switching & the Link Layer]]

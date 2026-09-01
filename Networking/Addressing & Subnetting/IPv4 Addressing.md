@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/addressing
   - type/concept
-  - level/crook
+  - difficulty/easy
 Domain:
   - "[[Addressing & Subnetting]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IPv4 Addressing -> Subnetting & CIDR -> VLSM & Route Summarization -> IPv6 Addressing -> Address Assignment & DHCP -> NAT & Address Translation
 
-## Start at Zero: Thirty-Two Bits Wearing a Disguise
+## Thirty-Two Bits Wearing a Disguise
 
 An **IPv4 address** is a 32-bit number. It identifies a network *interface*, not a device — a host with three interfaces has three addresses, and a single interface can hold several.
 
@@ -31,8 +31,6 @@ For human convenience the 32 bits are split into four 8-bit groups called **octe
 ```
 
 The dotted notation is a display convention, nothing more. Every meaningful operation — determining which network an address belongs to, calculating a range, deciding whether two hosts are neighbours — happens on the binary form. Learners who never look at the bits end up memorizing tables they cannot generalize; learners who do can derive every table on demand.
-
-![[Pasted image 20251017110201.png]]
 
 An address alone is incomplete. It must be paired with a **subnet mask**, which declares how many leading bits identify the *network* and how many trailing bits identify the *host within it*. `192.168.10.24` tells you almost nothing; `192.168.10.24/24` tells you the host lives on the network `192.168.10.0` alongside up to 253 neighbours.
 
@@ -160,59 +158,13 @@ Addressing decisions are security decisions, in three specific ways.
 
 Any address enumeration or scanning must remain within an authorized scope; sweeping ranges you have not been permitted to test is out of bounds regardless of whether the addresses are private.
 
-## Authorized Lab: Make a Mask Mistake on Purpose
+## Summary
 
-Use two lab VMs on the same isolated segment, plus a router providing a second segment. Record baseline output for every command first.
+You should now be able to:
 
-1. Baseline on Host-A: `ip -4 addr show`, `ip route`, and `ip route get <off-segment address>`. Confirm the off-segment lookup shows `via <gateway>`.
-2. Confirm connectivity to both a local neighbour and an off-segment host.
-3. Break the mask deliberately:
-
-```bash
-sudo ip addr flush dev eth0
-sudo ip addr add 192.168.10.24/16 dev eth0
-sudo ip route add default via 192.168.10.1 dev eth0
-```
-
-4. Re-test. The local neighbour still responds; the off-segment host does not. Confirm with `ip route get <off-segment address>` that no `via` appears.
-5. Inspect the neighbour table to see the mechanism directly:
-
-```bash
-ip neigh show
-```
-
-Expected excerpt:
-
-```text
-192.168.50.10 dev eth0  FAILED
-192.168.10.1 dev eth0 lladdr 00:1a:2b:3c:4d:5e REACHABLE
-```
-
-The `FAILED` entry is the proof: the host attempted link-layer resolution for an address that is not on the link, because the wrong mask told it that address was a neighbour.
-
-6. Restore the correct configuration and confirm the baseline returns:
-
-```bash
-sudo ip addr flush dev eth0
-sudo ip addr add 192.168.10.24/24 dev eth0
-sudo ip route add default via 192.168.10.1 dev eth0
-```
-
-7. Verify `ip route get` again shows `via <gateway>` and both connectivity tests pass.
-
-Expected interpretation:
-
-```text
-Correct mask -> off-segment destinations route through the gateway
-Wrong mask   -> host attempts direct delivery, neighbour resolution FAILS, silent partial outage
-Restored     -> baseline behaviour returns, confirming the mask was the sole cause
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Convert an address between dotted-decimal and binary, explain why an address is meaningless without a mask, and identify loopback, link-local, and private ranges on sight.
-- **Operator:** Read `ip addr` and `ip route` output to state a host's network, broadcast, usable range, and lease status; diagnose a mask error from partial connectivity and a `FAILED` neighbour entry.
-- **Root:** Explain why classful reasoning is obsolete but its vocabulary persists; justify why source-address-based trust is not authentication, and describe how address sizing and lease retention decided in advance determine both blast radius and post-incident attribution.
+- Convert an address between dotted-decimal and binary, explain why an address is meaningless without a mask, and identify loopback, link-local, and private ranges on sight.
+- Read `ip addr` and `ip route` output to state a host's network, broadcast, usable range, and lease status; diagnose a mask error from partial connectivity and a `FAILED` neighbour entry.
+- Explain why classful reasoning is obsolete but its vocabulary persists; justify why source-address-based trust is not authentication, and describe how address sizing and lease retention decided in advance determine both blast radius and post-incident attribution.
 
 ---
 > 🔼 Up: [[Addressing & Subnetting]]

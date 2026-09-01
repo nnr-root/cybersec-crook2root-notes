@@ -9,7 +9,7 @@ tags:
   - tree/offensive
   - cyber/offensive/guided
   - type/walkthrough
-  - level/root
+  - difficulty/hard
 Domain: "[[Guided Assessments]]"
 Color: "#DC143C"
 ---
@@ -22,7 +22,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Guided Network Pentest Walkthrough -> Guided Active Directory Assessment -> Guided Web & API Assessment -> Guided Wireless Assessment -> Guided Cloud Security Assessment -> Guided Social Engineering Exercise -> Guided Red Team & Purple Team Operation -> Guided Retest & Closure
 
-## Start at Zero: Emulate an Adversary, Then Fix What It Beat
+## Emulate an Adversary, Then Fix What It Beat
 
 A **red team operation** answers a business question by *emulating a specific, realistic adversary* end to end: initial access → identity/lateral operations → objective proof, while measuring whether the defenders detect and respond in time. A **purple team validation** is the natural follow-on: red and blue sit *together* and, behavior by behavior, confirm whether each attack technique is prevented, observed, alerted, investigated, and contained — then engineer the missing detections and re-run. This capstone pairs them because they are two halves of one loop: the red op *finds the gaps under realistic conditions*, and the purple phase *closes them measurably*. It is the highest-maturity engagement, and it sits at the top of this domain because it assumes every prior technique and methodology.
 
@@ -105,7 +105,7 @@ Case     : 13:01:10Z analyst acknowledged
 
 **10. Diagnose gaps by layer** (generation, collection, transport, parsing, enrichment, analytic logic, suppression, routing, triage, response) — never tune a rule when the underlying event is absent. **Tune with negative controls** (benign activity) around stable semantics, not filenames. Then **operationalize**: version the analytic, assign ownership, add investigation guidance, and schedule recurring validation. *A detection that fired once in a lab is not yet an operational control.*
 
-## Failure Modes and Interpretation
+## Why being inside doesn't retire the rules
 
 - **Treating the RoE as gone once "inside."** Objective-led does not mean unbounded — every action still obeys scope, safety, and impact ceiling. Stop when the objective is proven.
 - **Scripting the outcome.** A red op that only executes a pre-planned path stops testing the defenders; it must adapt via OODA while staying in bounds.
@@ -120,83 +120,13 @@ Case     : 13:01:10Z analyst acknowledged
 - **Threat-informed prioritization:** emulating the actors that realistically target the org's sector (via ATT&CK) focuses limited detection-engineering budget where it matters.
 - **Deconfliction and immutable logging** protect both the exercise and the evidence — the SOC keeps hunting real threats, and the blue-team timeline can't be quietly edited after the reveal.
 
-## Authorized Lab: A Purple-Team Detection Loop on One Machine
+## Summary
 
-> [!info] Runs on one Linux machine — emulate a benign "credential-file read + beacon" behavior, prove detection from a log, tune with a negative control, then re-test
-> Everything is a canary/benign analogue. Step 5 cleans up.
+You should now be able to:
 
-### Step 1 — Set up the telemetry source and a canary credential file
-
-```bash
-mkdir -p /tmp/purple-lab && cd /tmp/purple-lab
-echo "CANARY-CREDENTIAL-DO-NOT-USE" > canary.creds
-: > telemetry.log
-echo "behavior PT-VAL-014: detect unusual access to canary credential material"
-```
-
-```text
-behavior PT-VAL-014: detect unusual access to canary credential material
-```
-
-### Step 2 — Emulate the behavior (red action) and generate telemetry
-
-```bash
-cd /tmp/purple-lab
-# stand in for endpoint telemetry: log any read of the canary file
-cat canary.creds >/dev/null && echo "$(date -u +%FT%TZ) event=file_read path=canary.creds proc=bash user=$USER dest=203.0.113.5:443" >> telemetry.log
-tail -1 telemetry.log
-```
-
-```text
-<utc> event=file_read path=canary.creds proc=bash user=<user> dest=203.0.113.5:443
-```
-
-### Step 3 — The detection analytic (blue) fires on the behavior
-
-```bash
-cd /tmp/purple-lab
-grep -E 'event=file_read path=canary.creds' telemetry.log \
-  && echo "ALERT: canary credential accessed -> enrich with host/user/proc/dest (PT-VAL-014 PASS)"
-```
-
-```text
-<utc> event=file_read path=canary.creds proc=bash user=<user> dest=203.0.113.5:443
-ALERT: canary credential accessed -> enrich with host/user/proc/dest (PT-VAL-014 PASS)
-```
-
-### Step 4 — Negative control (benign activity must NOT alert)
-
-```bash
-cd /tmp/purple-lab
-echo "$(date -u +%FT%TZ) event=file_read path=/etc/hostname proc=bash user=$USER dest=-" >> telemetry.log
-hits=$(grep -cE 'event=file_read path=canary.creds' telemetry.log)
-echo "canary-read alerts=$hits (benign /etc/hostname read did NOT match -> analytic is specific, low false-positive)"
-```
-
-```text
-canary-read alerts=1 (benign /etc/hostname read did NOT match -> analytic is specific, low false-positive)
-```
-
-### Step 5 — Cleanup
-
-```bash
-cd /; rm -rf /tmp/purple-lab
-ls -d /tmp/purple-lab 2>&1 | tail -1
-echo "Finding: behavior is detectable with a specific, negative-control-validated analytic; operationalize (owner + health + recurring retest)."
-```
-
-```text
-ls: cannot access '/tmp/purple-lab': No such file or directory
-Finding: behavior is detectable with a specific, negative-control-validated analytic; operationalize (owner + health + recurring retest).
-```
-
-**What you should now be able to do:** plan an objective-led, threat-informed red operation with a proper cell and safety controls, execute in OODA cycles stopping at bounded proof, then run a purple-team loop that measures detection by layer, validates with negative controls, and operationalizes the resulting analytic.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain how a red team op differs from a pentest (objective-led, stealth-aware, measures response) and why purple teaming is collaboration, not competition.
-- **Operator:** Define a measurable objective with an impact ceiling, execute in OODA cycles within the RoE, and run a purple-team emulation that proves or disproves detection.
-- **Root:** Explain why the blue-team's independent timeline is the deliverable, why detections need negative controls + ownership + recurring validation to be operational, and how threat-informed emulation focuses detection-engineering effort.
+- Explain how a red team op differs from a pentest (objective-led, stealth-aware, measures response) and why purple teaming is collaboration, not competition.
+- Define a measurable objective with an impact ceiling, execute in OODA cycles within the RoE, and run a purple-team emulation that proves or disproves detection.
+- Explain why the blue-team's independent timeline is the deliverable, why detections need negative controls + ownership + recurring validation to be operational, and how threat-informed emulation focuses detection-engineering effort.
 
 ---
 > 🔼 Up: [[Guided Assessments]]

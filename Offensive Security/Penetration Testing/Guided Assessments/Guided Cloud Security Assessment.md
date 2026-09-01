@@ -5,6 +5,7 @@ aliases:
 tags:
   - tree/offensive
   - cyber/offensive/guided
+  - difficulty/hard
 Domain: "[[Guided Assessments]]"
 Color: "#DC143C"
 ---
@@ -86,11 +87,13 @@ Correlate controlled policy denials, role assumptions, public-policy changes on 
 
 Remove test resources, policies, keys, snapshots, public rules, federated sessions, and automation artifacts. Compare inventory before and after. Retest the repaired policy and adjacent identities so closure demonstrates least privilege without breaking legitimate deployment flows.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Explain the shared-responsibility split and why cloud attack paths come from *combinations* of permissions, not single flaws.
-- **Operator:** Establish identity truth, inventory the control plane, validate a privilege path edge-by-edge with metadata-only/canary proof, and check tenant isolation.
-- **Root:** Explain why deployed state (not IaC) is authoritative, how least privilege + short-lived workload identity + immutable org-level logging close the paths, and retest without breaking deployment flows.
+You should now be able to:
+
+- Explain the shared-responsibility split and why cloud attack paths come from *combinations* of permissions, not single flaws.
+- Establish identity truth, inventory the control plane, validate a privilege path edge-by-edge with metadata-only/canary proof, and check tenant isolation.
+- Explain why deployed state (not IaC) is authoritative, how least privilege + short-lived workload identity + immutable org-level logging close the paths, and retest without breaking deployment flows.
 
 ---
 > 🔼 Up: [[Guided Assessments]]

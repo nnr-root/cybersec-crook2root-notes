@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/osi
   - type/concept
-  - level/crook
+  - difficulty/easy
 Domain:
   - "[[Network Foundations]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation & Protocol Data Units -> Network Devices & Traffic Paths -> Reachability Testing & ICMP
 
-## Start at Zero: Why Layer a Network at All
+## Why Layer a Network at All
 
 Sending data between two programs on different machines is a large problem: signals must be encoded onto a medium, addressed to a machine on the local link, routed across unfamiliar networks, delivered to the correct program, and finally interpreted as meaningful content. Solving all of that as one monolithic system would make every change catastrophic — swapping copper for fibre would require rewriting the email client.
 
@@ -137,31 +137,13 @@ Because attacks target mechanisms, and mechanisms live at layers, the model is a
 
 Two structural lessons follow. First, a control at one layer does not protect another: encrypting traffic at Layer 6 does nothing about a Layer 2 attacker who can still redirect and drop it. Second, most modern breaches occur at Layer 7, because the lower layers now work reliably and the application is where business logic — and therefore ambiguity — lives.
 
-## Authorized Lab: Fault Isolation Drill
+## Summary
 
-On an isolated lab VM you control, break one layer at a time and confirm that layered diagnosis identifies it. Record baseline output for every command before starting.
+You should now be able to:
 
-1. Baseline: run the six commands from the procedure above and save the results.
-2. **Layer 1/2 fault:** `sudo ip link set eth0 down`. Re-run the procedure. Expect `state DOWN` and every subsequent test to fail. Restore with `sudo ip link set eth0 up`.
-3. **Layer 3 fault:** `sudo ip route del default`. Re-run. Expect the gateway ping to succeed and the off-segment ping to fail with `Network is unreachable`. Restore with `sudo ip route add default via <gateway> dev eth0`.
-4. **Layer 7 fault:** point `/etc/resolv.conf` at an unused address in your lab range. Re-run. Expect both pings to succeed and name resolution to time out. Restore the original file from a copy taken in step 1.
-5. Confirm the baseline output returns exactly.
-
-Expected interpretation:
-
-```text
-Fault at L1/L2 -> link state fails first; all higher tests are uninformative
-Fault at L3    -> local link fine, gateway fine, off-segment unreachable
-Fault at L7    -> all connectivity fine, name resolution alone fails
-```
-
-Cleanup matters here: step 4 edits a system file, so take the copy before you change anything and verify restoration rather than assuming it.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Name the seven layers in order, state the PDU at each, and explain in plain language what decision each layer makes.
-- **Operator:** Run a bottom-up isolation procedure, read the output of each step, and state which layer failed and which tests the failure invalidated.
-- **Root:** Explain why TLS and QUIC resist clean layer placement, why a control at one layer cannot compensate for a weakness at another, and how you would design telemetry so that a reported Layer 7 symptom can be attributed to the correct layer without guesswork.
+- Name the seven layers in order, state the PDU at each, and explain in plain language what decision each layer makes.
+- Run a bottom-up isolation procedure, read the output of each step, and state which layer failed and which tests the failure invalidated.
+- Explain why TLS and QUIC resist clean layer placement, why a control at one layer cannot compensate for a weakness at another, and how you would design telemetry so that a reported Layer 7 symptom can be attributed to the correct layer without guesswork.
 
 ---
 > 🔼 Up: [[Network Foundations]]

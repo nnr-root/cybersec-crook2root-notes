@@ -1,7 +1,7 @@
 ---
 title: "Hashcat"
 aliases: ["hashcat"]
-tags: [tree/tooling, cyber/tooling/offensive/cracking/hashcat, type/tool, level/root]
+tags: [tree/tooling, cyber/tooling/offensive/cracking/hashcat, type/tool, difficulty/hard]
 Domain: "[[Password Cracking Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ Hashcat is the GPU-accelerated cracker. Where John prizes format breadth and CPU
 ## Parent Learning Order
 name-that-hash -> hash-identifier -> John the Ripper -> Hashcat
 
-## Crook — The Mental Model
+## The same guess-and-compare loop, at GPU scale
 
 Same offline loop as John — guess, hash, compare — but Hashcat runs it on a GPU at a scale that changes what's possible.
 
-![[tool_cracking_modes.svg]]
-
 Hashcat owns the right side of the diagram: it turns the attack-mode ladder into GPU throughput and is the **mask/hybrid king** (rung 3), making brute-force *targeted* instead of blind. It's also the clearest demonstration of the **speed wall** — the same GPU cracks a fast MD5 hash billions of times per second but crawls against a slow bcrypt, which is the entire defensive story. Two flags encode it all: `-m` (which hash) and `-a` (which attack).
 
-## Operator — Make It Work
+## Benchmark, then dictionary and mask attacks
 
 Benchmark to see why fast hashes are indefensible, then crack with dictionary and mask:
 
@@ -47,7 +45,7 @@ e90664c0af74160644d29e4d6147969b:Summer2024
 
 A **mask** (`?u`=upper, `?l`=lower, `?d`=digit, `?s`=symbol) enumerates only a human *pattern* — `?u?l?l?l?l?l?d?d?d?d` is exactly `Summer2024`, cutting the keyspace by orders of magnitude versus blind brute force.
 
-## Root — Internals & The Deliberate Break
+## The benchmark table read as a hardening spec
 
 The benchmark table *is* a hardening spec — the speed wall from the diagram, measured:
 
@@ -63,11 +61,13 @@ Progress.........: 47104/14344385 (0.33%)
 
 **The deliberate break:** `password123` as raw MD5 falls in under a second at ~58 **billion** guesses/sec; the *identical password* as bcrypt cost-12 runs at ~9 **thousand** guesses/sec — about **six million times slower** — on the same hardware. Same password, same GPU: the only variable is the hash's **work factor**, and that variable is the entire defense. This is why "no hashcat mode cracked it" can mean either "strong password" *or* "strong hash" — never confuse the two. The reportable numbers: fast unsalted hashes (MD5/NTLM/SHA1) are indefensible at rest and must be migrated to bcrypt/scrypt/argon2 with high cost and unique salts, and the blue team must also detect the *capture* step (LSASS access, DCSync, WPA handshake grabs) that feeds the cracker — because once the hash is out, only its work factor stands between the attacker and the plaintext.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** What do `-m` and `-a` each select, and why do you always set both?
-- **Operator:** A wordlist misses `Summer2024`. Write the mask that finds it and explain why it beats blind brute force.
-- **Root:** Given the MD5-vs-bcrypt benchmark gap, justify the storage-hashing choice and salt/cost you'd mandate.
+You should now be able to:
+
+- What do `-m` and `-a` each select, and why do you always set both?
+- A wordlist misses `Summer2024`. Write the mask that finds it and explain why it beats blind brute force.
+- Given the MD5-vs-bcrypt benchmark gap, justify the storage-hashing choice and salt/cost you'd mandate.
 
 ---
 > 🔼 Up: [[Password Cracking Tools]]

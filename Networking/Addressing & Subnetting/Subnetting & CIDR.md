@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/addressing
   - type/technique
+  - difficulty/easy
   - level/apprentice
 Domain:
   - "[[Addressing & Subnetting]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IPv4 Addressing -> Subnetting & CIDR -> VLSM & Route Summarization -> IPv6 Addressing -> Address Assignment & DHCP -> NAT & Address Translation
 
-## Start at Zero: The Mask Is a Boundary Marker
+## The Mask Is a Boundary Marker
 
 A **subnet mask** is 32 bits in which every network bit is 1 and every host bit is 0, and the ones are always contiguous and leading. `255.255.255.0` in binary is twenty-four 1s followed by eight 0s — which is why it is written `/24` in **CIDR (Classless Inter-Domain Routing)** notation. The number after the slash is simply the count of network bits.
 
@@ -177,56 +178,13 @@ Finally, subnet boundaries shape evidence. Traffic that stays inside a segment m
 
 All scanning must target only ranges inside an authorized scope. Because a mis-computed prefix can silently extend a sweep beyond an agreed boundary, verifying the computed range before running any active tool is part of staying in scope, not merely good practice.
 
-## Authorized Lab: Segment a Range and Prove the Boundary
+## Summary
 
-Use a router VM and two host VMs on isolated virtual switches you control.
+You should now be able to:
 
-1. Compute by hand the four `/26` subnets of `192.168.50.0/24`, listing network, usable range, and broadcast for each. Verify with `ipcalc` only after writing your answers.
-2. Configure Host-A in the first `/26` and Host-B in the second, each with the correct `/26` mask and the router as gateway:
-
-```bash
-sudo ip addr add 192.168.50.10/26 dev eth0     # Host-A
-sudo ip addr add 192.168.50.70/26 dev eth0     # Host-B
-```
-
-3. From Host-A, confirm the boundary is real:
-
-```bash
-ip route get 192.168.50.70
-```
-
-Expected excerpt:
-
-```text
-192.168.50.70 via 192.168.50.1 dev eth0 src 192.168.50.10
-```
-
-The `via` proves the host correctly classified its neighbour as off-segment despite the addresses appearing similar. Under a `/24` mask this would have been a direct delivery.
-
-4. Verify connectivity through the router, then confirm that an ARP-based sweep from Host-A does **not** find Host-B:
-
-```bash
-nmap -sn -PR 192.168.50.64/26
-```
-
-Expect no results, because address resolution does not cross the routed boundary.
-
-5. Now deliberately misconfigure Host-A with a `/24` mask. Repeat step 3 and observe the missing `via`, then observe the connectivity failure and a `FAILED` entry in `ip neigh show`.
-6. Restore the `/26` mask on Host-A, confirm `ip route get` shows `via` again, and remove any addresses added during the lab.
-
-Expected interpretation:
-
-```text
-Correct /26 -> neighbour is off-segment, routed, controllable, observable
-Wrong /24   -> host attempts link-layer delivery across a boundary that exists, and fails silently
-ARP sweep   -> confirms the broadcast domain ends exactly at the computed prefix
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what a mask does in binary, compute network, broadcast, and usable range for any `/24` through `/30`, and state why two addresses are subtracted.
-- **Operator:** Use the magic-number method to place any address in its subnet without a table; verify with `ipcalc`, scan exactly the computed block, and diagnose off-by-one, overlap, and mask-mismatch errors from their symptoms.
-- **Root:** Explain why `/31` and `/32` break the usable-host formula and why that is correct; argue subnet sizing as a containment control by relating broadcast-domain size to lateral movement; and audit a rule set by expanding prefixes to reveal the gap between intended and authorized scope.
+- Explain what a mask does in binary, compute network, broadcast, and usable range for any `/24` through `/30`, and state why two addresses are subtracted.
+- Use the magic-number method to place any address in its subnet without a table; verify with `ipcalc`, scan exactly the computed block, and diagnose off-by-one, overlap, and mask-mismatch errors from their symptoms.
+- Explain why `/31` and `/32` break the usable-host formula and why that is correct; argue subnet sizing as a containment control by relating broadcast-domain size to lateral movement; and audit a rule set by expanding prefixes to reveal the gap between intended and authorized scope.
 
 ---
 > 🔼 Up: [[Addressing & Subnetting]]

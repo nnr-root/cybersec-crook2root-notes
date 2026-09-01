@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/transport
   - type/concept
-  - level/crook
+  - difficulty/easy
 Domain:
   - "[[Transport Layer & Sockets]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Control -> UDP & Connectionless Transport -> QUIC & Modern Transport -> Transport Layer Threats & Controls
 
-## Start at Zero: The Problem an Address Cannot Solve
+## The Problem an Address Cannot Solve
 
 A packet arrives at `192.168.10.24`. That machine is running a web server, an SSH daemon, a database, and a dozen background processes. The IP address identified the *host*, but nothing so far identifies which *program* should receive the data.
 
@@ -202,51 +202,13 @@ The output names the process and PID holding the port, converting a vague error 
 
 Enumerating sockets on systems you administer is ordinary operations. Scanning ports on hosts you do not own requires authorization, and is covered by the scoping rules of whatever engagement you are operating under.
 
-## Authorized Lab: Prove That Bind Address Is the Control
+## Summary
 
-Use two lab VMs on a segment you control: a server and a client.
+You should now be able to:
 
-1. **Bind to loopback.** On the server, start a simple service listening on `127.0.0.1:8080` (any minimal test server will do). Confirm the binding:
-
-```bash
-ss -tlnp '( sport = :8080 )'
-```
-
-Expected excerpt:
-
-```text
-tcp LISTEN 127.0.0.1:8080 users:(("testsrv",pid=2201,fd=3))
-```
-
-2. From the server itself, connect to `127.0.0.1:8080` and confirm it works.
-3. From the **client**, attempt to connect to the server's network address on port 8080. It fails — connection refused or timed out — with **no firewall rule involved at all**.
-4. **Rebind to all interfaces.** Stop the service and restart it bound to `0.0.0.0:8080`. Confirm with `ss` that the local address changed.
-5. From the client, retry the connection. It now succeeds. Nothing about the firewall, the network, or the client changed — only the bind address.
-6. **Add the secondary control.** With the service still on `0.0.0.0`, add a firewall rule denying port 8080 from the client. Confirm the connection fails again, demonstrating layered control.
-7. **Observe the five-tuple.** Open three simultaneous connections from the client and inspect them on the server:
-
-```bash
-ss -tnp state established '( sport = :8080 )'
-```
-
-Confirm three rows sharing a destination address and port but differing in source port — three unique five-tuples on one listening port.
-
-8. **Cleanup.** Stop the test service, remove the firewall rule, and confirm `ss -tlnp` no longer lists port 8080.
-
-Expected interpretation:
-
-```text
-Bound to 127.0.0.1 -> unreachable from the network, no firewall needed
-Bound to 0.0.0.0   -> reachable from every attached network
-Firewall added     -> secondary layer; the bind address was the primary one
-Three connections  -> one listening port, three five-tuples, fully separated
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why an IP address alone cannot deliver data to the right program, what a port is, and the difference between a listening and an established socket.
-- **Operator:** Read `ss` output to identify exposed versus loopback-only services and their owning processes; diagnose "address already in use" by finding the holder, and interpret `Recv-Q`/`Send-Q` to distinguish an application problem from a network one.
-- **Root:** Explain the five-tuple as the mechanism enabling massive concurrency on one port and the source of ephemeral exhaustion; argue why bind address is a stronger exposure control than firewall policy, and why port numbers are a convention that neither identifies nor hides a service.
+- Explain why an IP address alone cannot deliver data to the right program, what a port is, and the difference between a listening and an established socket.
+- Read `ss` output to identify exposed versus loopback-only services and their owning processes; diagnose "address already in use" by finding the holder, and interpret `Recv-Q`/`Send-Q` to distinguish an application problem from a network one.
+- Explain the five-tuple as the mechanism enabling massive concurrency on one port and the source of ephemeral exhaustion; argue why bind address is a stronger exposure control than firewall policy, and why port numbers are a convention that neither identifies nor hides a service.
 
 ---
 > 🔼 Up: [[Transport Layer & Sockets]]

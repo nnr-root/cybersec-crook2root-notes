@@ -8,6 +8,7 @@ tags:
   - tree/offensive
   - cyber/offensive/methodology
   - type/concept
+  - difficulty/easy
   - level/apprentice
 Domain: "[[Methodologies & Frameworks]]"
 Color: "#DC143C"
@@ -21,7 +22,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Penetration Testing Fundamentals -> Rules of Engagement & Scoping -> Penetration Testing Standards & Frameworks -> Cyber Kill Chain -> Threat Modeling & MITRE ATT&CK
 
-## Start at Zero: Why Attacks Have a Shape
+## Why Attacks Have a Shape
 
 Attacks are not single events — they are *sequences*. An intruder rarely goes from "outside" to "stealing data" in one move; they recon, build a weapon, deliver it, exploit, install a foothold, set up remote control, and only then act on their goal. The **Cyber Kill Chain**, introduced by Lockheed Martin in 2011, names those seven stages so both attackers and defenders share a map. Its power for defense is one insight: **the attacker must complete every link, but the defender only has to break one.**
 
@@ -39,8 +40,6 @@ The seven stages:
 5. **Installation** — establish persistence (services, scheduled tasks, web shells, rootkits, LOLBins).
 6. **Command & Control (C2)** — open a covert channel back to attacker infrastructure.
 7. **Actions on Objectives** — exfiltration, ransomware, lateral movement, sabotage.
-
-![[lab_5f04259cf9bf5b57aed2c476-1745943727167.svg]]
 
 ## Each Link, and the Control That Breaks It
 
@@ -63,13 +62,6 @@ Every stage is a chance for the defender to win. This table is the note's core r
 
 These authored diagrams illustrate each transition (reconnaissance → actions on objectives):
 
-![[lab_5f04259cf9bf5b57aed2c476-1745943824279.svg]]
-![[lab_5f04259cf9bf5b57aed2c476-1745943858065.svg]]
-![[lab_5f04259cf9bf5b57aed2c476-1745943933428.svg]]
-![[lab_5f04259cf9bf5b57aed2c476-1745943985465.svg]]
-![[lab_5f04259cf9bf5b57aed2c476-1745944031768.svg]]
-![[lab_5f04259cf9bf5b57aed2c476-1745944093554.svg]]
-
 ## The Whole Chain, and Where Each Link Breaks
 
 ```mermaid
@@ -90,25 +82,43 @@ flowchart TD
 
 The defender's advantage is structural: the attacker must complete **all seven** stages, so a control at *any* link — a scan alert, a blocked macro, an EDR catch on installation, an egress filter on C2 — collapses the chain. This is why layered defense works, and why mapping an engagement's findings onto the chain tells the client exactly *which links they can already break*.
 
-## Practical Exercise: Map an Engagement to the Chain
+## Worked Mapping: An Engagement Across the Chain
 
-> [!info] No shell needed — this is the analytical skill the kill chain exists to give you. Do it as a written mapping.
+The kill chain earns its keep as a reporting language: it places every action of an
+assessment on a shared timeline and names, for each, the control that would have
+broken it. Here is a completed mapping for one authorized engagement — the artifact
+a report delivers, not an exercise to attempt.
 
-Take a small authorized-assessment story, place each action in its stage, and name the control that *would* have broken it:
+| Stage | What the assessment did / observed | Control that breaks this link | Client status |
+|:--|:--|:--|:--|
+| Reconnaissance | Employee emails found via OSINT; an admin panel exposed to the internet | Reduce public info; alert on scan patterns; remove the exposure | **gap** — panel was reachable |
+| Weaponisation | Prepared a benign macro-bearing document (canary payload) | Block or restrict Office macros by policy | present — macros restricted |
+| Delivery | Sent a simulated phish to 40 scoped users | Mail filtering; user reporting culture | partial — 6 delivered, 2 clicked |
+| Exploitation | Macro would have run on click | Attack-surface reduction; least privilege | present — no admin on endpoints |
+| Installation | Persistence would be attempted here | EDR; application allowlisting | present — EDR blocked the test binary |
+| Command & Control | Beacon to an external redirector | Egress filtering; beacon-cadence detection | **gap** — outbound HTTPS unrestricted |
+| Actions on Objectives | Scoped goal: reach a canary data store | Segmentation; least privilege; DLP | **gap** — flat internal network |
 
-1. **Recon** — you found employee emails via OSINT and an exposed admin panel via scanning. *Break:* reduce public info; alert on scan patterns.
-2. **Weaponisation** — you prepared a benign macro-bearing document (canary payload). *Break:* block/limit macros by policy.
-3. **Delivery** — you (with authorization) sent a simulated phish. *Break:* email filtering + user training.
-4. **Exploitation → Installation → C2** — describe how a *real* attacker would proceed, and the EDR/allowlisting/egress controls that stop each.
-5. **Actions on Objectives** — the goal you were scoped to prove (e.g. reach a canary data store). *Break:* segmentation, least privilege, DLP.
+Read across the "client status" column and the finding writes itself in the language
+an executive acts on: *the chain can already be broken at weaponisation, delivery and
+installation, so the controls there are working; the exposures are the exposed panel
+at recon, unrestricted C2 egress, and a flat internal network at the objective.* Three
+named links to fix, each tied to a control the client either has or lacks.
 
-Deliverable: a one-page table of *stage → what you did/observed → the client's existing or missing control*. That table is exactly how a report communicates defensive gaps in the language executives understand — "you can already break the chain at delivery and installation; your gap is C2 egress."
+That framing is the whole reason to map to the chain rather than list findings
+severity-first. A severity list says "three highs, five mediums"; a kill-chain map
+says "you stop the attacker in three places and miss them in three others, and here
+is which." One is a scorecard; the other is a defensive plan, and the layered nature
+of the chain is exactly what lets a defender who cannot fix everything choose the link
+that costs the attacker the most.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Name the seven stages in order and explain why an attack is a sequence, not an event.
-- **Operator:** Place real offensive actions into their kill-chain stages and pair each with the countermeasure that severs that link.
-- **Root:** Explain why "the defender only has to win once" makes layered defense effective, map an engagement onto the chain to show a client which links they can break, and articulate where the linear model over-simplifies (looping, parallelism → ATT&CK).
+You should now be able to:
+
+- Name the seven stages in order and explain why an attack is a sequence, not an event.
+- Place real offensive actions into their kill-chain stages and pair each with the countermeasure that severs that link.
+- Explain why "the defender only has to win once" makes layered defense effective, map an engagement onto the chain to show a client which links they can break, and articulate where the linear model over-simplifies (looping, parallelism → ATT&CK).
 
 ---
 > 🔼 Up: [[Methodologies & Frameworks]]

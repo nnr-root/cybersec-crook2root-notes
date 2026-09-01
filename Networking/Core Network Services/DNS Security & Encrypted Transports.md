@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/dns
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Core Network Services]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 DNS Resolution & Records -> DNS Security & Encrypted Transports -> Local Name Resolution & Service Discovery -> Network Time Synchronization -> Email Transport Protocols -> Network Management Protocols
 
-## Start at Zero: Two Different Problems
+## Two Different Problems
 
 Classic DNS runs over UDP port 53 in cleartext with no signatures. That creates two independent weaknesses, and the single most common conceptual error in this topic is treating them as one.
 
@@ -136,49 +136,13 @@ A stream of long random-looking labels is the signature. Note that neither DNSSE
 
 All testing described here must target domains and resolvers within an authorized scope. Tunnelling in particular must be confined to a lab with a domain you control.
 
-## Authorized Lab: Separate Authenticity from Confidentiality
+## Summary
 
-Use a lab client, a validating resolver, and a signed zone you control.
+You should now be able to:
 
-1. **Observe cleartext exposure.** Capture a classic query and confirm the name is plainly readable:
-
-```bash
-sudo tcpdump -i eth0 -nn -A -c 2 'udp port 53'
-```
-
-2. **Enable encrypted transport.** Configure the client to use DoT or DoH. Repeat the capture and confirm the query name is no longer visible — only an encrypted session to the resolver.
-3. **Show that encryption is not validation.** Using the encrypted transport, query a name and check the `AD` flag. Confirm it is false for an unsigned zone despite the transport being fully encrypted.
-4. **Enable DNSSEC.** Sign your lab zone and enable validation on the resolver. Query again and confirm the `ad` flag now appears.
-5. **Break a signature deliberately.** Modify a signed record without re-signing. Confirm the validating resolver now returns SERVFAIL rather than the record — demonstrating that DNSSEC fails closed, and why a signing mistake causes an outage:
-
-```bash
-dig www.lab.internal A +dnssec
-```
-
-Expected excerpt:
-
-```text
-;; ->>HEADER<<- opcode: QUERY, status: SERVFAIL, id: 41022
-```
-
-6. **Demonstrate tunnelling detection.** In the isolated lab, send a series of queries with long encoded labels to a domain you control. Confirm that both DNSSEC validation and encrypted transport leave the tunnel fully functional, then detect it by query-name length and volume rather than by content.
-7. **Cleanup.** Restore the correct signatures, revert resolver and client transport configuration, and confirm normal resolution with the `ad` flag intact.
-
-Expected interpretation:
-
-```text
-Cleartext        -> query names readable by anyone on the path
-DoT/DoH          -> names hidden, but AD still false: no integrity guarantee
-DNSSEC enabled   -> ad flag appears; answers are cryptographically verified
-Broken signature -> SERVFAIL, not a warning: DNSSEC fails closed
-Tunnelling       -> unaffected by either technology; detected behaviourally
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** State the two distinct DNS weaknesses and name the technology addressing each; explain why encrypting a query does not make its answer trustworthy.
-- **Operator:** Verify DNSSEC validation via the `ad` flag, configure and confirm encrypted transport, and recognize DNS tunnelling by query length, entropy, volume, and timing.
-- **Root:** Explain the DNSSEC chain of trust from the root anchor down, and why validation location determines whether it protects you; argue the DoH privacy-versus-visibility tension fairly and describe the internal-resolver posture that resolves it; explain why subdomain takeover and registrar compromise are DNS risks that no protocol extension addresses.
+- State the two distinct DNS weaknesses and name the technology addressing each; explain why encrypting a query does not make its answer trustworthy.
+- Verify DNSSEC validation via the `ad` flag, configure and confirm encrypted transport, and recognize DNS tunnelling by query length, entropy, volume, and timing.
+- Explain the DNSSEC chain of trust from the root anchor down, and why validation location determines whether it protects you; argue the DoH privacy-versus-visibility tension fairly and describe the internal-resolver posture that resolves it; explain why subdomain takeover and registrar compromise are DNS risks that no protocol extension addresses.
 
 ---
 > 🔼 Up: [[Core Network Services]]

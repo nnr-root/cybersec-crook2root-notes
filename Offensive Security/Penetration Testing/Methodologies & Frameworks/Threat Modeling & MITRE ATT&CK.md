@@ -10,7 +10,7 @@ tags:
   - tree/offensive
   - cyber/offensive/methodology
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain: "[[Methodologies & Frameworks]]"
 Color: "#DC143C"
 ---
@@ -23,7 +23,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Penetration Testing Fundamentals -> Rules of Engagement & Scoping -> Penetration Testing Standards & Frameworks -> Cyber Kill Chain -> Threat Modeling & MITRE ATT&CK
 
-## Start at Zero: Deciding Which Attacker to Be
+## Deciding Which Attacker to Be
 
 The kill chain (previous leaf) told you attacks have a *shape*. **Threat modeling** answers a sharper question before an engagement: *which attacker are we simulating, going after what, and how would they actually operate?* You cannot test against "everything" — a bored script kiddie, a ransomware crew, and a nation-state behave completely differently, so a good engagement picks a **realistic adversary profile** and emulates it. **MITRE ATT&CK** is the shared catalogue that makes this concrete: a giant, curated matrix of the real **tactics** (the attacker's goals — the *why*) and **techniques** (the *how*) observed in actual intrusions, each with a stable ID (e.g. `T1566` Phishing). Together they turn "we did some hacking" into "we emulated a ransomware operator's TTPs — here are the exact techniques, mapped to ATT&CK, and which ones your controls caught."
 
@@ -66,7 +66,58 @@ The output is an **adversary-emulation plan**: a chosen set of ATT&CK techniques
 
 ATT&CK's real power is that *both sides speak it*. When the red team reports "we succeeded with `T1550.002` Pass-the-Hash and `T1003.001` LSASS dumping," the blue team can answer "we have detection for LSASS access but missed the PtH — here's the gap." Mapping every finding to a technique ID turns an engagement into a **coverage map**: which techniques were attempted, which were detected, which were blocked. That coverage map is the single most useful artifact you can hand a defender.
 
-## Failure Modes and Interpretation
+## Worked Example: Turning Findings Into a Coverage Heatmap
+
+Mapping findings to MITRE ATT&CK is not documentation for its own sake — it turns
+a list of things that worked into a measurement of what the defender's controls
+caught, in a format the blue team can act on directly. Five findings, each tagged
+with a technique and an outcome, make the workflow concrete.
+
+**Findings recorded as technique procedures**, not prose:
+
+```text
+finding,tactic,technique_id,technique,detected
+F-01,Initial Access,T1566.001,Spearphishing Attachment,blocked
+F-02,Credential Access,T1003.001,LSASS Memory,detected
+F-03,Lateral Movement,T1550.002,Pass-the-Hash,missed
+F-04,Persistence,T1053.003,Cron Job,detected
+F-05,Exfiltration,T1048,Exfil Over Alternative Protocol,missed
+```
+
+Each row carries the technique ID and — the column that makes this an assessment
+rather than a diary — whether the client's controls caught it.
+
+**Scoring the coverage** reduces five rows to the number that matters:
+
+```shell-session
+analyst@lab:/tmp/attack-lab$ python3 score.py
+techniques emulated : 5
+blocked/detected    : 3  (60% coverage)
+MISSED (gaps)       : 2
+--- gaps to fix ---
+  T1550.002  Pass-the-Hash  (Lateral Movement)
+  T1048      Exfil Over Alternative Protocol  (Exfiltration)
+```
+
+Sixty percent coverage, and — more useful than the percentage — the two specific
+techniques that went unseen, named by ID and tactic. That is a remediation backlog,
+not a grade: the blue team knows exactly which two detections to write.
+
+**Emitting a Navigator layer** puts it in the tool the defenders already use:
+
+```shell-session
+analyst@lab:/tmp/attack-lab$ python3 layer.py
+wrote coverage.layer.json -> 5 techniques (importable into ATT&CK Navigator)
+```
+
+The JSON colours each technique green or red on the standard ATT&CK matrix, so a
+defender sees the engagement as a heatmap over the same framework their detections
+are organised around. This is what makes the finding durable: not "the pentest
+found some gaps" but a technique-by-technique coverage map that the blue team
+imports, closes two cells on, and re-tests against next quarter — the whole purpose
+of framing offensive results in ATT&CK rather than in an ad-hoc list.
+
+## Modeling an adversary the client will never face
 
 - **Modeling an unrealistic adversary.** Emulating a nation-state for a small business wastes the engagement; the threat model must fit the client's actual risk (their sector, data, and who really targets it).
 - **Treating ATT&CK as exhaustive.** It is *observed* behavior. Novel or unpublished techniques exist; "not in ATT&CK" is not "safe." Use it as a shared map, not a boundary of what attackers can do.
@@ -81,112 +132,13 @@ ATT&CK's real power is that *both sides speak it*. When the red team reports "we
 - **Threat-informed defense:** by modeling *which* actors target their sector and prioritizing detections for *those* actors' known techniques, a defender spends limited budget where it matters — the same threat model, used defensively.
 - **Purple teaming operationalizes all of this:** red emulates a technique, blue confirms detection or finds the gap, a detection is written, and the technique is re-tested — a loop that measurably improves the coverage map over time.
 
-## Authorized Lab: Build an ATT&CK Coverage Map from Findings
+## Summary
 
-> [!info] Runs on one machine with Python — you turn a list of findings into technique-mapped, detection-scored coverage, the core purple-team artifact
-> No target is touched; this is the mapping/analysis skill. Step 5 cleans up.
+You should now be able to:
 
-### Step 1 — Record engagement findings as technique procedures
-
-```bash
-mkdir -p /tmp/attack-lab && cd /tmp/attack-lab
-cat > findings.csv <<'EOF'
-finding,tactic,technique_id,technique,detected
-F-01,Initial Access,T1566.001,Spearphishing Attachment,blocked
-F-02,Credential Access,T1003.001,LSASS Memory,detected
-F-03,Lateral Movement,T1550.002,Pass-the-Hash,missed
-F-04,Persistence,T1053.003,Cron Job,detected
-F-05,Exfiltration,T1048,Exfil Over Alternative Protocol,missed
-EOF
-echo "recorded 5 technique-mapped findings"
-```
-
-```text
-recorded 5 technique-mapped findings
-```
-
-### Step 2 — Score coverage (what did the client's controls actually catch?)
-
-```bash
-cd /tmp/attack-lab
-python3 - <<'PY'
-import csv
-rows=list(csv.DictReader(open('findings.csv')))
-from collections import Counter
-c=Counter(r['detected'] for r in rows)
-total=len(rows)
-caught=c['blocked']+c['detected']
-print(f"techniques emulated : {total}")
-print(f"blocked/detected    : {caught}  ({100*caught//total}% coverage)")
-print(f"MISSED (gaps)       : {c['missed']}")
-print("--- gaps to fix ---")
-for r in rows:
-    if r['detected']=='missed':
-        print(f"  {r['technique_id']:10} {r['technique']}  ({r['tactic']})")
-PY
-```
-
-```text
-techniques emulated : 5
-blocked/detected    : 3  (60% coverage)
-MISSED (gaps)       : 2
---- gaps to fix ---
-  T1550.002  Pass-the-Hash  (Credential Access)
-  T1048      Exfil Over Alternative Protocol  (Exfiltration)
-```
-
-The engagement is now a *measurable coverage map*: 60% of emulated techniques were caught, and the two gaps are named by ATT&CK ID — precisely what the blue team needs to write new detections.
-
-### Step 3 — Emit an ATT&CK Navigator layer (the standard heatmap format)
-
-```bash
-cd /tmp/attack-lab
-python3 - <<'PY'
-import csv, json
-color={'blocked':'#2ca02c','detected':'#98df8a','missed':'#d62728'}
-techs=[{"techniqueID":r['technique_id'].split('.')[0],
-        "color":color[r['detected']],
-        "comment":f"{r['finding']}: {r['detected']}"} for r in csv.DictReader(open('findings.csv'))]
-layer={"name":"Engagement ENT-2026-042 coverage","versions":{"layer":"4.5"},
-       "domain":"enterprise-attack","techniques":techs}
-open('coverage.layer.json','w').write(json.dumps(layer,indent=2))
-print("wrote coverage.layer.json ->", len(techs), "techniques (importable into ATT&CK Navigator)")
-PY
-```
-
-```text
-wrote coverage.layer.json -> 5 techniques (importable into ATT&CK Navigator)
-```
-
-### Step 4 — State the finding
-
-```bash
-echo "Finding: 60% detection coverage across the emulated ransomware-operator TTPs; gaps = Pass-the-Hash + alt-protocol exfil."
-echo "Deliverable: technique-mapped coverage + a Navigator layer -> blue team writes 2 detections, re-test to confirm."
-```
-
-```text
-Finding: 60% detection coverage across the emulated ransomware-operator TTPs; gaps = Pass-the-Hash + alt-protocol exfil.
-Deliverable: technique-mapped coverage + a Navigator layer -> blue team writes 2 detections, re-test to confirm.
-```
-
-### Step 5 — Cleanup
-
-```bash
-rm -rf /tmp/attack-lab; ls -d /tmp/attack-lab 2>&1 | tail -1
-```
-
-```text
-ls: cannot access '/tmp/attack-lab': No such file or directory
-```
-
-**What you should now be able to do:** build a threat model (who/what/why/how) that picks a realistic adversary, read the ATT&CK matrix as tactics × techniques, map engagement findings to precise technique IDs, and produce a detection-coverage map and Navigator layer that drives purple-team improvement.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why you emulate a *chosen* adversary rather than "everything," and what ATT&CK tactics and techniques are.
-- **Operator:** Build a threat model for a client, select a realistic technique set, and map findings to precise ATT&CK IDs at sub-technique granularity.
-- **Root:** Explain why ATT&CK is a shared red/blue language that turns an engagement into a coverage map, why it is observed-not-exhaustive, and how threat-informed defense and purple-team loops operationalize it.
+- Explain why you emulate a *chosen* adversary rather than "everything," and what ATT&CK tactics and techniques are.
+- Build a threat model for a client, select a realistic technique set, and map findings to precise ATT&CK IDs at sub-technique granularity.
+- Explain why ATT&CK is a shared red/blue language that turns an engagement into a coverage map, why it is observed-not-exhaustive, and how threat-informed defense and purple-team loops operationalize it.
 
 ---
 > 🔼 Up: [[Methodologies & Frameworks]]

@@ -4,7 +4,7 @@ aliases: ["Cyber Security Root", "Root", "Home", "Domain Map"]
 tags:
   - tree/root
   - cyber/moc
-  - level/root
+  - difficulty/info
 Color: "#FFFFFF"
 ---
 
@@ -42,7 +42,7 @@ flowchart TD
 > 4. Pick the platform you actually use — **Linux**, **Windows**, or **macOS** (all in [[OS Internals]]) — and work through its curriculum in order.
 > 5. Then continue down the Networking path (Switching → Routing → Transport → Services), and only afterwards branch into [[Cryptography]], [[Offensive Security]], or [[Defensive Security]].
 >
-> Every leaf opens at **Crook** level with a plain-language mental model and an analogy, then climbs to **Operator** and **Root**. If a note feels too advanced, its `Parent Learning Order` line names the siblings you should read first.
+> Every leaf opens at **A beginner** level with a plain-language mental model and an analogy, then climbs to **A practitioner** and **An expert**. If a note feels too advanced, its `Parent Learning Order` line names the siblings you should read first.
 
 ## 🌳 The Twelve Domains
 - 🌐 **[[Networking]]** — How data moves — OSI/TCP-IP, addressing, DNS/DHCP/NAT, routing, and the protocols both sides target.

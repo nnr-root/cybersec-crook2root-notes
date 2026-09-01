@@ -1,7 +1,7 @@
 ---
 title: "WPScan"
 aliases: ["wpscan"]
-tags: [tree/tooling, cyber/tooling/offensive/web/wpscan, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/offensive/web/wpscan, type/tool, difficulty/medium]
 Domain: "[[Web Application Testing Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ WPScan is a WordPress-specific security scanner. WordPress powers a huge share o
 ## Parent Learning Order
 curl -> Postman -> Burp Suite -> OWASP ZAP -> Nikto -> WPScan -> SQLmap
 
-## Crook — The Mental Model
+## A specialist that knows how WordPress leaks
 
 Like Nikto, WPScan aims at the **server** — but it's a specialist. It knows exactly how WordPress exposes its version, plugins, themes, and users, and it fingerprints each, then looks up known vulnerabilities.
 
-![[tool_web_request_path.svg]]
-
 The insight WPScan encodes: a WordPress site is only as secure as its *weakest plugin*. The core is well-maintained; the twelve plugins someone installed years ago are not. WPScan's job is to inventory that third-party sprawl and match it against a CVE feed.
 
-## Operator — Make It Work
+## Enumerating plugins and users, and what the token unlocks
 
 ```shell-session
 operator@lab:~$ wpscan --url https://blog.example.test --enumerate vp,u --api-token $TOK
@@ -36,7 +34,7 @@ operator@lab:~$ wpscan --url https://blog.example.test --enumerate vp,u --api-to
 
 `--enumerate vp` = *vulnerable plugins*, `u` = users. The **API token unlocks the CVE mapping** — without it you get versions but not the vulnerability data. WPScan can also brute-force enumerated users via `xmlrpc.php` (`--passwords rockyou.txt`) — bound it and respect lockouts.
 
-## Root — Internals & The Deliberate Break
+## Confirming an inferred version before claiming a CVE
 
 ```shell-session
 operator@lab:~$ wpscan --url https://blog.example.test --enumerate vp --api-token $TOK | grep CVE
@@ -50,11 +48,13 @@ operator@lab:~$ wpscan --url https://blog.example.test --enumerate vp --api-toke
 
 **The deliberate break:** WPScan *inferred* the plugin version from fingerprints — the `readme.txt` **curl** confirms `5.4.1` is really installed before you assert CVE-2020-35489 applies (fingerprints can lie; a partial install or a hidden version means guessing). After the update, the CVE count drops to `0` — an objective before/after remediation metric. The professional flow is the same everywhere in this category: the scanner *narrows*, a manual check *confirms*, and the fix is measured by re-running the scanner.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why are plugins and themes, not the WordPress core, usually the real risk?
-- **Operator:** WPScan reports a vulnerable plugin. What must you check before asserting the CVE is exploitable?
-- **Root:** Explain why the API token is required for CVE mapping, and how the CVE count gives an objective remediation metric.
+You should now be able to:
+
+- Why are plugins and themes, not the WordPress core, usually the real risk?
+- WPScan reports a vulnerable plugin. What must you check before asserting the CVE is exploitable?
+- Explain why the API token is required for CVE mapping, and how the CVE count gives an objective remediation metric.
 
 ---
 > 🔼 Up: [[Web Application Testing Tools]]

@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/windows
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
@@ -19,7 +19,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations -> Windows Drivers I-O & Kernel Debugging -> Windows Processes, Services & Boot -> Windows File System & Registry -> Windows Networking Internals -> Windows Security & Access Control -> Windows Identity, Credentials & Authentication -> Windows Active Directory & Domains -> Windows Command Prompt & Batch -> Windows PowerShell -> Windows Logging & Auditing -> Windows Diagnostics, Crash Dumps & Performance -> Windows Sysinternals & Troubleshooting
 
-## Start at Zero: What an Operating System Actually Does
+## What an Operating System Actually Does
 
 An application cannot safely control a CPU, RAM, disk, or network card directly. Windows therefore acts as a privileged broker: it schedules threads, maps virtual memory, names resources as objects, checks access tokens, sends I/O to drivers, and converts hardware events into work software can consume. A **process** is a protected container for resources; a **thread** is an executable stream inside it; a **handle** is a process-local reference to a kernel object; and a **system call** is a controlled transition into privileged code. Keep those four definitions in view—nearly every NT subsystem in this note refines one of them.
 
@@ -174,90 +174,13 @@ Privilege escalation requires crossing a precise boundary: obtaining a stronger 
 
 Analysts map observations to layers. A suspicious API call is user-mode evidence; a syscall trace proves transition; an object access check explains authorization; a driver callback or ETW event may show enforcement; a crash dump can reveal corrupted kernel state. This layered chain prevents both overclaiming and blind spots.
 
-## Hands-On Lab: See the User/Kernel Boundary and Object Manager
+## Summary
 
-> [!info] Runs on any Windows machine — read-only inspection, no changes
-> Uses built-in PowerShell plus `tasklist`. Nothing here modifies the system.
+You should now be able to:
 
-### Step 1 — Separate user-mode processes from kernel components
-
-```powershell
-Get-Process System,Idle,csrss,wininit -ErrorAction SilentlyContinue |
-  Select-Object Name,Id,@{n='Handles';e={$_.HandleCount}} | Format-Table -Auto
-```
-
-```text
-Name    Id Handles
-----    -- -------
-Idle     0       0
-System   4    4213
-csrss  548    1102
-```
-
-`System` (PID 4) is the container for kernel-mode threads; `Idle` (PID 0) is not a real process at all but the accounting for idle CPU. `csrss` is the user-mode side of the Windows subsystem. Recognizing which is which is the first step in reading Windows internals.
-
-### Step 2 — Count the syscall boundary crossings
-
-```powershell
-$before = (Get-Process -Id $PID).PrivilegedProcessorTime
-Get-ChildItem C:\Windows\System32 -File | Out-Null
-$after = (Get-Process -Id $PID).PrivilegedProcessorTime
-"Kernel-mode time used by this listing: {0} ms" -f [math]::Round(($after-$before).TotalMilliseconds,1)
-```
-
-```text
-Kernel-mode time used by this listing: 47.3 ms
-```
-
-`PrivilegedProcessorTime` is time spent in **kernel mode** — every file read crossed the boundary via a syscall. That accumulated 47 ms is the cost of the transitions, invisible but measurable.
-
-### Step 3 — Explore the Object Manager namespace
-
-```powershell
-Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\DOS Devices' | Select-Object -First 3 Name
-[System.IO.Directory]::GetLogicalDrives()
-```
-
-```text
-C:
-D:
-```
-
-Windows resolves everything — files, devices, pipes — through a single Object Manager namespace, of which drive letters are just symbolic links. This is why `\Device\HarddiskVolume2` and `C:` name the same thing.
-
-### Step 4 — Watch handles, the currency of the kernel
-
-```powershell
-$p = Get-Process explorer
-"explorer holds {0} handles and {1} threads" -f $p.HandleCount, $p.Threads.Count
-```
-
-```text
-explorer holds 2847 handles and 94 threads
-```
-
-Every open file, registry key, and window is a **handle** to a kernel object. A steadily climbing handle count on a process is the classic signature of a handle leak — a bug you can spot from this one number over time.
-
-### Step 5 — Confirm architecture and boot mode
-
-```powershell
-$os = Get-CimInstance Win32_OperatingSystem
-"{0} | {1} | boot: {2}" -f $os.Caption, $os.OSArchitecture, (Get-CimInstance Win32_ComputerSystem).BootupState
-```
-
-```text
-Microsoft Windows 11 Enterprise | 64-bit | Normal boot
-```
-
-**Cleanup:** none — every command read state only.
-
-**What you should now be able to do:** distinguish the System/Idle pseudo-processes from real ones, measure kernel-mode time as evidence of syscalls, and explain handles as references to kernel objects.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Name user mode, kernel mode, HAL, Kernel, Executive, Native API, process, thread, object, and handle.
-- **Operator:** Interpret EPROCESS/ETHREAD/PEB/TEB roles, syscall transitions, dispatcher waits, IRQL, APCs, DPCs, and ALPC message flow.
-- **Root:** Reconstruct an operation across every trust boundary, identify exactly where authorization or memory safety failed, validate the finding with symbols and debugger evidence, and design a control that survives user-mode tampering.
+- Name user mode, kernel mode, HAL, Kernel, Executive, Native API, process, thread, object, and handle.
+- Interpret EPROCESS/ETHREAD/PEB/TEB roles, syscall transitions, dispatcher waits, IRQL, APCs, DPCs, and ALPC message flow.
+- Reconstruct an operation across every trust boundary, identify exactly where authorization or memory safety failed, validate the finding with symbols and debugger evidence, and design a control that survives user-mode tampering.
 
 ---
 > 🔼 Up: [[Windows]]

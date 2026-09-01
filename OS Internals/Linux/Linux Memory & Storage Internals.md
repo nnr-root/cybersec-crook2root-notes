@@ -6,7 +6,7 @@ tags:
   - cyber/foundations/linux
   - cyber/defensive/storage
   - type/concept
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Linux]]"
 Color: "#FFA500"
@@ -155,111 +155,6 @@ MemoryMax=671088640
 
 This points to service-local pressure approaching `MemoryHigh`; it does not justify dropping caches or adding swap blindly. Reproduce safely, correlate workload and writeback, change one limit or behavior, then verify latency and data integrity.
 
-## Hands-On Lab: Memory Pressure, the Page Cache & a Loopback Filesystem
-
-> [!info] Runs on one Linux machine — builds a real filesystem in a file under `/tmp`
-> No physical disk is touched. Step 6 removes everything.
-
-### Step 1 — Read memory the way the kernel means it
-
-```bash
-free -m
-```
-
-```text
-               total        used        free      shared  buff/cache   available
-Mem:           15884        2312        9104          22        4468       13102
-Swap:           2047           0        2047
-```
-
-The trap is `free` — it looks alarmingly low, but `buff/cache` is memory holding **reclaimable** file data. The column that answers "can I start a big program?" is **`available`** (13,102 MB), not `free`. Misreading this is the most common false alarm in Linux monitoring.
-
-### Step 2 — Build a real filesystem inside a file
-
-```bash
-mkdir -p /tmp/mem-lab && cd /tmp/mem-lab
-dd if=/dev/zero of=disk.img bs=1M count=256 status=none
-mkfs.ext4 -q disk.img && sudo mkdir -p /mnt/memlab && sudo mount -o loop disk.img /mnt/memlab
-df -h /mnt/memlab | tail -1
-```
-
-```text
-/dev/loop12     241M   14K  223M   1% /mnt/memlab
-```
-
-A file is now a block device with a filesystem on it. This is the layering the note describes — file → loop device → ext4 → mount point — and each layer only sees the one below it.
-
-### Step 3 — Watch the page cache absorb a write
-
-```bash
-free -m | awk 'NR==2{print "buff/cache before:", $6}'
-sudo dd if=/dev/zero of=/mnt/memlab/big.bin bs=1M count=180 status=none
-free -m | awk 'NR==2{print "buff/cache after :", $6}'
-```
-
-```text
-buff/cache before: 4468
-buff/cache after : 4652
-```
-
-Cache grew by roughly the amount written — the data is in RAM, not necessarily on the "disk" yet. Force it down and watch the cost:
-
-```bash
-time sync
-```
-
-```text
-real	0m0.412s
-```
-
-That 0.4 s is the real write your earlier `dd` did not wait for.
-
-### Step 4 — See inodes as a separate exhaustible resource
-
-```bash
-df -i /mnt/memlab | tail -1
-sudo touch /mnt/memlab/f{1..500}
-df -i /mnt/memlab | tail -1
-```
-
-```text
-/dev/loop12    65536    11 65525    1% /mnt/memlab
-/dev/loop12    65536   511 65025    1% /mnt/memlab
-```
-
-Used inodes jumped from 11 to 511 while **space barely moved**. A filesystem can report free gigabytes and still refuse to create a file because it ran out of inodes — a failure that looks impossible until you check `df -i`.
-
-### Step 5 — Prove the layers are independent
-
-```bash
-losetup -j /tmp/mem-lab/disk.img
-sudo umount /mnt/memlab && echo "unmounted, file still exists:" && ls -lh /tmp/mem-lab/disk.img | awk '{print $5, $9}'
-```
-
-```text
-/dev/loop12: [2049]:1712099 (/tmp/mem-lab/disk.img)
-unmounted, file still exists:
-256M /tmp/mem-lab/disk.img
-```
-
-Unmounting removed the **filesystem view** while the underlying data file is untouched. That separation is why a corrupted mount does not necessarily mean lost data, and why forensic imaging works at the device layer rather than the file layer.
-
-### Step 6 — Cleanup
-
-```bash
-sudo umount /mnt/memlab 2>/dev/null; sudo rmdir /mnt/memlab 2>/dev/null
-cd /tmp && rm -rf /tmp/mem-lab
-losetup -a | grep -c mem-lab || echo "no loop devices remain"
-```
-
-```text
-no loop devices remain
-```
-
-Unmounting releases the loop device automatically; the check confirms nothing was left attached.
-
-**What you should now be able to do:** read `available` rather than `free`, explain what `buff/cache` holds, diagnose inode exhaustion, and describe the file→loop→filesystem layering from your own commands.
-
 ## NUMA, swap & encrypted-memory realities
 
 On NUMA systems, memory latency depends on which CPU socket owns the page. The kernel attempts local allocation and may migrate pages or tasks, but poor affinity and oversized working sets create remote accesses. Inspect topology and policy with `numactl --hardware`, `numastat`, and `/proc/<pid>/numa_maps`. Pinning blindly can worsen balance; profile before applying CPU or memory bindings.
@@ -284,11 +179,13 @@ Core dumps, hibernation, swap, crash dumps, and virtual-machine snapshots can ea
 
 Memory can leak credentials through core dumps, swap, hibernation, use-after-free, or overbroad process inspection. Storage can lose confidentiality through unlocked volumes, copied LUKS headers, snapshots, discarded container layers, or unencrypted backups. Availability depends on cgroup limits, OOM policy, free-space monitoring, snapshot capacity, writeback health, and tested recovery. Never infer durability from a successful `write`; understand application `fsync`, filesystem guarantees, device caches, and failure domain.
 
-### Crook → Operator → Root checkpoint
+## Summary
 
-- **Crook:** distinguish virtual from resident memory, cache from free space, filesystem from block device, and encryption from authentication.
-- **Operator:** diagnose faults, reclaim, PSI, OOM, writeback, filesystems, LVM, and LUKS using measured evidence.
-- **Root:** reason from page tables and allocators through page cache, journaling, device mapper, and durable storage semantics; design pressure controls, encrypted layouts, and recoverable backups.
+You should now be able to:
+
+- distinguish virtual from resident memory, cache from free space, filesystem from block device, and encryption from authentication.
+- diagnose faults, reclaim, PSI, OOM, writeback, filesystems, LVM, and LUKS using measured evidence.
+- reason from page tables and allocators through page cache, journaling, device mapper, and durable storage semantics; design pressure controls, encrypted layouts, and recoverable backups.
 
 ---
 > 🔼 Up: [[Linux]]

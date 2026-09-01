@@ -1,6 +1,6 @@
 ---
 title: "Human-Risk Metrics & Program Improvement"
-tags: [tree/offensive, cyber/offensive/social/metrics]
+tags: [tree/offensive, cyber/offensive/social/metrics, difficulty/medium]
 Domain: "[[Social Engineering Exercise Governance & Metrics]]"
 Color: "#DC143C"
 ---
@@ -34,50 +34,60 @@ Separate the exercise funnel into attempted, delivered, blocked, opened, interac
 
 Use minimum cohort sizes, role-based aggregation, fixed retention, and access controls. Track scenario difficulty, channel, exposure duration, and control changes so trends are comparable. Every metric must connect to an owner and intervention—technical control, process redesign, training, or playbook update. Retest the threat hypothesis rather than repeating an identical lure. Improvement means fewer unsafe process outcomes and faster collective response, not simply a lower click percentage.
 
-## Runnable Lab (one machine, Python)
+## Worked Example: The Denominator Decides the Story
 
-The wrong metric (click rate) drives blame; the right metrics (compromise rate, report rate, resilience ratio) drive improvement. This lab computes all of them from a small campaign result set.
-
-**Step 1 — the metrics computer (`metrics.py`).**
+A phishing exercise produces the same raw numbers no matter who reports them; what
+changes the conclusion is which denominator the "click rate" is computed against.
+Running the same campaign figures two ways shows how a reassuring number and an
+alarming one come from identical data.
 
 ```python
-import csv, io
-data="""user,delivered,clicked,submitted,reported,report_time_min
-u01,1,1,1,0,
-u02,1,0,0,1,4
-u03,1,1,0,1,9
-u04,1,0,0,1,2
-u05,1,1,1,0,
-u06,1,0,0,0,"""
-rows=list(csv.DictReader(io.StringIO(data))); n=len(rows)
-clk=sum(int(r['clicked']) for r in rows); sub=sum(int(r['submitted']) for r in rows)
-rep=sum(int(r['reported']) for r in rows)
-print(f"compromise_rate = {sub/n:.0%}   report_rate = {rep/n:.0%}   resilience = {rep/clk:.2f}")
+attempted, delivered, clicked, reported = 5000, 3200, 480, 210
+print(f"click rate / ATTEMPTED : {100*clicked/attempted:.1f}%")
+print(f"click rate / DELIVERED : {100*clicked/delivered:.1f}%")
+print(f"report rate / DELIVERED: {100*reported/delivered:.1f}%")
+print(f"report:click ratio     : {reported/clicked:.2f}")
 ```
 
-**Step 2 — run it.**
-
-```console
+```shell-session
 $ python3 metrics.py
-cohort=6
-click_rate      = 50%  (3/6)
-compromise_rate = 33%  (2/6)   <- the number that matters
-report_rate     = 50%  (3/6)   <- resilience signal
-median_report   = 4 min
-resilience_ratio= 1.00  (reporters per clicker; >1 is healthy)
+attempted=5000 delivered=3200 clicked=480 reported=210
+click rate / ATTEMPTED : 9.6%   (looks reassuring)
+click rate / DELIVERED : 15.0%   (the real human-failure rate)
+report rate / DELIVERED: 6.6%   (the resilience signal)
+report:click ratio     : 0.44   (>1 is the goal)
 ```
 
-**Step 3 — the deliberate contrast.** Click rate (50%) looks alarming, but **compromise rate** (33%, those who actually submitted credentials) and **report rate** (50%) tell the real story: half the cohort clicked, but half also *reported*, and a clicker who reports is a working control, not a failure.
+The first two lines are the same 480 clicks. Divided by everything *attempted*, the
+click rate is a comfortable 9.6%; divided by what was actually *delivered* to an
+inbox, it is 15%. The gap is the 1,800 messages the mail gateway blocked — and
+folding those into the denominator credits the *technical control* to the *humans*,
+making people look better than they are. The delivered denominator is the honest
+one for a human-risk metric, because a person can only fail to resist a message they
+received.
 
-**Step 4 — cleanup:** read-only computation — no cleanup required.
+The report metric matters more than the click metric, and the last line says why.
+A report:click ratio of 0.44 means fewer people reported the phish than fell for
+it — the population has no working immune response. The goal is a ratio above 1,
+where reporting outpaces clicking, because a reported phish is a defended one:
+detection and response begin. A program that optimises only the click rate can drive
+it down while the report rate stays flat and never learn that its users still cannot
+recognise or escalate an attack.
 
-**What you should now be able to do:** compute compromise/report/resilience metrics, and explain why click rate alone is a misleading (and blame-inducing) program metric.
+This is the measurement discipline the note argues for. Every rate needs its
+denominator stated, time metrics need medians and distributions rather than a
+single average that hides the slow responders, and the metric that predicts
+resilience — reporting — must be tracked alongside the metric that measures failure.
+A dashboard that shows click rate alone, against an unstated denominator, is not
+measuring human risk; it is producing a number that can be made to say anything.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why is "compromise rate" more meaningful than "click rate"?
-- **Operator:** Given the numbers above, what single program change would you prioritise, and what retest proves it worked?
-- **Root:** Explain how to trend human-risk metrics over time without gaming (e.g. easier lures inflating improvement) and how to tie them to real incident reduction.
+You should now be able to:
+
+- Why is "compromise rate" more meaningful than "click rate"?
+- Given the numbers above, what single program change would you prioritise, and what retest proves it worked?
+- Explain how to trend human-risk metrics over time without gaming (e.g. easier lures inflating improvement) and how to tie them to real incident reduction.
 
 ---
 > 🔼 Up: [[Social Engineering Exercise Governance & Metrics]]

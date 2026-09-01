@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/windows
   - type/concept
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
@@ -19,7 +19,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations -> Windows Drivers I-O & Kernel Debugging -> Windows Processes, Services & Boot -> Windows File System & Registry -> Windows Networking Internals -> Windows Security & Access Control -> Windows Identity, Credentials & Authentication -> Windows Active Directory & Domains -> Windows Command Prompt & Batch -> Windows PowerShell -> Windows Logging & Auditing -> Windows Diagnostics, Crash Dumps & Performance -> Windows Sysinternals & Troubleshooting
 
-## Start at Zero: Identity Is Not a Password
+## Identity Is Not a Password
 
 An **identity** is a principal the system can name; a **credential** is evidence used to authenticate it; a **logon session** is local state created after authentication; and a **token** carries authorization data to access checks. Passwords are only one credential form alongside keys, certificates, PIN-backed keys, and federated assertions. Authentication proves or asserts who initiated a session. Authorization separately decides what that session may do. Keeping these stages separate makes Kerberos tickets, NTLM challenge-response, DPAPI protection, Windows Hello, and access tokens much easier to reason about.
 
@@ -162,103 +162,13 @@ Credential exposure is a lifecycle problem. Secrets can appear during collection
 
 Investigation correlates account, source host, target service, logon type, authentication package, ticket encryption, delegation state, and subsequent process activity. Important events include 4624 and 4625 for logons, 4648 for explicit credentials, 4672 for special privileges, 4768 and 4769 for Kerberos tickets, 4776 for NTLM validation, and directory-service events on controllers. An individual event is context, not a verdict.
 
-## Hands-On Lab: Where Windows Credentials Live
+## Summary
 
-> [!info] Runs on any Windows machine — read-only inspection, run PowerShell as Administrator
-> No credentials are extracted. The lab shows *where* secrets live and why that location is the target.
+You should now be able to:
 
-### Step 1 — Identify the credential-guarding processes
-
-```powershell
-Get-Process lsass | Select-Object Name,Id,@{n='Handles';e={$_.HandleCount}}
-"LSASS is PID {0} - the process that holds authentication secrets in memory" -f (Get-Process lsass).Id
-```
-
-```text
-Name   Id Handles
-----   -- -------
-lsass 812    1847
-
-LSASS is PID 812 - the process that holds authentication secrets in memory
-```
-
-`lsass.exe` is where authentication material lives while you are logged on. Credential theft is fundamentally about reading **this process's memory** — which is why the attack is about protecting a running process, not choosing a strong password.
-
-### Step 2 — Check whether LSASS is protected
-
-```powershell
-$run = Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -Name RunAsPPL -ErrorAction SilentlyContinue
-"LSASS runs as protected process (RunAsPPL): {0}" -f ($run.RunAsPPL -eq 1)
-```
-
-```text
-LSASS runs as protected process (RunAsPPL): True
-```
-
-`RunAsPPL=1` makes LSASS a protected process, so even an administrator cannot casually read its memory. Its absence is a hardening gap an attacker looks for first.
-
-### Step 3 — See your Kerberos tickets
-
-```powershell
-klist | Select-String 'Client|Server|End Time' | Select-Object -First 3
-```
-
-```text
-        Client: analyst @ CORP.EXAMPLE
-        Server: krbtgt/CORP.EXAMPLE @ CORP.EXAMPLE
-        End Time: 8/4/2026 18:12:44
-```
-
-The `krbtgt` ticket is your ticket-granting ticket — steal it and you can mint access without a password until it expires. Time-limited tickets are why Kerberos depends on synchronized clocks.
-
-### Step 4 — Check Credential Guard
-
-```powershell
-$dg = Get-CimInstance -ClassName Win32_DeviceGuard -Namespace root\Microsoft\Windows\DeviceGuard
-"Credential Guard running: {0}" -f ($dg.SecurityServicesRunning -contains 1)
-```
-
-```text
-Credential Guard running: True
-```
-
-Credential Guard isolates secrets in a virtualization-based enclave that even the kernel cannot read — the strongest defense against credential dumping. Confirming it is running is a key hardening check.
-
-### Step 5 — List where saved credentials are stored
-
-```powershell
-cmdkey /list | Select-String 'Target' | Select-Object -First 3
-```
-
-```text
-    Target: LegacyGeneric:target=MicrosoftOffice16_Data:...
-    Target: WindowsLive:target=virtualapp/didlogical
-```
-
-Saved credentials live in the Credential Manager vault, protected by DPAPI keyed to your logon. This is another store an attacker enumerates after a foothold.
-
-**Cleanup:** none — every command read state only. No secret was extracted.
-
-**What you should now be able to do:** explain why LSASS memory is the credential-theft target, verify RunAsPPL and Credential Guard, read your Kerberos tickets, and locate the credential vault.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Distinguish identity, credential, authentication, logon session, token, and authorization.
-- **Operator:** Read Kerberos ticket state, identify NTLM risk conditions, interpret logon types, explain SAM/LSA/DPAPI boundaries, and verify LSA protection.
-- **Root:** Design an identity tiering and credential-protection architecture, trace one authentication end to end, identify relay/delegation/reuse exposure, and map each control to the precise secret or trust boundary it protects.
-
-### Credential Exposure Matrix
-
-| Secret or proof | Typical lifetime | Primary boundary | Failure consequence |
-| --- | --- | --- | --- |
-| Password | Human rotation interval | User knowledge, credential provider, protected channel | Reusable authentication across services if policy permits |
-| NT hash | Until password change | SAM or domain database, LSA protections | NTLM proof and offline guessing exposure |
-| Kerberos TGT | Hours plus renewal policy | Logon session, ticket cache, KDC keys | Service-ticket acquisition as the represented identity |
-| Service ticket | Service-ticket lifetime | Client cache and service account key | Access to one SPN; offline testing risk for weak service secrets |
-| DPAPI master key | Profile and recovery lifecycle | User credential, machine/domain protectors | Decryption of application-protected data in scope |
-| Hello private key | Device registration lifecycle | TPM, PIN/biometric gesture, policy | Device-bound authentication proof rather than reusable password |
-
-Root-level architecture minimizes where each row exists, who can request or recover it, how it is rotated or revoked, and which telemetry proves use. Passwordless deployment is incomplete when fallback passwords, legacy NTLM, unconstrained delegation, or help-desk recovery silently reintroduce reusable secrets.
+- Distinguish identity, credential, authentication, logon session, token, and authorization.
+- Read Kerberos ticket state, identify NTLM risk conditions, interpret logon types, explain SAM/LSA/DPAPI boundaries, and verify LSA protection.
+- Design an identity tiering and credential-protection architecture, trace one authentication end to end, identify relay/delegation/reuse exposure, and map each control to the precise secret or trust boundary it protects.
 
 ---
 > 🔼 Up: [[Windows]]

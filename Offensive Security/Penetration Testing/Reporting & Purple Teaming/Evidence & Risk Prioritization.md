@@ -9,7 +9,7 @@ tags:
   - tree/offensive
   - cyber/offensive/reporting
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain: "[[Reporting & Purple Teaming]]"
 Color: "#DC143C"
 ---
@@ -22,7 +22,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Evidence & Risk Prioritization -> Finding & Report Writing -> Purple Team Exercise Design -> Retesting, Closure & Lessons Learned
 
-## Start at Zero: From Raw Proof to a Ranked Risk List
+## From Raw Proof to a Ranked Risk List
 
 A report is only as good as its two foundations: **evidence** (defensible proof that each finding is real and reproducible) and **prioritization** (a defensible order in which to fix them). This note covers both, because they are the raw material of every deliverable — the technical and executive write-ups (next leaf) are just *presentation* of well-collected evidence and well-reasoned priority. Get evidence wrong and findings can be disputed or aren't reproducible; get prioritization wrong and the client burns limited remediation budget on the wrong things.
 
@@ -66,7 +66,7 @@ Priority = technical impact (CVSS) × exploit likelihood (EPSS/known-exploited)
 
 Record the **CVSS vector + version + rationale** (not just a number), the **EPSS date** (model output changes over time), and whether the issue was manually verified, reachable from the relevant trust zone, exposed to untrusted users, on a crown-jewel path, or already detected. A lower-scoring authorization flaw affecting *every tenant* routinely outranks a high base score isolated behind strong controls. Every **risk acceptance** must name an owner, rationale, compensating control, expiration, and review trigger.
 
-## Failure Modes and Interpretation
+## Over-collection as a liability you created
 
 - **Over-collection.** Dumping a real table when a single canary record proves the finding creates a data-protection liability and can constitute a breach *you* caused.
 - **Unhashed / untraceable evidence.** Without an original hash and custody record, a finding can be challenged as tampered — worthless in a dispute (the RoE chain-of-custody lab proves the mechanic).
@@ -81,103 +81,13 @@ Record the **CVSS vector + version + rationale** (not just a number), the **EPSS
 - **Known-exploited + reachable = act now:** combining EPSS/known-exploitation with your reachability finding is the strongest signal for emergency patching, far better than base severity alone.
 - **Risk acceptance with expiry** keeps deferred risks from being forgotten — the review trigger forces a re-decision.
 
-## Authorized Lab: Score and Rank Findings by Real Priority
+## Summary
 
-> [!info] Runs on one machine with Python — turn raw findings into a defensible, business-adjusted priority order, with a hashed evidence register
-> No target touched. Step 5 cleans up.
+You should now be able to:
 
-### Step 1 — Record findings with the inputs that matter
-
-```bash
-mkdir -p /tmp/prio-lab && cd /tmp/prio-lab
-cat > findings.csv <<'EOF'
-id,title,cvss,epss,business_exposure,controls,verified
-F-01,Cross-tenant IDOR (all customers),6.5,0.05,10,2,yes
-F-02,RCE on isolated throwaway host,9.8,0.10,2,9,yes
-F-03,Verbose error banner,3.1,0.01,2,5,yes
-F-04,Auth bypass on payments API,8.1,0.40,9,3,yes
-EOF
-echo "recorded 4 findings with CVSS, EPSS, business exposure (1-10), control strength (1-10)"
-```
-
-```text
-recorded 4 findings with CVSS, EPSS, business exposure (1-10), control strength (1-10)
-```
-
-### Step 2 — Compute business-adjusted priority (not raw CVSS)
-
-```bash
-cd /tmp/prio-lab
-python3 - <<'PY'
-import csv
-rows=list(csv.DictReader(open('findings.csv')))
-def score(r):
-    cvss=float(r['cvss']); epss=float(r['epss'])
-    biz=float(r['business_exposure']); ctl=float(r['controls'])
-    # impact*likelihood*exposure, damped by control strength
-    return round((cvss/10)*(0.3+epss)*(biz/10)*(11-ctl)/10*100,1)
-for r in rows: r['priority']=score(r)
-rows.sort(key=lambda r:-r['priority'])
-print(f"{'PRIORITY':>8}  {'CVSS':>4}  {'EPSS':>4}  TITLE")
-for r in rows:
-    print(f"{r['priority']:>8}  {r['cvss']:>4}  {r['epss']:>4}  {r['title']}")
-PY
-```
-
-```text
-PRIORITY  CVSS  EPSS  TITLE
-    22.7   8.1  0.40  Auth bypass on payments API
-    16.1   6.5  0.05  Cross-tenant IDOR (all customers)
-     1.6   9.8  0.10  RCE on isolated throwaway host
-     0.6   3.1  0.01  Verbose error banner
-```
-
-The business-adjusted order **inverts CVSS**: the 9.8 RCE ranks *third* (isolated, strong controls), while the 6.5 cross-tenant IDOR and the 8.1 payments-auth bypass rank first — because they reach real customer data with weak controls. That inversion is the entire point of prioritization, and only the operator who saw the environment can justify it.
-
-### Step 3 — Register evidence for the top finding (hashed + traceable)
-
-```bash
-cd /tmp/prio-lab
-echo "POST /api/pay/confirm w/o auth -> 200 (canary order) :: F-04 proof" > F-04-proof.txt
-H=$(sha256sum F-04-proof.txt | awk '{print $1}')
-printf 'id,collector,utc,sha256,class,disposition\nF-04,%s,%s,%s,confidential-synthetic,delete+30d\n' "$USER" "$(date -u +%FT%TZ)" "$H" > evidence-register.csv
-cat evidence-register.csv
-```
-
-```text
-id,collector,utc,sha256,class,disposition
-F-04,<user>,<utc>,<sha256>,confidential-synthetic,delete+30d
-```
-
-### Step 4 — State the ranking rationale
-
-```bash
-echo "Top priority F-04 (payments auth bypass): high business exposure + EPSS 0.40 + weak controls -> fix first, despite CVSS < the isolated RCE."
-echo "F-02 (RCE 9.8) deprioritized: throwaway host, strong controls, low reachability. Documented, not emergency."
-```
-
-```text
-Top priority F-04 (payments auth bypass): high business exposure + EPSS 0.40 + weak controls -> fix first, despite CVSS < the isolated RCE.
-F-02 (RCE 9.8) deprioritized: throwaway host, strong controls, low reachability. Documented, not emergency.
-```
-
-### Step 5 — Cleanup
-
-```bash
-cd /; rm -rf /tmp/prio-lab; ls -d /tmp/prio-lab 2>&1 | tail -1
-```
-
-```text
-ls: cannot access '/tmp/prio-lab': No such file or directory
-```
-
-**What you should now be able to do:** collect evidence that is sufficient/minimal/reproducible/protected/traceable, hash and register it, and rank findings by *business-adjusted* priority (CVSS × EPSS × exposure ÷ controls) — justifying why a lower CVSS can outrank a higher one.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the five properties of good evidence and why technical severity is not business priority.
-- **Operator:** Hash and register evidence with a custody record, and rank findings using CVSS, EPSS, and business exposure — not CVSS alone.
-- **Root:** Justify a priority order that inverts CVSS using environmental context, explain why EPSS/CVSS need dates and rationale, and how risk acceptance with expiry keeps deferred risk visible.
+- Explain the five properties of good evidence and why technical severity is not business priority.
+- Hash and register evidence with a custody record, and rank findings using CVSS, EPSS, and business exposure — not CVSS alone.
+- Justify a priority order that inverts CVSS using environmental context, explain why EPSS/CVSS need dates and rationale, and how risk acceptance with expiry keeps deferred risk visible.
 
 ---
 > 🔼 Up: [[Reporting & Purple Teaming]]

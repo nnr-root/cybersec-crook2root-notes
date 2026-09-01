@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/foundations
   - type/concept
-  - level/crook
+  - difficulty/easy
 Domain:
   - "[[Network Foundations]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation & Protocol Data Units -> Network Devices & Traffic Paths -> Reachability Testing & ICMP
 
-## Start at Zero: What a Network Actually Is
+## What a Network Actually Is
 
 A **network** is two or more devices that can exchange data using an agreed set of rules. That is the whole definition. Everything else — switches, routers, subnets, firewalls — exists to answer one repeated question: *given this destination, where do I send the data next?*
 
@@ -161,34 +161,13 @@ Scope and shape determine three things that matter to both attackers and defende
 
 All enumeration described here is limited to systems within an authorized scope. Host discovery generates traffic that is logged, and sweeping ranges outside an agreed boundary is both detectable and out of bounds.
 
-## Authorized Lab: Prove a Boundary Exists
+## Summary
 
-Use two virtual machines on an isolated hypervisor network you control.
+You should now be able to:
 
-1. Place both VMs on the same virtual switch. Record `ip addr` and `ip route` on each.
-2. From VM-A, run `nmap -sn -PR <segment>/24` and confirm VM-B appears.
-3. Move VM-B to a second virtual switch with its own subnet and a router between the two.
-4. Repeat the ARP-based sweep from VM-A. VM-B must now be absent, because ARP does not cross a routed boundary.
-5. Repeat with `nmap -sn <VM-B subnet>/24`. VM-B should reappear, because ICMP does route.
-6. Add a deny rule on the router for traffic between the two subnets and repeat step 5.
-7. Remove the rule and restore both VMs to their original switch.
-
-Expected interpretation:
-
-```text
-Same segment, ARP sweep      -> host found   (no routing decision required)
-Routed segments, ARP sweep   -> host absent  (proves a broadcast-domain boundary)
-Routed segments, ICMP sweep  -> host found   (proves routing works)
-Routed + deny rule, ICMP     -> host absent  (proves the control, not the topology)
-```
-
-Steps 4 and 6 produce the same observable result — "host not found" — for completely different reasons. Distinguishing them is the entire skill.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Define node, link, segment, and broadcast domain; name the common topologies and explain why star-of-stars dominates.
-- **Operator:** Read `ip addr`, `ip route`, and `ip neigh` to state your own segment, gateway, and reachable scope; run an authorized sweep and explain why ARP and ICMP discovery can disagree.
-- **Root:** Given a topology diagram, identify every enforcement point and every place where an overlay could bypass one; design a segmentation scheme that still constrains an attacker holding valid credentials, and specify where sensors must sit to observe intra-segment movement.
+- Define node, link, segment, and broadcast domain; name the common topologies and explain why star-of-stars dominates.
+- Read `ip addr`, `ip route`, and `ip neigh` to state your own segment, gateway, and reachable scope; run an authorized sweep and explain why ARP and ICMP discovery can disagree.
+- Given a topology diagram, identify every enforcement point and every place where an overlay could bypass one; design a segmentation scheme that still constrains an attacker holding valid credentials, and specify where sensors must sit to observe intra-segment movement.
 
 ---
 > 🔼 Up: [[Network Foundations]]

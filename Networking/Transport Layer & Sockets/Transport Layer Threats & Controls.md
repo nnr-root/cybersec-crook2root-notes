@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/transport
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Transport Layer & Sockets]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Control -> UDP & Connectionless Transport -> QUIC & Modern Transport -> Transport Layer Threats & Controls
 
-## Start at Zero: Two Root Causes
+## Two Root Causes
 
 Every attack in this note traces to one of two facts.
 
@@ -133,41 +133,13 @@ A **slow scan** deliberately spreads probes over hours to stay under such thresh
 
 Every technique described here must be exercised only in an isolated laboratory you own. Flooding, exhaustion, and injection all degrade or deny service for legitimate users and are destructive outside a controlled environment.
 
-## Authorized Lab: Exhaust, Detect, and Defend
+## Summary
 
-Use an isolated segment with a server, a client, and an attacker VM. Snapshot the server so exhaustion is trivially recoverable. Record baseline state counts and connection-tracking utilization.
+You should now be able to:
 
-1. **Baseline.** Record `ss -tan` state distribution, `nf_conntrack_count`, and a successful client connection time.
-2. **SYN flood.** From the attacker, generate SYN segments to a listening port without completing handshakes, with `tcp_syncookies` disabled on the server. Watch the backlog:
-
-```bash
-watch -n1 "ss -tan state syn-recv | wc -l; netstat -s | grep -c 'SYNs to LISTEN'"
-```
-
-Confirm legitimate client connections begin failing while bandwidth remains modest.
-3. **Enable SYN cookies** and repeat. Confirm the `SYN-RECV` backlog no longer grows unbounded and legitimate clients connect successfully during the same attack rate.
-4. **Slow-connection exhaustion.** Stop the flood. Open many connections that complete the handshake and then send data extremely slowly. Confirm `ESTAB` climbs with near-zero throughput and that the state distribution differs clearly from step 2.
-5. **Apply the control.** Configure a per-connection timeout and a per-source connection limit. Repeat and confirm slow connections are reaped and the server stays responsive.
-6. **Middlebox exhaustion.** On a lab firewall, drive connection-tracking utilization toward its maximum and confirm new legitimate flows are dropped with `nf_conntrack: table full` in the logs — while CPU and bandwidth look healthy, demonstrating why table utilization needs its own monitoring.
-7. **Scan detection.** From the attacker, run a port sweep. Capture bare SYN segments with the filter above and confirm the sequential-port signature. Then repeat with a slow scan and confirm it evades a short-window threshold.
-8. **Cleanup.** Stop all attack traffic, restore `tcp_syncookies` and any timeout, limit, and connection-tracking settings to baseline, and confirm the state distribution and client connection time match step 1.
-
-Expected interpretation:
-
-```text
-SYN flood, no cookies -> SYN-RECV saturates, legitimate clients refused, low bandwidth
-SYN cookies enabled   -> no unbounded state; the same attack rate is absorbed
-Slow exhaustion       -> ESTAB high, throughput near zero; volumetric defenses blind
-Timeouts + limits     -> slow connections reaped; server stays available
-Conntrack full        -> flows dropped while CPU and bandwidth look fine
-Fast vs slow scan     -> same technique; only the rate determines threshold detection
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** State the two root causes of transport attacks, and explain what a SYN flood consumes.
-- **Operator:** Distinguish a SYN flood, a slow-connection exhaustion attack, and a legitimate traffic spike from state distribution and throughput; detect a port sweep from bare-SYN traffic and explain why the detection is behavioural rather than content-based.
-- **Root:** Explain how SYN cookies eliminate the resource dependency without breaking the protocol, and what they cost; describe why sequence randomization defends against off-path injection while authenticated encryption is the definitive control, and articulate the cost of each defense honestly enough to deploy it without causing an outage.
+- State the two root causes of transport attacks, and explain what a SYN flood consumes.
+- Distinguish a SYN flood, a slow-connection exhaustion attack, and a legitimate traffic spike from state distribution and throughput; detect a port sweep from bare-SYN traffic and explain why the detection is behavioural rather than content-based.
+- Explain how SYN cookies eliminate the resource dependency without breaking the protocol, and what they cost; describe why sequence randomization defends against off-path injection while authenticated encryption is the definitive control, and articulate the cost of each defense honestly enough to deploy it without causing an outage.
 
 ---
 > 🔼 Up: [[Transport Layer & Sockets]]

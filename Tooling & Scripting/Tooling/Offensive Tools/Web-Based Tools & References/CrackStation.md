@@ -1,7 +1,7 @@
 ---
 title: "CrackStation"
 aliases: ["CrackStation", "crackstation"]
-tags: [tree/tooling, cyber/tooling/offensive/web-tools/crackstation, type/tool, level/apprentice]
+tags: [tree/tooling, cyber/tooling/offensive/web-tools/crackstation, type/tool, level/apprentice, difficulty/easy]
 Domain: "[[Web-Based Tools & References]]"
 Color: "#708090"
 ---
@@ -16,7 +16,7 @@ CrackStation (`crackstation.net`) is a free online **hash lookup**. Paste an uns
 ## Parent Learning Order
 GTFOBins -> LOLBAS -> CrackStation -> Aperisolve -> revshells.com
 
-## Crook — The Mental Model
+## Precomputing once, looking up forever
 
 Cracking a hash normally means *guessing*: try a password, hash it, compare. A **lookup table** flips that around — precompute the hashes of billions of known passwords *once*, store them, and then any future hash is a database query. If a password has ever appeared in a wordlist or breach, its unsalted hash is already in the table.
 
@@ -29,7 +29,7 @@ flowchart LR
     S["a per-hash salt"] -.defeats.-> C
 ```
 
-## Operator — Make It Work
+## Identify, confirm unsalted, look it up
 
 The workflow is trivial: identify the hash type (with **name-that-hash**), confirm it's *unsalted*, paste it, solve the CAPTCHA, read the plaintext.
 
@@ -46,7 +46,7 @@ Result:  not found — salted/slow hash, lookup impossible
 
 It supports MD5, SHA1, SHA256, and other **unsalted** fast hashes — the ones a lookup table can enumerate.
 
-## Root — Internals & The Deliberate Break
+## The single fact that is both its power and its limit
 
 CrackStation's power and its hard limit are the same fact: it only works on **unsalted** hashes.
 
@@ -57,11 +57,13 @@ MD5("password"+"a1B9") = 7c2e51f3...   → unique per salt → NOT in any table 
 
 **The deliberate break:** the *identical password* `password` is instantly recovered when hashed bare, but **unrecoverable** the moment a per-user salt is added — because the salt makes each hash unique, so no precomputed table can ever contain it. That is precisely why salting exists: it doesn't make one password stronger, it makes *precomputation useless*, forcing an attacker back to slow per-hash guessing (Hashcat/John). CrackStation is therefore the clearest possible demonstration of *why every stored password must be salted* — and why bcrypt/argon2 (salted **and** slow) defeat it twice over.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** How does a lookup table "crack" a hash instantly without guessing?
-- **Operator:** You have a bcrypt hash. Why is CrackStation the wrong tool, and what do you use instead?
-- **Root:** Explain, using the same password hashed with and without a salt, why salting defeats lookup tables.
+You should now be able to:
+
+- How does a lookup table "crack" a hash instantly without guessing?
+- You have a bcrypt hash. Why is CrackStation the wrong tool, and what do you use instead?
+- Explain, using the same password hashed with and without a salt, why salting defeats lookup tables.
 
 ---
 > 🔼 Up: [[Web-Based Tools & References]]

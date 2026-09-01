@@ -1,7 +1,7 @@
 ---
 title: "Suricata"
 aliases: ["suricata"]
-tags: [tree/tooling, cyber/tooling/defensive/suricata, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/defensive/suricata, type/tool, difficulty/medium]
 Domain: "[[Network Detection & Monitoring Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ Suricata is the modern, multi-threaded network IDS/IPS. It runs signature rules 
 ## Parent Learning Order
 Suricata -> Snort -> Zeek
 
-## Crook — The Mental Model
+## One engine doing both signatures and protocol logging
 
 There are two ways to watch a network; Suricata is unusual in doing *both*.
 
-![[tool_ids_models.svg]]
-
 On the left of the diagram it is a **signature engine** — matching traffic against known-bad rules and alerting. But it also emits the right-hand side's structured **protocol logs** (`dns.json`, `http`, `tls`, `flow`). And it can flip from **IDS** (out-of-band, detect-only) to **IPS** (inline, block). Understanding which of those three hats it's wearing in a given deployment is the key to Suricata.
 
-## Operator — Make It Work
+## Snort grammar in, eve.json out
 
 Rules use the same grammar as Snort; output lands in `eve.json` (one JSON event per line, SIEM-ready):
 
@@ -43,7 +41,7 @@ alert tls any any -> any any (msg:"Self-signed cert to external"; tls.cert_self_
 
 `suricata-update` pulls community rule sets (Emerging Threats); `eve.json` event types (`alert`, `dns`, `http`, `tls`, `flow`) feed a SIEM directly.
 
-## Root — Internals & The Deliberate Break
+## Where IDS mode becomes an outage
 
 The IDS-vs-IPS decision is where Suricata can go from *helpful* to *outage*:
 
@@ -57,11 +55,13 @@ alert → drop   → legitimate connections to a partner API now BLOCKED for eve
 
 **The deliberate break:** a slightly over-broad rule is a minor annoyance in IDS mode (one noisy alert to tune) but a **self-inflicted denial of service** in IPS mode, because inline Suricata *acts* on every match by dropping the packet. The same rule set, two deployment modes, wildly different blast radius. The discipline: develop and tune rules in **IDS mode** against real traffic, measure the false-positive rate, and only promote to inline **IPS** rules you trust — and even then keep a bypass. The other Root reality (shared with Snort): **content signatures can't see inside TLS**, so a growing share of Suricata's value is its *metadata* logging (JA3 fingerprints, SNI, cert anomalies) rather than payload rules — which is exactly the ground Zeek was built for.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** In what three roles can Suricata operate, and how does it differ from a pure signature IDS?
-- **Operator:** Read a Suricata rule's structure, and name the output that feeds a SIEM.
-- **Root:** Explain why the same rule is safe in IDS mode but dangerous in IPS mode, and what that implies for rollout.
+You should now be able to:
+
+- In what three roles can Suricata operate, and how does it differ from a pure signature IDS?
+- Read a Suricata rule's structure, and name the output that feeds a SIEM.
+- Explain why the same rule is safe in IDS mode but dangerous in IPS mode, and what that implies for rollout.
 
 ---
 > 🔼 Up: [[Network Detection & Monitoring Tools]]

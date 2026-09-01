@@ -5,6 +5,7 @@ aliases:
 tags:
   - tree/offensive
   - cyber/offensive/guided
+  - difficulty/hard
 Domain: "[[Guided Assessments]]"
 Color: "#DC143C"
 ---
@@ -81,11 +82,13 @@ With written approval, operate a low-power controlled access point using a clear
 
 Power down test radios, remove profiles and certificates, revoke temporary identities, restore access-point settings, and verify no rogue configuration remains. Report coverage gaps, weak identity validation, segmentation failures, and monitoring outcomes with RF location and timestamp evidence.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Explain why wireless scope must be defined by SSID/BSSID/zone/channel, and why RF crossing property lines makes authorization critical.
-- **Operator:** Run a passive survey, inventory security modes, test onboarding/certificate validation and client isolation, and run an approved rogue-AP detection drill.
-- **Root:** Explain why a name match never proves ownership, how PMF/WPA3-Enterprise/server-cert validation defeat the common attacks, and how to measure whether wireless monitoring actually detected the drill.
+You should now be able to:
+
+- Explain why wireless scope must be defined by SSID/BSSID/zone/channel, and why RF crossing property lines makes authorization critical.
+- Run a passive survey, inventory security modes, test onboarding/certificate validation and client isolation, and run an approved rogue-AP detection drill.
+- Explain why a name match never proves ownership, how PMF/WPA3-Enterprise/server-cert validation defeat the common attacks, and how to measure whether wireless monitoring actually detected the drill.
 
 ---
 > 🔼 Up: [[Guided Assessments]]

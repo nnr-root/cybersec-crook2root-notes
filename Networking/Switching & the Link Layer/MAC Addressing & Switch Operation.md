@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/layer2
   - type/concept
+  - difficulty/easy
   - level/apprentice
 Domain:
   - "[[Switching & the Link Layer]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbor Discovery -> VLANs & Trunking -> Spanning Tree & Loop Prevention -> Link Layer Security Controls
 
-## Start at Zero: What a MAC Address Is
+## What a MAC Address Is
 
 A **MAC (Media Access Control) address** is a 48-bit identifier assigned to a network interface, written as six hex pairs: `00:1a:2b:3c:4d:5e`. It identifies a device on a local segment, and unlike an IP address it is not hierarchical and does not describe location — it is a flat name.
 
@@ -117,44 +118,13 @@ The defence is not encryption of the frame; it is limiting how many addresses a 
 
 All flooding, spoofing, and table manipulation described here must be confined to an isolated lab you own. Exhausting a production switch's table degrades service for every user on it and exposes their traffic.
 
-## Authorized Lab: Watch Learning, Then Break It
+## Summary
 
-Use three lab VMs connected to a software bridge you control (a Linux bridge stands in for a hardware switch).
+You should now be able to:
 
-1. Create the bridge and attach the three interfaces. Confirm an empty forwarding database:
-
-```bash
-sudo bridge fdb show br0 | grep -c "master br0"
-```
-
-2. From Host-A, ping Host-B once. Inspect the database and confirm both addresses are now learned behind their respective ports.
-3. Capture on Host-C's interface while Host-A pings Host-B:
-
-```bash
-sudo tcpdump -i eth0 -nn -c 20 'not arp'
-```
-
-Under normal switching, Host-C should see almost none of the A-to-B traffic, because the bridge forwards it only to B's port.
-
-4. Now flood the table. From Host-C, generate frames with many random source addresses to fill the forwarding database (a MAC-flooding tool or a crafted-frame script in your lab). Watch the entry count climb toward the table limit.
-5. Repeat the capture on Host-C during an A-to-B ping. Once the table is saturated, Host-C begins receiving the A-to-B frames, because the bridge is now flooding unknown-destination traffic.
-6. Apply the control: set a per-port MAC limit on the bridge port facing Host-C. Restart the flood and confirm the port restricts or disables rather than accepting thousands of addresses.
-7. Clear the flooded entries, remove the port limit and bridge configuration created for the lab, and confirm normal switching returns — Host-C again sees none of the A-to-B traffic.
-
-Expected interpretation:
-
-```text
-Before flood -> switching isolates A-to-B; C sees nothing
-Table full   -> switch floods; C intercepts A-to-B (interception via exhaustion)
-Port limit   -> the flood cannot present thousands of MACs through one port
-After cleanup-> isolation restored, proving the flood was the sole cause
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what a MAC address is and how it differs from an IP address; describe the switch's learn/forward/flood algorithm in plain language.
-- **Operator:** Read a forwarding database, interpret an OUI and the U/L bit, and explain why the first frame to a new host is flooded while the rest of the conversation is unicast.
-- **Root:** Explain how MAC flooding converts a switch into a wiretap by exhausting the CAM table; justify why port-security limits defeat it where encryption does not, and why MAC-based access control provides no real authentication.
+- Explain what a MAC address is and how it differs from an IP address; describe the switch's learn/forward/flood algorithm in plain language.
+- Read a forwarding database, interpret an OUI and the U/L bit, and explain why the first frame to a new host is flooded while the rest of the conversation is unicast.
+- Explain how MAC flooding converts a switch into a wiretap by exhausting the CAM table; justify why port-security limits defeat it where encryption does not, and why MAC-based access control provides no real authentication.
 
 ---
 > 🔼 Up: [[Switching & the Link Layer]]

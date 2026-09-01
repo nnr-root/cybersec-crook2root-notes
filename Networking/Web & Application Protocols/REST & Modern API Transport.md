@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/appproto
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Web & Application Protocols]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 HTTP Fundamentals -> HTTPS & the TLS Handshake -> Web Architecture & Proxies -> WebSockets & Real-Time Protocols -> REST & Modern API Transport -> Application Delivery & Load Balancing
 
-## Start at Zero: An API Is a Contract Between Programs
+## An API Is a Contract Between Programs
 
 A web page is for humans; an **API (Application Programming Interface)** is for programs. Instead of returning HTML to render, an API returns structured data — usually JSON — that another program parses and acts on. The transport is still HTTP, so everything from the HTTP branch applies; what differs is that the consumer is code, which changes the design pressures.
 
@@ -110,34 +110,13 @@ APIs have consumers who cannot be updated in lockstep, so they must evolve witho
 
 All API testing described here must target only systems within an authorized scope. Enumerating objects, testing authorization, and rate-limit probing are intrusive and require explicit authorization.
 
-## Authorized Lab: Exercise the Transport Styles
+## Summary
 
-Use a lab exposing a REST API, and if available a GraphQL endpoint, with token authentication under your control.
+You should now be able to:
 
-1. **Map REST to methods.** Exercise GET, POST, PUT, and DELETE against a resource and confirm each behaves per its HTTP semantics; confirm a GET does not change state and a repeated PUT is idempotent.
-2. **Observe stateless auth.** Make a request without a token (expect 401), then with a valid token (expect 200). Confirm the token is required on every request, with no session persisting between them.
-3. **Test object-level authorization.** Authenticate as one user and request another user's object by ID. If the API returns it, you have found the classic broken-object-authorization condition; confirm a correct implementation returns 403 or 404. Articulate that the token was valid — the missing check was ownership.
-4. **Contrast GraphQL controls.** If available, send two very different GraphQL queries to the single endpoint and confirm that path- and method-based controls cannot distinguish them, so control must inspect the query itself. Send a deliberately expensive nested query and observe the disproportionate server work, motivating query-cost limiting.
-5. **Test rate limiting.** Send rapid repeated requests and confirm the API returns 429 once a limit is reached; confirm the limit is scoped sensibly per client.
-6. **Check token handling.** Confirm the token is accepted in the `Authorization` header and, critically, that placing it in the URL causes it to appear in server logs — demonstrating why it must not go there.
-7. **Cleanup.** Remove test objects and restore any rate-limit or auth configuration changed during the lab.
-
-Expected interpretation:
-
-```text
-Methods         -> REST relies on HTTP method semantics; GET stays safe, PUT idempotent
-Stateless auth  -> token required every request; no server-side session
-Cross-object    -> valid token, missing ownership check = broken object authorization
-GraphQL         -> one endpoint defeats path/method controls; inspect the query and its cost
-429             -> rate limiting scoped per client is a core API control
-Token in URL    -> leaks into logs; belongs only in the Authorization header
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what an API is and how REST models resources with URLs and HTTP methods; state why REST relies on the safe/idempotent method contract.
-- **Operator:** Make authenticated REST requests and read status-code outcomes; explain why the token accompanies every request and why REST-style controls do not translate directly to GraphQL's single endpoint.
-- **Root:** Explain why per-request, per-object authorization is the API's essential control and why no network layer substitutes for it; describe how transport style dictates where rate limiting and inspection apply, and why deprecated versions and verbose errors are transport-level attack surface.
+- Explain what an API is and how REST models resources with URLs and HTTP methods; state why REST relies on the safe/idempotent method contract.
+- Make authenticated REST requests and read status-code outcomes; explain why the token accompanies every request and why REST-style controls do not translate directly to GraphQL's single endpoint.
+- Explain why per-request, per-object authorization is the API's essential control and why no network layer substitutes for it; describe how transport style dictates where rate limiting and inspection apply, and why deprecated versions and verbose errors are transport-level attack surface.
 
 ---
 > 🔼 Up: [[Web & Application Protocols]]

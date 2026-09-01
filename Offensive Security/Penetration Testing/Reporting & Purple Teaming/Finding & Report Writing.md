@@ -9,7 +9,7 @@ tags:
   - tree/offensive
   - cyber/offensive/reporting
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain: "[[Reporting & Purple Teaming]]"
 Color: "#DC143C"
 ---
@@ -22,7 +22,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Evidence & Risk Prioritization -> Finding & Report Writing -> Purple Team Exercise Design -> Retesting, Closure & Lessons Learned
 
-## Start at Zero: Two Readers, One Truth
+## Two Readers, One Truth
 
 A penetration test produces exactly one durable artifact: the report. It has to serve two very different readers from the *same* set of verified facts. The **technical finding** is written for an engineer who must reproduce the issue and fix its root cause. The **executive summary and attack narrative** are written for a decision-maker who must understand business exposure and allocate budget. This note covers both crafts, because the skill is *translation* — turning the evidence and priorities from the previous leaf into a technical ticket an engineer can act on *and* a narrative a CISO can decide on, without exaggeration and without drowning either reader in the wrong detail.
 
@@ -63,7 +63,7 @@ flowchart LR
 
 The **attack narrative** is chronological and evidence-backed: initial condition → decisions → controls that worked → controls that failed → achieved privilege → bounded proof → detection response → cleanup. **Include the paths that were *prevented*** so the client sees where their investment paid off. Close with a 30/60/90-day roadmap tied to accountable owners. One good narrative shows how *several medium findings combine* into material impact — the whole point that a severity tally misses.
 
-## Failure Modes and Interpretation
+## The difference between a report and a scanner export
 
 - **Payload-only findings.** A report that shows the exploit but not the root cause, business impact, or actionable fix is a scanner export, not an assessment.
 - **Exaggerated impact.** Claiming reach you didn't demonstrate destroys credibility and can misdirect remediation. Use verified language and state what was *not* tested.
@@ -91,11 +91,13 @@ Take a raw, low-value finding (as a scanner would emit it) and produce the two r
 
 Deliverable: one engineer-actionable ticket + one executive paragraph from the same finding. The mastery signal is that the engineer could fix it and the executive could decide on it — without either needing the other's document.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Explain why the report is the deliverable and why it must serve engineers and executives from the same verified facts.
-- **Operator:** Write a technical finding with full anatomy (condition→evidence→impact→root cause→fix→retest) and an executive attack narrative, using precise verified language.
-- **Root:** Explain why root-cause grouping (not per-finding themes or severity tallies) drives systemic fixes, why prevented paths belong in the report, and how a 30/60/90 owner-mapped roadmap turns a document into an accountable program.
+You should now be able to:
+
+- Explain why the report is the deliverable and why it must serve engineers and executives from the same verified facts.
+- Write a technical finding with full anatomy (condition→evidence→impact→root cause→fix→retest) and an executive attack narrative, using precise verified language.
+- Explain why root-cause grouping (not per-finding themes or severity tallies) drives systemic fixes, why prevented paths belong in the report, and how a 30/60/90 owner-mapped roadmap turns a document into an accountable program.
 
 ---
 > 🔼 Up: [[Reporting & Purple Teaming]]

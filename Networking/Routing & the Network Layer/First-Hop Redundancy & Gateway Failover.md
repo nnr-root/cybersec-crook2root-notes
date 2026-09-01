@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/routing
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Routing & the Network Layer]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interior Gateway Protocols -> BGP & Internet Routing -> First-Hop Redundancy & Gateway Failover -> Routing Security & Path Validation
 
-## Start at Zero: The Single Point of Failure Hosts Cannot See Past
+## The Single Point of Failure Hosts Cannot See Past
 
 A host learns exactly one default gateway. Every packet it sends off-segment goes to that one address. This creates a problem that all the redundancy in the core cannot solve: if the host's gateway router fails, the host is isolated from everything beyond its own subnet, even though other routers are sitting right there, healthy, on the same segment.
 
@@ -98,33 +98,13 @@ The recurring theme across this branch holds here too: transport-layer encryptio
 
 All FHRP configuration and takeover testing described here must be confined to an isolated lab you own. Winning a gateway election on a production segment redirects every host's traffic and disrupts connectivity for the whole subnet.
 
-## Authorized Lab: Fail Over, Then Hijack the Gateway
+## Summary
 
-Use two lab routers and a host on a shared segment, plus an uplink each router can reach. Record baseline priorities and state.
+You should now be able to:
 
-1. **Configure a virtual gateway** shared by both routers with different priorities, and point the host's default gateway at the virtual IP. Confirm one router is active and the other standby.
-2. **Verify transparency.** From the host, confirm off-segment connectivity and note the gateway MAC in `ip neigh` — it is the virtual MAC.
-3. **Test failover.** Disable the active router. Observe the standby enter master state (in its logs) and send a gratuitous ARP; confirm the host's connectivity survives with only a brief interruption and that its ARP entry for the gateway is unchanged, because the virtual MAC moved with the role.
-4. **Test interface tracking.** Re-enable both routers, configure the active to track its uplink, then fail only the active router's *uplink* (not the router). Confirm it lowers priority and yields to the standby whose uplink is healthy — proving the design covers a useless-but-alive gateway.
-5. **Demonstrate a takeover.** From the host (emulating an attacker) speaking the FHRP protocol, advertise a priority higher than both routers. Confirm the attacker becomes active and that the host's gateway traffic now flows to the attacker, while connectivity still appears normal.
-6. **Apply the control.** Enable FHRP authentication with a shared key on the legitimate routers. Repeat the takeover attempt and confirm the unauthenticated attacker can no longer participate in the election.
-7. **Cleanup.** Restore baseline priorities and configuration, confirm the intended router is active, and verify host connectivity over the legitimate gateway.
-
-Expected interpretation:
-
-```text
-Virtual gateway  -> host uses one unchanging gateway IP and MAC
-Active fails     -> standby takes the virtual MAC; ARP cache stays valid; failover is fast
-Uplink tracking  -> a healthy router with a dead uplink correctly yields
-Malicious priority -> attacker wins the election; whole subnet's traffic redirected
-Authentication   -> keyless attacker cannot join the election; takeover fails
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why a single default gateway is a single point of failure that host-side redundancy cannot fix, and what a virtual gateway is.
-- **Operator:** Read FHRP state and logs to identify the active router and a failover event; explain why the shared virtual MAC keeps failover transparent and why interface tracking is needed for a router that is alive but cut off from its uplink.
-- **Root:** Explain how an unauthenticated FHRP election lets an attacker become the active gateway for an entire subnet in one move; justify authentication and control-plane filtering as the controls, and explain why transport encryption remains the backstop against the resulting on-path position.
+- Explain why a single default gateway is a single point of failure that host-side redundancy cannot fix, and what a virtual gateway is.
+- Read FHRP state and logs to identify the active router and a failover event; explain why the shared virtual MAC keeps failover transparent and why interface tracking is needed for a router that is alive but cut off from its uplink.
+- Explain how an unauthenticated FHRP election lets an attacker become the active gateway for an entire subnet in one move; justify authentication and control-plane filtering as the controls, and explain why transport encryption remains the backstop against the resulting on-path position.
 
 ---
 > 🔼 Up: [[Routing & the Network Layer]]

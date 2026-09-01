@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/routing
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Routing & the Network Layer]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interior Gateway Protocols -> BGP & Internet Routing -> First-Hop Redundancy & Gateway Failover -> Routing Security & Path Validation
 
-## Start at Zero: The Shared Weakness
+## The Shared Weakness
 
 The network layer was designed to move packets, not to prove anything about them. Two assumptions baked into IP are the root of routing insecurity:
 
@@ -110,34 +110,13 @@ The mindset shift is the deliverable: replace "is the destination up?" with "is 
 
 All configuration and testing described here must be performed only on isolated infrastructure you own or are explicitly authorized to modify. Filtering and validation changes on production routers affect every flow they carry, and a misapplied strict-mode filter can silently drop legitimate asymmetric traffic.
 
-## Authorized Lab: Spoof, Filter, and Detect
+## Summary
 
-Use a lab with at least two routers, an "internal" host, and an "external" segment. Record baseline configuration and a baseline traceroute for a known path.
+You should now be able to:
 
-1. **Demonstrate spoofing.** From the external segment, send packets with a forged source address belonging to the internal network. Confirm they are accepted and forwarded, showing the default lack of source validation.
-2. **Enable strict uRPF** on the external-facing interface. Repeat the spoofed packets and confirm they are now dropped because the reverse route does not point back out that interface. Verify with the interface's drop counters.
-3. **Show the asymmetric-routing pitfall.** Introduce a legitimate asymmetric path and confirm strict uRPF now drops some *legitimate* traffic; switch to loose mode and confirm the legitimate traffic passes while obvious spoofs are still caught. This demonstrates why mode choice requires knowing the traffic.
-4. **Inject a route** (from the IGP lab) and confirm traffic is redirected while end-to-end connectivity is preserved — reinforcing that reachability is not integrity.
-5. **Detect it by path, not reachability.** Compare a fresh traceroute against the baseline and confirm the path changed even though the destination is still reachable. This is the detection signal a reachability check would miss.
-6. **Apply route authentication** and confirm the injection is rejected, then confirm the traceroute returns to the baseline path.
-7. **Cleanup.** Remove filters, injected routes, and authentication changes as needed to restore the baseline, and confirm both connectivity and the baseline path.
-
-Expected interpretation:
-
-```text
-No source validation -> forged-source packets accepted and forwarded
-Strict uRPF          -> spoofs dropped; but legitimate asymmetric traffic also dropped
-Loose uRPF           -> asymmetry tolerated; obvious spoofs still caught
-Route injected       -> traffic redirected yet still reachable (integrity != reachability)
-Path comparison      -> the changed traceroute is the detection signal, not an outage
-Authentication       -> injection rejected; path returns to baseline
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** State the two IP assumptions that make routing insecure, and explain why "the destination is reachable" does not prove the route is trustworthy.
-- **Operator:** Configure and reason about ingress filtering with strict versus loose reverse-path checking, and detect a redirected path by comparing traceroute and telemetry against a baseline rather than testing reachability.
-- **Root:** Assemble the routing-security controls into a defense-in-depth posture, explaining the gap each one leaves and why encryption is the invariant backstop; justify why ingress filtering and origin validation protect the commons, and why that shared-benefit structure explains their under-deployment.
+- State the two IP assumptions that make routing insecure, and explain why "the destination is reachable" does not prove the route is trustworthy.
+- Configure and reason about ingress filtering with strict versus loose reverse-path checking, and detect a redirected path by comparing traceroute and telemetry against a baseline rather than testing reachability.
+- Assemble the routing-security controls into a defense-in-depth posture, explaining the gap each one leaves and why encryption is the invariant backstop; justify why ingress filtering and origin validation protect the commons, and why that shared-benefit structure explains their under-deployment.
 
 ---
 > 🔼 Up: [[Routing & the Network Layer]]

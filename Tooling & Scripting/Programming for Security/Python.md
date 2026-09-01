@@ -1,7 +1,7 @@
 ---
 title: "Python for Security Engineering"
 aliases: ["Python Security", "Python"]
-tags: [tree/tooling, cyber/tooling/programming/python, type/concept, level/operator]
+tags: [tree/tooling, cyber/tooling/programming/python, type/concept, difficulty/medium]
 Domain: "[[Programming for Security]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ Python is the default language of security tooling: fast to write, batteries-inc
 ## Parent Learning Order
 Python -> Go -> C++ -> Bash
 
-## Crook — The Mental Model
+## The rapid-development corner of the map
 
 Python is the **rapid-development** corner of the language map.
 
-![[tool_language_choice.svg]]
-
 Reach for it when the task is prototyping, parsing, automation, or anything with a library that already exists — which is most security work. You trade raw speed and easy deployment for development velocity, and that's usually the right trade: a working Python tool today beats a fast Rust tool next month. The one thing to understand up front is *why* Python is slow at CPU-bound work, so you pick the right concurrency model instead of fighting the language.
 
-## Operator — Make It Work
+## A bounded async probe in a reproducible environment
 
 A bounded async probe (I/O-bound → `asyncio` shines), in a reproducible environment:
 
@@ -46,7 +44,7 @@ async def scan(host, ports, limit=200):
 
 Use a **virtualenv** (`python -m venv`), pin deps, add type hints + `mypy`, and write `pytest` tests on pure functions. The library reach is the point: `requests`/`httpx` for web, `scapy` for packets, `impacket` for AD, `cryptography` for crypto — don't reimplement what these do.
 
-## Root — Internals & The Deliberate Break
+## The GIL, and the concurrency model it forces on you
 
 The single most misunderstood thing in Python is the **GIL** (Global Interpreter Lock) — and it decides your concurrency model:
 
@@ -62,11 +60,13 @@ from multiprocessing import Pool          # THIS parallelises CPU work (separate
 
 **The deliberate break:** a beginner speeds up a CPU-heavy task (say, a pure-Python hasher) by spawning threads — and gets **no speedup**, because the GIL permits only one thread to execute Python bytecode at once. Threads only help when the work is **I/O-bound** (a scanner spends its time *waiting* on sockets, and the GIL is released during those waits, so `asyncio`/threads give real concurrency). For **CPU-bound** work you need `multiprocessing` (separate interpreters, separate GILs) — or you drop the hot loop into Go/C++ (the next rungs of the ladder). Knowing which regime you're in is the whole game: match `asyncio`/threads to I/O-bound tools (most of them) and `multiprocessing` to CPU-bound ones, and Python's "slowness" mostly stops mattering. When even that isn't enough, that's your signal to graduate to Go.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why is Python the default for security tooling, and what does it trade away?
-- **Operator:** Write a bounded async probe and name the libraries you'd use instead of rolling your own.
-- **Root:** Explain the GIL, and why threads speed up a scanner but not a pure-Python hasher.
+You should now be able to:
+
+- Why is Python the default for security tooling, and what does it trade away?
+- Write a bounded async probe and name the libraries you'd use instead of rolling your own.
+- Explain the GIL, and why threads speed up a scanner but not a pure-Python hasher.
 
 ---
 > 🔼 Up: [[Programming for Security]]

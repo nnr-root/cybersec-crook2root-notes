@@ -14,6 +14,7 @@ tags:
   - tree/offensive
   - cyber/offensive/methodology
   - type/concept
+  - difficulty/easy
   - level/apprentice
 Domain: "[[Methodologies & Frameworks]]"
 Color: "#DC143C"
@@ -27,7 +28,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Penetration Testing Fundamentals -> Rules of Engagement & Scoping -> Penetration Testing Standards & Frameworks -> Cyber Kill Chain -> Threat Modeling & MITRE ATT&CK
 
-## Start at Zero: The Contract That Makes It Legal
+## The Contract That Makes It Legal
 
 Before you touch a single target, a set of documents defines *what you may do, to what, when, and how the evidence is handled*. Getting this wrong is not a technical mistake — it is a legal and ethical one, and it can end careers and companies. This note covers the four things every operator must internalize: the **documents** that authorize an engagement, how to define **scope** precisely, the **rules of engagement** that govern behavior, and **evidence governance** (how you collect, protect, and dispose of the sensitive data you will inevitably see). It absorbs the commercial Statement of Work and evidence-governance material into one place because in practice they are one continuous chain: contract → scope → behavior → evidence → disposal.
 
@@ -92,7 +93,59 @@ flowchart LR
 - **Protect:** least privilege, encryption at rest, immutable hashes, transfer logging, named custodians.
 - **Chain of custody:** record collector, UTC timestamp, source, method, original hash, storage location, transformations, access, and disposition — every working copy must trace back to a hashed original.
 
-## Failure Modes and Interpretation
+## Worked Example: Evidence That Survives a Challenge
+
+An engagement's findings are only as defensible as the evidence behind them, and
+defensibility comes from a chain of custody that can prove a piece of evidence is
+unaltered. Hashing an artifact on collection and verifying it later turns "trust
+us" into "here is the proof."
+
+**Register the evidence with its hash at collection time:**
+
+```shell-session
+analyst@lab:/tmp/engagement$ sha256sum evidence/F-07-request.txt | awk '{print $1}'
+9c1f...4ab2
+analyst@lab:/tmp/engagement$ cat evidence-register.csv
+id,collector,utc,source,method,sha256,classification,custodians,disposition
+F-07,analyst,2026-08-09T14:22:07Z,api.example.test,manual-request,9c1f...4ab2,restricted,lead+reviewer,delete+30d
+```
+
+The register binds the artifact to who collected it, when, from where, by what
+method, and — the anchor — its hash at the moment of collection. Everything else in
+the row is context; the hash is what makes the record provable.
+
+**An untampered working copy verifies against the register:**
+
+```shell-session
+analyst@lab:/tmp/engagement$ echo "9c1f...4ab2  evidence/F-07-working.txt" | sha256sum -c -
+evidence/F-07-working.txt: OK
+```
+
+`OK` means the working copy is byte-for-byte the evidence that was registered — so
+analysis, redaction and reporting can proceed from it while the original stays
+sealed.
+
+**Any alteration is detectable:**
+
+```shell-session
+analyst@lab:/tmp/engagement$ echo "TAMPERED" >> evidence/F-07-working.txt
+analyst@lab:/tmp/engagement$ echo "9c1f...4ab2  evidence/F-07-working.txt" | sha256sum -c -
+evidence/F-07-working.txt: FAILED
+```
+
+`FAILED` is the property that makes the chain worth maintaining. A single appended
+line breaks the hash, so any modification — accidental or malicious, by the tester
+or by anyone who later handles the file — is caught against the collection-time
+anchor. This is what lets a finding withstand a client disputing it: the evidence
+is provably the same as when it was gathered.
+
+The final link is disposition. The register's `delete+30d` field is a commitment,
+and honouring it — destroying restricted evidence on schedule, logged before
+deletion — is as much a part of the engagement's integrity as gathering it. Scope
+defines what you were authorised to touch; chain of custody proves what you found
+was real and that you handled it responsibly from collection to destruction.
+
+## The one error that is also a crime
 
 - **Testing out of scope.** The single most serious operational error — a pivot into an unlisted host, or scanning a range you misread, can be a crime and a contract breach. When in doubt, stop and confirm in writing.
 - **Verbal-only authorization.** "The client said it was fine on a call" is not a defense; authorization must be signed by someone empowered to grant it, and carried during the test.
@@ -107,90 +160,13 @@ flowchart LR
 - **Evidence handling *is* a security control:** encrypting, hashing, and destroying evidence on schedule means a compromised tester or lost laptop does not become the client's breach.
 - **Legal hold vs. destruction:** if an assessment uncovers a real active compromise, evidence may shift to a legal hold — governance defines who decides and how the handoff to IR/legal happens.
 
-## Authorized Lab: Build a Chain-of-Custody Register
+## Summary
 
-> [!info] Runs on one machine — this is the real evidence-integrity workflow, and it genuinely runs
-> You hash a piece of evidence, register it with custody metadata, then prove tampering is detectable. Step 5 disposes of it on schedule.
+You should now be able to:
 
-### Step 1 — Collect a piece of evidence (a canary finding artifact)
-
-```bash
-mkdir -p /tmp/engagement/evidence
-echo "GET /api/invoice/1002 -> 200 OK (belongs to another user) :: FINDING F-07 IDOR proof (canary)" > /tmp/engagement/evidence/F-07-request.txt
-echo "collected F-07 evidence artifact"
-```
-
-```text
-collected F-07 evidence artifact
-```
-
-### Step 2 — Hash the original (integrity anchor) and register custody
-
-```bash
-cd /tmp/engagement
-H=$(sha256sum evidence/F-07-request.txt | awk '{print $1}')
-printf 'id,collector,utc,source,method,sha256,classification,custodians,disposition\n' > evidence-register.csv
-printf 'F-07,%s,%s,api.example.test,manual-request,%s,restricted,lead+reviewer,delete+30d\n' "$USER" "$(date -u +%FT%TZ)" "$H" >> evidence-register.csv
-cat evidence-register.csv
-```
-
-```text
-id,collector,utc,source,method,sha256,classification,custodians,disposition
-F-07,<user>,<utc>,api.example.test,manual-request,<sha256>,restricted,lead+reviewer,delete+30d
-```
-
-The register ties the artifact to a collector, a UTC time, a method, and — crucially — the original hash. This is what makes the evidence defensible.
-
-### Step 3 — Prove integrity: an untampered copy verifies
-
-```bash
-cd /tmp/engagement
-cp evidence/F-07-request.txt evidence/F-07-working.txt   # working copy
-REG=$(grep '^F-07,' evidence-register.csv | cut -d, -f6)
-echo "$REG  evidence/F-07-working.txt" | sha256sum -c -
-```
-
-```text
-evidence/F-07-working.txt: OK
-```
-
-The working copy matches the registered hash — provably the same evidence.
-
-### Step 4 — Prove tampering is detectable (the deliberate break)
-
-```bash
-cd /tmp/engagement
-echo "TAMPERED: changed the invoice id" >> evidence/F-07-working.txt
-REG=$(grep '^F-07,' evidence-register.csv | cut -d, -f6)
-echo "$REG  evidence/F-07-working.txt" | sha256sum -c - 2>&1 | tail -1
-echo "Finding: any modification breaks the hash match -> chain of custody catches tampering. This is why originals are hashed on collection."
-```
-
-```text
-evidence/F-07-working.txt: FAILED
-Finding: any modification breaks the hash match -> chain of custody catches tampering. This is why originals are hashed on collection.
-```
-
-### Step 5 — Disposition (scheduled destruction)
-
-```bash
-rm -rf /tmp/engagement
-ls -d /tmp/engagement 2>&1 | tail -1
-echo "Evidence destroyed per 'delete+30d' disposition. In a real engagement this is logged in the register before deletion."
-```
-
-```text
-ls: cannot access '/tmp/engagement': No such file or directory
-Evidence destroyed per 'delete+30d' disposition. In a real engagement this is logged in the register before deletion.
-```
-
-**What you should now be able to do:** name the documents that authorize an engagement, define scope by explicit inclusion, list the out-of-scope traps, specify the essential RoE terms, and run a real hash-anchored chain-of-custody workflow that detects tampering and disposes of evidence on schedule.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why authorization + scope is what makes offensive work legal, and name the core documents (SOW, RoE, scope, authorization letter, NDA).
-- **Operator:** Define a precise scope, write the essential RoE terms (window, contacts, de-confliction, forbidden actions), and maintain a hash-anchored chain-of-custody register.
-- **Root:** Explain the evidence lifecycle (collect → protect → use → destroy), why out-of-scope pivoting and unhashed evidence are the cardinal failures, and how de-confliction and post-test baseline audits protect both sides.
+- Explain why authorization + scope is what makes offensive work legal, and name the core documents (SOW, RoE, scope, authorization letter, NDA).
+- Define a precise scope, write the essential RoE terms (window, contacts, de-confliction, forbidden actions), and maintain a hash-anchored chain-of-custody register.
+- Explain the evidence lifecycle (collect → protect → use → destroy), why out-of-scope pivoting and unhashed evidence are the cardinal failures, and how de-confliction and post-test baseline audits protect both sides.
 
 ---
 > 🔼 Up: [[Methodologies & Frameworks]]

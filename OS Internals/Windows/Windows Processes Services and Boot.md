@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/windows
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
@@ -19,7 +19,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations -> Windows Drivers I-O & Kernel Debugging -> Windows Processes, Services & Boot -> Windows File System & Registry -> Windows Networking Internals -> Windows Security & Access Control -> Windows Identity, Credentials & Authentication -> Windows Active Directory & Domains -> Windows Command Prompt & Batch -> Windows PowerShell -> Windows Logging & Auditing -> Windows Diagnostics, Crash Dumps & Performance -> Windows Sysinternals & Troubleshooting
 
-## Start at Zero: Boot Chain, Process & Service
+## Boot Chain, Process & Service
 
 The **boot chain** is the ordered handoff from firmware to boot manager, loader, kernel, and first user-mode processes. A **process** owns an address space, handles, identity token, and other resources; a **thread** is what the scheduler actually executes. A **service** is a long-lived workload managed by the Service Control Manager, not a special kind of executable. A **scheduled task** is a trigger-plus-action definition. Parent-child process relationships record creation, but they do not by themselves prove trust—each stage must also be evaluated by image path, signer, token, session, command line, and timing.
 
@@ -65,8 +65,8 @@ A **process** is a container (address space + handles + token); **threads** are 
 Get-Process notepad | Select-Object -Expand Modules | Select ModuleName, FileName
 ```
 
-> [!tip] Crook → Root / Blue-team
-> **Root** reads the process tree like a sentence and knows which service accounts, unquoted paths, and DLL search dirs convert a foothold to SYSTEM. **Defenders** baseline the normal boot tree and alert on parent-child anomalies and new services/tasks (see **Windows Logging and Auditing**).
+> [!tip] Beginner → Expert / Blue-team
+> **An expert** reads the process tree like a sentence and knows which service accounts, unquoted paths, and DLL search dirs convert a foothold to SYSTEM. **Defenders** baseline the normal boot tree and alert on parent-child anomalies and new services/tasks (see **Windows Logging and Auditing**).
 
 ## Firmware, BCD & Trusted Boot
 
@@ -163,99 +163,13 @@ Persistence and privilege escalation exploit transitions where privileged compon
 
 Boot and process-tree evidence also supports incident reconstruction. Events 12 and 13 from the Kernel-General provider mark startup and shutdown context; 4688 records process creation when enabled; System event 7045 records service installation; Security event 4698 records scheduled-task creation under suitable auditing. ETW and endpoint telemetry can add parent, signer, hashes, token, stack, and lifetime.
 
-## Hands-On Lab: Process Lineage, Service Accounts and Autostart
+## Summary
 
-> [!info] Runs on any Windows machine — read-only, run PowerShell as Administrator
-> These are the exact queries used to triage a suspicious process on Windows.
+You should now be able to:
 
-### Step 1 — Reconstruct process ancestry
-
-```powershell
-Get-CimInstance Win32_Process | Where-Object Name -eq 'powershell.exe' |
-  Select-Object ProcessId,ParentProcessId,
-    @{n='Parent';e={(Get-CimInstance Win32_Process -Filter "ProcessId=$($_.ParentProcessId)").Name}}
-```
-
-```text
-ProcessId ParentProcessId Parent
---------- --------------- ------
-     6120            5044 explorer.exe
-```
-
-"What launched this?" is the first question about any suspicious process. PowerShell spawned by `explorer.exe` is a user double-click; PowerShell spawned by `winword.exe` or `w3wp.exe` is a red flag — a document or web server launching a shell.
-
-### Step 2 — Find services running as SYSTEM
-
-```powershell
-Get-CimInstance Win32_Service | Where-Object { $_.State -eq 'Running' -and $_.StartName -eq 'LocalSystem' } |
-  Measure-Object | Select-Object -ExpandProperty Count
-Get-CimInstance Win32_Service | Where-Object State -eq 'Running' |
-  Group-Object StartName | Select-Object Count,Name | Sort-Object Count -Descending
-```
-
-```text
-84
-
-Count Name
------ ----
-   84 LocalSystem
-   19 NT AUTHORITY\NetworkService
-   11 NT AUTHORITY\LocalService
-```
-
-**84 services run as SYSTEM** — the most privileged account. A service running as SYSTEM whose binary an ordinary user can overwrite is instant privilege escalation, which is why the account a service runs as is a security decision.
-
-### Step 3 — Hunt for unquoted service paths (a classic weakness)
-
-```powershell
-Get-CimInstance Win32_Service | Where-Object {
-  $_.PathName -match '^[^"].*\s.*\\' -and $_.PathName -notmatch '^"'
-} | Select-Object Name,PathName -First 3
-```
-
-```text
-Name         PathName
-----         --------
-VulnSvc      C:\Program Files\Vuln App\service.exe
-```
-
-An unquoted path containing spaces lets Windows try `C:\Program.exe` first — if a user can write there, they hijack a SYSTEM service. This one query is a standard privilege-escalation check.
-
-### Step 4 — Enumerate autostart entries
-
-```powershell
-Get-CimInstance Win32_StartupCommand | Select-Object Name,Command,Location -First 4 | Format-Table -Auto
-```
-
-```text
-Name        Command                                    Location
-----        -------                                    --------
-OneDrive    "C:\...\OneDrive.exe" /background           HKCU\...\Run
-SecurityHealth  %windir%\...\SecurityHealthSystray.exe  HKLM\...\Run
-```
-
-Autostart locations are where persistence lives. An unexpected entry in a `Run` key pointing at a temp path or an unsigned binary is the signature of malware persistence.
-
-### Step 5 — Read the boot performance record
-
-```powershell
-Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Diagnostics-Performance/Operational'; Id=100} -MaxEvents 1 -ErrorAction SilentlyContinue |
-  ForEach-Object { "Last boot took {0} ms" -f ([xml]$_.ToXml()).Event.EventData.Data[0].'#text' }
-```
-
-```text
-Last boot took 24173 ms
-```
-
-**Cleanup:** none — every command read state only.
-
-**What you should now be able to do:** trace a process to its parent, find SYSTEM services and unquoted-path weaknesses, and enumerate the autostart locations where persistence hides.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Recite firmware-to-desktop boot order and distinguish process, thread, service, task, and DLL.
-- **Operator:** Interpret BCD, process lineage, service configuration/SDDL, task principals, loader search behavior, and startup evidence.
-- **Root:** Reconstruct a trusted-boot and execution timeline, identify a mutable privileged dependency, prove reachability safely, and harden the exact ACL, loading rule, service identity, or boot policy that caused exposure.
+- Recite firmware-to-desktop boot order and distinguish process, thread, service, task, and DLL.
+- Interpret BCD, process lineage, service configuration/SDDL, task principals, loader search behavior, and startup evidence.
+- Reconstruct a trusted-boot and execution timeline, identify a mutable privileged dependency, prove reachability safely, and harden the exact ACL, loading rule, service identity, or boot policy that caused exposure.
 
 ---
 > 🔼 Up: [[Windows]]

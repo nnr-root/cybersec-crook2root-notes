@@ -5,7 +5,7 @@ tags:
   - tree/offensive
   - cyber/offensive/wireless
   - type/methodology
-  - level/root
+  - difficulty/hard
 Domain: "[[Wireless & Physical Penetration Testing]]"
 Color: "#DC143C"
 ---
@@ -122,15 +122,13 @@ Stop condition: unexpected client association
 
 Compare wireless-controller rogue detection, wired switch MAC/port data, DHCP, RADIUS, DNS, endpoint WLAN events, and physical inventory. Test unknown AP, known SSID from wrong BSSID, unauthorized bridge, and canary client association. Validate response ownership and containment procedure.
 
-## Mastery lab
+## Summary
 
-Create legitimate and controlled rogue APs, then explain client choice under secure enterprise profile, intentionally weak profile, and personal network. Demonstrate why signal strength alone is not identity. Remediate certificate validation/MDM profile and require failed association to the rogue fixture.
+You should now be able to:
 
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Why does a client happily connect to an "evil twin" with the same SSID as a network it trusts?
-- **Operator:** Design a bounded evil-twin detection exercise that proves whether corporate clients auto-associate, without capturing real user credentials.
-- **Root:** Explain how 802.1X server-certificate validation and PMF (Protected Management Frames) each remove a specific rogue-AP primitive, and what still fails if clients don't validate the RADIUS certificate.
+- Why does a client happily connect to an "evil twin" with the same SSID as a network it trusts?
+- Design a bounded evil-twin detection exercise that proves whether corporate clients auto-associate, without capturing real user credentials.
+- Explain how 802.1X server-certificate validation and PMF (Protected Management Frames) each remove a specific rogue-AP primitive, and what still fails if clients don't validate the RADIUS certificate.
 
 ---
 > 🔼 Up: [[Wireless & Physical Penetration Testing]]

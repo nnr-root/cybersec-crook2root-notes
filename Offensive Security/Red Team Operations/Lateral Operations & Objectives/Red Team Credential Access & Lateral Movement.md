@@ -9,7 +9,7 @@ tags:
   - tree/offensive
   - cyber/offensive/redteam
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain: "[[Lateral Operations & Objectives]]"
 Color: "#DC143C"
 ---
@@ -22,7 +22,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Red Team Credential Access & Lateral Movement -> Data Collection & Exfiltration Simulation
 
-## Start at Zero: The Same Moves as Post-Ex, but Measured for Stealth
+## The Same Moves as Post-Ex, but Measured for Stealth
 
 A red team's mid-operation work is credential access (harvest keys to the next system) and lateral movement (use them to get there) — the same *actions* as the pentest **Credential Access & Secret Hunting** and **Pivoting & Tunneling** leaves. What makes this a distinct, red-team note is the **objective**: here you don't just prove the path exists, you measure *whether the blue team detects it* and *how much noise each technique makes*. A pentest maximizes coverage; a red team operates like a real adversary — quiet, targeted, living off the land — precisely so the exercise tests the SOC's ability to catch a *stealthy* actor.
 
@@ -63,7 +63,57 @@ flowchart LR
 
 Techniques (SMB, WinRM, RDP, SSH, remote service/task, app administration, cloud management) differ in authentication, authorization, and — crucially — **detectability**. Preferring **native, authenticated administration** (living off the land) over noisy tools (a new service, PsExec) is the red-team choice, because it blends into legitimate admin traffic and tests whether the SOC can tell them apart.
 
-## Failure Modes and Interpretation
+## Worked Example: The Same Objective, Loud and Quiet
+
+In a red-team operation, reaching the objective is rarely the hard part — reaching
+it without generating the telemetry that ends the engagement is. The difference
+between a loud and a quiet approach to the same credential is measurable, and a
+small file tree with an access log makes it so. One file holds the objective; the
+rest are decoys.
+
+**The loud approach** sweeps for anything that looks like a secret:
+
+```shell-session
+operator@lab:/tmp/rtcl-lab$ grep -rl 'password\|note' . | while read f; do echo "access $f" >> access.log; done
+operator@lab:/tmp/rtcl-lab$ grep -c '^access' access.log
+6
+```
+
+Six file reads to find one credential. The sweep works — it will find the target —
+but it touches every sensitive-looking file in the tree, and each read is an event
+some monitor can see. On a real host this is `find / -name '*.conf'` and its
+relatives: comprehensive, and exactly the pattern detection is tuned for.
+
+**The quiet approach** reads only the path the operator already identified:
+
+```shell-session
+operator@lab:/tmp/rtcl-lab$ cat opt/config.ini >/dev/null; echo "access opt/config.ini" >> access.log
+operator@lab:/tmp/rtcl-lab$ grep -c '^access' access.log
+1
+```
+
+One read. Same credential obtained. The prerequisite — knowing where to look —
+was paid earlier, in reconnaissance, so the acquisition itself is a single
+in-context file access indistinguishable from normal use.
+
+**What a simple detector does with each** is the whole point:
+
+```shell-session
+operator@lab:/tmp/rtcl-lab$ echo "rule: >3 sensitive reads in a short window = credential-sweep alert"
+operator@lab:/tmp/rtcl-lab$ # loud run: 6 reads -> ALERT ;  quiet run: 1 read -> under threshold -> silent
+```
+
+The loud sweep trips a volume threshold; the quiet read stays under it. That gap
+is the finding, and note which direction it points: the alert exists and works
+against the noisy technique, and the deficiency is the *absence* of low-volume
+detection — a single anomalous read of a credential file by a process that has no
+business opening it. The report's value to the defender is not "we got the
+password" but "the noisy path is caught and the targeted one is not; here is the
+low-and-slow behaviour your detection does not cover." That framing turns an
+attack into a detection-engineering requirement, which is what a mature red team
+delivers.
+
+## Why the red team takes the quiet path, not every path
 
 - **Optimizing reach over measurement.** Grabbing every credential and hopping everywhere is pentest behavior; the red team picks the quiet path to test detection, then stops at the objective.
 - **Loud techniques when quiet ones suffice.** Dumping all of LSASS or spraying broadly generates high-signal telemetry unnecessarily — match the technique to the objective and the detection question.
@@ -79,84 +129,13 @@ Techniques (SMB, WinRM, RDP, SSH, remote service/task, app administration, cloud
 - **LOTL detection:** because red teams prefer native tools, detections must distinguish *malicious* WinRM/SSH/admin use from legitimate — behavioral baselining and just-in-time admin help.
 - **The exercise's deliverable:** a per-technique detection-coverage outcome (which credential-access and lateral moves were caught, and how fast) that directly drives detection engineering.
 
-## Authorized Lab: Loud vs. Quiet Credential Access and Its Detection
+## Summary
 
-> [!info] Runs on one Linux machine — contrast a noisy broad credential sweep with a targeted read, and show a simple access-telemetry detector flags the loud one
-> Canary secrets only. Step 5 cleans up.
+You should now be able to:
 
-### Step 1 — Seed canary secrets and an access log
-
-```bash
-mkdir -p /tmp/rtcl-lab/{etc,home,opt,srv,var} && cd /tmp/rtcl-lab
-for d in etc home opt srv var; do echo "note=nothing-here" > $d/file.txt; done
-echo "db_password=CANARY-TARGET-PW" > opt/config.ini      # the one real target
-: > access.log
-echo "seeded canaries; opt/config.ini holds the objective credential"
-```
-
-```text
-seeded canaries; opt/config.ini holds the objective credential
-```
-
-### Step 2 — LOUD: broad sweep (touches everything -> lots of telemetry)
-
-```bash
-cd /tmp/rtcl-lab
-grep -rl 'password\|note' . 2>/dev/null | while read f; do echo "access $f" >> access.log; done
-echo "loud sweep read $(grep -c '^access' access.log) files"
-```
-
-```text
-loud sweep read 6 files
-```
-
-### Step 3 — QUIET: targeted read (you already know the path -> minimal telemetry)
-
-```bash
-cd /tmp/rtcl-lab
-: > access.log                      # reset to compare the quiet approach alone
-cat opt/config.ini >/dev/null; echo "access opt/config.ini" >> access.log
-echo "quiet read touched $(grep -c '^access' access.log) file"
-```
-
-```text
-quiet read touched 1 file
-```
-
-### Step 4 — A simple detector: flag the noisy access pattern
-
-```bash
-cd /tmp/rtcl-lab
-# simulate the detector seeing the LOUD run again:
-grep -rl 'password\|note' . 2>/dev/null >/dev/null
-echo "Detector rule: >3 sensitive-file reads in a short window = credential-sweep alert."
-echo "LOUD sweep (6 reads) -> ALERT fires.  QUIET read (1) -> under threshold -> no alert."
-echo "Finding: objective credential is reachable; the sweep is DETECTED, the targeted read is NOT -> gap = no low-volume detection."
-```
-
-```text
-Detector rule: >3 sensitive-file reads in a short window = credential-sweep alert.
-LOUD sweep (6 reads) -> ALERT fires.  QUIET read (1) -> under threshold -> no alert.
-Finding: objective credential is reachable; the sweep is DETECTED, the targeted read is NOT -> gap = no low-volume detection.
-```
-
-### Step 5 — Cleanup
-
-```bash
-cd /; rm -rf /tmp/rtcl-lab; ls -d /tmp/rtcl-lab 2>&1 | tail -1
-```
-
-```text
-ls: cannot access '/tmp/rtcl-lab': No such file or directory
-```
-
-**What you should now be able to do:** explain why red team credential/lateral work is measured for stealth (not coverage), choose techniques by detection cost, prefer living-off-the-land lateral movement, demonstrate the loud-vs-quiet telemetry difference, and name the identity-centric defenses (least privilege, LAPS/gMSA/Credential Guard, LOTL detection).
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why the red team version of credential access/lateral movement optimizes stealth and measurement, not reach.
-- **Operator:** Choose credential-access and lateral techniques by detection cost, take one bounded path, and capture the loud-vs-quiet telemetry difference.
-- **Root:** Explain why identity telemetry (logon types, PtH, unusual sources) is the key detection, how least privilege/tiering/credential-hygiene limit reach, and why LOTL forces behavioral (not signature) detection.
+- Explain why the red team version of credential access/lateral movement optimizes stealth and measurement, not reach.
+- Choose credential-access and lateral techniques by detection cost, take one bounded path, and capture the loud-vs-quiet telemetry difference.
+- Explain why identity telemetry (logon types, PtH, unusual sources) is the key detection, how least privilege/tiering/credential-hygiene limit reach, and why LOTL forces behavioral (not signature) detection.
 
 ---
 > 🔼 Up: [[Lateral Operations & Objectives]]

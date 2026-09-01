@@ -1,7 +1,7 @@
 ---
 title: "Command & Control Design Principles"
 aliases: ["C2 Design Principles", "C2 Architecture"]
-tags: [tree/tooling, cyber/tooling/development/c2, type/concept, level/root]
+tags: [tree/tooling, cyber/tooling/development/c2, type/concept, difficulty/hard]
 Domain: "[[Writing Your Own Tools]]"
 Color: "#708090"
 ---
@@ -16,7 +16,7 @@ Command-and-control (C2) is the infrastructure a red team uses to task and recei
 ## Parent Learning Order
 Security Tool Architecture & Design Patterns -> Building Network Scanners -> Command & Control Design Principles -> Hashsmith Tool Architecture -> ShadowStep Tool Architecture
 
-## Crook — The Mental Model
+## A topology built so the operator is never exposed
 
 A C2 is a distributed client/server system with a deliberate topology, built so that the operator is never directly exposed to the target.
 
@@ -33,7 +33,7 @@ flowchart LR
 
 The four roles: an **implant/beacon** on the target that calls home, a **listener** on the team server that receives it, a **redirector** in between (a disposable relay that hides the real server), and the **operator console**. The point of the redirector is separation — the target only ever talks to a throwaway host, so burning it doesn't burn the operation.
 
-## Operator — Make It Work
+## Beacon behaviour as the dominant tunable
 
 The tunable that dominates detectability is the **beacon's call-home behaviour**:
 
@@ -46,7 +46,7 @@ channel  = HTTPS    # blend into normal web traffic (DNS as a fallback)
 
 A **malleable profile** shapes the HTTP requests/responses to mimic legitimate traffic (a jQuery CDN fetch, an Office update). The comms channel (HTTPS, DNS, or domain-fronted) trades resilience against detectability. Everything is logged to the team server as engagement evidence, and stop conditions are wired in.
 
-## Root — Internals & The Deliberate Break
+## The metronome that gives a beginner C2 away
 
 The classic beginner C2 is trivially caught — by the exact technique the **Zeek** note teaches defenders:
 
@@ -61,11 +61,13 @@ cat conn.log | zeek-cut id.resp_h ts | (detect constant interval) → BEACON at 
 
 **The deliberate break:** a fixed-interval beacon produces a *metronomic* connection pattern that stands out in `conn.log` like a heartbeat — no payload signature needed, just the regularity gives it away (this is precisely the Zeek beacon-hunt from the defensive side). Adding **jitter** breaks the rhythm, a **malleable profile** makes each request look like ordinary web traffic, and a **redirector** means even a detected beacon leads to a throwaway host, not your infrastructure. This is the whole design tension: a C2 is a normal distributed system (the architecture note's separation-of-concerns applies — beacon, listener, redirector, console are clean components), but its *design goal* is to have its traffic and topology resist the detections in the Defensive branch. Building one for an authorized exercise is the best way to understand both sides: every C2 design choice (jitter, profile, redirector, channel) maps to a specific blue-team detection it's trying to survive — and documenting that mapping is what makes the exercise valuable to the defenders.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Name the four C2 roles and explain why a redirector sits between the target and the team server.
-- **Operator:** What do sleep, jitter, and a malleable profile each control, and why does jitter matter most for detection?
-- **Root:** Show how a no-jitter beacon is caught in `conn.log`, and map three C2 design choices to the blue-team detection each resists.
+You should now be able to:
+
+- Name the four C2 roles and explain why a redirector sits between the target and the team server.
+- What do sleep, jitter, and a malleable profile each control, and why does jitter matter most for detection?
+- Show how a no-jitter beacon is caught in `conn.log`, and map three C2 design choices to the blue-team detection each resists.
 
 ---
 > 🔼 Up: [[Writing Your Own Tools]]

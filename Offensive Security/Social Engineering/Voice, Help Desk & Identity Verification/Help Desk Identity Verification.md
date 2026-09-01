@@ -1,6 +1,6 @@
 ---
 title: "Help Desk Identity Verification"
-tags: [tree/offensive, cyber/offensive/social/helpdesk, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/social/helpdesk, type/technique, difficulty/medium]
 Domain: "[[Voice, Help Desk & Identity Verification]]"
 Color: "#DC143C"
 ---
@@ -13,13 +13,13 @@ Color: "#DC143C"
 ## Parent Learning Order
 Help Desk Identity Verification -> MFA Recovery Process Testing -> Vishing & Executive Impersonation Testing
 
-## Crook — Why the Help Desk Is a Target
+## Why the Help Desk Is a Target
 
 The IT help desk exists to *restore access* — reset passwords, unlock accounts, re-enrol MFA. That mission is in direct tension with security: the same action that helps a locked-out employee also hands an attacker the keys, *if* the agent cannot reliably tell them apart. The attacker's whole game is to impersonate a legitimate user convincingly enough to trigger a reset.
 
 The weak link is **knowledge-based verification (KBA)** — "what's your employee ID / manager / date of birth / last four of your SSN?" Every one of those is often discoverable through OSINT, data breaches, or a plausible pretext. KBA authenticates *knowledge of a fact*, and facts leak.
 
-## Operator — Weak vs. Strong Verification
+## Weak vs. Strong Verification
 
 | Verification method | Why it fails / holds |
 |---|---|
@@ -41,38 +41,62 @@ flowchart LR
     V -- no --> B["Hang up → call directory number → verify"]
 ```
 
-## Root — Runnable Lab (one machine, Python)
+## Worked Example: When "Verification" Authenticates a Fact, Not a Person
 
-This lab encodes the control — a sensitive action (password reset) is safe only when verified out-of-band via a directory-known number — and runs the *same* request with and without that verification.
-
-**Step 1 — the verification gate (`verify.py`).**
+A help-desk verification policy can be tested without a single phone call, by
+asking one question of each method: can an *attacker* satisfy it with what they can
+plausibly obtain? A short evaluator, given a realistic attacker capability set,
+answers it for five common methods.
 
 ```python
-def decide(req):
-    sensitive = req["action"] in {"password_reset","mfa_reset","bank_change"}
-    ob = req.get("out_of_band_callback") and req.get("directory_number")
-    return "ALLOW" if (not sensitive or ob) else "BLOCK (requires independent callback verification)"
+attacker_has = {"employee_id", "dob", "manager", "ssn_last4", "spoofed_caller_id"}
+methods = {
+    "Employee ID + DOB":          ({"employee_id", "dob"},          "knowledge"),
+    "Last four of SSN":           ({"ssn_last4"},                   "knowledge"),
+    "Caller ID matches directory":({"spoofed_caller_id"},           "knowledge"),
+    "Callback to HR-directory #": ({"control_registered_phone"},    "possession"),
+    "Live video + enrolled badge":({"possess_enrolled_device"},     "possession"),
+}
+for name, (needs, kind) in methods.items():
+    print(name, "ATTACKER PASSES" if needs <= attacker_has else "blocked", kind)
 ```
 
-**Step 2 — run it.**
-
-```console
-$ python3 verify.py
-help desk caller   password_reset -> BLOCK (requires independent callback verification)
-help desk caller   password_reset -> ALLOW
+```shell-session
+$ python3 helpdesk.py
+Employee ID + DOB              [knowledge (KBA)   ] -> ATTACKER PASSES
+Last four of SSN               [knowledge (KBA)   ] -> ATTACKER PASSES
+Caller ID matches directory    [knowledge (KBA)   ] -> ATTACKER PASSES
+Callback to HR-directory #     [channel/possession] -> attacker blocked
+Live video + enrolled badge    [channel/possession] -> attacker blocked
 ```
 
-**Step 3 — the deliberate contrast (the lesson).** Identical action, opposite outcome. The *only* difference between the BLOCK and the ALLOW is whether the agent hung up and called back a pre-registered directory number. No amount of correctly-answered KBA moves the first case to ALLOW — because KBA proves knowledge, not control.
+The split is total and it falls on one line: every knowledge-based method passes
+the attacker, and every possession-based method blocks them. That is not a
+coincidence of this attacker's capabilities — it is the definition of the two
+categories. Knowledge-based verification authenticates *knowing a fact*, and facts
+about employees leak through OSINT, breaches and pretext. An employee ID, a date of
+birth, a manager's name, the last four of an SSN — all are recoverable, and caller
+ID is simply spoofable.
 
-**Step 4 — cleanup:** decision simulation only — no cleanup required.
+Possession-based verification authenticates *control of a pre-registered channel or
+device* — a callback to the number already in the HR directory, or a live factor
+bound to an enrolled device. The attacker cannot satisfy those without actually
+compromising the channel, which is a far higher bar than looking up a fact.
 
-**What you should now be able to do:** classify verification methods as knowledge-based (weak) vs. possession/control-based (strong), and describe the directory-callback control that defeats a well-researched impersonator.
+This is the finding a vishing engagement against the help desk exists to produce:
+not "an agent was fooled" but "the verification policy relies on knowledge, and
+knowledge does not authenticate identity." The remediation is categorical — move
+the reset-triggering step onto a possession factor — rather than a plea for agents
+to be more careful, because the careful agent following a knowledge-based policy
+still hands over the account.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why is "what's your employee ID and manager's name?" a weak identity check?
-- **Operator:** Design a scoped test of a help desk's reset process using a canary account — what proves a pass, and what must you never do?
-- **Root:** Explain why a directory callback resists even a perfect-OSINT attacker, and where it still fails (e.g. a compromised or attacker-updated directory number).
+You should now be able to:
+
+- Why is "what's your employee ID and manager's name?" a weak identity check?
+- Design a scoped test of a help desk's reset process using a canary account — what proves a pass, and what must you never do?
+- Explain why a directory callback resists even a perfect-OSINT attacker, and where it still fails (e.g. a compromised or attacker-updated directory number).
 
 ---
 > 🔼 Up: [[Voice, Help Desk & Identity Verification]]

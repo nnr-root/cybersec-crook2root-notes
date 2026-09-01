@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/dhcp
   - type/concept
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Addressing & Subnetting]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IPv4 Addressing -> Subnetting & CIDR -> VLSM & Route Summarization -> IPv6 Addressing -> Address Assignment & DHCP -> NAT & Address Translation
 
-## Start at Zero: Three Ways to Get an Address
+## Three Ways to Get an Address
 
 | Method | Who decides | Where used | Failure mode |
 | --- | --- | --- | --- |
@@ -162,41 +163,13 @@ Snooping is the highest-value control here because its binding table — port, h
 
 Everything described here must be exercised only on an isolated laboratory segment you own. Running a DHCP server on a network you do not control affects every device on it, including devices belonging to others, and is out of scope in any engagement that has not explicitly authorized it in writing.
 
-## Authorized Lab: Two Servers, One Segment
+## Summary
 
-Use an isolated virtual switch with no connection to any production network. Three VMs: a legitimate DHCP server, a client, and a second server representing the rogue.
+You should now be able to:
 
-1. **Baseline.** Start only the legitimate server. On the client run `sudo dhclient -v eth0` and record the offer source, address, gateway, and resolvers. Confirm the lease appears in the server's lease file.
-2. **Observe the exchange.** Capture it in full:
-
-```bash
-sudo tcpdump -i eth0 -nn -v 'udp port 67 or udp port 68'
-```
-
-Confirm all four DORA messages and note which are broadcast.
-
-3. **Introduce the second server.** Configure the second VM to serve a different pool, with itself as both gateway and resolver. Start it.
-4. **Renew on the client** and observe two offers in the capture. Record which one the client accepted and why — arrival order, not trust.
-5. **Confirm the consequence.** Run `ip route` on the client. If the second server won, the default gateway now points at it. Every off-segment packet the client sends would traverse that host.
-6. **Apply the control.** Enable DHCP snooping on the lab switch, marking only the legitimate server's port trusted. Restart the second server and renew the client again.
-7. **Verify.** The client receives only the legitimate offer. Inspect the switch's snooping binding table and confirm it records the client's port, hardware address, and leased address.
-8. **Cleanup.** Stop the second server, remove its configuration, release and renew the client lease, and confirm `ip route` and `networkctl status` match the step 1 baseline. Remove any lab entries from the legitimate server's lease file if your procedure requires a clean state.
-
-Expected interpretation:
-
-```text
-Single server      -> one offer, predictable configuration
-Two servers        -> two offers; the client picks by arrival, not by trust
-Rogue wins         -> gateway and resolver are attacker-controlled while everything "works"
-Snooping enabled   -> offers from untrusted ports are discarded before reaching the client
-Binding table      -> port/MAC/IP/lease becomes the trusted basis for further link-layer controls
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Name the four DORA messages, state which are broadcast and why, and explain why a `169.254.x.x` address is a complete diagnosis.
-- **Operator:** Read client and server lease state, identify the offering server, and diagnose exhaustion, conflict, and relay failures from their distinct symptoms.
-- **Root:** Explain why DHCP has no authentication and what that implies for options 3, 6, and 121; describe how snooping's binding table underpins other link-layer controls; and argue lease-log retention as a prerequisite for post-incident attribution.
+- Name the four DORA messages, state which are broadcast and why, and explain why a `169.254.x.x` address is a complete diagnosis.
+- Read client and server lease state, identify the offering server, and diagnose exhaustion, conflict, and relay failures from their distinct symptoms.
+- Explain why DHCP has no authentication and what that implies for options 3, 6, and 121; describe how snooping's binding table underpins other link-layer controls; and argue lease-log retention as a prerequisite for post-incident attribution.
 
 ---
 > 🔼 Up: [[Addressing & Subnetting]]

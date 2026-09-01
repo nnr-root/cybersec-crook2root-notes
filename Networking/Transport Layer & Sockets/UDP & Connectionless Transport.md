@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/transport
   - type/concept
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Transport Layer & Sockets]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Control -> UDP & Connectionless Transport -> QUIC & Modern Transport -> Transport Layer Threats & Controls
 
-## Start at Zero: Eight Bytes and No Promises
+## Eight Bytes and No Promises
 
 **UDP (User Datagram Protocol)** provides exactly one service beyond raw IP: **demultiplexing to a port**, plus an optional checksum. Its entire header is eight bytes.
 
@@ -141,52 +142,13 @@ The recurring theme is that operators of UDP services must protect *third partie
 
 All scanning and traffic generation described here must be confined to systems within an authorized scope. Amplification techniques in particular direct traffic at third parties and must never be exercised outside a fully isolated lab.
 
-## Authorized Lab: Ambiguity, Statelessness, and Amplification
+## Summary
 
-Use two lab VMs on an isolated segment. The amplification portion must not have any path to a real network.
+You should now be able to:
 
-1. **Observe the eight-byte header.** Capture a DNS query and confirm the minimal header:
-
-```bash
-sudo tcpdump -i eth0 -nn -v -c 2 'udp port 53'
-```
-
-Note the absence of any handshake — the query is the first and only packet before the reply.
-
-2. **Demonstrate scan ambiguity.** On the server, run a UDP service on one port, leave a second port with nothing listening, and firewall-drop a third. Scan all three:
-
-```bash
-sudo nmap -sU -p <open>,<closed>,<dropped> <server>
-```
-
-Confirm you receive `open`, `closed`, and `open|filtered`, and write down what evidence produced each.
-
-3. **Prove the closed-port dependency on ICMP.** Block outbound ICMP port-unreachable on the server, rescan, and confirm the previously `closed` port now reports `open|filtered` — demonstrating that "closed" is an ICMP-derived inference, not a UDP observation.
-
-4. **Show statelessness.** Send a single datagram to a port with no listener and confirm the sender receives no transport-level error; the only feedback is the ICMP message, which the application may never see.
-
-5. **Demonstrate amplification safely.** In the isolated lab only, configure a UDP service that returns a response substantially larger than the request. From the attacker VM, send requests with the source address spoofed to the third VM. Confirm the third VM receives traffic it never requested, and measure the ratio.
-
-6. **Apply the controls.** Enable reverse-path filtering on the attacker's segment and confirm the spoofed packets are dropped at the source. Then rate-limit the service per source address and confirm the amplification is bounded even if spoofing succeeded.
-
-7. **Cleanup.** Remove the test service, firewall rules, spoofing configuration, and reverse-path filter changes; confirm the baseline scan results and connectivity return.
-
-Expected interpretation:
-
-```text
-No handshake       -> the first packet is already the request; no source verification possible
-open|filtered      -> honest ambiguity; silence is not evidence of closure
-Blocking ICMP      -> "closed" detection disappears, proving it was never a UDP signal
-Spoofed source     -> service replies to a victim that never asked
-Ingress filtering  -> spoofed packets never leave; the root-cause fix
-Rate limiting      -> bounds the damage a single service can contribute
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** List what UDP omits compared to TCP and give two applications where those omissions are advantages rather than deficiencies.
-- **Operator:** Interpret UDP scan results correctly, explain why `open|filtered` is honest rather than a tool failure, and why closed-port detection depends on ICMP and rate limiting distorts it.
-- **Root:** Explain precisely why the absence of a handshake enables reflection and amplification while TCP is structurally immune; justify ingress filtering, service hardening, and rate limiting as complementary defenses, and explain why UDP's lack of congestion control lets it starve well-behaved TCP flows.
+- List what UDP omits compared to TCP and give two applications where those omissions are advantages rather than deficiencies.
+- Interpret UDP scan results correctly, explain why `open|filtered` is honest rather than a tool failure, and why closed-port detection depends on ICMP and rate limiting distorts it.
+- Explain precisely why the absence of a handshake enables reflection and amplification while TCP is structurally immune; justify ingress filtering, service hardening, and rate limiting as complementary defenses, and explain why UDP's lack of congestion control lets it starve well-behaved TCP flows.
 
 ---
 > 🔼 Up: [[Transport Layer & Sockets]]

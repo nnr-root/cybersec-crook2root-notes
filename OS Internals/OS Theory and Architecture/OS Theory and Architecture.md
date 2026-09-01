@@ -23,7 +23,7 @@ Color: "#FFA500"
 
 ## Completion Standard
 
-Finish the laboratory and **Crook → Operator → Root** checkpoint in each masterclass. At Root level, you should be able to move from a symptom—latency, corruption, a crash, lost data, or anomalous device activity—to the responsible OS abstraction and a defensible experiment that proves the root cause.
+Finish the laboratory and **Beginner → Expert** checkpoint in each masterclass. At Root level, you should be able to move from a symptom—latency, corruption, a crash, lost data, or anomalous device activity—to the responsible OS abstraction and a defensible experiment that proves the root cause.
 
 ---
 > 🔼 Up: [[OS Internals]]

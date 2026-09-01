@@ -1,7 +1,7 @@
 ---
 title: "MFA, Recovery & Session Bypass Testing"
 aliases: ["MFA Bypass Testing", "MFA Recovery Process Testing", "Account Recovery Testing"]
-tags: [tree/offensive, cyber/offensive/web/identity/mfa, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/web/identity/mfa, type/technique, difficulty/medium]
 Domain: "[[Web Identity & Access Control]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Web Authentication Testing -> Broken Access Control -> JWT Security Testing -> Federated Identity & SSO -> MFA, Recovery & Session Bypass Testing
 
-## Start at Zero: The Second Factor and Its Escape Hatches
+## The Second Factor and Its Escape Hatches
 
 **Multi-Factor Authentication (MFA)** requires a second proof beyond the password — a code from an app, an SMS, a hardware key — so that a stolen password alone is not enough. It is the single most effective control against credential attacks. But MFA is only as strong as its *implementation and its bypasses*: the account-recovery flow that resets it, the session handling around it, and the ways it can be skipped. Attackers who cannot beat the password-plus-MFA front door look for the *side doors* — and there are usually several.
 
@@ -62,7 +62,61 @@ flowchart TD
     B4 --> P
 ```
 
-## Failure Modes and Interpretation
+## Worked Example: MFA That Is Prompted but Not Enforced
+
+A second factor only protects a resource if the resource checks for it. A common
+flaw prompts for MFA, records that the password was correct, and then guards the
+protected page against the *password* state rather than the *MFA-complete* state.
+The specimen has that exact gap:
+
+```python
+if path == "/login" and password_ok:
+    half_auth.add(user)                    # password verified
+    return '{"mfa_required": true}'
+if path == "/dashboard":
+    if user in half_auth:                  # BUG: checks password, not MFA
+        return '{"data": "..."}'
+```
+
+**Logging in** looks correctly protected:
+
+```shell-session
+analyst@lab:~$ curl -s -X POST -d 'u=alice&p=S3cret!' http://127.0.0.1:8118/login
+{"mfa_required":true}
+```
+
+The password is accepted and the app declares that MFA is required. A tester
+watching the intended flow — password, then a code prompt — sees a second factor
+and might conclude it is enforced.
+
+**Skipping the second factor** is a single request that never touches the code
+prompt:
+
+```shell-session
+analyst@lab:~$ curl -s http://127.0.0.1:8118/dashboard
+{"data":"CANARY-DASHBOARD"}
+```
+
+The dashboard returned its data with no MFA completed. The server treated a
+correct password as sufficient because the protected resource only checked the
+half-authenticated state — the one the password created — and MFA, though
+prompted, was never a precondition for anything. The prompt was theatre; the gate
+was open.
+
+This is why MFA testing follows the resource, not the login screen. The question
+is never "does it ask for a code" but "does *every* authenticated resource refuse
+to serve a session that has not completed MFA, verified server-side". The
+half-authenticated state must gate the whole application until the second factor
+is confirmed, and the check cannot live in the client, which the attacker
+controls.
+
+The second place to look is the recovery flow, because it is the designed bypass:
+a "lost your device" path that resets MFA on a single emailed link, or a security
+question, hands an attacker the same access the second factor was meant to
+prevent. An MFA implementation is only as strong as the weakest way to switch it
+off, and recovery is usually that way.
+
+## MFA present is not MFA enforced
 
 - **Locking out real users.** Code brute-force and recovery-flow testing can lock accounts. Synthetic accounts, throttling, coordination.
 - **MFA present ≠ MFA enforced.** The finding is often that MFA *exists* but is skippable — test whether authenticated resources are reachable without completing it, don't assume the presence of an MFA prompt means protection.
@@ -78,99 +132,13 @@ flowchart TD
 - **Number-matching / context in push MFA** defeats push-bombing by requiring the user to actively match a number, not just tap "approve."
 - **Detection**: repeated MFA-code attempts, recovery-flow abuse, and MFA-reset events are high-value signals — an account whose MFA was just reset then logged in from a new device is the takeover signature.
 
-## Authorized Lab: Bypass MFA That Isn't Enforced Server-Side
+## Summary
 
-> [!info] Runs on one Linux machine — builds an app where MFA is prompted but not enforced on the protected resource
-> Loopback, synthetic account. Step 5 removes it.
+You should now be able to:
 
-### Step 1 — Build an app with a skippable MFA step
-
-```bash
-cat > /tmp/mfa.py << 'EOF'
-import http.server, urllib.parse
-# state: after password, user is "half-authenticated"; MFA should gate /dashboard
-half_auth=set()
-class H(http.server.BaseHTTPRequestHandler):
-    def do_POST(self):
-        n=int(self.headers.get("Content-Length",0)); q=urllib.parse.parse_qs(self.rfile.read(n).decode())
-        if self.path=="/login" and q.get("u",[""])[0]=="alice" and q.get("p",[""])[0]=="S3cret!":
-            half_auth.add("alice")
-            self.send_response(200); self.end_headers(); self.wfile.write(b'{"mfa_required":true}')
-        else:
-            self.send_response(401); self.end_headers()
-    def do_GET(self):
-        # BUG: /dashboard checks only half-auth (password), NOT that MFA was completed
-        if self.path=="/dashboard":
-            if "alice" in half_auth:
-                self.send_response(200); self.end_headers(); self.wfile.write(b'{"data":"CANARY-DASHBOARD"}')
-            else:
-                self.send_response(401); self.end_headers()
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8118),H).serve_forever()
-EOF
-python3 /tmp/mfa.py &>/dev/null &
-sleep 1; echo "app up (alice, MFA prompted after password)"
-```
-
-```text
-app up (alice, MFA prompted after password)
-```
-
-### Step 2 — Log in with the password; MFA is requested
-
-```bash
-curl -s -X POST -d 'u=alice&p=S3cret!' http://127.0.0.1:8118/login
-```
-
-```text
-{"mfa_required":true}
-```
-
-The password succeeded and the app says MFA is required — the front door appears protected.
-
-### Step 3 — Skip MFA and go straight to the protected resource (the finding)
-
-```bash
-# without completing MFA, request the dashboard directly
-curl -s http://127.0.0.1:8118/dashboard
-```
-
-```text
-{"data":"CANARY-DASHBOARD"}
-```
-
-The dashboard returned its data **without MFA being completed** — the server treated password-success as sufficient and never enforced the second factor on the protected resource. MFA was prompted but not *enforced*: a bypass, proven by reaching the canary data with no code.
-
-### Step 4 — State the fix
-
-```bash
-echo "Fix: the half-authenticated state must gate ALL authenticated resources until MFA is verified server-side."
-echo "Also test the RECOVERY flow — a weak MFA-reset is the other common bypass."
-```
-
-```text
-Fix: the half-authenticated state must gate ALL authenticated resources until MFA is verified server-side.
-Also test the RECOVERY flow — a weak MFA-reset is the other common bypass.
-```
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/mfa.py; wait 2>/dev/null
-curl -s -o /dev/null -w "app gone: %{http_code}\n" --max-time 2 http://127.0.0.1:8118/dashboard 2>&1 | grep -o 'gone.*' || echo "app gone: connection refused"
-```
-
-```text
-app gone: connection refused
-```
-
-**What you should now be able to do:** distinguish MFA present from MFA enforced, bypass a skippable MFA step to reach protected data, recognize account recovery as the weak back door, and name the server-side-enforcement and recovery-hardening fixes.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what MFA protects against, and why account recovery is often the weak back door around it.
-- **Operator:** Bypass a skippable MFA step, test recovery for weak tokens and host-header injection, and prove a bypass with a synthetic account.
-- **Root:** Explain why MFA must be enforced server-side on every path, why recovery must be hardened to match login, and why phishing-resistant factors and number-matching defeat the strongest MFA attacks.
+- Explain what MFA protects against, and why account recovery is often the weak back door around it.
+- Bypass a skippable MFA step, test recovery for weak tokens and host-header injection, and prove a bypass with a synthetic account.
+- Explain why MFA must be enforced server-side on every path, why recovery must be hardened to match login, and why phishing-resistant factors and number-matching defeat the strongest MFA attacks.
 
 ---
 > 🔼 Up: [[Web Identity & Access Control]]

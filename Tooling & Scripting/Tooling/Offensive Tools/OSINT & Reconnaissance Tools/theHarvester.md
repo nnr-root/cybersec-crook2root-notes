@@ -1,7 +1,7 @@
 ---
 title: "theHarvester"
 aliases: ["theharvester"]
-tags: [tree/tooling, cyber/tooling/offensive/osint/theharvester, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/offensive/osint/theharvester, type/tool, difficulty/medium]
 Domain: "[[OSINT & Reconnaissance Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ theHarvester aggregates a target's public footprint — emails, subdomains, host
 ## Parent Learning Order
 theHarvester -> Amass -> Shodan
 
-## Crook — The Mental Model
+## One command fanned out across public sources
 
 theHarvester is the **breadth** tool of passive recon — one command that fans out across many public sources and merges what they know about a domain.
 
-![[tool_osint_recon.svg]]
-
 Its place in the map: it sits on the far-left, tapping the widest set of *third-party* sources at once. You never send a packet to the target — you ask search engines, crt.sh, and keyservers what *they* already know, and theHarvester deduplicates it into a first list of emails and hosts. Breadth over depth: it's the "cast a wide net first" pass before Amass digs deep or Shodan tells you what's exposed.
 
-## Operator — Make It Work
+## Choosing a source set, and saving the evidence
 
 Point it at a domain and a source set (`-b`):
 
@@ -42,7 +40,7 @@ dev-old.acme-corp.com:198.51.100.4
 
 `-b all` runs every source; `-l` limits results; `-f report.json` saves evidence. Some sources (Shodan, Hunter, SecurityTrails) need an **API key** in the config to return anything — a run that finds "nothing" from those is often a missing key, not an empty target.
 
-## Root — Internals & The Deliberate Break
+## Acting on aggregated data without confirming it
 
 Harvested data is *aggregated third-party data*, which means it can be **stale**, and acting on it blindly is the classic mistake:
 
@@ -57,11 +55,13 @@ operator@kali:~$ host 198.51.100.4
 
 **The deliberate break:** `dev-old.acme-corp.com` came from a *certificate* issued years ago and cached in crt.sh — but it no longer resolves, and that IP has been recycled to a **different cloud tenant**. Treat the harvested list as ground truth and you might scan or phish an asset your client no longer owns — out of scope and potentially illegal. theHarvester tells you what *was* public, not what is *live and yours*. Every harvested host must be re-resolved and ownership-confirmed (WHOIS/ASN) before it enters the active phase, and every harvested email verified before it feeds a phishing sim (distribution lists and ex-employees are common noise). Breadth is the strength; verification is the discipline that makes it usable.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why is theHarvester "passive" when it returns the target's emails and hosts?
-- **Operator:** A run returns nothing from Shodan/SecurityTrails sources. What's the most likely cause?
-- **Root:** Explain why a harvested subdomain can be a scope hazard, and what you verify before acting on it.
+You should now be able to:
+
+- Why is theHarvester "passive" when it returns the target's emails and hosts?
+- A run returns nothing from Shodan/SecurityTrails sources. What's the most likely cause?
+- Explain why a harvested subdomain can be a scope hazard, and what you verify before acting on it.
 
 ---
 > 🔼 Up: [[OSINT & Reconnaissance Tools]]

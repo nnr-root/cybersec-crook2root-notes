@@ -1,7 +1,7 @@
 ---
 title: "Zeek"
 aliases: ["zeek", "Bro"]
-tags: [tree/tooling, cyber/tooling/defensive/zeek, type/tool, level/root]
+tags: [tree/tooling, cyber/tooling/defensive/zeek, type/tool, difficulty/hard]
 Domain: "[[Network Detection & Monitoring Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ Zeek (formerly Bro) is a network-traffic **recorder**, not a signature engine. I
 ## Parent Learning Order
 Suricata -> Snort -> Zeek
 
-## Crook — The Mental Model
+## Recording behaviour instead of matching signatures
 
 Zeek is the entire right-hand model of the diagram — behaviour, not signatures.
 
-![[tool_ids_models.svg]]
-
 Where Snort/Suricata ask "did a *known* threat just happen?", Zeek asks nothing — it simply *records*. Every connection becomes a row in `conn.log`; every DNS lookup a row in `dns.log`; every TLS handshake (JA3, SNI, cert) a row in `ssl.log`. The detection happens *later*, when you or a SIEM hunt over those logs for what's abnormal. Its superpower is seeing patterns no signature could encode — and doing so even on **encrypted** traffic, because it reasons about *metadata*, not payload.
 
-## Operator — Make It Work
+## Pointing it at an interface and reading the logs
 
 Point Zeek at an interface (or a pcap); it produces the logs:
 
@@ -38,7 +36,7 @@ analyst@sensor:~$ head -1 conn.log; cat conn.log | zeek-cut id.orig_h id.resp_h 
 
 `zeek-cut` extracts columns from the tab-separated logs. The high-value logs: `conn.log` (every flow + duration + bytes), `dns.log` (queries — catch DGA/exfil), `ssl.log` (JA3 + SNI + cert), `http.log`, `files.log` (extracted files + hashes). Zeek's scripting language lets you write custom detections that trigger on protocol events.
 
-## Root — Internals & The Deliberate Break
+## Why 'no alerts' means it is working
 
 New Zeek users open the tool expecting alerts — and find none:
 
@@ -54,11 +52,13 @@ analyst@sensor:~$ cat conn.log | zeek-cut id.resp_h ts | sort | \
 
 **The deliberate break:** Zeek produces **no alerts**, and a beginner concludes it's "not working." It's working perfectly — Zeek's model is *record now, detect later*. A Cobalt Strike beacon calling home every 60 seconds matches no Snort signature (the payload is encrypted, the domain rotates), but in `conn.log` it's glaringly obvious: the same destination at a metronomic interval. That's the class of threat behavioural monitoring exists to catch and signatures never will. The tradeoff the diagram states plainly: Zeek shifts the work from the *rule author* (signatures) to the *analyst* (hunting) — more effort, but it's the only side of the house that sees the novel and the encrypted. In practice you run Zeek *and* Suricata: signatures for the known, Zeek logs for everything else, both feeding the SIEM.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** How does Zeek differ from Snort/Suricata, and why does it work on encrypted traffic?
-- **Operator:** Name four Zeek logs and what each is used to hunt for.
-- **Root:** Explain why Zeek emits no alerts by design, and show how a C2 beacon surfaces in `conn.log` when no signature would catch it.
+You should now be able to:
+
+- How does Zeek differ from Snort/Suricata, and why does it work on encrypted traffic?
+- Name four Zeek logs and what each is used to hunt for.
+- Explain why Zeek emits no alerts by design, and show how a C2 beacon surfaces in `conn.log` when no signature would catch it.
 
 ---
 > 🔼 Up: [[Network Detection & Monitoring Tools]]

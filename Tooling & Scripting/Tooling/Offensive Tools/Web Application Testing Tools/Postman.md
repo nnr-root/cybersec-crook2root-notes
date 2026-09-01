@@ -1,7 +1,7 @@
 ---
 title: "Postman"
 aliases: ["postman", "Newman"]
-tags: [tree/tooling, cyber/tooling/offensive/web/postman, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/offensive/web/postman, type/tool, difficulty/medium]
 Domain: "[[Web Application Testing Tools]]"
 Color: "#708090"
 ---
@@ -16,7 +16,7 @@ Postman is the graphical API workbench. Where curl sends one request, Postman or
 ## Parent Learning Order
 curl -> Postman -> Burp Suite -> OWASP ZAP -> Nikto -> WPScan -> SQLmap
 
-## Crook — The Mental Model
+## Structured input, structured output, gated by auth
 
 An API is a set of endpoints that take structured input (usually JSON) and return structured output, gated by authentication. Testing one request by hand is easy; the hard part is testing *many* requests, as *different users*, *repeatedly*, without re-typing tokens. Postman's answer is three layers stacked on top of a single request.
 
@@ -31,7 +31,7 @@ flowchart TD
 
 `{{variables}}` are the key idea: define `{{base_url}}` and `{{token}}` once in an *environment*, reference them everywhere, and switch from staging to your low-priv test user by changing one dropdown.
 
-## Operator — Make It Work
+## Importing a spec, or pasting a curl command
 
 **Build a request** by importing an OpenAPI/Swagger spec (Postman generates the whole collection) or pasting a curl command — *Import → Raw text → paste `curl ...`* converts it into a Postman request instantly. That curl↔Postman bridge means everything you learned in **curl** transfers directly.
 
@@ -48,7 +48,7 @@ Subsequent requests set `Authorization: Bearer {{token}}` and just work — no c
 
 **Find access-control bugs by swapping environments.** Save `customer_a` and `customer_b` tokens in two environments, then fire the *same* `GET /api/orders/{{order_id}}` at customer B's object using customer A's token — a classic IDOR/BOLA test, run in two clicks.
 
-## Root — Internals, Automation & The Deliberate Break
+## Newman, and turning a collection into a CI gate
 
 Postman's real power at the Root level is **Newman**, the CLI runner that turns a saved collection into a repeatable, CI-gating test suite:
 
@@ -71,11 +71,13 @@ operator@ci:~$ newman run api-tests.postman_collection.json -e staging.postman_e
 
 Internals worth knowing: Postman variables have a **scope chain** (global → collection → environment → local), and a subtle bug is a stale global shadowing an environment value — check the variable's resolved value in the console. Pre-request scripts run *before* the request (used for HMAC signing or timestamp nonces). And beware secret hygiene: tokens saved in environments are stored locally and can sync to the cloud — use "secret" variable type and never commit exported environments containing live credentials.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** What do collections, environments, and `{{variables}}` each solve that raw curl does not?
-- **Operator:** You have two users' tokens. Describe the two-click IDOR test Postman makes trivial.
-- **Root:** Explain how a Newman assertion turns a manual authorization check into a CI gate, using the cross-tenant 404 example.
+You should now be able to:
+
+- What do collections, environments, and `{{variables}}` each solve that raw curl does not?
+- You have two users' tokens. Describe the two-click IDOR test Postman makes trivial.
+- Explain how a Newman assertion turns a manual authorization check into a CI gate, using the cross-tenant 404 example.
 
 ---
 > 🔼 Up: [[Web Application Testing Tools]]
