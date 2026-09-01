@@ -5,6 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/macos
   - type/technique
+  - difficulty/easy
   - level/apprentice
 Domain:
   - "[[macOS]]"
@@ -19,7 +20,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File System -> macOS Processes & Daemons -> macOS Identity, Keychain & Credentials -> macOS Networking Internals -> macOS Security Mechanisms -> macOS Binaries & Runtime Loading -> macOS Observability, Incident Response & Forensics
 
-## Crook — Zsh, Unix Semantics & Safe Command Work
+## Zsh, Unix Semantics & Safe Command Work
 
 ### Vocabulary & First Mental Model
 
@@ -76,7 +77,7 @@ shasum -a 256 ~/Downloads/sample.pkg
 > [!tip] The analogy, and where it breaks
 > A polished storefront with a fully equipped workshop behind it — the graphical layer and the Unix command line acting on the same underlying goods. The analogy breaks because the storefront sometimes enforces rules the workshop must also respect: privacy consent prompts can block a command-line action, so the terminal is not an unrestricted back door.
 
-## Operator — Native Administration Map
+## Native Administration Map
 
 ### System Identity & Hardware
 
@@ -192,7 +193,7 @@ flowchart LR
     E --> H["Hash, preserve, interpret"]
 ```
 
-## Root — Homebrew, Architecture Boundaries & Automation
+## Homebrew, Architecture Boundaries & Automation
 
 Homebrew installs to `/opt/homebrew` on Apple Silicon and `/usr/local` on Intel. A formula provides command-line software; a cask manages graphical applications or vendor packages; `brew services` integrates selected software with `launchd`.
 
@@ -275,94 +276,6 @@ sudo -V | grep -E 'Environment|Path' | sed -n '1,20p'
 
 Shell history is useful but incomplete evidence: users can disable it, Zsh may share history among sessions, commands can begin with configured ignore patterns, and secrets may be exposed accidentally. Preserve it under authorization, correlate it with process and file evidence, and never treat absence as proof a command did not run.
 
-## Hands-On Lab: The Terminal Is Not an Unrestricted Back Door
-
-> [!info] Runs on any Mac — creates files under a temp dir removed in Step 6
-> The key macOS lesson: the command line must still obey privacy and integrity controls the GUI enforces.
-
-### Step 1 — Standard Unix, as expected
-
-```bash
-LAB=$(mktemp -d); cd "$LAB"; pwd
-echo "ok" > file.txt && ls -l@ file.txt
-```
-
-```text
-/var/folders/xy/.../T/tmp.AbC123
--rw-r--r--  1 you  staff  3 Aug  4 18:30 file.txt
-```
-
-The BSD userland behaves like any Unix — but note `ls -l@`, which shows **extended attributes**, a macOS addition that carries metadata like quarantine flags.
-
-### Step 2 — Watch macOS tag a "downloaded" file
-
-```bash
-xattr -w com.apple.quarantine "0083;00000000;Safari;" file.txt
-xattr -l file.txt
-```
-
-```text
-com.apple.quarantine: 0083;00000000;Safari;
-```
-
-The quarantine attribute is macOS's mark-of-the-web. A file carrying it triggers Gatekeeper checks on first open — and it persists as forensic evidence of where the file came from, all visible from the CLI.
-
-### Step 3 — The CLI hits a privacy wall the GUI also hits
-
-```bash
-ls ~/Library/Messages/ 2>&1 | head -1
-```
-
-```text
-ls: /Users/you/Library/Messages/: Operation not permitted
-```
-
-This is the surprise: `ls` — running as **you**, on **your** files — is refused. TCC (Transparency, Consent & Control) protects sensitive directories regardless of Unix permissions. The terminal is not a bypass; it is subject to the same consent framework as any app.
-
-### Step 4 — See which security context the shell runs in
-
-```bash
-csrutil status
-codesign -dv /bin/zsh 2>&1 | grep -E 'Identifier|Authority' | head -2
-```
-
-```text
-System Integrity Protection status: enabled.
-Identifier=com.apple.zsh
-Authority=Software Signing
-```
-
-Even the shell binary is code-signed by Apple. SIP plus code signing mean the CLI operates inside the same integrity guarantees as the rest of the system.
-
-### Step 5 — Use native macOS-specific tooling
-
-```bash
-sw_vers
-system_profiler SPHardwareDataType 2>/dev/null | grep -E 'Chip|Memory' | head -2
-```
-
-```text
-ProductName:		macOS
-ProductVersion:		15.0
-BuildVersion:		24A335
-      Chip: Apple M1 Pro
-      Memory: 16 GB
-```
-
-`sw_vers` and `system_profiler` are the macOS-native equivalents of Linux's `/etc/os-release` and `lshw` — the correct tools for identifying a Mac.
-
-### Step 6 — Cleanup
-
-```bash
-cd /tmp && rm -rf "$LAB" && ls -d "$LAB" 2>&1
-```
-
-```text
-ls: /var/folders/.../tmp.AbC123: No such file or directory
-```
-
-**What you should now be able to do:** read extended attributes and the quarantine flag, explain why the CLI is blocked from TCC-protected directories despite Unix permissions, and identify a Mac with native tools.
-
 ## Troubleshooting Workflow
 
 Start with context rather than repeating commands: record architecture, macOS build, shell, effective identity, current directory, `PATH`, active Homebrew prefix, and whether the process runs locally, through SSH, or under launchd. Use `type -a`, `command -v`, `file`, and `codesign -dv` to identify what will actually execute. Compare exit status, stdout, and stderr separately. When a command behaves differently in a script, inspect quoting, glob expansion, locale, permissions, environment inheritance, and Apple Silicon versus Rosetta execution before modifying the system.
@@ -375,11 +288,13 @@ Start with context rather than repeating commands: record architecture, macOS bu
 - Absolute paths and controlled environments protect privileged automation from `PATH` substitution.
 - Native collection tools reduce deployment friction but still require timestamps, hashes, error capture, and documented limitations.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Navigate Zsh safely and explain why BSD flags differ from GNU/Linux.
-- **Operator:** Build a non-destructive inventory using native identity, storage, network, process, and control commands with realistic output interpretation.
-- **Root:** Automate forensic-quality collection across Intel and Apple Silicon while controlling `PATH`, architecture translation, privileges, provenance, and evidence integrity.
+You should now be able to:
+
+- Navigate Zsh safely and explain why BSD flags differ from GNU/Linux.
+- Build a non-destructive inventory using native identity, storage, network, process, and control commands with realistic output interpretation.
+- Automate forensic-quality collection across Intel and Apple Silicon while controlling `PATH`, architecture translation, privileges, provenance, and evidence integrity.
 
 ---
 > 🔼 Up: [[macOS]]

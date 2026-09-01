@@ -1,7 +1,7 @@
 ---
 title: "Go for Security Engineering"
 aliases: ["Golang Security Engineering", "Go"]
-tags: [tree/tooling, cyber/tooling/programming/go, type/concept, level/operator]
+tags: [tree/tooling, cyber/tooling/programming/go, type/concept, difficulty/medium]
 Domain: "[[Programming for Security]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ Go is what you graduate to when a Python tool needs to be *fast and deployable*.
 ## Parent Learning Order
 Python -> Go -> C++ -> Bash
 
-## Crook — The Mental Model
+## One static binary, cheap concurrency
 
 Go is the **deployable-speed** corner of the map.
 
-![[tool_language_choice.svg]]
-
 Reach for Go when you've outgrown Python's speed or deployment story: you need a fast concurrent tool that runs as *one file* on a stranger's machine. Its two superpowers are the **static binary** (`GOOS`/`GOARCH` cross-compile → a Linux/Windows/ARM executable from your laptop, no interpreter to install) and **goroutines** (concurrency so cheap you can launch thousands) — while staying memory-safe, unlike C++.
 
-## Operator — Make It Work
+## A worker pool over channels
 
 The idiomatic concurrent pattern is a **worker pool over channels**:
 
@@ -53,7 +51,7 @@ $ GOOS=windows GOARCH=amd64 go build -o scan.exe   # cross-compile from Linux �
 
 `context.Context` for cancellation/timeouts, interfaces for pluggable modules, `go test` + `-race` for correctness.
 
-## Root — Internals & The Deliberate Break
+## When goroutines are so cheap you launch too many
 
 Goroutines are *so* cheap that the mistake is launching too many:
 
@@ -66,11 +64,13 @@ for _, p := range allPorts {         // 65,535 goroutines
 
 **The deliberate break:** because a goroutine costs almost nothing, it's tempting to spawn one per unit of work — and with 65,535 ports you've just opened tens of thousands of concurrent connections, exhausting file descriptors on your side and flooding the target on theirs (the same self-DoS as the hand-built scanner, one language up). Cheap concurrency doesn't remove the need to *bound* it — a fixed **worker pool** (N goroutines draining a channel) keeps in-flight work at a level the OS and target can bear. The `-race` detector is the other Go essential: it catches data races (two goroutines touching shared state) that are invisible until they corrupt output in production. Go's whole value proposition for security work is "concurrent, fast, and a single portable binary" — but the concurrency is a tool you aim, not a firehose you open. When you need *lower* than Go can go (byte-exact layout, no GC pauses, exploit dev), that's the signal to drop to C++.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** What two properties make Go ideal for deployable security tools?
-- **Operator:** Write a bounded worker-pool scanner, and show how you'd cross-compile it for Windows.
-- **Root:** Explain why cheap goroutines still need bounding, and what `-race` catches.
+You should now be able to:
+
+- What two properties make Go ideal for deployable security tools?
+- Write a bounded worker-pool scanner, and show how you'd cross-compile it for Windows.
+- Explain why cheap goroutines still need bounding, and what `-race` catches.
 
 ---
 > 🔼 Up: [[Programming for Security]]

@@ -1,7 +1,7 @@
 ---
 title: "Amass"
 aliases: ["amass", "OWASP Amass"]
-tags: [tree/tooling, cyber/tooling/offensive/osint/amass, type/tool, level/root]
+tags: [tree/tooling, cyber/tooling/offensive/osint/amass, type/tool, difficulty/hard]
 Domain: "[[OSINT & Reconnaissance Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ OWASP Amass is the deep subdomain-enumeration and attack-surface-mapping engine.
 ## Parent Learning Order
 theHarvester -> Amass -> Shodan
 
-## Crook — The Mental Model
+## Mapping one target's DNS estate into a graph
 
 Amass is the **depth** tool — where theHarvester casts a wide net, Amass exhaustively maps one target's DNS estate into a graph.
 
-![[tool_osint_recon.svg]]
-
 But note *where* Amass sits on the map: it **straddles the passive/active line**. Its default enumeration is passive (querying cert transparency, DNS datasets, archives — the target sees nothing). The moment you add `-brute` or `-active`, it starts sending DNS queries and probes *to the target itself* — crossing into active recon, where you appear in their logs. Understanding which side of that line a given command lives on is the single most important thing about Amass.
 
-## Operator — Make It Work
+## Passive first, then active inside scope
 
 Passive first — quiet and free:
 
@@ -46,7 +44,7 @@ operator@kali:~$ amass enum -active -brute -d acme-corp.com -w wordlist.txt
 
 `intel` gathers ASNs/orgs; `-df` scopes to specific domains; the graph database (`amass db`) lets you track how the surface changes over time.
 
-## Root — Internals & The Deliberate Break
+## The flag that turns quiet recon into logged traffic
 
 The passive/active distinction is not academic — it's the difference between invisible and logged:
 
@@ -62,11 +60,13 @@ operator@kali:~$ amass enum -brute -d acme-corp.com -w big-wordlist.txt
 
 **The deliberate break:** a beginner runs `amass enum -brute` on a "passive recon" engagement, assuming Amass is always passive, and dumps tens of thousands of DNS lookups onto the target's authoritative servers — noisy, potentially disruptive, and outside a passive scope. Same tool, two utterly different footprints, separated by one flag. Always run `-passive` first (it's quiet, free, and often finds the "internal-dev" names leaked in certificates), and only cross into `-active`/`-brute` when the RoE authorizes touching the target. The corollary discovery from the passive run above — an `internal-*` hostname exposed in a public TLS certificate — is exactly the kind of finding cert transparency hands you for free, no active probing required.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** How does Amass differ from theHarvester (depth vs. breadth), and why does it produce a *graph*?
-- **Operator:** Write the command for a quiet, in-scope first pass, and name what turns it active.
-- **Root:** Explain exactly what changes between `amass enum -passive` and `-brute`, and why the distinction is a scope/OPSEC decision.
+You should now be able to:
+
+- How does Amass differ from theHarvester (depth vs. breadth), and why does it produce a *graph*?
+- Write the command for a quiet, in-scope first pass, and name what turns it active.
+- Explain exactly what changes between `amass enum -passive` and `-brute`, and why the distinction is a scope/OPSEC decision.
 
 ---
 > 🔼 Up: [[OSINT & Reconnaissance Tools]]

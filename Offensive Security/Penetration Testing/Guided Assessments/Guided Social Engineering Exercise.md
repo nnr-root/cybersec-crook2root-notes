@@ -5,6 +5,7 @@ aliases:
 tags:
   - tree/offensive
   - cyber/offensive/guided
+  - difficulty/hard
 Domain: "[[Guided Assessments]]"
 Color: "#DC143C"
 ---
@@ -81,11 +82,13 @@ Provide immediate reassurance, explain the observable cues, and give one clear r
 
 Repeat the same threat hypothesis after remediation with changed wording and timing. Improvement means faster detection and safer process execution, not merely recognition of a familiar template.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Explain why the exercise measures *systems and processes*, never employee worth, and why governance/safety approval comes first.
-- **Operator:** Design cohorts with a control group, execute in bounded waves with test indicators, and measure delivery/click/report/help-desk/SOC metrics separately.
-- **Root:** Explain why raw click-rate is an inadequate measure, how median-report-time and process adherence are the real signals, and how to debrief with participant care and convert findings into control fixes.
+You should now be able to:
+
+- Explain why the exercise measures *systems and processes*, never employee worth, and why governance/safety approval comes first.
+- Design cohorts with a control group, execute in bounded waves with test indicators, and measure delivery/click/report/help-desk/SOC metrics separately.
+- Explain why raw click-rate is an inadequate measure, how median-report-time and process adherence are the real signals, and how to debrief with participant care and convert findings into control fixes.
 
 ---
 > 🔼 Up: [[Guided Assessments]]

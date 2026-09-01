@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/windows
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
@@ -19,7 +19,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations -> Windows Drivers I-O & Kernel Debugging -> Windows Processes, Services & Boot -> Windows File System & Registry -> Windows Networking Internals -> Windows Security & Access Control -> Windows Identity, Credentials & Authentication -> Windows Active Directory & Domains -> Windows Command Prompt & Batch -> Windows PowerShell -> Windows Logging & Auditing -> Windows Diagnostics, Crash Dumps & Performance -> Windows Sysinternals & Troubleshooting
 
-## Start at Zero: Symptom, Evidence & Cause
+## Symptom, Evidence & Cause
 
 A **symptom** is what a user observes; a **fault** is the incorrect state that produced it; the **root cause** is the earliest actionable condition in the chain. A crash is abrupt termination, a hang is failure to make progress, and a performance problem is progress at unacceptable latency or resource cost. A **counter** samples a changing quantity, a **trace** records events over time, and a **dump** freezes selected memory state. Experts choose evidence according to the question instead of collecting everything indiscriminately.
 
@@ -164,102 +164,13 @@ Diagnostics artifacts are security-sensitive. Dumps may hold tokens, secrets, de
 
 The same evidence reveals malicious behavior: unsigned modules, anomalous parentage, injected executable memory, unusual network destinations, vulnerable drivers, log-tampering gaps, and persistence activity. Conversely, attackers may induce resource exhaustion to hide within operational noise. Analysts should establish whether a symptom is accidental load, defective software, hostile input, or deliberate suppression of telemetry.
 
-## Hands-On Lab: Performance Counters and Crash Configuration
+## Summary
 
-> [!info] Runs on any Windows machine — read-only inspection
-> No crash is induced. The lab shows how the evidence is configured and read.
+You should now be able to:
 
-### Step 1 — Read live performance counters
-
-```powershell
-Get-Counter '\Processor(_Total)\% Processor Time','\Memory\Available MBytes' -SampleInterval 1 -MaxSamples 1 |
-  Select-Object -ExpandProperty CounterSamples | Select-Object Path,CookedValue
-```
-
-```text
-Path                                    CookedValue
-----                                    -----------
-\\win-lab01\processor(_total)\% proces...       12.4
-\\win-lab01\memory\available mbytes           9832
-```
-
-Performance counters are the black-box telemetry of a running system. `Available MBytes` — not "free" — is the number that answers whether memory is under pressure, the same distinction as Linux `available`.
-
-### Step 2 — Find what is consuming CPU right now
-
-```powershell
-Get-Process | Sort-Object CPU -Descending | Select-Object -First 3 Name,Id,
-  @{n='CPU(s)';e={[math]::Round($_.CPU,1)}},@{n='WS(MB)';e={[math]::Round($_.WorkingSet64/1MB)}}
-```
-
-```text
-Name        Id CPU(s) WS(MB)
-----        -- ------ ------
-chrome    7120  842.3    621
-Teams     6044  310.7    488
-explorer  5044  118.2    142
-```
-
-`CPU` here is **cumulative seconds** since the process started, not a percentage — a common misreading. A process with huge cumulative CPU may be idle now; you need a rate to judge current load.
-
-### Step 3 — Check the crash-dump configuration
-
-```powershell
-$cc = Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl'
-$type = @{0='None';1='Complete';2='Kernel';3='Small (minidump)';7='Automatic'}[$cc.CrashDumpEnabled]
-"Dump type on crash: {0}" -f $type
-"Dump file location:  {0}" -f $cc.DumpFile
-```
-
-```text
-Dump type on crash: Automatic
-Dump file location:  C:\Windows\MEMORY.DMP
-```
-
-This determines what evidence exists **after** a crash. If it were `None`, a blue screen would leave nothing to analyze — so verifying dump configuration is preparation done before the incident, not after.
-
-### Step 4 — Look for prior crash evidence
-
-```powershell
-Get-WinEvent -FilterHashtable @{LogName='System'; Id=1001; ProviderName='Microsoft-Windows-WER-SystemErrorReporting'} -MaxEvents 2 -ErrorAction SilentlyContinue |
-  Select-Object TimeCreated,Id | Format-Table -Auto
-if (Test-Path C:\Windows\Minidump) { Get-ChildItem C:\Windows\Minidump | Select-Object Name,Length -First 2 }
-```
-
-```text
-TimeCreated          Id
------------          --
-7/29/2026 3:11:07 AM 1001
-```
-
-Event 1001 records each bugcheck (blue screen) with its stop code. A minidump plus its stop code is enough to identify the failing driver — the fidelity a live witness could never provide.
-
-### Step 5 — Snapshot resource use for a baseline
-
-```powershell
-"Threads: {0} | Handles: {1} | Processes: {2}" -f `
-  (Get-Process | Measure-Object -Property Threads -Sum).Sum,
-  (Get-Process | Measure-Object -Property HandleCount -Sum).Sum,
-  (Get-Process).Count
-```
-
-```text
-Threads: 3241 | Handles: 148922 | Processes: 187
-```
-
-**Cleanup:** none — every command read state only.
-
-**What you should now be able to do:** read performance counters (and why `Available MBytes` matters), interpret cumulative CPU correctly, verify crash-dump configuration before an incident, and find prior bugcheck evidence.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Distinguish logs, counters, traces, and dumps; read a basic exception code and stack.
-- **Operator:** Capture fit-for-purpose evidence, load matching symbols, analyze crashes and hangs, and attribute CPU/disk/memory cost to specific call paths.
-- **Root:** Correlate multiple evidence classes, protect sensitive artifacts, falsify competing hypotheses, identify the earliest causal defect, and prove remediation with a reproducible regression test.
-
-### Root Review Questions
-
-Before closing an incident, prove that the dump matches the deployed binary, symbols match that image, system time and trace time align, and the suspected frame is causal rather than merely where corruption surfaced. State whether the conclusion rests on one observation or recurs across independent captures. Preserve exact commands and debugger output so another analyst can reproduce the reasoning without access to your memory or assumptions.
+- Distinguish logs, counters, traces, and dumps; read a basic exception code and stack.
+- Capture fit-for-purpose evidence, load matching symbols, analyze crashes and hangs, and attribute CPU/disk/memory cost to specific call paths.
+- Correlate multiple evidence classes, protect sensitive artifacts, falsify competing hypotheses, identify the earliest causal defect, and prove remediation with a reproducible regression test.
 
 ---
 > 🔼 Up: [[Windows]]

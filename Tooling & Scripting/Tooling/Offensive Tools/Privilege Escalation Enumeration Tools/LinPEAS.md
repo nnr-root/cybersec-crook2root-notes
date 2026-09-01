@@ -1,7 +1,7 @@
 ---
 title: "LinPEAS"
 aliases: ["linpeas", "PEASS-ng"]
-tags: [tree/tooling, cyber/tooling/offensive/privesc/linpeas, type/tool, level/root]
+tags: [tree/tooling, cyber/tooling/offensive/privesc/linpeas, type/tool, difficulty/hard]
 Domain: "[[Privilege Escalation Enumeration Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ LinPEAS (part of PEASS-ng) is *the* Linux privilege-escalation enumeration scrip
 ## Parent Learning Order
 LinPEAS -> WinPEAS
 
-## Crook — The Mental Model
+## Finding the one thing that trusts you too much
 
 Escalating from a normal user to root means finding **one thing that is misconfigured to trust you more than it should**: a program that runs as root but you can influence, a file root reads that you can write, or a kernel old enough to have a known exploit. The vectors are always the same handful of categories.
 
-![[tool_privesc_surface.svg]]
-
 The left column of the diagram is LinPEAS's entire checklist. You do not memorise commands for each — LinPEAS runs them all — but you must recognise the categories so you can *read the output*: a writable SUID binary means "check GTFOBins," a `NOPASSWD` sudo rule means "run that command as root," an old kernel means "look up a CVE."
 
-## Operator — Make It Work
+## Running it, and keeping the output as evidence
 
 Get the script onto the host (it is a single self-contained shell script) and run it, teeing the output for evidence:
 
@@ -51,7 +49,7 @@ uid=0(root) gid=0(root) groups=0(root)
 
 The passwordless-sudo `tar` became a root shell via its `--checkpoint-action` — one of LinPEAS's highlighted findings, exploited deliberately.
 
-## Root — Internals & The Deliberate Break
+## Reading the colour ranking correctly
 
 LinPEAS ranks findings with a colour scheme, and the single most important skill is reading that ranking correctly:
 
@@ -66,11 +64,13 @@ low@hardened:/tmp$ ./linpeas.sh -a | grep -c '95%'
 
 Operational internals: run with `-a` for all checks (slower, thorough) or targeted flags to stay quiet; LinPEAS works even without root by reading what your user can; and because it shells out to many binaries, a locked-down host (no `curl`/`wget`, restricted `/tmp` noexec) forces you to transfer and run it creatively — itself a signal of a well-hardened target.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** What is the one thing every privilege-escalation vector has in common?
-- **Operator:** LinPEAS highlights `(root) NOPASSWD: /usr/bin/tar`. Turn it into a root shell and explain why it works.
-- **Root:** Explain why LinPEAS's colour ranking is a heuristic, and why a low-confidence line still needs manual verification (both directions of error).
+You should now be able to:
+
+- What is the one thing every privilege-escalation vector has in common?
+- LinPEAS highlights `(root) NOPASSWD: /usr/bin/tar`. Turn it into a root shell and explain why it works.
+- Explain why LinPEAS's colour ranking is a heuristic, and why a low-confidence line still needs manual verification (both directions of error).
 
 ---
 > 🔼 Up: [[Privilege Escalation Enumeration Tools]]

@@ -1,6 +1,6 @@
 ---
 title: "Cloud Data Access Simulation"
-tags: [tree/offensive, cyber/offensive/cloud/data, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/cloud/data, type/technique, difficulty/hard]
 Domain: "[[Cloud Red Team Operations]]"
 Color: "#DC143C"
 ---
@@ -13,13 +13,13 @@ Color: "#DC143C"
 ## Parent Learning Order
 Cloud Identity Operations -> Cloud Control Plane Operations -> Cloud Persistence Simulation -> Cloud Data Access Simulation
 
-## Crook — The Data Is the Objective
+## The Data Is the Objective
 
 Recon, identity escalation, and persistence are all in service of one thing: reaching the data. In the cloud, most data lives in **object storage** (S3, GCS, Azure Blob), and the most common breach is not a clever exploit — it is a **bucket exposed by policy**. Storage access is governed by a resource policy plus account-level "block public access" settings, and a single `Principal: "*"` with no condition turns a private store into a public one.
 
 The skill is reading a bucket policy the way the cloud evaluator does: *who* is allowed *what*, and *under which conditions* — because the condition is often the only thing standing between "internal" and "the whole internet."
 
-## Operator — How Storage Gets Exposed
+## How Storage Gets Exposed
 
 | Misconfiguration | Effect |
 |---|---|
@@ -40,43 +40,77 @@ flowchart LR
     E -- no --> Priv["Restricted to a named<br/>principal / condition"]
 ```
 
-## Root — Runnable Lab (one machine, Python)
+## Worked Example: A Bucket That Answers to Anyone
 
-This lab evaluates a bucket policy for public exposure the way the cloud would, with no account.
+The most common cloud data breach is not an exploit — it is a storage policy that
+names `*` as a principal. Reading a bucket policy the way the cloud evaluator does,
+then confirming the exposure anonymously, is the whole skill.
 
-**Step 1 — the exposure evaluator (`bucket_policy.py`).**
+> [!note] Representative output
+> Reconstructed to match the AWS CLI's real output shapes rather than captured from one account; identifiers are synthetic. The field names, error strings and command structure are what a live account returns.
 
-```python
-policy={"Statement":[{"Effect":"Allow","Principal":"*","Action":"s3:GetObject",
-        "Resource":"arn:aws:s3:::c2r-canary-bucket/*"}]}
-def is_public(p):
-    for s in p["Statement"]:
-        if s["Effect"]=="Allow" and s["Principal"]=="*" and "Condition" not in s:
-            return True, s["Action"]
-    return False, None
-print("public read?:", is_public(policy))
+**The policy says who is allowed what** — and this one says everyone:
+
+```shell-session
+$ aws s3api get-bucket-policy --bucket acme-customer-exports --query Policy --output text | python3 -m json.tool
+{
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::acme-customer-exports/*"
+        }
+    ]
+}
 ```
 
-**Step 2 — run it.**
+Read it as the evaluator does: `Effect: Allow`, `Principal: *`, and — the decisive
+absence — no `Condition` block. There is nothing restricting *who* the `*`
+includes, so it includes anonymous requests from the public internet. A policy
+with the same `Allow` but a `Condition` limiting it to a VPC endpoint or an
+organisation ID would be restricted; this one is not.
 
-```console
-$ python3 bucket_policy.py
-bucket policy Principal: *
-public read?: True (s3:GetObject)
-fix: set Principal to a specific account/role, or add aws:SourceVpce / aws:PrincipalOrgID condition
+**The account-level backstop is the second thing to check**, because it can
+override a bad policy:
+
+```shell-session
+$ aws s3api get-public-access-block --bucket acme-customer-exports
+An error occurred (NoSuchPublicAccessBlockConfiguration) ... does not exist
 ```
 
-**Step 3 — the deliberate break (the fix).** Add a `Condition` (e.g. `{"StringEquals":{"aws:PrincipalOrgID":"o-abc123"}}`) to the statement and re-run: `is_public` returns `False`. The permission is unchanged — the *condition* is what re-privatises the data. That is precisely the line reviewers must check, not just the `Action`.
+The error is the finding. "Block Public Access" is the switch that makes a
+`Principal: *` policy inert regardless of what the policy says, and here it is not
+configured — so the policy stands unopposed.
 
-**Step 4 — cleanup:** static policy evaluation — no cleanup required. (In a live lab, delete the canary object and re-run a public-read check expecting `AccessDenied`.)
+**Confirm it anonymously**, with credentials explicitly disabled:
 
-**What you should now be able to do:** read a bucket policy for `Principal`/`Condition` exposure, explain why "Block Public Access" is the account-level backstop, and prove reachability with a canary object instead of real data.
+```shell-session
+$ aws s3 ls s3://acme-customer-exports/ --no-sign-request
+2026-07-14 03:22:10   4881232 customers-2026-q2.csv
+$ aws s3 cp s3://acme-customer-exports/customers-2026-q2.csv - --no-sign-request | head -1
+id,email,full_name,plan,mrr
+```
 
-## Crook → Operator → Root Checkpoint
+`--no-sign-request` sends no credentials at all, and the object still returns. That
+is the proof: not "an authorised user can read this" but "anyone on the internet
+can", demonstrated by reading a header line and stopping. On a real engagement the
+restraint matters — establishing the first row is reachable is the finding, and
+pulling the full customer file is neither necessary nor authorised.
 
-- **Crook:** Why is `Principal: "*"` with no condition the classic cloud data breach?
-- **Operator:** You suspect a bucket is public. What single canary-object check proves it without reading real data?
-- **Root:** Explain the evaluation order of account "Block Public Access", bucket policy, and object ACL, and how a conflict resolves.
+The invariant this violates is simple to state: an object should be reachable only
+by a named principal or one satisfying a network or organisation condition. `Allow
+*` with no condition breaks it by definition, and the fix is equally direct — a
+principal or condition on the policy, and Block Public Access enabled as the
+account-wide backstop that catches the next mistake.
+
+## Summary
+
+You should now be able to:
+
+- Why is `Principal: "*"` with no condition the classic cloud data breach?
+- You suspect a bucket is public. What single canary-object check proves it without reading real data?
+- Explain the evaluation order of account "Block Public Access", bucket policy, and object ACL, and how a conflict resolves.
 
 ---
 > 🔼 Up: [[Cloud Red Team Operations]]

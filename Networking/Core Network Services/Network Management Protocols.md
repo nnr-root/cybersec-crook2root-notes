@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/services
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Core Network Services]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 DNS Resolution & Records -> DNS Security & Encrypted Transports -> Local Name Resolution & Service Discovery -> Network Time Synchronization -> Email Transport Protocols -> Network Management Protocols
 
-## Start at Zero: Three Kinds of Visibility
+## Three Kinds of Visibility
 
 Managing a network requires three distinct kinds of information, and a different protocol family provides each.
 
@@ -41,7 +41,7 @@ These are complementary. Polling gives you current metrics (interface utilizatio
 **SNMP (Simple Network Management Protocol)** lets a management system query and configure network devices. A device runs an **agent** exposing a tree of values — the **MIB (Management Information Base)** — where each value has a numeric address called an **OID (Object Identifier)**. The manager polls OIDs for metrics, and devices can also push unsolicited **traps** when something notable occurs.
 
 ```bash
-snmpwalk -v2c -c public 192.168.10.1 system
+snmpwalk -v2c -c public 10.10.10.1 system
 ```
 
 Expected excerpt:
@@ -83,9 +83,9 @@ Classic syslog runs over UDP 514 — unencrypted, unauthenticated, and unreliabl
 
 ```text
 SrcIP           DstIP           Proto SrcPt DstPt  Packets Bytes  Flags
-10.0.5.22       203.0.113.90    TCP   52418 443    1204    88213  ...S
-10.0.5.22       198.51.100.7    UDP   51002 53     6       540    ...
-10.0.5.99       185.22.11.4     TCP   49877 4444   88291   14M    ...
+10.10.10.22     203.0.113.90    TCP   52418 443    1204    88213  ...S
+10.10.10.22     198.51.100.7    UDP   51002 53     6       540    ...
+10.10.10.99     198.51.100.9    TCP   49877 4444   88291   14M    ...
 ```
 
 Flow data is uniquely valuable because it scales and it survives encryption. Recording the full payload of a busy network is impractical and, increasingly, impossible because the traffic is encrypted. But flow *metadata* — who connected to whom, when, how much — is compact enough to retain for long periods and remains visible even when the content does not. The third row above tells a story without any payload: a large sustained transfer to an unusual high port on an external host is the shape of exfiltration or command-and-control, detectable purely from the metadata.
@@ -106,39 +106,13 @@ This is why flow analysis is central to modern detection: it is the one network-
 
 All enumeration described here must target only devices within an authorized scope. SNMP walking, log access, and flow inspection on infrastructure you do not own are unauthorized, and writable SNMP access in particular can alter device behaviour.
 
-## Authorized Lab: See the Network See Itself
+## Summary
 
-Use a lab with a network device supporting SNMP and flow export, a syslog collector, and a client generating traffic.
+You should now be able to:
 
-1. **Poll with a default community.** From the client, walk the device with `snmpwalk -v2c -c public`. Confirm how much configuration and state is disclosed with a guessable string, and capture the traffic to confirm the community string travels in cleartext:
-
-```bash
-sudo tcpdump -i eth0 -nn -A -c 4 'udp port 161' | grep -i public
-```
-
-2. **Harden to v3.** Reconfigure the device for SNMPv3 with authentication and encryption, disable v2c, and confirm the old `public` walk now fails while an authenticated v3 query succeeds and is unreadable in capture.
-3. **Centralize logs.** Configure the device to forward syslog to the collector. Generate an event (a failed login), confirm it arrives at the collector, then delete the local log on the device and confirm the central copy survives — demonstrating why forwarding matters.
-4. **Forge an event.** Over unauthenticated UDP syslog, send a spoofed message to the collector and confirm it is accepted, then switch to authenticated syslog over TLS and confirm forgery no longer works.
-5. **Capture flow data.** Enable flow export and generate a distinctive conversation — a large transfer to an unusual high port. Confirm the flow record captures the five-tuple and byte count without any payload, and that the pattern is visible even if the transfer is encrypted.
-6. **Map a blind spot.** Identify a segment or path in the lab that no flow collector or syslog source covers, generate traffic there, and confirm it is invisible in all three systems — making the coverage gap concrete.
-7. **Cleanup.** Restore the device to its baseline configuration, remove test log entries and flow captures, and confirm authenticated monitoring is in place.
-
-Expected interpretation:
-
-```text
-snmpwalk -c public -> full device disclosure from a default string, sent in cleartext
-SNMPv3             -> authenticated and encrypted; the old walk fails
-Central syslog     -> event survives deletion of the local log
-Forged syslog      -> accepted over UDP; rejected once authenticated
-Flow record        -> the conversation's shape is visible without payload, even if encrypted
-Blind spot         -> unmonitored traffic is invisible to all three; coverage is a control
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the three kinds of visibility — polling, event logging, flow records — and which protocol provides each.
-- **Operator:** Walk an SNMP agent and read the disclosure, configure central syslog and confirm forwarded events survive local deletion, and interpret a flow record to spot an anomalous conversation.
-- **Root:** Explain why SNMP v2c community strings and unauthenticated syslog are high-impact weaknesses on the very systems that reveal the most; argue why flow metadata is the visibility that survives encryption, and why the monitoring plane must be better protected than what it monitors.
+- Explain the three kinds of visibility — polling, event logging, flow records — and which protocol provides each.
+- Walk an SNMP agent and read the disclosure, configure central syslog and confirm forwarded events survive local deletion, and interpret a flow record to spot an anomalous conversation.
+- Explain why SNMP v2c community strings and unauthenticated syslog are high-impact weaknesses on the very systems that reveal the most; argue why flow metadata is the visibility that survives encryption, and why the monitoring plane must be better protected than what it monitors.
 
 ---
 > 🔼 Up: [[Core Network Services]]

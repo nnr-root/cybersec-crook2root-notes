@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/secarch
   - type/concept
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Network Security Architecture]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Firewall Architecture & Policy -> Network Segmentation & Zero Trust -> VPNs & Encrypted Tunnels -> Intrusion Detection & Network Monitoring -> Egress Control & Web Proxies -> Network Access Control
 
-## Start at Zero: A Decision on Every Packet
+## A Decision on Every Packet
 
 A **firewall** enforces a policy about which traffic may pass a boundary. For every packet or connection, it asks a question — "does a rule permit this?" — and either forwards or drops. That is the entire concept; everything else is how sophisticated the question can be and how well the rules are written.
 
@@ -42,6 +43,12 @@ A **next-generation firewall** goes further, identifying the *application* regar
 > [!tip] The analogy, and where it breaks
 > A doorman with a guest list. The sound version admits only names on the list and turns away everyone else; the doomed version tries to memorise every troublemaker in the city and admits all others. The analogy breaks at statefulness: a doorman does not need to remember that *you* went out in order to let your taxi back in, whereas that memory of an outbound conversation is exactly what a stateful firewall keeps and what makes tight policy practical.
 
+**The deliberate break:** "the firewall blocks attacks" is the mental model almost everyone starts with, and it quietly assumes the firewall knows what an attack is.
+
+It does not. A firewall matches a **policy about connections** — addresses, ports, protocol, and for a stateful one, whether this packet belongs to a flow it already permitted. If your rule allows 443 inbound to the web server, it allows every request that arrives on 443, benign and hostile alike. The firewall is not failing when an SQL injection reaches your application; it is doing exactly what it was configured to do.
+
+**How you'd spot an over-broad rule:** read the address range as its literal extent, not its notation. A `/16` in a permit rule is 65,534 hosts — write it out before approving it.
+
 ## Stateful Inspection in Practice
 
 The stateful model is worth seeing concretely, because it is where most policy lives.
@@ -59,7 +66,7 @@ table inet filter {
     ct state established,related accept
     ct state invalid drop
     iif "lo" accept
-    tcp dport 22 ip saddr 10.0.0.0/8 accept
+    tcp dport 22 ip saddr 10.10.0.0/16 accept
     tcp dport 443 accept
   }
 }
@@ -70,7 +77,7 @@ Read this top to bottom, because that is how it executes:
 - **`policy drop`** is the foundation — **default deny**. Anything not explicitly permitted is dropped. This is the single most important property of a sound firewall: the rule base states what is *allowed*, and everything else is denied by default. The opposite (default allow, block known-bad) is unwinnable, because you cannot enumerate all bad traffic.
 - **`ct state established,related accept`** is the stateful heart: return traffic for existing connections is permitted because a connection exists, not because an address is trusted. `related` covers helper flows like an FTP data connection tied to a control connection.
 - **`ct state invalid drop`** discards packets that match no known connection and are not a valid new one — a cheap, high-value rule.
-- **`tcp dport 22 ip saddr 10.0.0.0/8 accept`** permits SSH only from internal addresses. Restricting by both port and source is far stronger than by port alone.
+- **`tcp dport 22 ip saddr 10.10.0.0/16 accept`** permits SSH only from internal addresses. Restricting by both port and source is far stronger than by port alone.
 
 Rules are evaluated **in order**, and the first match wins. This makes ordering a correctness property: a broad `accept` placed above a specific `drop` renders the drop dead, silently permitting what you meant to block. Auditing a rule base means reading it as the firewall does — sequentially — not as a set.
 
@@ -106,34 +113,13 @@ flowchart TD
 
 All firewall configuration and testing described here must target only systems within an authorized scope. Modifying rules on a shared firewall affects every flow it governs, and probing a firewall's policy is reconnaissance that is logged.
 
-## Authorized Lab: Build a Default-Deny Policy
+## Summary
 
-Use a lab firewall (a Linux host with nftables is ideal) between two segments you control.
+You should now be able to:
 
-1. **Start with default-deny.** Configure the input and forward policies to drop, with no allow rules, and confirm all traffic is blocked — the correct starting point.
-2. **Add stateful return handling.** Add the `established,related accept` rule and one specific allow (SSH from an internal address). Confirm that outbound-initiated connections get their replies automatically, and that the permitted service works only from the intended source.
-3. **Demonstrate ordering.** Place a broad `accept` above a specific `drop` and confirm the drop never fires; then reorder and confirm the drop now takes effect. This makes first-match-wins concrete.
-4. **Demonstrate rule bloat.** Add several overlapping and redundant rules, then audit the base by testing which rules actually fire for representative traffic, identifying the dead and redundant ones.
-5. **Log the denies.** Add logging to the default-deny path, generate some blocked traffic (a scan from the other segment), and confirm each blocked attempt appears in the log — turning silent drops into telemetry.
-6. **Add egress control.** Set the outbound policy to default-deny and permit only required outbound traffic. Confirm that an unexpected outbound connection (simulating malware calling home) is now blocked and logged.
-7. **Cleanup.** Restore the baseline ruleset and confirm expected connectivity.
-
-Expected interpretation:
-
-```text
-Default-deny      -> nothing passes until explicitly allowed; the sound foundation
-Stateful accept   -> replies permitted by connection state, not by trusting an address
-Rule order        -> first match wins; a broad accept above a drop kills the drop
-Bloat audit       -> overlapping and dead rules revealed by testing what actually fires
-Logged denies     -> blocked attempts become investigable telemetry
-Egress deny       -> outbound malware/exfil connection blocked, not just inbound attacks
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what a firewall decides on every packet and the difference between a stateless packet filter and a stateful firewall; state why default-deny is the sound posture.
-- **Operator:** Read a stateful ruleset, explain the `established,related` rule and first-match-wins ordering, and diagnose a dead rule caused by a broader rule above it.
-- **Root:** Explain why default-allow is unwinnable and default-deny is finite; argue why egress control and deny-logging are high-value and neglected, and why a firewall is one layer rather than a complete boundary — motivating segmentation and zero trust.
+- Explain what a firewall decides on every packet and the difference between a stateless packet filter and a stateful firewall; state why default-deny is the sound posture.
+- Read a stateful ruleset, explain the `established,related` rule and first-match-wins ordering, and diagnose a dead rule caused by a broader rule above it.
+- Explain why default-allow is unwinnable and default-deny is finite; argue why egress control and deny-logging are high-value and neglected, and why a firewall is one layer rather than a complete boundary — motivating segmentation and zero trust.
 
 ---
 > 🔼 Up: [[Network Security Architecture]]

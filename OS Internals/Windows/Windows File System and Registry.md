@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/windows
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
@@ -19,7 +19,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations -> Windows Drivers I-O & Kernel Debugging -> Windows Processes, Services & Boot -> Windows File System & Registry -> Windows Networking Internals -> Windows Security & Access Control -> Windows Identity, Credentials & Authentication -> Windows Active Directory & Domains -> Windows Command Prompt & Batch -> Windows PowerShell -> Windows Logging & Auditing -> Windows Diagnostics, Crash Dumps & Performance -> Windows Sysinternals & Troubleshooting
 
-## Start at Zero: Persistent Names & State
+## Persistent Names & State
 
 A file system turns blocks on storage into named byte streams with metadata and permissions. A **volume** is a formatted storage region, a **file record** describes one file, a **directory** maps names to records, and a **stream** stores bytes associated with a record. The Registry is different: it is a hierarchical configuration database whose **keys** resemble folders, **values** hold typed data, and **hives** are independently backed stores. NTFS and the Registry both cache and journal state, so what is visible through Explorer or Registry Editor is only one view of a deeper transactional system.
 
@@ -71,8 +71,8 @@ reg query HKLM\SYSTEM\CurrentControlSet\Services                     :: services
 ```
 Run/RunOnce keys, service `ImagePath`s, and Winlogon `Userinit`/`Shell` are classic **persistence** footholds — and exactly what **Autoruns** (see **Windows Sysinternals and Troubleshooting**) enumerates.
 
-> [!tip] Crook → Root
-> **Crook** browses `C:\`. **Root** reads the **$MFT** for the real timeline, hides tools in an **ADS**, and knows the three hives (**SAM/SYSTEM/SECURITY**) that turn one foothold into every credential on the box.
+> [!tip] Beginner → Expert
+> **A beginner** browses `C:\`. **An expert** reads the **$MFT** for the real timeline, hides tools in an **ADS**, and knows the three hives (**SAM/SYSTEM/SECURITY**) that turn one foothold into every credential on the box.
 
 ## NTFS On-Disk Architecture
 
@@ -170,114 +170,13 @@ Filesystem and Registry findings need provenance. A suspicious executable in a s
 
 Hardening combines least-privilege ACLs, safe path handling, controlled reparse-point traversal, application control, protected backups, BitLocker, service/task path integrity, Registry auditing on high-value keys, and centralized telemetry. Clearing a journal or deleting a file does not erase copies already forwarded, snapshotted, cached, backed up, or recorded in another subsystem.
 
-## Hands-On Lab: NTFS Streams, the Registry & Forensic Traces
+## Summary
 
-> [!info] Runs on any Windows machine — creates files under `%TEMP%\fslab`, removed in Step 6
-> Demonstrates two things unique to Windows: alternate data streams and the Registry as evidence.
+You should now be able to:
 
-### Step 1 — Create a file and hide data in an alternate stream
-
-```powershell
-$dir = "$env:TEMP\fslab"; New-Item -ItemType Directory -Force -Path $dir | Out-Null; Set-Location $dir
-"visible content" | Set-Content main.txt
-"hidden payload"  | Set-Content -Path 'main.txt:secret' -Stream secret 2>$null
-Get-Item main.txt | Select-Object Length
-Get-Content main.txt
-```
-
-```text
-Length
-------
-    17
-
-visible content
-```
-
-The file looks 17 bytes and shows only visible content — but a second stream is attached, invisible to normal tools. This is an **NTFS alternate data stream (ADS)**, a real hiding place malware uses.
-
-### Step 2 — Reveal the hidden stream
-
-```powershell
-Get-Item main.txt -Stream * | Select-Object Stream,Length
-Get-Content main.txt -Stream secret
-```
-
-```text
-Stream   Length
-------   ------
-:$DATA       17
-secret       15
-
-hidden payload
-```
-
-Only `-Stream *` exposes it. The `:$DATA` is the visible file; `secret` is the concealed 15 bytes. Defenders and forensic tools must explicitly enumerate streams — which is exactly why attackers use them.
-
-### Step 3 — See the "mark of the web" the OS adds to downloads
-
-```powershell
-Set-Content downloaded.txt "pretend this came from the internet"
-Add-Content -Path 'downloaded.txt' -Stream 'Zone.Identifier' -Value "[ZoneTransfer]`nZoneId=3"
-Get-Content downloaded.txt -Stream Zone.Identifier
-```
-
-```text
-[ZoneTransfer]
-ZoneId=3
-```
-
-`ZoneId=3` is the mark Windows attaches to internet-downloaded files — it is why SmartScreen warns you and why Office opens such files in Protected View. It is also a forensic breadcrumb proving a file came from the web.
-
-### Step 4 — Read Registry values as structured data
-
-```powershell
-Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' |
-  Select-Object ProductName,CurrentBuild,InstallDate
-```
-
-```text
-ProductName  CurrentBuild InstallDate
------------  ------------ -----------
-Windows 11    26100        1719849600
-```
-
-The Registry is not just settings — `InstallDate` (a Unix timestamp) is forensic evidence of when the OS was installed. The Registry records history, which is why it is a goldmine in investigations.
-
-### Step 5 — Find recently-run programs in the Registry
-
-```powershell
-$key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU'
-if (Test-Path $key) { Get-ItemProperty $key | Select-Object -ExpandProperty MRUList } else { 'RunMRU not populated on this host' }
-```
-
-```text
-gfa
-```
-
-The `RunMRU` key records what a user typed into the Run dialog, in order — the kind of artifact that reconstructs user activity long after the fact.
-
-### Step 6 — Cleanup
-
-```powershell
-Set-Location $env:TEMP; Remove-Item "$env:TEMP\fslab" -Recurse -Force
-Test-Path "$env:TEMP\fslab"
-```
-
-```text
-False
-```
-
-**What you should now be able to do:** create and reveal an NTFS alternate data stream, read the Zone.Identifier mark-of-the-web, and treat Registry values like `InstallDate` and `RunMRU` as forensic evidence.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain files, directories, MFT records, streams, hives, keys, values, and basic ACLs.
-- **Operator:** Interpret resident/nonresident attributes, runlists, USN evidence, reparse points, control sets, WOW64 views, and Registry transaction state.
-- **Root:** Reconstruct a defensible cross-source timeline, explain filesystem and Registry evidence limits, identify the writable trust boundary behind persistence, and implement controls that preserve integrity plus recovery.
-
-### Root Review Questions
-
-For each conclusion, identify whether it came from live API state, raw metadata, a journal, a snapshot, or forwarded telemetry. Explain timestamp semantics, collection time, possible reuse, parser limitations, and whether encryption or storage optimization changed visibility. A professional finding states what the artifact proves, what it merely suggests, and which independent source would raise confidence.
+- Explain files, directories, MFT records, streams, hives, keys, values, and basic ACLs.
+- Interpret resident/nonresident attributes, runlists, USN evidence, reparse points, control sets, WOW64 views, and Registry transaction state.
+- Reconstruct a defensible cross-source timeline, explain filesystem and Registry evidence limits, identify the writable trust boundary behind persistence, and implement controls that preserve integrity plus recovery.
 
 ---
 > 🔼 Up: [[Windows]]

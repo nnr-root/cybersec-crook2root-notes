@@ -5,9 +5,11 @@ tags:
   - tree/networking
   - cyber/networking/dns
   - type/concept
-  - level/crook
+  - difficulty/easy
 Domain:
   - "[[Core Network Services]]"
+thread-exempt:
+  - "10.113.0.203: not an address — the reversed in-addr.arpa name for 203.0.113.10, which is edge"
 Color: "#42D4F4"
 ---
 
@@ -19,7 +21,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 DNS Resolution & Records -> DNS Security & Encrypted Transports -> Local Name Resolution & Service Discovery -> Network Time Synchronization -> Email Transport Protocols -> Network Management Protocols
 
-## Start at Zero: A Distributed Database of Names
+## A Distributed Database of Names
 
 People use names; the network uses addresses. **DNS (Domain Name System)** is the distributed database that translates between them. "Distributed" is the essential word: no single server holds the mapping for the whole Internet. Instead, authority is **delegated** down a hierarchy, and each level knows only who to ask next.
 
@@ -47,6 +49,12 @@ A **zone** is a portion of the namespace under one administrative control. Deleg
 
 > [!tip] The analogy, and where it breaks
 > Asking directory assistance for a number, where the first office does not know it but knows which regional office to ask, and so on down to the one that does. The analogy breaks in two ways: real directory assistance answers from one book, whereas DNS genuinely *delegates* — the root does not hold the answer at all; and DNS answers are cached with an expiry, so a corrected number keeps being handed out until that timer runs down.
+
+**The deliberate break:** DNS is described as a lookup — you ask for a name, you get an address, like a phone book.
+
+The resolver you ask almost never knows the answer. It **walks a hierarchy** on your behalf — root, then TLD, then the zone's authoritative servers — and then caches the result for as long as the TTL allows. That caching is the part with consequences: the answer you receive may have been true when it was fetched and false since, which is why a DNS change "hasn't propagated" and why cache poisoning is worth an attacker's effort at all. You are not reading a phone book, you are trusting a stranger's memory of one.
+
+**How you'd spot which you got:** `dig` marks an authoritative answer with the `aa` flag, and a cached one counts its TTL *down* between queries. A TTL that decrements is someone else's memory.
 
 ## Walking the Hierarchy
 
@@ -86,7 +94,7 @@ A DNS record maps a name to data of a specific type.
 | **MX** | Mail servers for a domain, with priority | `10 mail.example.com.` |
 | **NS** | Delegates a zone to authoritative servers | `ns1.example.com.` |
 | **TXT** | Arbitrary text; carries SPF, DKIM, DMARC, verification | `"v=spf1 include:..."` |
-| **PTR** | Address → name (reverse lookup) | `10.113.0.203.in-addr.arpa. → www.example.com.` |
+| **PTR** | Address → name (reverse lookup) | `10.113.0.203.in-addr.arpa. → edge.meridian.test.` |
 | **SRV** | Service location: host, port, priority, weight | `_ldap._tcp` → host and port |
 | **SOA** | Zone authority and timing parameters | Serial, refresh, expiry |
 | **CAA** | Which certificate authorities may issue for this domain | `0 issue "letsencrypt.org"` |
@@ -173,48 +181,13 @@ That failure is the correct, secure result.
 
 All enumeration described here must target only domains and servers within an authorized scope. DNS queries are logged by resolvers and authoritative operators, and zone-transfer attempts against systems you do not own are unauthorized access attempts.
 
-## Authorized Lab: Watch a Name Resolve, Then Break It
+## Summary
 
-Use a lab resolver and an authoritative server for a zone you control (`lab.internal` or similar). Record baseline answers first.
+You should now be able to:
 
-1. **Trace a full resolution.** Flush the resolver cache, then run `dig +trace` for a name in your zone. Identify each referral step and the final authoritative answer.
-2. **Prove caching.** Query the same name twice and compare the query times reported by `dig`:
-
-```bash
-dig www.lab.internal | grep "Query time"
-dig www.lab.internal | grep "Query time"
-```
-
-Expected excerpt:
-
-```text
-;; Query time: 42 msec
-;; Query time: 0 msec
-```
-
-The second is served from cache. Watch the TTL count down on successive queries, confirming it is a live countdown, not a static value.
-
-3. **Demonstrate the stale-answer problem.** With a long TTL configured, change the A record on the authoritative server. Confirm the authoritative server returns the new value while your resolver still returns the old one, and that this persists until the TTL expires.
-4. **Demonstrate the fix.** Lower the TTL, wait for the old TTL to expire, then make another change and confirm it propagates quickly. Articulate why lowering the TTL after a change would not have helped.
-5. **Test zone transfer.** Attempt `dig @<your authoritative server> lab.internal AXFR`. If it succeeds, observe the full record inventory returned, then restrict transfers to designated secondaries and confirm the attempt now fails.
-6. **Break resolution deliberately.** Point the client at a non-existent resolver. Confirm that `ping <IP address>` still works while `ping <hostname>` fails — isolating the failure to name resolution rather than connectivity.
-7. **Cleanup.** Restore the original records, TTLs, resolver configuration, and transfer restrictions; confirm baseline answers return.
-
-Expected interpretation:
-
-```text
-+trace          -> referrals down the hierarchy; only the last server gives the answer
-Query time 0    -> cached; the TTL is a live countdown
-Changed record  -> authoritative differs from resolver until the old TTL expires
-AXFR permitted  -> full hostname inventory disclosed
-IP works, name fails -> the fault is resolution, not connectivity
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the delegation hierarchy right to left, the three resolver roles, and what a TTL controls.
-- **Operator:** Use `dig` with `+trace` and `+norecurse` to distinguish a stale cache from a wrong record; plan a record change around TTL so it propagates predictably, and isolate a resolution failure from a connectivity failure.
-- **Root:** Explain why referral-based delegation is what makes DNS scale; describe cache poisoning and the entropy defenses that made off-path attacks impractical, and argue why zone-transfer restriction, record hygiene, and resolver logging are each security controls rather than operational chores.
+- Explain the delegation hierarchy right to left, the three resolver roles, and what a TTL controls.
+- Use `dig` with `+trace` and `+norecurse` to distinguish a stale cache from a wrong record; plan a record change around TTL so it propagates predictably, and isolate a resolution failure from a connectivity failure.
+- Explain why referral-based delegation is what makes DNS scale; describe cache poisoning and the entropy defenses that made off-path attacks impractical, and argue why zone-transfer restriction, record hygiene, and resolver logging are each security controls rather than operational chores.
 
 ---
 > 🔼 Up: [[Core Network Services]]

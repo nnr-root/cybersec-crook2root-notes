@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/routing
   - type/concept
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Routing & the Network Layer]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interior Gateway Protocols -> BGP & Internet Routing -> First-Hop Redundancy & Gateway Failover -> Routing Security & Path Validation
 
-## Start at Zero: Telling a Device Exactly Where to Send
+## Telling a Device Exactly Where to Send
 
 A **static route** is a forwarding instruction an administrator configures directly: "to reach network X, use next hop Y." The device does not learn it, calculate it, or share it — it simply obeys it until someone changes it.
 
@@ -40,15 +41,15 @@ flowchart TD
 The diagram exposes the defining weakness on its right edge: the forwarding decision is made purely from the configured table, and nothing verifies that the chosen next hop is alive. A static route is obeyed identically whether the gateway is healthy or failed.
 
 ```bash
-sudo ip route add 10.20.0.0/16 via 192.168.10.254
-sudo ip route add default via 192.168.10.1
+sudo ip route add 10.20.0.0/16 via 10.10.10.254
+sudo ip route add default via 10.10.10.1
 ```
 
 Expected result in the table:
 
 ```text
-default via 192.168.10.1 dev eth0
-10.20.0.0/16 via 192.168.10.254 dev eth0 proto static
+default via 10.10.10.1 dev eth0
+10.20.0.0/16 via 10.10.10.254 dev eth0 proto static
 ```
 
 The `proto static` marker distinguishes these from routes the kernel derived or a protocol learned. They persist exactly as written, which is both their strength and their weakness.
@@ -57,6 +58,12 @@ The `proto static` marker distinguishes these from routes the kernel derived or 
 
 > [!tip] The analogy, and where it breaks
 > A handwritten note taped to a junction saying 'for the north depot, turn left'. It is perfectly reliable and completely unaware — if the left road washes away, the note still says turn left. The analogy breaks in one useful direction: a driver would *see* the missing road, whereas a router keeps forwarding into a dead next hop with no error at all, because a static route's health and its next hop's health are entirely different facts.
+
+**The deliberate break:** static routes feel like the safe choice. Nothing to converge, nothing to be poisoned, no protocol to misconfigure — you wrote it down and it stays written.
+
+Staying written is the failure. A dynamic protocol **withdraws** a route when the path dies; a static route has no idea the path died and keeps sending traffic into it. The result is not an error message, it is a black hole: packets leave, nothing comes back, and every device reports itself healthy. Static routing does not remove failure modes, it converts loud ones into silent ones.
+
+**How you'd spot it:** the route is present in the table and the next hop does not answer. `ip route get` will happily return a path that goes nowhere — a static route is a claim, not a measurement.
 
 ## When Static Is the Right Answer
 
@@ -90,14 +97,14 @@ Diagnose a dead static next hop:
 
 ```bash
 ip route get 10.20.5.5
-ping -c 2 192.168.10.254
+ping -c 2 10.10.10.254
 ```
 
 Expected excerpt when the next hop is down:
 
 ```text
-10.20.5.5 via 192.168.10.254 dev eth0 src 192.168.10.24
---- 192.168.10.254 ping statistics ---
+10.20.5.5 via 10.10.10.254 dev eth0 src 10.10.10.14
+--- 10.10.10.254 ping statistics ---
 2 packets transmitted, 0 received, 100% packet loss
 ```
 
@@ -115,37 +122,13 @@ The route resolves perfectly — the configuration is intact — but the next ho
 
 All routing configuration described here must be performed on systems within an authorized scope. Adding or altering routes on shared infrastructure affects every device whose traffic traverses it, and a blackhole route can silently deny service.
 
-## Authorized Lab: Configure, Break, and Blackhole
+## Summary
 
-Use a lab host and at least one lab router, with two reachable lab destinations. Record the baseline routing table.
+You should now be able to:
 
-1. Add a specific static route to a lab network through a chosen next hop, and confirm with `ip route get` that traffic to that network uses it while other traffic uses the default.
-2. **Break the next hop.** Disable the interface or device serving that next hop. Observe that the route remains in the table (`ip route` still lists it) while `ping` to destinations through it fails — the route is healthy, the next hop is not.
-3. Confirm the distinction explicitly: `ip route get <destination>` still resolves to the dead next hop, proving the device will keep sending into the black hole with no self-correction.
-4. Restore the next hop and confirm connectivity returns without any configuration change — proving the outage was the next hop, not the route.
-5. **Blackhole a destination.** Add a `blackhole` route for one lab address:
-
-```bash
-sudo ip route add <lab address>/32 blackhole
-```
-
-Confirm traffic to it is silently dropped while every other destination is unaffected, and note that no error is returned to the sender.
-6. **Cleanup.** Remove every route added during the lab, confirm the blackholed destination is reachable again, and verify the table matches the baseline.
-
-Expected interpretation:
-
-```text
-Static route added   -> deterministic path, no protocol involved
-Next hop down        -> route persists pointing at a dead gateway; no auto-recovery
-Route vs next hop    -> ip route get resolves fine while ping fails; they are different facts
-Blackhole            -> silent discard; a control when intended, an outage when not
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what a static route is and why the default gateway is just the least specific static route; state when static routing is appropriate.
-- **Operator:** Configure static and default routes, diagnose a dead next hop by distinguishing route health from next-hop health, and explain how asymmetric routing arises from inconsistent configuration.
-- **Root:** Argue both sides of static routing's security posture — immunity to protocol poisoning versus persistence of an attacker-installed route; explain blackhole routing as both a volumetric-attack defense and a stealthy denial-of-service, and why the default gateway is the highest-value route on a host.
+- Explain what a static route is and why the default gateway is just the least specific static route; state when static routing is appropriate.
+- Configure static and default routes, diagnose a dead next hop by distinguishing route health from next-hop health, and explain how asymmetric routing arises from inconsistent configuration.
+- Argue both sides of static routing's security posture — immunity to protocol poisoning versus persistence of an attacker-installed route; explain blackhole routing as both a volumetric-attack defense and a stealthy denial-of-service, and why the default gateway is the highest-value route on a host.
 
 ---
 > 🔼 Up: [[Routing & the Network Layer]]

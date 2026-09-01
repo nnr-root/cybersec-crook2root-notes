@@ -1,7 +1,7 @@
 ---
 title: "WinPEAS"
 aliases: ["winpeas", "winPEAS"]
-tags: [tree/tooling, cyber/tooling/offensive/privesc/winpeas, type/tool, level/root]
+tags: [tree/tooling, cyber/tooling/offensive/privesc/winpeas, type/tool, difficulty/hard]
 Domain: "[[Privilege Escalation Enumeration Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ WinPEAS is the Windows counterpart of LinPEAS — the PEASS-ng script that sweep
 ## Parent Learning Order
 LinPEAS -> WinPEAS
 
-## Crook — The Mental Model
+## The vector families that lead to SYSTEM
 
 Escalating on Windows means finding a **service, task, or privilege that will execute your code as SYSTEM** — or a credential that unlocks a higher account. The vector families are distinct from Linux, but the principle is identical: one misconfiguration that trusts a low-priv user too much.
 
-![[tool_privesc_surface.svg]]
-
 The **right** column of the diagram is WinPEAS's checklist. The two that pay off most often: **`SeImpersonatePrivilege`** on a service account (the "Potato" family escalates it to SYSTEM), and **unquoted service paths** (Windows may execute an attacker-planted `C:\Program.exe`). WinPEAS finds them; you recognise which to pursue.
 
-## Operator — Make It Work
+## The .exe and the .bat fallback
 
 WinPEAS ships as a native `.exe` (fast, full checks) and a `.bat` (fallback where the exe is blocked). Run and capture:
 
@@ -50,7 +48,7 @@ C:\Windows\system32> whoami
 nt authority\system
 ```
 
-## Root — Internals & The Deliberate Break
+## Why the colour ranking is triage, not a verdict
 
 As with LinPEAS, the colour ranking is a triage aid, not a verdict:
 
@@ -65,11 +63,13 @@ PS C:\hardened> .\winPEASx64.exe quiet servicesinfo | find /c "[!]"
 
 Operational internals: prefer the `.exe` (the `.bat` misses many checks); `log=` writes an evidence file; AMSI/EDR frequently flags WinPEAS on write, so operators use obfuscated builds or the `.bat` in constrained environments (in an authorized test, coordinate expected alerts with the blue team rather than evading silently). And remember the Windows privesc reality: many findings (stored creds, DPAPI, GPP passwords) yield *credentials* rather than direct SYSTEM — those feed **NetExec**/**Impacket** for lateral movement, closing the loop with the AD tooling.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why are Windows privesc vectors (services, tokens, registry) different from Linux's (SUID, sudo)?
-- **Operator:** WinPEAS shows `SeImpersonatePrivilege` enabled. What tool family escalates it, and to which account?
-- **Root:** Explain why an "unquoted service path" is only exploitable with a second condition, and what a careless tester gets wrong.
+You should now be able to:
+
+- Why are Windows privesc vectors (services, tokens, registry) different from Linux's (SUID, sudo)?
+- WinPEAS shows `SeImpersonatePrivilege` enabled. What tool family escalates it, and to which account?
+- Explain why an "unquoted service path" is only exploitable with a second condition, and what a careless tester gets wrong.
 
 ---
 > 🔼 Up: [[Privilege Escalation Enumeration Tools]]

@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/analysis
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Network Analysis & Troubleshooting]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Packet Capture & Analysis -> Structured Network Troubleshooting -> Traffic Analysis & Flow Inspection -> Performance & Latency Analysis -> Connectivity Diagnostics -> Protocol Debugging & Deep Inspection
 
-## Start at Zero: Four Different Things Called "Slow"
+## Four Different Things Called "Slow"
 
 Users say "slow"; the analyst must translate that into a measurable quantity, because "slow" hides four distinct metrics that call for different fixes.
 
@@ -47,7 +47,7 @@ Diagnosing performance starts with identifying which metric the workload actuall
 
 ## Measuring Each Metric
 
-**Latency** is measured by round-trip time, most simply with ping, and read as a distribution, not a single number:
+**Latency** is measured by round-trip time — ping is the most direct instrument — and read as a distribution, not a single number:
 
 ```bash
 ping -c 20 example.com | tail -3
@@ -91,8 +91,8 @@ Expected excerpt:
 
 ```text
 HOST: workstation          Loss%   Snt   Last   Avg  Best  Wrst StDev
-  1.|-- 192.168.1.1         0.0%    30    0.5   0.6   0.4   1.2   0.2
-  2.|-- 10.255.0.1          0.0%    30    8.1   8.4   7.9  12.1   0.9
+  1.|-- 10.10.10.1         0.0%    30    0.5   0.6   0.4   1.2   0.2
+  2.|-- 10.10.250.1          0.0%    30    8.1   8.4   7.9  12.1   0.9
   3.|-- 203.0.113.1         0.0%    30    9.0   9.2   8.8  10.1   0.3
   4.|-- 198.51.100.9        2.1%    30   88.4  91.2  85.0 140.2  12.4
   5.|-- example.com         2.0%    30   89.1  90.8  86.1 138.9  11.8
@@ -126,33 +126,13 @@ flowchart LR
 
 All performance testing described here should target systems you administer or are authorized to test; active throughput tests generate significant traffic and can themselves affect a shared link.
 
-## Authorized Lab: Separate Bandwidth from Latency
+## Summary
 
-Use two lab hosts with a link whose bandwidth, latency, loss, and jitter you can control (the traffic-control setup from the TCP reliability leaf).
+You should now be able to:
 
-1. **Baseline all four metrics.** Measure latency (`ping` distribution), throughput (`iperf3`), and per-hop behaviour (`mtr`), recording normal values.
-2. **Add latency only, keep bandwidth.** Introduce 100 ms of delay without changing capacity. Confirm throughput for a single transfer drops (bandwidth-delay product) while the link's bandwidth is untouched — proving bandwidth and latency are independent and that "more bandwidth" would not help.
-3. **Prove the window fix.** Tune the TCP window for the high-latency link and confirm throughput recovers without any bandwidth change — the correct fix for a latency-limited transfer.
-4. **Add jitter.** Introduce variable delay and confirm the average latency may look acceptable while `mdev`/`max` reveal the jitter that would break a real-time call — showing why average latency is insufficient for media.
-5. **Add loss.** Introduce a small loss rate and confirm throughput falls disproportionately (the transport-branch nonlinearity), and that `mtr` shows the loss persisting to the destination.
-6. **Locate a hop problem.** Impair one intermediate hop and confirm `mtr` shows impairment beginning there and persisting; then impair a hop in a way that does not persist and confirm it is a reporting artifact, not a real fault.
-7. **Cleanup.** Remove all impairments and confirm baseline metrics return.
-
-Expected interpretation:
-
-```text
-Latency added, bandwidth same -> single-transfer throughput drops; bandwidth irrelevant
-Window tuned                  -> throughput recovers with no bandwidth change
-Jitter added                  -> average fine, mdev/max reveal the real problem
-Loss added                    -> disproportionate throughput drop; persists to destination
-Hop impairment                -> real if it persists to the destination, artifact if not
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Define bandwidth, throughput, latency, and jitter, and explain why bandwidth and latency are independent.
-- **Operator:** Identify which metric a workload cares about, measure each correctly, read a ping distribution and an `mtr` report, and distinguish real per-hop impairment from a reporting artifact.
-- **Root:** Explain the bandwidth-delay product and why a latency-limited transfer is fixed by window tuning rather than bandwidth; argue why performance analysis distinguishes a capacity problem from a denial-of-service attack, and why the "add bandwidth" reflex both wastes resources and can mask an incident.
+- Define bandwidth, throughput, latency, and jitter, and explain why bandwidth and latency are independent.
+- Identify which metric a workload cares about, measure each correctly, read a ping distribution and an `mtr` report, and distinguish real per-hop impairment from a reporting artifact.
+- Explain the bandwidth-delay product and why a latency-limited transfer is fixed by window tuning rather than bandwidth; argue why performance analysis distinguishes a capacity problem from a denial-of-service attack, and why the "add bandwidth" reflex both wastes resources and can mask an incident.
 
 ---
 > 🔼 Up: [[Network Analysis & Troubleshooting]]

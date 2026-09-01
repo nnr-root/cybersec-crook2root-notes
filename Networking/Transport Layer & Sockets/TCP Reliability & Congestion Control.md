@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/transport
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Transport Layer & Sockets]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Control -> UDP & Connectionless Transport -> QUIC & Modern Transport -> Transport Layer Threats & Controls
 
-## Start at Zero: Building Certainty on an Unreliable Base
+## Building Certainty on an Unreliable Base
 
 IP may drop, duplicate, delay, or reorder packets, and it never reports doing so. TCP delivers a byte stream that suffers none of these problems. The mechanism is conceptually simple and its consequences are subtle.
 
@@ -100,7 +100,7 @@ ss -tin
 Expected excerpt:
 
 ```text
-ESTAB 0 0  192.168.10.24:52418  93.184.216.34:443
+ESTAB 0 0  10.10.10.14:52418  203.0.113.20:443
     cubic wscale:7,7 rto:212 rtt:11.4/2.1 mss:1448 cwnd:42 ssthresh:31
     bytes_sent:1842910 bytes_acked:1842910 retrans:0/3 rcv_space:14480
 ```
@@ -138,60 +138,13 @@ Case A shows heavy retransmission, a collapsed congestion window, and high RTT v
 
 Any traffic generation or transport testing described here must remain within an authorized scope; saturating a shared path affects every user of it.
 
-## Authorized Lab: Make the Bottleneck Visible
+## Summary
 
-Use two lab VMs with a link whose characteristics you can manipulate. Record baseline transport metrics first.
+You should now be able to:
 
-1. **Baseline transfer.** Move a large file between the hosts and capture the transport state mid-transfer:
-
-```bash
-ss -tin '( dport = :22 or sport = :22 )'
-```
-
-Record `rtt`, `cwnd`, `retrans`, and whether `wscale` was negotiated.
-
-2. **Introduce latency** on the sending host and repeat:
-
-```bash
-sudo tc qdisc add dev eth0 root netem delay 100ms
-```
-
-Confirm `rtt` rises, throughput falls, and `cwnd` must grow much larger to sustain the same rate — demonstrating the bandwidth-delay product directly.
-
-3. **Introduce loss** instead of latency:
-
-```bash
-sudo tc qdisc change dev eth0 root netem loss 2%
-```
-
-Confirm `retrans` climbs and `cwnd` stays suppressed. Note that 2% loss costs far more than 2% of throughput — this is the nonlinearity that makes lossy paths feel broken.
-
-4. **Combine both** and observe the compounding effect, the classic "long fat lossy path" that performs far worse than either impairment alone.
-
-5. **Create a receiver-side bottleneck.** Run a receiving application that reads very slowly from its socket. Confirm on the sender that `Send-Q` grows while `retrans` stays at zero and `rtt` stays low — the signature of an endpoint bottleneck rather than a path problem.
-
-6. **Contrast the two diagnoses** explicitly: write down which metrics distinguished step 3 from step 5.
-
-7. **Cleanup.** Remove the traffic-control impairments and confirm baseline metrics return:
-
-```bash
-sudo tc qdisc del dev eth0 root
-```
-
-Expected interpretation:
-
-```text
-Added latency -> rtt up, throughput down, larger cwnd needed (bandwidth-delay product)
-Added loss    -> retrans up, cwnd suppressed; small loss costs disproportionate throughput
-Slow reader   -> Send-Q grows, retrans zero, rtt normal -> endpoint, not path
-Cleanup       -> metrics return to baseline, confirming each impairment was the cause
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain how numbering and acknowledgment produce delivery, ordering, and de-duplication over an unreliable network.
-- **Operator:** Read `ss -tin` output to distinguish a path bottleneck (loss, retransmission, suppressed congestion window) from an endpoint bottleneck (queued data, healthy path); explain why window scaling matters on high-latency links.
-- **Root:** Explain why loss detected by timeout is far costlier than loss detected by duplicate acknowledgments, and why the loss-equals-congestion assumption misfires on wireless; describe how optimistic acknowledgments and tiny advertised windows attack a sender's rate control and connection capacity, and why bufferbloat breaks the signal congestion control depends on.
+- Explain how numbering and acknowledgment produce delivery, ordering, and de-duplication over an unreliable network.
+- Read `ss -tin` output to distinguish a path bottleneck (loss, retransmission, suppressed congestion window) from an endpoint bottleneck (queued data, healthy path); explain why window scaling matters on high-latency links.
+- Explain why loss detected by timeout is far costlier than loss detected by duplicate acknowledgments, and why the loss-equals-congestion assumption misfires on wireless; describe how optimistic acknowledgments and tiny advertised windows attack a sender's rate control and connection capacity, and why bufferbloat breaks the signal congestion control depends on.
 
 ---
 > 🔼 Up: [[Transport Layer & Sockets]]

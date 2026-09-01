@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/routing
   - type/concept
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Routing & the Network Layer]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interior Gateway Protocols -> BGP & Internet Routing -> First-Hop Redundancy & Gateway Failover -> Routing Security & Path Validation
 
-## Start at Zero: A Network of Networks
+## A Network of Networks
 
 Interior protocols route inside one organization, where every router is trusted because one owner controls them all. The Internet has no single owner. It is a mesh of about a hundred thousand **autonomous systems (AS)** — independently operated networks, each identified by an **AS number** — that must exchange reachability information without trusting each other the way routers inside one company do.
 
@@ -62,6 +62,76 @@ RPKI's limitation is that it validates only the *origin*, not the whole *path*. 
 
 **Filtering and route registries** remain the workaday defense: networks filter which prefixes and AS-paths they accept from each neighbour, using published intent in routing registries. This is unglamorous and imperfect — it depends on every network doing its part — but it prevents a large share of leaks and hijacks in practice.
 
+## Worked Example: Reading a Path, and Watching a More-Specific Win
+
+BGP's failure mode is easier to believe once you have watched the routing table
+prefer the wrong announcement without anything reporting an error.
+
+> [!note] Representative output
+> Reconstructed from a lab of this shape rather than copied from one capture. Field layouts and flag names match the named tool; addresses and identifiers are synthetic.
+
+**The legitimate route.** From a router three autonomous systems away, the path
+back to the origin is written out in full:
+
+```shell-session
+operator@router-c:~$ sudo vtysh -c "show ip bgp 203.0.113.0/24"
+BGP routing table entry for 203.0.113.0/24
+Paths: (1 available, best #1, table default)
+  65002 65001
+    192.0.2.23 from 192.0.2.23 (192.0.2.2)
+      Origin IGP, valid, external, best (First path received)
+      Last update: Sun Apr 12 09:41:18 2026
+```
+
+`65002 65001` is the AS-path read right to left: AS 65001 originated the prefix,
+AS 65002 passed it along. That list is the entire basis on which the rest of the
+Internet decides this route is genuine — a claim, propagated by other people's
+routers, with no cryptographic backing at all.
+
+**A more-specific announcement appears.** A second AS announces a /25 inside
+that /24, and the table changes without complaint:
+
+```shell-session
+operator@router-c:~$ sudo vtysh -c "show ip bgp"
+   Network          Next Hop      Metric LocPrf Weight Path
+*> 203.0.113.0/24   192.0.2.23                       0 65002 65001 i
+*> 203.0.113.0/25   192.0.2.13                       0 65003 i
+```
+
+Both routes are marked `*>` — valid and best *for their own prefix*. Nothing is
+in conflict as far as BGP is concerned, because they are different prefixes. But
+forwarding uses longest-prefix match, so every packet for the first half of that
+range now leaves toward AS 65003:
+
+```shell-session
+operator@router-c:~$ sudo vtysh -c "show ip route 203.0.113.20"
+Routing entry for 203.0.113.0/25
+  Known via "bgp", distance 20, metric 0, best
+  * 192.0.2.13, via eth1
+```
+
+This is the shape of almost every real hijack. Nothing was overwritten, no alarm
+fired, and the destination still appears reachable — traffic simply goes
+somewhere else first. Because the announcement is more specific it wins
+everywhere it propagates, which is why a hijack of a /25 out of someone else's
+/24 is both effective and hard to notice from inside the affected network.
+
+**What origin validation catches.** With RPKI enabled and a ROA declaring AS
+65001 as the only authorized origin, the router can now express an opinion:
+
+```shell-session
+operator@router-c:~$ sudo vtysh -c "show bgp ipv4 unicast rpki invalid"
+   Network          Next Hop      Path
+*  203.0.113.0/25   192.0.2.13     65003 i
+```
+
+The route is now marked `invalid` and, with a policy that acts on that state, is
+never selected. Note what this does *not* prove: RPKI validates that the origin
+AS is entitled to announce the prefix, not that the AS-path is truthful. An
+attacker who forges a path ending in `65001` while still carrying the traffic
+themselves produces a route that validates cleanly — which is exactly the residual
+gap path validation exists to close.
+
 ## Security Implications
 
 **BGP is critical infrastructure with a trust model from an earlier Internet.** The protocol predates the adversarial environment it now operates in, and its security is being retrofitted while it carries essentially all inter-domain traffic. For a defender, this means BGP-level events are largely outside your control but very much within your threat model: your traffic can be rerouted by networks you have no relationship with.
@@ -74,33 +144,13 @@ RPKI's limitation is that it validates only the *origin*, not the whole *path*. 
 
 No lab in this note touches the real Internet's routing. All experimentation is confined to isolated autonomous systems you own, because a BGP announcement that escapes into the global table affects networks worldwide.
 
-## Authorized Lab: Hijack a Prefix in a Sealed Internet
+## Summary
 
-Use a virtualized multi-AS lab (several BGP router instances) with **no connectivity to the real Internet**. This must be a sealed environment; a leaked announcement to the global table is a serious incident.
+You should now be able to:
 
-1. **Build three autonomous systems**, each with its own AS number, peered so routes propagate between them. Assign AS-A a prefix and have it originate that prefix.
-2. **Verify legitimate routing.** From AS-C, confirm the prefix is reachable and inspect the AS-path, confirming it shows origin AS-A.
-3. **Hijack it.** From AS-B, originate the *same* prefix, then originate a *more specific* prefix within it. Observe that AS-C now prefers the more specific route toward AS-B, and that traffic to the victim prefix is redirected — while still appearing reachable.
-4. **Demonstrate the on-path consequence.** With AS-B forwarding the hijacked traffic onward, confirm it can observe the redirected flows, then confirm that a TLS session across the hijacked path remains encrypted end to end.
-5. **Apply Route Origin Validation.** Create a signed origin authorization declaring AS-A as the only authorized origin for the prefix, enable origin validation on AS-C, and repeat the hijack. Confirm AS-C now rejects or deprioritizes AS-B's unauthorized announcement.
-6. **Show the residual gap.** Have AS-B forge an AS-path that ends in AS-A while still transiting AS-B, and observe that origin validation alone does not catch this — motivating path validation.
-7. **Cleanup.** Withdraw all lab announcements, remove the injected routes and validation objects if restoring a baseline, and confirm routing returns to the legitimate state.
-
-Expected interpretation:
-
-```text
-Legitimate     -> prefix reachable via origin AS-A
-More-specific hijack -> AS-C prefers AS-B; traffic redirected but still "working"
-On-path        -> AS-B observes flows; TLS stays encrypted regardless of path
-Origin validation -> unauthorized origin rejected; the common hijack is stopped
-Forged path    -> origin validation alone misses it; path validation is the open frontier
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why the Internet needs a different protocol than a single organization does, what an autonomous system is, and what the AS-path represents.
-- **Operator:** Read a BGP route and its AS-path, explain why path selection follows policy rather than shortest distance, and describe how to monitor for a hijack of your own prefixes when you cannot configure BGP yourself.
-- **Root:** Explain how more-specific announcements combined with an unauthenticated origin enable global traffic redirection; describe precisely what RPKI origin validation does and does not cover, and why end-to-end encryption is the necessary backstop for a routing layer you cannot fully trust.
+- Explain why the Internet needs a different protocol than a single organization does, what an autonomous system is, and what the AS-path represents.
+- Read a BGP route and its AS-path, explain why path selection follows policy rather than shortest distance, and describe how to monitor for a hijack of your own prefixes when you cannot configure BGP yourself.
+- Explain how more-specific announcements combined with an unauthenticated origin enable global traffic redirection; describe precisely what RPKI origin validation does and does not cover, and why end-to-end encryption is the necessary backstop for a routing layer you cannot fully trust.
 
 ---
 > 🔼 Up: [[Routing & the Network Layer]]

@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Local agent/session state
+.claude/
+
+# Obsidian per-user UI state (the vault config itself is tracked)
+.obsidian/workspace.json
+
+# Extracted labs and checkpoints from the 2026 restructure. Source material for
+# the private website repo, deliberately not published here.
+.archive/
+
+# Staging area for files awaiting manual deletion
+_to_delete/
+
+# Python bytecode
+__pycache__/
+*.pyc

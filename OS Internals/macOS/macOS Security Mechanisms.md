@@ -6,7 +6,7 @@ tags:
   - cyber/foundations/macos
   - cyber/defense
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[macOS]]"
 Color: "#FFA500"
@@ -20,7 +20,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File System -> macOS Processes & Daemons -> macOS Identity, Keychain & Credentials -> macOS Networking Internals -> macOS Security Mechanisms -> macOS Binaries & Runtime Loading -> macOS Observability, Incident Response & Forensics
 
-## Crook — Layered Trust From Download to Data
+## Layered Trust From Download to Data
 
 ### Vocabulary & First Mental Model
 
@@ -61,7 +61,13 @@ No single layer guarantees benign behavior. A validly signed and notarized appli
 > [!tip] The analogy, and where it breaks
 > Layered checks on a new arrival: a reference check before entry, an identity check at the door, a supervisor watching behaviour inside, and locked rooms even staff cannot enter. The analogy breaks because one of those locks binds the *owner* too — System Integrity Protection restricts even the administrator, which no ordinary building would impose on its landlord.
 
-## Operator — Mechanisms & Validation
+**The deliberate break:** "macOS checks apps before they run, so a signed app has been vetted." Signing and notarisation prove **provenance**, not safety — they establish who shipped the code and that it has not been altered since, which is a different claim from whether it is benign.
+
+And the check is conditional. Gatekeeper evaluates a file because it carries the `com.apple.quarantine` attribute, which the *downloading application* attaches. A file that arrives by a route that does not set it — a `curl` in a terminal, an archive extracted by a tool that drops attributes, a mounted share — is not quarantined, and Gatekeeper never looks at it. The gate is real; it just is not on every door.
+
+**How you'd spot it:** `xattr -p com.apple.quarantine <file>` tells you whether the file will be evaluated at all. No attribute, no Gatekeeper.
+
+## Mechanisms & Validation
 
 ### Quarantine, Gatekeeper & Notarization
 
@@ -165,7 +171,7 @@ log show --last 24h --predicate 'process CONTAINS[c] "XProtect"' --style compact
 
 Endpoint Security is not itself an antivirus. It is a controlled telemetry and enforcement API used by security products. Product quality depends on event selection, policy, cache behavior, health monitoring, and protected data pipeline.
 
-## Root — FileVault, Secure Enclave & Control Composition
+## FileVault, Secure Enclave & Control Composition
 
 FileVault protects the APFS Data volume at rest. On Apple Silicon, key release integrates with Secure Enclave and boot policy. Recovery mechanisms must be escrowed and governed; a lost recovery key can become an availability incident, while an exposed institutional key undermines confidentiality.
 
@@ -185,96 +191,6 @@ Controls compose as an intersection. For an application to read a protected file
 | alter platform files | SIP, SSV, authenticated root | `csrutil`, mount flags, seal state |
 | protect powered-off data | FileVault, Secure Enclave, recovery policy | `fdesetup`, escrow records, boot policy |
 
-## Hands-On Lab: Gatekeeper, SIP, TCC and the Layered Defenses
-
-> [!info] Runs on any Mac — read-only inspection plus one quarantined test file removed in Step 6
-> macOS stacks several independent controls. This lab shows each one refusing something.
-
-### Step 1 — Confirm System Integrity Protection
-
-```bash
-csrutil status
-ls -lO /System/Library/CoreServices/SystemVersion.plist 2>/dev/null | awk '{print $5, $NF}'
-```
-
-```text
-System Integrity Protection status: enabled.
-restricted SystemVersion.plist
-```
-
-The `restricted` flag is SIP in action: this file **cannot be modified even by root**. SIP removes "root can do anything" — the single biggest departure from traditional Unix, and it constrains the owner as much as an attacker.
-
-### Step 2 — Watch Gatekeeper assess a downloaded file
-
-```bash
-LAB=$(mktemp -d); cd "$LAB"
-cp /bin/echo ./testtool
-xattr -w com.apple.quarantine "0083;0;Safari;" testtool
-spctl -a -vvv testtool 2>&1 | head -3
-```
-
-```text
-testtool: rejected
-source=no usable signature
-origin=unavailable
-```
-
-Gatekeeper **rejected** the quarantined binary because it is not signed and notarized. This is the check that fires when you open a downloaded app — the quarantine flag from the CLI triggering the same policy the GUI enforces.
-
-### Step 3 — See what notarization would provide
-
-```bash
-spctl -a -vvv /System/Applications/Calculator.app 2>&1 | head -3
-```
-
-```text
-/System/Applications/Calculator.app: accepted
-source=Apple System
-origin=Software Signing
-```
-
-A properly signed Apple app is `accepted`. The difference between this and Step 2 is exactly what Gatekeeper checks: valid signature plus notarization.
-
-### Step 4 — Hit the TCC privacy wall
-
-```bash
-sqlite3 ~/Library/Application\ Support/com.apple.TCC/TCC.db 'SELECT 1' 2>&1 | head -1
-ls ~/Library/Application\ Support/com.apple.TCC/ 2>&1 | head -1
-```
-
-```text
-Error: unable to open database file
-ls: .../com.apple.TCC/: Operation not permitted
-```
-
-Even reading the TCC database — which lists what each app may access — is itself TCC-protected. Consent for camera, microphone, and sensitive folders is enforced regardless of Unix permissions, and it guards its own configuration.
-
-### Step 5 — Check the runtime hardening features
-
-```bash
-sysctl -n hw.optional.arm.FEAT_PAuth 2>/dev/null && echo "pointer authentication: on"
-codesign -dv --entitlements - /System/Applications/Calculator.app 2>&1 | grep -c 'com.apple.security'
-```
-
-```text
-1
-pointer authentication: on
-```
-
-Hardened Runtime plus pointer authentication add memory-safety and entitlement constraints on top of the signing checks. macOS security is these layers **together** — no single one is the whole story.
-
-### Step 6 — Cleanup
-
-```bash
-cd /tmp && rm -rf "$LAB" && ls -d "$LAB" 2>&1
-```
-
-```text
-ls: /var/folders/.../tmp.XYZ: No such file or directory
-```
-
-**What you should now be able to do:** confirm SIP and read the `restricted` flag, watch Gatekeeper reject an unsigned quarantined binary and accept a notarized one, and explain why TCC blocks access even from the owner.
-
 ## Cybersecurity Implications
 
 - Valid signing and notarization establish identity and distribution checks, not permanent innocence.
@@ -283,11 +199,13 @@ ls: /var/folders/.../tmp.XYZ: No such file or directory
 - Quarantine and policy logs are evidence; removing metadata before collection damages the investigation.
 - Hardware-backed boot and storage protections raise attacker cost but depend on secure recovery and fleet configuration.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Name each security layer and the stage where it acts.
-- **Operator:** Validate signing, notarization, quarantine, SIP, TCC, FileVault, and extension state with native commands and interpret expected output.
-- **Root:** Model a complete access decision across provenance, code identity, runtime, sandbox, privacy, filesystem, boot, and hardware controls—then identify the minimum safe remediation without disabling unrelated protections.
+You should now be able to:
+
+- Name each security layer and the stage where it acts.
+- Validate signing, notarization, quarantine, SIP, TCC, FileVault, and extension state with native commands and interpret expected output.
+- Model a complete access decision across provenance, code identity, runtime, sandbox, privacy, filesystem, boot, and hardware controls—then identify the minimum safe remediation without disabling unrelated protections.
 
 ---
 > 🔼 Up: [[macOS]]

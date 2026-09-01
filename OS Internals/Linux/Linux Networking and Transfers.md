@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/linux
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Linux]]"
 Color: "#FFA500"
@@ -113,8 +113,8 @@ $ curl -v http://target/ 2>&1 | head
 > [!warning] Authorized Simulation context
 > `curl` is dual-use: the same request that tests *your* API is the one used to probe **SSRF**, replay stolen tokens, or fetch a webshell. Use it against systems you own or are authorized to assess. Defensively, `-v` is unbeatable for seeing precisely what a request looks like on the wire.
 
-> [!tip] Crook → Root
-> **Crook** opens a browser. **Root** reconstructs any request in `curl`, scripts a hundred of them, pipes the output into `grep`, and pins it through a proxy for inspection — total control over the HTTP conversation.
+> [!tip] Beginner → Expert
+> **A beginner** opens a browser. **An expert** reconstructs any request in `curl`, scripts a hundred of them, pipes the output into `grep`, and pins it through a proxy for inspection — total control over the HTTP conversation.
 
 ## The Linux packet path
 
@@ -137,10 +137,10 @@ $ ip -br link; ip -br address
 lo               UNKNOWN        127.0.0.1/8 ::1/128
 enp0s31f6        UP             10.20.30.44/24 fe80::a62b:b0ff:fe12:3456/64
 $ ip route get 198.51.100.20
-198.51.100.20 via 10.20.30.1 dev enp0s31f6 src 10.20.30.44 uid 1000
+198.51.100.20 via 10.10.10.1 dev enp0s31f6 src 10.20.30.44 uid 1000
     cache
 $ ip neigh show dev enp0s31f6
-10.20.30.1 lladdr 00:11:22:33:44:55 REACHABLE
+10.10.10.1 lladdr 00:00:5e:00:53:01 REACHABLE
 ```
 
 Use `ss` to inspect socket state and owners. `LISTEN` indicates a server socket; TCP connections transition through SYN states, `ESTAB`, FIN states, and `TIME-WAIT`. A listener bound to `127.0.0.1` is local-only, while `0.0.0.0` or `[::]` usually accepts on all matching interfaces.
@@ -217,7 +217,7 @@ For transfers, verify free space, destination permissions, proxy variables, cert
 
 ```shell-session
 $ ip route get 203.0.113.20
-203.0.113.20 via 10.20.30.1 dev eth0 src 10.20.30.44 uid 1000
+203.0.113.20 via 10.10.10.1 dev eth0 src 10.20.30.44 uid 1000
 $ curl --fail-with-body --show-error --silent \
     --write-out 'code=%{http_code} type=%{content_type} bytes=%{size_download}\n' \
     -o artifact.bin https://repo.lab/artifact.bin
@@ -228,128 +228,17 @@ artifact.bin: HTML document, UTF-8 Unicode text
 
 The network worked; application authentication or redirect handling did not. Preserve verbose traces without exposing credentials, and fix the failing layer rather than disabling TLS verification.
 
-## Hands-On Lab: Trace One Connection End to End
-
-> [!info] Runs on one Linux machine — builds a real second host with a network namespace
-> No VMs, no second computer. Step 6 removes everything with one command.
-
-### Step 1 — Build a real peer to talk to
-
-```bash
-sudo ip netns add netlab
-sudo ip link add veth-a type veth peer name veth-b
-sudo ip link set veth-b netns netlab
-sudo ip addr add 10.77.0.1/24 dev veth-a && sudo ip link set veth-a up
-sudo ip netns exec netlab sh -c 'ip addr add 10.77.0.2/24 dev veth-b && ip link set veth-b up && ip link set lo up'
-ping -c 2 10.77.0.2
-```
-
-```text
-64 bytes from 10.77.0.2: icmp_seq=1 ttl=64 time=0.055 ms
-64 bytes from 10.77.0.2: icmp_seq=2 ttl=64 time=0.041 ms
-```
-
-You now have two independent network stacks on one kernel — a genuine link, not a simulation.
-
-### Step 2 — Start a service and see it listening
-
-```bash
-sudo ip netns exec netlab python3 -m http.server 8080 --bind 10.77.0.2 &>/dev/null &
-sleep 1
-sudo ip netns exec netlab ss -tlnp
-```
-
-```text
-State   Recv-Q  Send-Q   Local Address:Port   Peer Address:Port  Process
-LISTEN  0       5          10.77.0.2:8080          0.0.0.0:*      users:(("python3",pid=23104,fd=3))
-```
-
-`LISTEN` with the owning process is the definitive answer to "is the service actually up" — far stronger evidence than a ping.
-
-### Step 3 — Watch the routing decision before sending anything
-
-```bash
-ip route get 10.77.0.2
-```
-
-```text
-10.77.0.2 dev veth-a src 10.77.0.1 uid 1000
-    cache
-```
-
-No `via` appears, meaning the kernel considers this destination **directly reachable** — no gateway involved. Compare with an off-link address:
-
-```bash
-ip route get 1.1.1.1 | head -1
-```
-
-```text
-1.1.1.1 via 192.168.1.1 dev wlan0 src 192.168.1.24 uid 1000
-```
-
-The presence or absence of `via` is the local-versus-routed decision made visible.
-
-### Step 4 — Capture the connection while it happens
-
-```bash
-sudo tcpdump -i veth-a -nn -c 6 'tcp port 8080' &
-sleep 1
-curl -s -o /dev/null -w 'HTTP %{http_code}\n' http://10.77.0.2:8080/
-```
-
-```text
-IP 10.77.0.1.51234 > 10.77.0.2.8080: Flags [S], seq 1829304857, win 64240
-IP 10.77.0.2.8080 > 10.77.0.1.51234: Flags [S.], seq 998172634, ack 1829304858
-IP 10.77.0.1.51234 > 10.77.0.2.8080: Flags [.], ack 998172635
-IP 10.77.0.1.51234 > 10.77.0.2.8080: Flags [P.], length 78: HTTP: GET / HTTP/1.1
-IP 10.77.0.2.8080 > 10.77.0.1.51234: Flags [P.], length 155: HTTP: HTTP/1.1 200 OK
-HTTP 200
-```
-
-The three-way handshake is visible in the first three lines — `[S]`, `[S.]` (SYN+ACK), `[.]` (ACK) — and only then does the request flow. Note each acknowledgment is the peer's sequence **+1**.
-
-### Step 5 — Break it at the firewall and read the difference
-
-```bash
-sudo ip netns exec netlab iptables -A INPUT -p tcp --dport 8080 -j DROP
-timeout 3 curl -s -o /dev/null -w '%{http_code}\n' http://10.77.0.2:8080/ ; echo "curl exit: $?"
-sudo ip netns exec netlab iptables -R INPUT 1 -p tcp --dport 8080 -j REJECT --reject-with tcp-reset
-timeout 3 curl -s -o /dev/null -w '%{http_code}\n' http://10.77.0.2:8080/ ; echo "curl exit: $?"
-```
-
-```text
-000
-curl exit: 124
-000
-curl exit: 7
-```
-
-Two different failures that look identical to a user. `DROP` produces **silence**, so curl hangs until the timeout (exit 124). `REJECT` sends a TCP reset, so curl fails **immediately** (exit 7, connection refused). Distinguishing a hang from an instant refusal tells you whether a policy device is dropping or actively refusing — before you read a single firewall rule.
-
-### Step 6 — Cleanup
-
-```bash
-sudo ip netns del netlab
-ip link show veth-a 2>&1 | tail -1
-```
-
-```text
-Device "veth-a" does not exist.
-```
-
-Deleting the namespace removes the peer interface, the HTTP server, and the iptables rules together, because all of them lived inside it.
-
-**What you should now be able to do:** read `ip route get` for the local-versus-routed decision, identify a handshake in a capture, and tell DROP from REJECT by how the client fails.
-
 ## Security implications
 
 An exposed listener, permissive route, poisoned resolver, disabled certificate validation, or unsafe firewall update can defeat application security. Troubleshooting should follow the actual packet path and namespace rather than randomly changing controls. Transfers must preserve integrity and client boundaries; captures can contain credentials and require evidence handling. Restrict raw-socket and network-administration capabilities because they permit packet capture, spoofing, route changes, and firewall manipulation.
 
-### Crook → Operator → Root checkpoint
+## Summary
 
-- **Crook:** identify interfaces, routes, listeners, DNS answers, and perform authenticated transfers.
-- **Operator:** trace socket-to-packet behavior, diagnose resolver layers, validate nftables policy, and reproduce HTTP precisely with integrity checks.
-- **Root:** reason across namespaces, policy routing, conntrack, NAT, qdiscs, certificate trust, and packet evidence to explain exactly why a connection succeeds or fails.
+You should now be able to:
+
+- identify interfaces, routes, listeners, DNS answers, and perform authenticated transfers.
+- trace socket-to-packet behavior, diagnose resolver layers, validate nftables policy, and reproduce HTTP precisely with integrity checks.
+- reason across namespaces, policy routing, conntrack, NAT, qdiscs, certificate trust, and packet evidence to explain exactly why a connection succeeds or fails.
 
 ---
 > 🔼 Up: [[Linux]]

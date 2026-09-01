@@ -5,6 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/linux
   - type/technique
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Linux]]"
@@ -32,8 +33,6 @@ Prerequisites are paths, users, groups, and binary notation. Begin with files yo
 
 ## Reading the permission string
 `ls -l` shows a 10-character mode. Learn to read it at a glance:
-
-![[lnx_permission_bits.svg]]
 
 ```
 -rwxr-x---  1  alice  devs  4096  Jul 18  script.sh
@@ -121,8 +120,8 @@ $ disown -h %1                    # detach a job from the shell
 ```
 Press **`Ctrl+Z`** to suspend the foreground job, then `bg` to continue it in the background — the everyday way to free your prompt without killing the task.
 
-> [!tip] Crook → Root
-> **Crook** reboots when something hangs. **Root** finds the offender with `ps aux | grep`, understands *why* it runs and as whom, and `kill`s precisely — or, on the blue-team side, spots the rogue process that shouldn't be there at all (a shell spawned by a web server is a red flag).
+> [!tip] Beginner → Expert
+> **A beginner** reboots when something hangs. **An expert** finds the offender with `ps aux | grep`, understands *why* it runs and as whom, and `kill`s precisely — or, on the blue-team side, spots the rogue process that shouldn't be there at all (a shell spawned by a web server is a red flag).
 
 ## Identity checks, ACLs & permission resolution
 
@@ -225,149 +224,17 @@ $ cat /proc/4812/cgroup; systemctl status 4812 --no-pager
 
 Do not escalate from `TERM` to `KILL` automatically. First determine whether systemd will restart the process, whether data is being committed, and whether a blocked dependency—not the process itself—is the actual fault.
 
-## Hands-On Lab: Modes, SUID & Signals You Can Watch
-
-> [!info] Runs on any Linux machine — the SUID step uses a copy in `/tmp`, never a system binary
-> Nothing outside `/tmp/perm-lab` is modified. Step 6 removes it all.
-
-### Step 1 — Read and change a mode
-
-```bash
-mkdir -p /tmp/perm-lab && cd /tmp/perm-lab
-echo secret > data.txt && chmod 640 data.txt && ls -l data.txt
-stat -c '%A  %a  owner=%U group=%G' data.txt
-```
-
-```text
--rw-r----- 1 you you 7 Aug  4 16:40 data.txt
--rw-r-----  640  owner=you group=you
-```
-
-The three triads are owner / group / other. `640` = owner read+write (6), group read (4), other nothing (0). Prove the last digit matters:
-
-```bash
-chmod 604 data.txt; sudo -u nobody cat data.txt 2>&1
-chmod 640 data.txt; sudo -u nobody cat data.txt 2>&1
-```
-
-```text
-secret
-cat: data.txt: Permission denied
-```
-
-One digit decided whether an unrelated user could read the file.
-
-### Step 2 — Directory `x` is permission to *traverse*, not to list
-
-```bash
-mkdir -p dir/inner && echo hi > dir/inner/file.txt
-chmod 644 dir            # readable, but NOT executable
-sudo -u nobody ls dir 2>&1
-sudo -u nobody cat dir/inner/file.txt 2>&1
-```
-
-```text
-inner
-cat: dir/inner/file.txt: Permission denied
-```
-
-`nobody` can **list** the directory but cannot **enter** it. On a directory, `r` lets you see names and `x` lets you pass through — which is why a file with permissive mode can still be unreachable, and why `namei -l` is the right diagnostic.
-
-```bash
-chmod 755 dir; sudo -u nobody cat dir/inner/file.txt 2>&1
-```
-
-```text
-hi
-```
-
-### Step 3 — Watch SUID actually change identity
-
-```bash
-cp /usr/bin/id ./myid && sudo chown root:root myid && sudo chmod 4755 myid
-ls -l myid | cut -c1-11
-./myid -u                # real user
-./myid -u -r 2>/dev/null || true
-id -u
-```
-
-```text
--rwsr-xr-x
-0
-1000
-1000
-```
-
-The `s` in `-rwsr-xr-x` is the SUID bit. Running `./myid -u` reports **0 (root)** even though you are user 1000 — the process took the *file owner's* identity. This is the mechanism behind legitimate tools like `passwd`, and the reason any writable or misused SUID binary is a privilege-escalation path.
-
-### Step 4 — Signals, watched live
-
-```bash
-sleep 300 & PID=$!
-grep State /proc/$PID/status
-kill -STOP $PID; sleep 1; grep State /proc/$PID/status
-kill -CONT $PID; sleep 1; grep State /proc/$PID/status
-```
-
-```text
-State:	S (sleeping)
-State:	T (stopped)
-State:	S (sleeping)
-```
-
-`SIGSTOP` froze the process and `SIGCONT` resumed it — the state letter is the kernel's own view. Now the distinction that matters:
-
-```bash
-kill -TERM $PID; sleep 1; ps -p $PID >/dev/null 2>&1 && echo "still alive" || echo "terminated"
-```
-
-```text
-terminated
-```
-
-`SIGTERM` **asks** a process to exit and can be caught or ignored; `SIGKILL` cannot be caught but gives the process no chance to clean up. Reach for TERM first.
-
-### Step 5 — See process lineage
-
-```bash
-sleep 200 & CH=$!
-ps -o pid,ppid,user,stat,comm -p $CH
-ps -o pid,comm -p $(ps -o ppid= -p $CH | tr -d ' ')
-```
-
-```text
-    PID    PPID USER     STAT COMMAND
-  21903   21455 you      S    sleep
-    PID COMMAND
-  21455 bash
-```
-
-Every process records its **parent**, which is how an investigator reconstructs "what launched this" — the single most useful question when a suspicious process appears.
-
-### Step 6 — Cleanup
-
-```bash
-kill %1 %2 2>/dev/null; wait 2>/dev/null
-cd /tmp && sudo rm -rf /tmp/perm-lab && ls -d /tmp/perm-lab 2>&1
-```
-
-```text
-ls: cannot access '/tmp/perm-lab': No such file or directory
-```
-
-`sudo` is required because Step 3 created a root-owned SUID file. Removing it matters — a stray SUID binary is exactly the artifact you should never leave behind.
-
-**What you should now be able to do:** explain directory `x` versus `r` from your own denial, describe what SUID changed about your identity, and choose TERM over KILL with a reason.
-
 ## Security implications
 
 Permission failures are layered decisions, not an invitation to disable controls. World-writable directories without sticky bit, privileged services with writable units, inherited ACL mistakes, secrets in process arguments, and excessive service capabilities create real compromise paths. Defenders should reason from credentials through path traversal, mode/ACL, mount, capability, and LSM checks. Operators should preserve process lineage and use scoped service sandboxing instead of blanket privilege.
 
-### Crook → Operator → Root checkpoint
+## Summary
 
-- **Crook:** read symbolic/octal permissions, manage jobs, and use signals safely.
-- **Operator:** diagnose ACL and traversal behavior, inspect `/proc`, understand states and lineage, and manage systemd units with validation.
-- **Root:** model the complete access decision, explain sessions/process groups and uninterruptible sleep, and design least-privileged, resource-controlled service execution.
+You should now be able to:
+
+- read symbolic/octal permissions, manage jobs, and use signals safely.
+- diagnose ACL and traversal behavior, inspect `/proc`, understand states and lineage, and manage systemd units with validation.
+- model the complete access decision, explain sessions/process groups and uninterruptible sleep, and design least-privileged, resource-controlled service execution.
 
 ---
 > 🔼 Up: [[Linux]]

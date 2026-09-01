@@ -1,7 +1,7 @@
 ---
 title: "Web Authentication Testing"
 aliases: ["Authentication Attacks", "Identity and Session Testing", "Session Management Testing"]
-tags: [tree/offensive, cyber/offensive/web/auth, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/web/auth, type/technique, difficulty/medium]
 Domain: "[[Web Identity & Access Control]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Web Authentication Testing -> Broken Access Control -> JWT Security Testing -> Federated Identity & SSO -> MFA, Recovery & Session Bypass Testing
 
-## Start at Zero: Proving Who You Are, and Staying Proven
+## Proving Who You Are, and Staying Proven
 
 **Authentication** is how an application establishes who you are; **session management** is how it *remembers* that across the many stateless HTTP requests that follow. Both are attack surfaces, and this note covers the foundation the rest of the identity cluster builds on: how login and sessions work, and the flaws in each. Because a broken authentication flaw often means *complete account takeover*, this is among the highest-impact web testing.
 
@@ -27,6 +27,14 @@ The two phases:
 > Authentication is the ID check at a club door; the session token is the wristband you get so you don't re-show ID all night. The analogy breaks on wristband forgery: a club wristband is hard to copy, but a predictable or non-expiring session token is trivially guessed, stolen, or reused — and unlike a wristband, one leaked token can be used from anywhere in the world simultaneously.
 
 **Prerequisites:** HTTP, cookies, and the statelessness concept.
+
+**The deliberate break:** testing authentication means testing the login form. That is where the password goes, so that is where the security is.
+
+The login form is usually the **strongest** part of an authentication system, because it is the part everyone remembers to harden — rate limiting, MFA, lockout, monitoring. Authentication is the whole set of paths that can end with the application believing you are someone: registration, password reset, email change, "remember me", account recovery, and any SSO or social login bolted on beside them. Those paths are built later, tested less, and frequently skip the controls the login has.
+
+The consequence is a rule worth carrying: **if recovery is weaker than the front door, an attacker does not attack the front door.** A reset flow that accepts a guessable token, or a help desk that will change an email address on a plausible phone call, is the authentication system — MFA on the login page notwithstanding.
+
+**How you'd spot it:** enumerate every path that ends in an authenticated session, then check each one for the controls the login has. An MFA prompt that appears at login and *not* after a password reset is the finding, and it will not show up in any scan.
 
 ## Login Attacks
 
@@ -72,7 +80,7 @@ flowchart TD
     P -->|"no expiry / bad flags"| T["Theft / extended window"]
 ```
 
-## Failure Modes and Interpretation
+## Brute force as an outage you caused
 
 - **Locking out real users.** Brute-force and spray testing can lock legitimate accounts (DoS). Use synthetic accounts, throttle, and coordinate.
 - **Timing-based enumeration.** Even identical messages can leak via *timing* (a valid user's password is hashed, an invalid one short-circuits). Test response timing, not just content.
@@ -88,100 +96,13 @@ flowchart TD
 - **Secure cookie flags** (`HttpOnly`, `Secure`, `SameSite`) limit token theft and CSRF — a one-header hardening.
 - **Detection is behavioral:** failed-login bursts (brute-force), one-password-many-users (spraying), impossible-travel logins, and concurrent sessions from distant locations are the signals — the identity-provider protections that make credential attacks detectable even when individually valid.
 
-## Authorized Lab: Find Username Enumeration and Session Weakness
+## Summary
 
-> [!info] Runs on one Linux machine — builds a login app with enumeration and a predictable session
-> Loopback, synthetic accounts. Step 5 removes it.
+You should now be able to:
 
-### Step 1 — Build a login app with two flaws
-
-```bash
-cat > /tmp/auth.py << 'EOF'
-import http.server, urllib.parse
-users={"alice":"S3cret!","bob":"Winter2026"}
-counter=[1000]   # PREDICTABLE session ids (the flaw)
-class H(http.server.BaseHTTPRequestHandler):
-    def do_POST(self):
-        n=int(self.headers.get("Content-Length",0)); q=urllib.parse.parse_qs(self.rfile.read(n).decode())
-        u=q.get("u",[""])[0]; p=q.get("p",[""])[0]
-        # FLAW 1: different messages for valid vs invalid users
-        if u not in users:
-            self.send_response(401); self.end_headers(); self.wfile.write(b"No such user"); return
-        if users[u]!=p:
-            self.send_response(401); self.end_headers(); self.wfile.write(b"Incorrect password"); return
-        # FLAW 2: sequential/predictable session id
-        counter[0]+=1; sid=counter[0]
-        self.send_response(200); self.send_header("Set-Cookie",f"session={sid}"); self.end_headers()
-        self.wfile.write(f"logged in, session={sid}".encode())
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8116),H).serve_forever()
-EOF
-python3 /tmp/auth.py &>/dev/null &
-sleep 1; echo "login app up (alice, bob)"
-```
-
-```text
-login app up (alice, bob)
-```
-
-### Step 2 — Username enumeration (the first finding)
-
-```bash
-echo "alice/wrong  -> $(curl -s -X POST -d 'u=alice&p=x' http://127.0.0.1:8116/login)"
-echo "ghost/wrong  -> $(curl -s -X POST -d 'u=ghost&p=x' http://127.0.0.1:8116/login)"
-```
-
-```text
-alice/wrong  -> Incorrect password
-ghost/wrong  -> No such user
-```
-
-The differing messages confirm `alice` exists and `ghost` doesn't — username enumeration. An attacker now knows which accounts to spray.
-
-### Step 3 — Predictable session tokens (the second finding)
-
-```bash
-curl -s -D - -X POST -d 'u=alice&p=S3cret!' http://127.0.0.1:8116/login | grep -i set-cookie
-curl -s -D - -X POST -d 'u=bob&p=Winter2026' http://127.0.0.1:8116/login | grep -i set-cookie
-```
-
-```text
-Set-Cookie: session=1001
-Set-Cookie: session=1002
-```
-
-Sequential session IDs (`1001`, `1002`) — an attacker who logs in as `1005` can guess `1004`, `1003`, etc. belong to other users and ride their sessions. Predictable tokens are a session-hijacking flaw.
-
-### Step 4 — State the fixes
-
-```bash
-echo "Fix 1: identical response ('Invalid credentials') for both bad-user and bad-password — and equal timing."
-echo "Fix 2: cryptographically random session IDs (e.g. 128-bit), regenerated on login, expiring, HttpOnly+Secure+SameSite."
-```
-
-```text
-Fix 1: identical response ('Invalid credentials') for both bad-user and bad-password — and equal timing.
-Fix 2: cryptographically random session IDs (e.g. 128-bit), regenerated on login, expiring, HttpOnly+Secure+SameSite.
-```
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/auth.py; wait 2>/dev/null
-curl -s -o /dev/null -w "app gone: %{http_code}\n" --max-time 2 http://127.0.0.1:8116/login 2>&1 | grep -o 'gone.*' || echo "app gone: connection refused"
-```
-
-```text
-app gone: connection refused
-```
-
-**What you should now be able to do:** test login for username enumeration (content and timing) and brute-force resistance, test sessions for predictability/fixation/expiry, prove both with synthetic accounts, and name the identical-response and random-token fixes.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the two phases (login and session), and why a session token is the prize after login.
-- **Operator:** Test username enumeration by content and timing, test session tokens for predictability and fixation, and prove hijacking between synthetic sessions.
-- **Root:** Explain why identical responses/timing, random regenerated expiring tokens, and MFA are the layered defenses, and how credential attacks surface as behavioral anomalies to a defender.
+- Explain the two phases (login and session), and why a session token is the prize after login.
+- Test username enumeration by content and timing, test session tokens for predictability and fixation, and prove hijacking between synthetic sessions.
+- Explain why identical responses/timing, random regenerated expiring tokens, and MFA are the layered defenses, and how credential attacks surface as behavioral anomalies to a defender.
 
 ---
 > 🔼 Up: [[Web Identity & Access Control]]

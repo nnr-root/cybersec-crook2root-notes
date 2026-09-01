@@ -1,7 +1,7 @@
 ---
 title: "Nmap"
 aliases: ["Network Mapper"]
-tags: [tree/tooling, cyber/tooling/offensive/nmap, type/tool, level/root]
+tags: [tree/tooling, cyber/tooling/offensive/nmap, type/tool, difficulty/hard]
 Domain: "[[Network Discovery Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,36 @@ Nmap is a network-discovery, port-state inference, service-fingerprinting, and s
 ## Parent Learning Order
 Nmap -> Masscan -> RustScan
 
-## Crook — The Mental Model
+## Inferring state from a reply, or from silence
 
 A scanner never "sees" an open port. It sends a probe and **infers** the port's state from the reply — or from silence. The whole tool rests on the TCP handshake and a small set of possible responses.
 
-![[tool_port_scan_states.svg]]
+```mermaid
+sequenceDiagram
+    participant S as Scanner
+    participant P as Target port
+    S->>P: SYN — can I connect?
+    P-->>S: SYN-ACK — yes, I'm open
+    S->>P: ACK — connection established
+```
 
-Read the diagram before any flag: a `SYN-ACK` means **open**, a `RST` means **closed**, and *no reply at all* means **filtered** (a firewall ate the probe — indistinguishable from a lost packet). This is why `filtered` and UDP's `open|filtered` are the genuinely hard results, and why a surprising state always needs a second technique to confirm. Master this table and Nmap's output stops being noise and becomes a story about the network path.
+The possible replies, and what each scan type infers from them:
 
-## Operator — Make It Work
+| Scan | reply = OPEN | reply = CLOSED | silence means |
+|:--|:--|:--|:--|
+| SYN `-sS` (half-open) | `SYN-ACK` | `RST` | filtered |
+| Connect `-sT` (full) | handshake completes | `RST` | filtered |
+| UDP `-sU` | a UDP reply | `ICMP port-unreachable` | `open`&#124;`filtered` |
+
+`filtered` and `open|filtered` are the genuinely hard results, because silence is
+ambiguous — a firewall dropping the probe is indistinguishable from a lost
+packet. That is why UDP scanning is slow and uncertain, and why a surprising
+state always needs a second technique to confirm. `-sS` sends `RST` instead of
+the final `ACK`, so the connection never completes and the application never logs
+a session; `-sT` needs no privileges but completes the handshake, and the
+application sees it.
+
+## The flags you actually use, grouped by phase
 
 **Install and verify** — record the version, because bundled NSE scripts change behaviour:
 
@@ -128,7 +149,7 @@ operator@lab:~$ nmap -F -sV --script default 192.0.2.10 -oA evidence/quick
 
 Read that middle line as a sentence: *don't ping first* (`-Pn`), *don't resolve DNS* (`-n`), *half-open* (`-sS`), *fingerprint versions* (`-sV`), *every port* (`-p-`), *at ≥500 pkt/s* (`--min-rate`), *show me why* (`--reason`), *save everything* (`-oA`).
 
-## Root — Internals, Evidence & The Deliberate Break
+## Why -sS and -sT are a detection choice
 
 The difference between `-sS` and `-sT` is not cosmetic — it is a packet-level and a *detection* choice. `-sS` sends a `RST` instead of the final `ACK`, so the connection never completes and the target application never logs a session (but it needs raw-socket privilege). `-sT` uses the OS `connect()` call, needs no privilege, but completes the handshake — the app sees and logs it. Choosing wrong changes both your footprint and what you can run.
 
@@ -148,11 +169,13 @@ operator@range:~$ sudo nmap -sU -p53,123,161 192.0.2.10
 
 **Defensive visibility:** discovery produces recognizable fan-out — many destination ports from one source, incomplete handshakes, unusual flag combinations, and NSE application requests. During purple-team work, correlate scanner source, firewall flow logs, and target service logs; success means the assessment evidence and the defensive evidence describe the same activity.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** What does an `open|filtered` UDP result actually tell you, and why is it ambiguous?
-- **Operator:** A scan shows everything `filtered`. How do you distinguish a host firewall from a routing/source-address problem?
-- **Root:** Explain how `-sS` and `-sT` differ at the packet level, and why one needs root while the other is logged by the application.
+You should now be able to:
+
+- What does an `open|filtered` UDP result actually tell you, and why is it ambiguous?
+- A scan shows everything `filtered`. How do you distinguish a host firewall from a routing/source-address problem?
+- Explain how `-sS` and `-sT` differ at the packet level, and why one needs root while the other is logged by the application.
 
 ---
 > 🔼 Up: [[Network Discovery Tools]]

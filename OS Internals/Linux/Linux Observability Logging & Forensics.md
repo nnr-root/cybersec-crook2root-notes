@@ -6,7 +6,7 @@ tags:
   - cyber/foundations/linux
   - cyber/defensive/forensics
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Linux]]"
 Color: "#FFA500"
@@ -167,119 +167,6 @@ $ journalctl -t c2r-canary -o json-pretty --since -1m | sed -n '1,12p'
 
 If the canary appears but the original event does not, report a historical visibility gap rather than inventing certainty. If it does not appear, repair or document collection before drawing incident conclusions.
 
-## Hands-On Lab: Investigate a Service You Break on Purpose
-
-> [!info] Runs on any systemd Linux machine — creates one disposable unit, removed in Step 6
-> The point is to practise the *order* of evidence collection, from most volatile to least.
-
-### Step 1 — Create a service that fails in a realistic way
-
-```bash
-sudo tee /etc/systemd/system/obs-lab.service >/dev/null << 'EOF'
-[Unit]
-Description=Observability lab service
-[Service]
-ExecStart=/bin/sh -c 'echo starting; sleep 2; echo "cannot open /var/lib/obs/state" >&2; exit 3'
-EOF
-sudo systemctl daemon-reload && sudo systemctl start obs-lab.service
-sleep 4; systemctl is-active obs-lab.service; systemctl is-failed obs-lab.service
-```
-
-```text
-failed
-failed
-```
-
-### Step 2 — Collect the volatile evidence first
-
-```bash
-systemctl status obs-lab.service --no-pager | head -8
-```
-
-```text
-× obs-lab.service - Observability lab service
-     Active: failed (Result: exit-code) since Tue 2026-08-04 17:04:22; 5s ago
-    Process: 23511 ExecStart=/bin/sh -c echo starting; ... (code=exited, status=3)
-   Main PID: 23511 (code=exited, status=3)
-Aug 04 17:04:20 host sh[23511]: starting
-Aug 04 17:04:22 host sh[23511]: cannot open /var/lib/obs/state
-Aug 04 17:04:22 host systemd[1]: obs-lab.service: Failed with result 'exit-code'.
-```
-
-One command yields the exit code (**3**), the failing command line, the PID, and the service's own stderr. Start here — process state disappears, files do not.
-
-### Step 3 — Query the journal precisely instead of scrolling
-
-```bash
-sudo journalctl -u obs-lab.service --since '10 min ago' -o short-iso --no-pager | tail -4
-```
-
-```text
-2026-08-04T17:04:20+0000 host sh[23511]: starting
-2026-08-04T17:04:22+0000 host sh[23511]: cannot open /var/lib/obs/state
-2026-08-04T17:04:22+0000 host systemd[1]: obs-lab.service: Main process exited, code=exited, status=3
-2026-08-04T17:04:22+0000 host systemd[1]: Failed with result 'exit-code'.
-```
-
-`-o short-iso` gives unambiguous timestamps — essential the moment you correlate this host with another. Now extract it as structured data rather than text:
-
-```bash
-sudo journalctl -u obs-lab.service -o json --no-pager | tail -1 | python3 -m json.tool | grep -E '"MESSAGE"|"_PID"|"_UID"'
-```
-
-```text
-    "MESSAGE": "obs-lab.service: Failed with result 'exit-code'.",
-    "_PID": "1",
-    "_UID": "0"
-```
-
-The journal stores **fields, not lines**. Filtering on `_PID` or `_UID` is far more reliable than grepping a formatted string that changes with locale.
-
-### Step 4 — Confirm the claim in the log is actually true
-
-```bash
-ls -ld /var/lib/obs 2>&1
-```
-
-```text
-ls: cannot access '/var/lib/obs': No such file or directory
-```
-
-The service *said* it could not open a path; this confirms the path genuinely does not exist. **Never stop at the log message** — logs report what a program believed, and verifying the claim independently is what separates a diagnosis from a guess.
-
-### Step 5 — Establish a timeline across sources
-
-```bash
-sudo journalctl --since '10 min ago' --no-pager -o short-iso | grep -iE 'obs-lab' | head -3
-last -n 3 2>/dev/null | head -3
-```
-
-```text
-2026-08-04T17:04:20+0000 host systemd[1]: Started Observability lab service.
-2026-08-04T17:04:22+0000 host sh[23511]: cannot open /var/lib/obs/state
-2026-08-04T17:04:22+0000 host systemd[1]: Failed with result 'exit-code'.
-you      pts/0        192.168.1.50     Tue Aug  4 16:40   still logged in
-reboot   system boot  6.8.0-generic    Tue Aug  4 08:12   still running
-```
-
-Two independent sources on one timeline: the service failure and the login/boot record. Correlation like this is only possible because both carry synchronized timestamps — which is why time synchronization is a forensic prerequisite, not a convenience.
-
-### Step 6 — Cleanup
-
-```bash
-sudo systemctl reset-failed obs-lab.service 2>/dev/null
-sudo rm /etc/systemd/system/obs-lab.service && sudo systemctl daemon-reload
-systemctl status obs-lab.service --no-pager 2>&1 | head -1
-```
-
-```text
-Unit obs-lab.service could not be found.
-```
-
-Note the journal entries **remain** — deleting the unit does not erase its history, which is exactly the property that makes centralized logging valuable.
-
-**What you should now be able to do:** collect volatile evidence first, query the journal by field rather than by grep, and verify a log's claim independently before believing it.
-
 ## Collection integrity & blind-spot testing
 
 Continuously test the telemetry path. Generate an approved canary event, verify local capture, forwarding, parsing, indexing, timestamp normalization, field preservation, retention, and alert delivery. Monitor journal/audit drop counters, forwarder queues, disk pressure, eBPF ring-buffer loss, collector authentication, and ingestion delay. A healthy dashboard does not prove that high-value events survive every hop.
@@ -290,11 +177,13 @@ Record the expected negative space as well: container logs may bypass host files
 
 Visibility has cost and power. Logs can contain credentials and personal data; tracing can expose application secrets; audit floods can drop records; profiling can perturb timing; live response changes state. Conversely, insufficient retention or local-only records let compromise erase context. Apply least privilege to collectors, encrypt transport/storage, monitor collection health, define retention, synchronize time, centralize high-value evidence, and test that detections and crash capture actually work.
 
-### Crook → Operator → Root checkpoint
+## Summary
 
-- **Crook:** query current/previous boots, inspect processes and sockets, and distinguish metrics, logs, traces, profiles, and artifacts.
-- **Operator:** correlate journal/audit/syscalls/perf/eBPF evidence, measure collection loss and overhead, and produce a hashed, reproducible timeline.
-- **Root:** design host observability and forensic acquisition around threat model, namespaces, time, retention, privacy, crash recovery, and independent evidence validation.
+You should now be able to:
+
+- query current/previous boots, inspect processes and sockets, and distinguish metrics, logs, traces, profiles, and artifacts.
+- correlate journal/audit/syscalls/perf/eBPF evidence, measure collection loss and overhead, and produce a hashed, reproducible timeline.
+- design host observability and forensic acquisition around threat model, namespaces, time, retention, privacy, crash recovery, and independent evidence validation.
 
 ---
 > 🔼 Up: [[Linux]]

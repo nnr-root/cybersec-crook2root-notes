@@ -32,9 +32,9 @@ Color: "#FFA500"
 
 ## Progression standard
 
-- **Crook:** explain vocabulary and reproduce the bounded lab exactly.
-- **Operator:** diagnose an unfamiliar Linux host from first principles and preserve evidence of every conclusion.
-- **Root:** reason across firmware, kernel, userspace, policy, storage, networking, and observability; design controls and recovery rather than memorizing commands.
+- **Easy:** explain vocabulary and reproduce the bounded lab exactly.
+- **Medium:** diagnose an unfamiliar Linux host from first principles and preserve evidence of every conclusion.
+- **Hard:** reason across firmware, kernel, userspace, policy, storage, networking, and observability; design controls and recovery rather than memorizing commands.
 
 ---
 > 🔼 Up: [[OS Internals]]

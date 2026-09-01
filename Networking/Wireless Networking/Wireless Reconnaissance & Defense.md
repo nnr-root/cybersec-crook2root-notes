@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/wireless
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Wireless Networking]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Wireless Fundamentals & 802.11 -> Wi-Fi Security & WPA -> Wireless Attacks & Rogue Infrastructure -> Cellular & Long-Range Wireless -> Bluetooth & Personal-Area Networks -> Wireless Reconnaissance & Defense
 
-## Start at Zero: You Cannot Defend Airspace You Have Not Mapped
+## You Cannot Defend Airspace You Have Not Mapped
 
 Wired security starts from a known topology — you have the cable map. Wireless security starts from ignorance: the airspace contains your APs, your clients, your neighbours' networks, and potentially an attacker's rogue infrastructure, all mixed together on shared channels. **The first act of wireless defense is reconnaissance of your own airspace** — discovering what is actually transmitting, so that "normal" is defined and anomalies stand out.
 
@@ -110,34 +110,13 @@ That last point ties the wireless branch back to the security-architecture branc
 
 All reconnaissance and monitoring described here must target only airspace and networks you own or are explicitly authorized to assess. Wardriving that captures others' networks, and any active testing, require authorization.
 
-## Authorized Lab: Map, Detect, Harden
+## Summary
 
-Use a monitor-capable adapter, your own lab APs, and an attacker radio, all in an isolated environment you control.
+You should now be able to:
 
-1. **Survey your airspace.** Scan and build an inventory of your lab APs — SSIDs, hardware addresses, channels, security, and signal strength. This is your baseline of "normal."
-2. **Map signal reach.** Measure signal strength at increasing distances from an AP and identify where usable signal ends, assessing whether it extends beyond the intended area.
-3. **Introduce a rogue AP.** Stand up an evil twin (from the attacks leaf) and confirm your survey now shows an extra AP claiming your SSID with an unexpected hardware address — the rogue signature. Locate it by comparing signal strength from different positions.
-4. **Detect a deauth attack.** Run a deauthentication burst against your own client and confirm a monitor watching management frames flags the abnormal deauth volume immediately.
-5. **Apply the root fix.** Enable Protected Management Frames on your AP and confirm the deauthentication attack no longer disconnects the client — prevention succeeding where detection only alerted.
-6. **Verify hardening.** Confirm WPA3 (or strong WPA2), enforced Enterprise certificate validation, and that the wireless segment is isolated from a simulated sensitive system.
-7. **Cleanup.** Remove the rogue AP, restore configurations, and stop monitoring.
-
-Expected interpretation:
-
-```text
-Baseline survey  -> the authorized-AP inventory that defines normal
-Signal reach     -> usable signal beyond the intended area is attack surface
-Rogue AP         -> extra AP with your SSID and an unexpected address, locatable by signal
-Deauth flood     -> abnormal management-frame volume, immediately detectable
-Protected Mgmt Frames -> deauth prevented at the root, not merely detected
-Segmentation     -> compromised wireless client reaches little
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why mapping your own airspace is the first act of wireless defense, and what wardriving and a site survey produce.
-- **Operator:** Build an authorized-AP inventory, detect a rogue AP by SSID and hardware-address mismatch, and recognize a deauthentication attack by its management-frame signature.
-- **Root:** Explain the defender's listening advantage and why a rogue transmitter cannot hide; argue why Protected Management Frames (prevention) beats WIDS (detection) for deauthentication, why wireless should be treated as an access method under the same segmentation and zero-trust controls, and how the encryption backstop closes the wireless threat exactly as it does the rest of the domain.
+- Explain why mapping your own airspace is the first act of wireless defense, and what wardriving and a site survey produce.
+- Build an authorized-AP inventory, detect a rogue AP by SSID and hardware-address mismatch, and recognize a deauthentication attack by its management-frame signature.
+- Explain the defender's listening advantage and why a rogue transmitter cannot hide; argue why Protected Management Frames (prevention) beats WIDS (detection) for deauthentication, why wireless should be treated as an access method under the same segmentation and zero-trust controls, and how the encryption backstop closes the wireless threat exactly as it does the rest of the domain.
 
 ---
 > 🔼 Up: [[Wireless Networking]]

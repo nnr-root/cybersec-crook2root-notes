@@ -27,7 +27,7 @@ flowchart TD
 - [[Offensive Tools]]
 - [[Defensive Tools]]
 
-## Operator baseline
+## Run discipline baseline
 
 ```shell-session
 operator@lab:~$ mkdir -p run/{config,raw,normalized,logs}

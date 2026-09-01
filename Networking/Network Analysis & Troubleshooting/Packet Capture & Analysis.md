@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/analysis
   - type/technique
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Network Analysis & Troubleshooting]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Packet Capture & Analysis -> Structured Network Troubleshooting -> Traffic Analysis & Flow Inspection -> Performance & Latency Analysis -> Connectivity Diagnostics -> Protocol Debugging & Deep Inspection
 
-## Start at Zero: Reading the Wire Directly
+## Reading the Wire Directly
 
 Every diagnostic tool so far has *interpreted* the network — reported a state, a route, a connection. **Packet capture** shows the raw traffic itself: the actual bytes on the wire, header by header. It is the authoritative evidence, because it is not an interpretation — it is what actually happened. When a developer says "the request was sent" and the server says "nothing arrived," the capture ends the argument.
 
@@ -35,6 +36,12 @@ This captures 100 TCP/443 packets to a file. The `-w` writes raw packets (openab
 
 > [!tip] The analogy, and where it breaks
 > A tape recorder on a phone line — the definitive record when two parties disagree about what was said. The analogy breaks because a modern switched network is not a party line: by default your recorder hears only your own calls, and you must arrange a deliberate tap or mirror to hear anyone else's. Capturing 'the network' is never automatic.
+
+**The deliberate break:** you put the interface in promiscuous mode, start the capture, and expect to see the network. On a switched network you will see almost nothing but your own traffic and broadcasts.
+
+Promiscuous mode tells your NIC to stop discarding frames not addressed to it. It does not tell the **switch** to send you any. A switch forwards unicast only to the port that owns the destination MAC, so the frames you want never reach your cable. This is the single most common reason a capture "isn't working," and no tcpdump flag fixes it — you need a SPAN/mirror port, a TAP, or to be in the path.
+
+**How you'd spot it:** if every packet you see involves your own address, plus ARP and broadcast, you are on a switch port with no mirror. That is a topology problem, not a filter problem.
 
 ## Two Filters, Constantly Confused
 
@@ -54,10 +61,10 @@ The practical rule: **use a capture filter to control volume on a busy link** (y
 BPF capture-filter syntax is worth fluency because it appears everywhere — tcpdump, Wireshark, and many security tools share it:
 
 ```bash
-sudo tcpdump -i eth0 'host 10.0.5.22 and tcp port 443'      # one host's HTTPS
+sudo tcpdump -i eth0 'host 10.10.10.22 and tcp port 443'      # one host's HTTPS
 sudo tcpdump -i eth0 'tcp[tcpflags] & tcp-syn != 0'          # SYN packets (find scans/handshakes)
 sudo tcpdump -i eth0 'icmp or arp'                           # low-level troubleshooting
-sudo tcpdump -i eth0 'net 192.168.1.0/24 and not port 22'    # a subnet, excluding SSH noise
+sudo tcpdump -i eth0 'net 10.10.10.0/24 and not port 22'    # a subnet, excluding SSH noise
 ```
 
 ## The Switched-Network Problem
@@ -100,33 +107,13 @@ This connects capture to sensor placement from the security-architecture branch:
 
 All capture described here must be performed only on networks and systems you own or are explicitly authorized to monitor. Capturing traffic exposes its contents, and doing so on networks you do not control is unlawful interception.
 
-## Authorized Lab: Capture, Filter, and Mirror
+## Summary
 
-Use a lab with a switch you can configure, two hosts generating traffic, and a capture host.
+You should now be able to:
 
-1. **Prove the switched-network blind spot.** From the capture host, put the interface in promiscuous mode and capture while two *other* hosts exchange traffic. Confirm you see almost none of it — the switch is not sending it to you.
-2. **Configure a mirror.** Set up a SPAN/mirror port copying the two hosts' traffic to the capture host's port, and confirm you now see their full conversation.
-3. **Capture filter versus display filter.** Capture broadly to a file, then apply different display filters to view subsets, confirming the data remains and only the view changes. Then capture with a narrow BPF filter and confirm that non-matching traffic is permanently absent from the file.
-4. **Demonstrate the narrow-filter danger.** Capture with a filter so tight it excludes TCP resets, reproduce a connection failure, and confirm the capture cannot explain it because the relevant packet was filtered out — then re-capture broadly and find the reset.
-5. **Practice BPF fluency.** Write capture filters for a single host's HTTPS, for SYN packets only, and for a subnet excluding SSH, confirming each records the intended traffic.
-6. **Manage volume.** Capture with a ring buffer and a snap length, and confirm you can capture continuously without exhausting storage.
-7. **Cleanup.** Remove the mirror configuration and delete lab capture files containing any sensitive data.
-
-Expected interpretation:
-
-```text
-Promiscuous only  -> still see little; the switch does not forward others' frames
-Mirror configured -> the full conversation now reaches the capture host
-Capture vs display-> capture filter discards; display filter merely hides
-Too-narrow filter -> the packet that explains the failure was discarded
-BPF fluency       -> precise control of what is recorded on a busy link
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what packet capture shows that other tools do not, what promiscuous mode does, and why a PCAP file is portable evidence.
-- **Operator:** Distinguish a capture filter from a display filter and know when to use each; write BPF filters, and explain why a switched network requires a mirror, tap, or chokepoint to capture other hosts' traffic.
-- **Root:** Explain why capture is the arbiter of truth and simultaneously a sensitive surveillance capability; argue why the capture point defines what you can conclude, and why every "capture reveals cleartext" fact is an argument for encrypting the payload.
+- Explain what packet capture shows that other tools do not, what promiscuous mode does, and why a PCAP file is portable evidence.
+- Distinguish a capture filter from a display filter and know when to use each; write BPF filters, and explain why a switched network requires a mirror, tap, or chokepoint to capture other hosts' traffic.
+- Explain why capture is the arbiter of truth and simultaneously a sensitive surveillance capability; argue why the capture point defines what you can conclude, and why every "capture reveals cleartext" fact is an argument for encrypting the payload.
 
 ---
 > 🔼 Up: [[Network Analysis & Troubleshooting]]

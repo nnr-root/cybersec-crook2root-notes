@@ -1,72 +1,104 @@
 # Crook2Root Authoring Standard
 
-Crook2Root is a cybersecurity knowledge system designed to take a reader from complete beginner to independent expert. The name is an editorial promise: every technical leaf must be understandable at **Crook**, usable at **Operator**, and defensible at **Root**.
+Crook2Root is a cybersecurity knowledge system designed to take a reader from complete beginner to independent expert. The name is the editorial promise: a reader who starts at zero and works through a track ends up owning the machine.
 
-This document is the permanent content philosophy for every domain. Contributors and automated editors should apply it without requiring the project owner to repeat it in each request.
+This document is the permanent content philosophy for every domain. Contributors and automated editors apply it without the project owner restating it in each request.
 
-## 1. The Three-Level Learning Contract
+---
 
-### Crook — Build the Mental Model
+## 0. Two Repositories — Know Which One You Are In
 
-Assume the learner has never seen the subject.
+Crook2Root ships as **two separate repositories with different jobs**. Confusing them is the most damaging mistake an author or agent can make.
 
-- Explain what the thing is and why it exists.
-- Define prerequisites and every essential term before using it heavily.
-- Use a concrete analogy, then state where the analogy stops being accurate.
-- Show the smallest safe example and its expected result.
-- Identify the object, protocol, process, or trust boundary being studied.
-- Avoid unexplained acronyms, cargo-cult commands, and premature edge cases.
+| | **This repo — `cybersec-crook2root-notes`** | **The website repo — private, later** |
+|:--|:--|:--|
+| Visibility | **Public** | Private |
+| Purpose | Pure learning documentation | The interactive platform |
+| Contains | Explanation, diagrams, worked examples, images | Labs, practice questions, quizzes, CTFs, flags, progress |
+| Reads from | — | **This repo, as its source of content and images** |
+| A reader here | Reads and learns | Does and is assessed |
 
-A Crook section succeeds when a new learner can describe the mechanism in plain language and reproduce the baseline example.
+**Therefore, in this repository:**
 
-### Operator — Make It Work & Diagnose It
+- ❌ **No labs.** No "set up two hosts and try this", no exercises for the reader to perform.
+- ❌ **No questions, quizzes or answer boxes.** Nothing to submit, nothing to check.
+- ❌ **No flags, no scoring, no progress tracking.**
+- ❌ **No cleanup instructions**, because the reader was never asked to build anything.
+- ✅ **Worked examples** — real commands with their real output, presented as demonstration.
+- ✅ **Complete technical explanation** from zero to mastery.
+- ✅ **Diagrams and images**, which the website repo will reuse directly.
 
-Move from recognition to reliable operation.
+The website repo will turn this documentation into rooms with numbered tasks, questions and labs. Its job is assessment, and the task numbering is part of it. **This repo's job is teaching**, so it carries plain descriptive section headings and no `Task N` anywhere. Keep the boundary clean and both repos stay simple.
 
-- Explain architecture, data flow, state transitions, inputs, outputs, and dependencies.
-- Show realistic commands, configuration, code, requests, responses, logs, or debugger output.
-- Explain every important flag or field used in the example.
-- Include normal output, at least one failure mode, and a troubleshooting workflow.
-- Teach evidence collection: what proves the conclusion and what could produce a false conclusion?
-- Use a bounded hands-on lab with prerequisites, procedure, expected output, interpretation, and cleanup.
+---
 
-An Operator section succeeds when the learner can investigate an unfamiliar system without copying a memorized recipe blindly.
+## 1. The Learning Contract
 
-### Root — Explain the Internals & Tradeoffs
+Every technical leaf takes a reader from *never heard of this* to *can reason about it independently* — inside a single note.
 
-Reach implementation-level understanding.
+The ramp is carried by **the order of the sections**, not by labelled difficulty sections. The opening section assumes nothing. Each section builds only on the sections above it and on the rooms named in `Parent Learning Order`. By the final section the reader is looking at internals, edge cases and failure modes.
 
-- Trace the mechanism through parsers, protocols, runtimes, kernel structures, cryptographic assumptions, or control planes as appropriate.
-- Cover edge cases, version or platform differences, race conditions, resource limits, failure recovery, and security boundaries.
+**Open at zero.**
+
+- State what the thing is and why it exists before using any jargon.
+- Define every essential term on first use.
+- Give one concrete analogy — then say where the analogy stops being accurate. That boundary is where real understanding starts.
+- Identify the object, protocol, process or trust boundary being studied.
+- No unexplained acronyms, no cargo-cult commands, no premature edge cases.
+
+**Build to working understanding.**
+
+- Explain architecture, data flow, state transitions, inputs, outputs and dependencies.
+- Show real commands, configuration, code, requests, responses, logs or debugger output — **with their real output**.
+- Explain every important flag or field in the example.
+- Show at least one failure or misleading result and how to tell it apart from success.
+- Teach evidence: what proves the conclusion, and what could produce a false one.
+
+**Finish at mastery.**
+
+- Trace the mechanism through parsers, protocols, runtimes, kernel structures, cryptographic assumptions or control planes.
+- Cover edge cases, version and platform differences, race conditions, resource limits and recovery.
 - Explain how controls fail, how to debug the failure, and how design choices change risk.
-- Distinguish demonstrated facts, inferences, and hypotheses.
-- Connect offense, defense, engineering, and forensic evidence under authorized use.
-- End with a **Crook → Operator → Root** checkpoint that tests explanation, operation, and independent reasoning.
+- Distinguish demonstrated fact, inference and hypothesis.
+- Connect offence, defence and engineering under authorized use.
 
-A Root section succeeds when the learner can predict behavior, design a defensible experiment, and explain the result from first principles.
+A leaf succeeds when a beginner can enter without an unstated prerequisite, and someone finishing it can predict behaviour and explain it from first principles.
+
+---
 
 ## 2. Required Leaf Anatomy
 
-Section names may adapt to the subject, but every technical leaf needs the following functions:
+Section titles adapt to the subject, but every technical leaf needs these functions in this order:
 
-1. YAML frontmatter with one parent, domain tag, level/type tags, aliases, and matching color.
+1. YAML frontmatter — one parent, domain tag, type tag, **difficulty tag**, aliases, matching colour.
 2. A clear H1 and a short abstract stating the learning outcome.
 3. `## Parent Learning Order` followed by one plain-text order line.
-4. Beginner mental model and prerequisites.
-5. Architecture or mechanics explanation.
-6. At least one meaningful visual — Mermaid **or an authored image** where the subject is inherently spatial (see §4).
-7. Practical commands, code, or protocol examples with realistic output.
+4. An opening `## <descriptive title>` section starting at zero: mental model, prerequisites, vocabulary.
+5. Further `## <descriptive title>` sections carrying the technical content, in teaching order.
+6. At least one meaningful visual — Mermaid, or a table / ASCII layout / annotated hex dump where the subject is spatial (§4).
+7. At least one **worked example** with real commands and real output (§5).
 8. Failure modes and troubleshooting.
 9. Security implications and authorized-use boundaries.
-10. A **runnable, step-by-step lab** — every step shows its real command *and* its real output (see §6). A list of things the reader "could try" is not a lab and does not satisfy this item.
-11. A Crook → Operator → Root checkpoint.
-12. A single parent link at the footer.
+10. `## Summary` — what the reader should now be able to do.
+11. A single parent link at the footer.
 
-Recommended technical-leaf depth is approximately 1,500–5,000 words. Complexity—not padding—determines the final size. Shorter is acceptable only when the topic is genuinely narrow and still satisfies the complete learning contract.
+Recommended depth is approximately **1,500–5,000 words**. Complexity, not padding, determines the size. Shorter is acceptable only when the topic is genuinely narrow and still satisfies the full contract.
+
+### Section headings
+
+- Content sections are plain `##` headings with descriptive titles: `## The EtherType: The Demultiplexing Key`.
+- **Never `## Task N — …`.** Numbered tasks are a course-runner construct and belong in the private website repo (§0). In this repo the heading's job is to say what the section teaches; the CI gate rejects a numbered heading as an error.
+- Order is expressed by the sequence of headings, not by a number the reader has to carry.
+- **Cross-reference by name, in bold** — "as **The FCS** explains", never "as Task 4 explains". A numeric reference silently rots the moment a section is inserted, moved or split; a named one does not. The gate rejects a bare `Task N` in prose.
+- `## Parent Learning Order` and `## Summary` are structural, not lesson sections.
+- Index and hub notes carry navigation, not lessons.
+- A section is a coherent unit of one idea. If a section needs more than roughly 700 words, it is probably two sections.
+
+---
 
 ## 3. Parent Learning Order Rule
 
-Each parent owns an ordered curriculum of its direct children. Every direct child repeats that same first-degree order near the beginning:
+Each parent owns an ordered curriculum of its direct children. Every direct child repeats that first-degree order near the beginning:
 
 ```markdown
 ## Parent Learning Order
@@ -76,66 +108,107 @@ Foundations -> Architecture -> Operation -> Troubleshooting -> Mastery
 Rules:
 
 - Use `->` exactly as the separator.
-- List direct siblings only.
-- Do not include grandchildren or deeper descendants.
-- Do not add descriptions, numbers, bullets, or commentary to the order line.
-- Do not use wikilinks on the order line; lateral links would collapse the strict tree topology.
-- Use the professional visible title of each sibling.
+- List direct siblings only — no grandchildren, no deeper descendants.
+- No descriptions, numbers, bullets or commentary on the order line.
+- No wikilinks; lateral links would collapse the tree topology.
+- Use each sibling's professional visible title.
 - Update every sibling if the parent curriculum changes.
+
+---
 
 ## 4. Visual Standard
 
-A visual must teach a relationship that prose alone would make harder to understand.
+**Every visual in this repository is Mermaid.** The vault carries no image files:
+no SVG, no PNG, no GIF. A note that needs a picture writes it as Mermaid source
+in a fenced block, and the renderer draws it.
 
-Use Mermaid for:
+This is a deliberate constraint, and it has three reasons behind it. Mermaid is
+plain text, so it diffs in a pull request and a reviewer can see what changed.
+It inherits the reader's theme instead of fighting it. And it cannot carry
+another organisation's branding or licence into a public repository, which
+image files repeatedly did.
 
-- `sequenceDiagram` — protocol exchanges, syscalls, authentication, remote execution, and request lifecycles.
-- `flowchart` — architecture, decision paths, trust boundaries, and transformations.
-- `stateDiagram-v2` — process, protocol, scheduler, or resource states.
+A visual must teach a relationship that prose alone would make harder to
+understand. Reach for:
+
+- `sequenceDiagram` — protocol exchanges, syscalls, authentication, request
+  lifecycles, attack chains.
+- `flowchart` — architecture, decision paths, trust boundaries, transformations.
+- `stateDiagram-v2` — process, protocol, scheduler or resource states.
 - `classDiagram` — object ownership and structural relationships.
-- `timeline` — boot, incident, or forensic sequences.
+- `timeline` — boot, incident or forensic sequences.
+- `erDiagram` — schema and entity relationships.
 
-**Mermaid is not sufficient for every subject.** When the concept is inherently *spatial* — a byte or bit layout, a packet/frame/header field map, a hex-dump-to-field mapping, a memory or address-space map, a register or flag layout, a disk/partition structure, or an RF channel arrangement — Mermaid cannot express it, and the note **must include an authored image**. Author these as self-contained SVGs (theme-agnostic dark background `#0f1420`, light text), store them in `assets/` with a domain prefix (e.g. `net_`, `os_`), and embed with `![[name.svg]]`. **Any authored image must be rendered and visually inspected before it is committed** — SVG label collisions and overflow are common and are not caught by text tooling. Every visual needs nearby prose explaining how to read it and why it matters.
+### When the subject is spatial
 
-Decorative diagrams, repeated generic flows, and visuals that merely restate a list do not satisfy the standard. A note whose only visuals are Mermaid flowcharts, when its subject is a byte or memory layout, is **incomplete**.
+Byte and bit layouts, packet and header field maps, memory and address-space
+maps, register and flag layouts, disk structures and RF channel arrangements are
+**spatial**, and Mermaid cannot draw them. Do not force a flowchart to stand in
+for a layout — it will mislead. Use one of these instead, in order of preference:
 
-## 5. Practical Evidence Standard
+1. **A field table.** Columns for field, size and purpose carry the same
+   information as a byte map and are searchable, translatable and screen-reader
+   accessible.
+2. **A fenced ASCII diagram.** For a frame or header, a plain box drawing inside
+   a ```text fence shows offsets and widths precisely, and copies as text.
+3. **An annotated hex dump.** Show the real bytes with a second block naming
+   which offset is which field. This is usually the strongest option, because it
+   is simultaneously the diagram and the evidence.
 
-Commands without output teach syntax but not interpretation. Every important workflow should show:
+`Ethernet & Frame Structure` uses all three and is the reference for this
+pattern.
 
-- The exact command, request, code, or configuration.
-- A realistic expected result.
-- Which fields matter and why.
-- One likely error or misleading outcome.
-- A safe troubleshooting step.
-- Scope and cleanup when the exercise changes state.
+Every visual needs nearby prose explaining how to read it and why it matters.
+Decorative diagrams, repeated generic flows, and visuals that merely restate a
+list do not satisfy this standard.
 
-Use synthetic hosts, identities, domains, addresses, records, and markers. Authorized offensive material should establish the mechanism with bounded evidence and explicit stop conditions.
+> Screenshots are never acceptable. A screenshot of code is not searchable, not
+> copyable, not accessible and does not scale; write a fenced code block. A
+> screenshot of a third party's training platform additionally imports their
+> content and branding into a public repository.
 
-## 6. The Lab Standard — Labs Must Actually Run
+## 5. The Worked Example Standard
 
-The lab is the leaf's proof that the reader can *do* the thing, not just read about it. It is the most frequently degraded section, so its requirements are explicit and non-negotiable.
+Worked examples replace what used to be labs. The difference is framing, and it is not cosmetic.
 
-**A lab is a sequence of executed steps, each showing a real command and its real output.** The reader should be able to paste the commands and see the results described.
+**A lab says:** "Build this environment, run these commands, verify your result, then clean up."
+**A worked example says:** "Here is the command, here is exactly what it prints, and here is what each field means."
 
-Every lab MUST:
+The reader follows along by reading. They may run the commands if they wish, but the note never depends on it, never asks them to, and never assumes they did.
 
-1. **State its setup cost honestly, and minimise it.** Prefer a lab that runs on **one machine the reader already has**. Network topics use Linux network namespaces, veth pairs, or loopback to build a real second host inside one kernel — never demand "two VMs" or hardware the reader may lack when a namespace or container will do. Platform notes (Windows, macOS) may require that platform, but must still run on a single ordinary instance of it with built-in tooling.
-2. **Show real output under every command**, in its own fenced block, with a sentence interpreting it. A step with a command and no output is unfinished.
-3. **Include at least one deliberate failure or break** — a wrong mask, a dropped packet, a missing `-ErrorAction Stop`, a spoofed field — so the reader sees the mechanism fail, not only succeed. The most important lessons live in the break.
-4. **End with verifiable cleanup** whenever it changes state: a command that removes what was created **and** output confirming removal (e.g. a "does not exist" error). Read-only labs state "no cleanup required — every command read state only."
-5. **Close with a one-line "What you should now be able to do."**
+Every worked example MUST:
 
-**Prohibited lab anti-patterns** (each is grounds for rejecting the note):
+1. **Show the exact command, request, code or configuration.**
+2. **Show its realistic output**, in its own fenced block. A command with no output teaches syntax but not interpretation.
+3. **Explain which fields matter and why** — the sentence after the output is the part that teaches.
+4. **Include at least one failure or misleading result** somewhere in the note, with the mechanism behind it. Not "it failed because the value was wrong", but *which parser rejected it, at which stage, and what it was checking for.*
 
-- A bulleted list of suggestions — "try scanning…", "you could inspect…", "if you have a second VM…" — with no commands or output. This is a to-do list, not a lab.
-- Commands with no output shown.
-- A cleanup that deletes without confirming, or a state-changing lab with no cleanup.
-- A lab that cannot be run at all without infrastructure the note never helps the reader build.
+Every worked example MUST NOT:
 
-A lab that merely tells the reader what they *could* try teaches nothing and fails the Crook2Root promise. If the reader cannot follow the lab to a verified result on a machine they have, the note is incomplete.
+- Instruct the reader to build infrastructure, spin up hosts, or install a target.
+- Ask a question, request a submission, or contain an answer box.
+- Include cleanup steps — nothing was built, so nothing needs removing.
+- Say "try this yourself", "your turn", or "verify that you get".
 
-## 7. Strict Multiple-Trees Architecture
+Use synthetic hosts, identities, domains, addresses and records — `192.0.2.0/24`, `example.com`. Authorized offensive material establishes the mechanism with bounded evidence and explicit scope statements.
+
+**Formatting.** Prefer `shell-session` fences with a visible prompt for command-plus-output pairs, and a plain fence for output shown alone:
+
+````markdown
+```shell-session
+analyst@lab:~$ ip -s link show eth0
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP
+    RX: bytes  packets  errors  dropped
+    114829461  248193   0       0
+```
+
+`errors 0` is what a healthy link looks like. A rising count here — while everything
+still "works" because TCP retransmits — is the early warning of a failing cable.
+````
+
+---
+
+## 6. Strict Multiple-Trees Architecture
 
 The graph is intentionally hierarchical:
 
@@ -148,25 +221,25 @@ Cyber Security
 
 - A node has one parent.
 - Root and indexes create vertical edges.
-- Leaves do not link laterally to other leaves.
-- Cross-topic references use **bold text**, not wikilinks.
+- **Leaves do not link laterally to other leaves.** Cross-topic references use **bold text**, not wikilinks.
 - `Domain:` creates the child-to-parent graph edge.
-- Domain `tree/*` tags drive Graph View colors.
-- A concept needing substantial independent treatment becomes an atomic leaf under the correct parent rather than a large lateral section.
+- Domain `tree/*` tags drive Graph View colours.
+- A concept needing substantial independent treatment becomes an atomic leaf under the correct parent, not a large lateral section.
 
-## 8. Naming & Metadata
+---
 
-Use professional names that resemble an enterprise wiki:
+## 7. Naming, Metadata & Difficulty
 
-- No numeric folder prefixes.
-- No underscores.
-- No synthetic module codes such as `LNX.1`.
-- No `Hub` or `Branch` prefix.
-- Use `&` instead of “and” in visible titles that join peer concepts.
-- Keep filenames stable unless a rename materially improves the architecture.
-- Preserve useful aliases so historical names continue resolving.
+Use professional names that resemble an enterprise wiki: no numeric folder prefixes, no underscores, no synthetic module codes, no `Hub` or `Branch` prefixes. Use `&` instead of "and" in visible titles joining peer concepts. Keep filenames stable unless a rename materially improves the architecture, and preserve aliases so historical names keep resolving.
 
-Example:
+**Difficulty tags** replace the old level tags and map to the scale the website will render:
+
+| Tag | Meaning |
+|:--|:--|
+| `difficulty/info` | Index, hub and navigation notes. No lesson content. |
+| `difficulty/easy` | Assumes no prior knowledge of the subject. Entry points into a branch. |
+| `difficulty/medium` | Assumes the branch's earlier rooms. The working majority. |
+| `difficulty/hard` | Internals, edge cases, exploitation depth. Assumes the whole branch. |
 
 ```yaml
 ---
@@ -176,37 +249,49 @@ tags:
   - tree/os
   - cyber/foundations/windows
   - type/concept
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
 ---
 ```
 
-## 9. Editorial Quality
+---
+
+## 8. Editorial Quality
 
 - Write in professional English.
-- Prefer precise plain language over inflated jargon.
-- Define acronyms on first use.
-- Separate stable principles from version-specific behavior.
-- Mark simulations, illustrative output, assumptions, and inferences honestly.
-- Do not use generic filler or mechanically repeat paragraphs across notes.
-- Replace platform branding from training providers with technology-focused instruction.
+- Prefer precise plain language over inflated jargon; define acronyms on first use.
+- Separate stable principles from version-specific behaviour.
+- Mark simulations, illustrative output, assumptions and inferences honestly.
+- No generic filler, and no paragraph mechanically repeated across notes.
+- Replace training-provider branding with technology-focused instruction.
 - Preserve existing image embeds and user-authored material unless the task explicitly supersedes it.
 
-## 10. Definition of Done
+---
+
+## 9. Definition of Done
 
 A leaf is complete only when:
 
 - A beginner can enter without an unstated prerequisite.
-- An operator can reproduce and troubleshoot the workflow.
-- An expert can reason about internals, edge cases, security, and evidence.
+- Someone finishing it can reproduce, troubleshoot and reason about internals, edge cases and security.
+- Sections are plain descriptive `##` headings — no `Task N` numbering, and no `Task N` cross-references in prose.
 - The first-degree learning order matches the parent.
-- The parent link, Domain property, color, aliases, tags, code fences, visuals, and embeds are valid.
+- The parent link, `Domain:`, `Color:`, difficulty tag, aliases, tags, code fences, visuals and embeds are all valid.
 - No sibling or lateral leaf wikilinks were introduced.
-- Commands include realistic output and interpretation.
-- The lab is a **runnable step-by-step sequence** in which every step shows a real command and its real output, includes a deliberate failure, and ends with verified cleanup (§6). A "things you could try" list fails this test.
-- The lab runs on **one machine the reader plausibly has**, building any additional hosts locally (namespaces, containers, loopback) rather than assuming unavailable infrastructure.
-- If the subject is a byte, packet, memory, register, or disk layout, an **authored, visually-inspected image** is present, not merely a Mermaid flowchart (§4).
+- Every important command shows realistic output **and** an interpretation.
+- At least one worked example is present, and **no labs, questions, quizzes or flags** appear anywhere.
+- If the subject is a byte, packet, memory, register or disk layout, an **authored, visually-inspected image** is present — not merely a Mermaid flowchart (§4).
+- A `## Summary` section states what the reader should now be able to do.
 - No generic placeholders remain.
 
+---
+
+## 10. Migration Note (2026-08-31)
+
+This standard replaced an earlier three-level model in which every note was divided into labelled *Crook*, *Operator* and *Root* sections and was required to carry a runnable lab.
+
+That structure was removed vault-wide: 306 notes were converted to flat sections, 205 lab sections were cut, 281 checkpoints became `## Summary` sections, and `level/*` tags became `difficulty/*`. A later pass stripped the interim `## Task N — ` numbering from 1,624 headings across 303 notes, leaving the descriptive titles. The extracted labs and checkpoints are preserved under `.archive/` as source material for the private website repo — they are not part of the published documentation and Obsidian ignores that folder.
+
+The **name** Crook2Root is unchanged. It always described the journey, not the note template.

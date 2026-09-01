@@ -5,9 +5,11 @@ tags:
   - tree/networking
   - cyber/networking/nat
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Addressing & Subnetting]]"
+thread-exempt:
+  - "100.64.0.0: the RFC 6598 carrier-grade NAT block — the note explains what that range means"
 Color: "#42D4F4"
 ---
 
@@ -19,25 +21,23 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IPv4 Addressing -> Subnetting & CIDR -> VLSM & Route Summarization -> IPv6 Addressing -> Address Assignment & DHCP -> NAT & Address Translation
 
-## Start at Zero: Why Rewriting Became Necessary
+## Why Rewriting Became Necessary
 
 IPv4 provides about 4.3 billion addresses, which the Internet exhausted. **NAT (Network Address Translation)** was the pragmatic answer: let many hosts share a small number of public addresses by rewriting the address fields of packets as they cross a boundary, and keeping a table so replies can be translated back.
 
 The device performing translation must solve one problem. If ten internal hosts all send from the same public address, how does a returning packet get to the right one? The answer is to rewrite the **source port** as well, making every outbound flow unique in the table. That is why the common form of NAT is more precisely called **PAT (Port Address Translation)**, or "NAT overload."
 
-![[5f04259cf9bf5b57aed2c476-1719849362861.svg]]
-
 ```mermaid
 sequenceDiagram
-    participant L as Laptop 192.168.0.129:15401
+    participant L as Laptop 10.10.10.129:15401
     participant R as NAT router (public 203.0.113.5)
     participant S as Server 198.51.100.20:443
-    L->>R: src 192.168.0.129:15401 dst 198.51.100.20:443
-    Note over R: Create entry — 192.168.0.129:15401 <-> 203.0.113.5:19273
+    L->>R: src 10.10.10.129:15401 dst 198.51.100.20:443
+    Note over R: Create entry — 10.10.10.129:15401 <-> 203.0.113.5:19273
     R->>S: src 203.0.113.5:19273 dst 198.51.100.20:443
     S-->>R: src 198.51.100.20:443 dst 203.0.113.5:19273
     Note over R: Table lookup reverses the rewrite
-    R-->>L: src 198.51.100.20:443 dst 192.168.0.129:15401
+    R-->>L: src 198.51.100.20:443 dst 10.10.10.129:15401
 ```
 
 The server never learns the internal address. It sees only `203.0.113.5:19273`, which is why translation destroys attribution unless the translating device logs the mapping — a point returned to below.
@@ -73,7 +73,7 @@ sudo conntrack -L -j 2>/dev/null | head -5
 Expected excerpt:
 
 ```text
-tcp 6 431990 ESTABLISHED src=192.168.0.129 dst=198.51.100.20 sport=15401 dport=443
+tcp 6 431990 ESTABLISHED src=10.10.10.129 dst=198.51.100.20 sport=15401 dport=443
     src=198.51.100.20 dst=203.0.113.5 sport=443 dport=19273 [ASSURED] mark=0 use=1
 ```
 
@@ -95,7 +95,7 @@ table ip nat {
   }
   chain prerouting {
     type nat hook prerouting priority dstnat; policy accept;
-    iifname "eth0" tcp dport 8443 dnat to 192.168.0.50:443
+    iifname "eth0" tcp dport 8443 dnat to 10.10.10.50:443
   }
 }
 ```
@@ -145,55 +145,13 @@ Rewriting headers violates the assumption that addresses are stable end-to-end, 
 
 All configuration and testing described here belongs on a laboratory you own. Modifying translation rules on a shared or production gateway affects every user behind it and can create exposure that outlives the test.
 
-## Authorized Lab: Watch a Rewrite, Then Undo It
+## Summary
 
-Use an isolated lab: a client VM on an internal segment, a router VM performing NAT, and a server VM on a simulated external segment.
+You should now be able to:
 
-1. **Baseline.** From the client, connect to a service on the server and capture on both sides simultaneously:
-
-```bash
-# on the client
-sudo tcpdump -i eth0 -nn -c 4 'port 443'
-# on the server
-sudo tcpdump -i eth0 -nn -c 4 'port 443'
-```
-
-Record the source address and port each side observes. They will differ — that difference is the translation.
-
-2. **Inspect the table entry** on the router while the connection is open:
-
-```bash
-sudo conntrack -L | grep <server address>
-```
-
-Confirm the two tuples and identify the rewritten port.
-
-3. **Prove inbound is closed.** From the server, attempt to connect to the client's internal address, then to the router's public address on the same port. Both fail — the first has no route, the second has no table entry.
-4. **Open a port forward** on the router:
-
-```bash
-sudo nft add rule ip nat prerouting iifname "eth0" tcp dport 8443 dnat to <client internal address>:443
-```
-
-5. Repeat the inbound attempt to the public address on port 8443. It now succeeds. Note that nothing about the client changed — its exposure was altered entirely by a rule on another device, which is why inventory of DNAT rules matters more than inventory of hosts.
-6. **Observe state pressure.** Record `nf_conntrack_count`, open a few hundred short-lived connections from the client, and watch the count rise and then decay as entries time out.
-7. **Cleanup.** Delete the DNAT rule, confirm the inbound attempt fails again, verify `conntrack -L` no longer lists lab entries once they expire, and confirm the rule set matches the baseline captured in step 1.
-
-Expected interpretation:
-
-```text
-Two captures disagree on source -> the rewrite is real and only the gateway knows both halves
-Table entry present             -> replies are matched by state, not by policy
-Inbound blocked                 -> a side effect of missing state, not a firewall decision
-Port forward added              -> one rule publishes an internal service to the outside
-Table count climbing            -> translation capacity is a finite, attackable resource
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why NAT was needed, why source ports are rewritten, and what the translation table stores.
-- **Operator:** Distinguish static NAT, PAT, and port forwarding; read `conntrack` and `nft list table ip nat` output to identify a mapping and the rules producing it; diagnose table exhaustion from its symptoms rather than mistaking it for a bandwidth problem.
-- **Root:** Argue precisely why NAT is not a firewall and what that means for outbound control; explain how translation destroys attribution and what logging restores it; and describe why application-layer helpers, IPsec integrity checks, and carrier-grade NAT all follow from the same violated assumption that addresses are stable end-to-end.
+- Explain why NAT was needed, why source ports are rewritten, and what the translation table stores.
+- Distinguish static NAT, PAT, and port forwarding; read `conntrack` and `nft list table ip nat` output to identify a mapping and the rules producing it; diagnose table exhaustion from its symptoms rather than mistaking it for a bandwidth problem.
+- Argue precisely why NAT is not a firewall and what that means for outbound control; explain how translation destroys attribution and what logging restores it; and describe why application-layer helpers, IPsec integrity checks, and carrier-grade NAT all follow from the same violated assumption that addresses are stable end-to-end.
 
 ---
 > 🔼 Up: [[Addressing & Subnetting]]

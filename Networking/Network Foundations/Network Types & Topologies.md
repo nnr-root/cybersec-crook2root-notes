@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/foundations
   - type/concept
-  - level/crook
+  - difficulty/easy
 Domain:
   - "[[Network Foundations]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation & Protocol Data Units -> Network Devices & Traffic Paths -> Reachability Testing & ICMP
 
-## Start at Zero: What a Network Actually Is
+## What a Network Actually Is
 
 A **network** is two or more devices that can exchange data using an agreed set of rules. That is the whole definition. Everything else — switches, routers, subnets, firewalls — exists to answer one repeated question: *given this destination, where do I send the data next?*
 
@@ -49,6 +49,12 @@ Networks are conventionally named by geographic and administrative reach. The na
 The security consequence of this table is trust asymmetry. Devices on the same LAN historically trusted each other far more than they trusted anything outside — file shares, printer discovery, credential caching, and management protocols were all designed for a "friendly" local segment. That assumption is why a single foothold inside a LAN is disproportionately valuable, and why modern architecture pushes toward treating the local segment as hostile.
 
 An **overlay** deserves special attention because it breaks the geography intuition entirely. A VPN or software-defined overlay makes two hosts on different continents behave as if they share a segment. Everything you conclude about trust from a physical diagram must therefore be re-checked against the logical topology.
+
+**The deliberate break:** look at any modern office and you will see a star — every desk cabled back to a switch. So the reasonable conclusion is that the topology is a star.
+
+Physically, yes. Logically, it depends entirely on what the switch does, and that is the distinction that matters for security. A hub wired in exactly the same star is a logical **bus**: every frame reaches every port. A switch with one VLAN is a single **broadcast domain**, which is why ARP spoofing works across the whole floor. The cabling diagram tells you where to send an engineer; it tells you almost nothing about who can hear whom.
+
+**How you'd spot it:** ping a broadcast address, or watch a capture with no filter. If you see traffic between two hosts that are not you, you are in a shared segment, not an isolated one — regardless of what the cable map says.
 
 ## Topology: Physical Shape versus Logical Behaviour
 
@@ -107,32 +113,32 @@ Expected excerpt:
 
 ```text
 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP
-    inet 192.168.10.24/24 brd 192.168.10.255 scope global eth0
+    inet 10.10.10.14/24 brd 10.10.10.255 scope global eth0
 
-default via 192.168.10.1 dev eth0 proto dhcp metric 100
-192.168.10.0/24 dev eth0 proto kernel scope link src 192.168.10.24
+default via 10.10.10.1 dev eth0 proto dhcp metric 100
+10.10.10.0/24 dev eth0 proto kernel scope link src 10.10.10.14
 
-192.168.10.1 dev eth0 lladdr 00:1a:2b:3c:4d:5e REACHABLE
+10.10.10.1 dev eth0 lladdr 00:00:5e:00:53:01 REACHABLE
 ```
 
 Three facts fall out of that output, and each one answers a scope question:
 
-- `192.168.10.24/24` means this host's own segment holds 254 usable addresses. That is the set of hosts reachable without any routing decision.
-- `default via 192.168.10.1` identifies the gateway — the only exit from this broadcast domain, and therefore the natural place for policy.
+- `10.10.10.14/24` means this host's own segment holds 254 usable addresses. That is the set of hosts reachable without any routing decision.
+- `default via 10.10.10.1` identifies the gateway — the only exit from this broadcast domain, and therefore the natural place for policy.
 - The neighbour entry proves the gateway answered at the link layer, which is a stronger statement than "an address is configured."
 
 To enumerate live hosts within a block you are explicitly authorized to test, use a host-discovery sweep:
 
 ```bash
-nmap -sn 192.168.10.0/24
+nmap -sn 10.10.10.0/24
 ```
 
 Expected excerpt:
 
 ```text
-Nmap scan report for 192.168.10.1
+Nmap scan report for 10.10.10.1
 Host is up (0.00089s latency).
-Nmap scan report for 192.168.10.24
+Nmap scan report for 10.10.10.14
 Host is up (0.000058s latency).
 Nmap done: 256 IP addresses (2 hosts up) scanned in 2.41 seconds
 ```
@@ -144,7 +150,7 @@ Nmap done: 256 IP addresses (2 hosts up) scanned in 2.41 seconds
 The troubleshooting workflow is to change the evidence type rather than repeat the same probe:
 
 ```bash
-nmap -sn -PR 192.168.10.0/24        # ARP-based discovery, local segment only
+nmap -sn -PR 10.10.10.0/24        # ARP-based discovery, local segment only
 ```
 
 ARP discovery is far harder to suppress on a local segment because a host that ignores ARP cannot receive traffic at all. If ARP finds hosts that ICMP missed, the correct conclusion is "ICMP is filtered," not "the network changed."
@@ -161,34 +167,13 @@ Scope and shape determine three things that matter to both attackers and defende
 
 All enumeration described here is limited to systems within an authorized scope. Host discovery generates traffic that is logged, and sweeping ranges outside an agreed boundary is both detectable and out of bounds.
 
-## Authorized Lab: Prove a Boundary Exists
+## Summary
 
-Use two virtual machines on an isolated hypervisor network you control.
+You should now be able to:
 
-1. Place both VMs on the same virtual switch. Record `ip addr` and `ip route` on each.
-2. From VM-A, run `nmap -sn -PR <segment>/24` and confirm VM-B appears.
-3. Move VM-B to a second virtual switch with its own subnet and a router between the two.
-4. Repeat the ARP-based sweep from VM-A. VM-B must now be absent, because ARP does not cross a routed boundary.
-5. Repeat with `nmap -sn <VM-B subnet>/24`. VM-B should reappear, because ICMP does route.
-6. Add a deny rule on the router for traffic between the two subnets and repeat step 5.
-7. Remove the rule and restore both VMs to their original switch.
-
-Expected interpretation:
-
-```text
-Same segment, ARP sweep      -> host found   (no routing decision required)
-Routed segments, ARP sweep   -> host absent  (proves a broadcast-domain boundary)
-Routed segments, ICMP sweep  -> host found   (proves routing works)
-Routed + deny rule, ICMP     -> host absent  (proves the control, not the topology)
-```
-
-Steps 4 and 6 produce the same observable result — "host not found" — for completely different reasons. Distinguishing them is the entire skill.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Define node, link, segment, and broadcast domain; name the common topologies and explain why star-of-stars dominates.
-- **Operator:** Read `ip addr`, `ip route`, and `ip neigh` to state your own segment, gateway, and reachable scope; run an authorized sweep and explain why ARP and ICMP discovery can disagree.
-- **Root:** Given a topology diagram, identify every enforcement point and every place where an overlay could bypass one; design a segmentation scheme that still constrains an attacker holding valid credentials, and specify where sensors must sit to observe intra-segment movement.
+- Define node, link, segment, and broadcast domain; name the common topologies and explain why star-of-stars dominates.
+- Read `ip addr`, `ip route`, and `ip neigh` to state your own segment, gateway, and reachable scope; run an authorized sweep and explain why ARP and ICMP discovery can disagree.
+- Given a topology diagram, identify every enforcement point and every place where an overlay could bypass one; design a segmentation scheme that still constrains an attacker holding valid credentials, and specify where sensors must sit to observe intra-segment movement.
 
 ---
 > 🔼 Up: [[Network Foundations]]

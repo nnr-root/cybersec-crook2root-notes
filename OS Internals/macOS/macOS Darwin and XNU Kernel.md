@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/macos
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[macOS]]"
 Color: "#FFA500"
@@ -19,7 +19,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File System -> macOS Processes & Daemons -> macOS Identity, Keychain & Credentials -> macOS Networking Internals -> macOS Security Mechanisms -> macOS Binaries & Runtime Loading -> macOS Observability, Incident Response & Forensics
 
-## Crook — Build the Kernel Mental Model
+## Build the Kernel Mental Model
 
 ### Vocabulary & First Mental Model
 
@@ -48,7 +48,7 @@ flowchart TB
 > [!tip] The analogy, and where it breaks
 > A building constructed from two architectural traditions joined at the foundation — one contributing the messaging and memory design, the other the familiar Unix interfaces. The analogy breaks because the join is not cosmetic: the same operation can be reached through either lineage with different semantics, which is why macOS internals surprise engineers who assume it is simply BSD.
 
-## Operator — Mach Tasks, Threads, VM & IPC
+## Mach Tasks, Threads, VM & IPC
 
 A **task** is a resource container: an address space, port namespace, and collection of threads. It resembles a process but does not itself execute. A **thread** owns register state, scheduling state, and a kernel stack. BSD overlays a process identity, credentials, signals, and file descriptors onto the Mach task. Context switching saves one thread's architectural state and restores another's; on Apple Silicon this includes security-relevant state such as pointer-authentication context.
 
@@ -91,7 +91,7 @@ Pages wired down:                       121887.
 
 The 16 KiB page size commonly seen on Apple Silicon changes exploit assumptions originally developed around 4 KiB Intel pages. `vmmap` also reveals shared-cache mappings, guard pages, stacks, heaps, and code-signature-backed executable regions.
 
-## Root — Zones, Drivers & Apple Silicon Trust
+## Zones, Drivers & Apple Silicon Trust
 
 XNU allocates many fixed-size kernel objects from **zones**. A zone groups objects of one type, controls caching, and supports accounting and hardening. Zone confusion, stale pointers, double frees, and out-of-bounds access historically turned memory-safety defects into kernel compromise. Modern kernels add typed zones, randomization, guard pages, poisoning, and stronger metadata checks. Understanding the allocator remains essential when interpreting a panic report: the faulting address, zone name, allocation backtrace, and PAC failure can distinguish corruption from a driver bug.
 
@@ -129,101 +129,6 @@ ls -lt /Library/Logs/DiagnosticReports/*panic* 2>/dev/null | head
 
 Do not disable SIP or load an unsigned extension merely to make a lab easier. A safe lab uses built-in observability and a disposable test account.
 
-## Hands-On Lab: See Both Halves of the Hybrid Kernel
-
-> [!info] Runs on any Mac — read-only inspection in Terminal
-> macOS joins a Mach core to a BSD layer. This lab shows both lineages on one system.
-
-### Step 1 — Confirm the kernel and its two traditions
-
-```bash
-uname -v
-sysctl kern.ostype kern.osrelease
-```
-
-```text
-Darwin Kernel Version 24.0.0: root:xnu-11215.1.10~2/RELEASE_ARM64_T6000
-kern.ostype: Darwin
-kern.osrelease: 24.0.0
-```
-
-`xnu` is the kernel name — literally "X is Not Unix." The `T6000` marks Apple Silicon. Darwin is the open-source core beneath the macOS product name, exactly as the Linux kernel sits beneath a distribution.
-
-### Step 2 — Reach the BSD lineage through familiar syscalls
-
-```bash
-sysctl kern.maxproc kern.maxfiles
- psrap() { ps -Ao pid,ppid,comm | head -3; }; psrap
-```
-
-```text
-kern.maxproc: 2000
-kern.maxfiles: 122880
-```
-
-```text
-  PID  PPID COMM
-    1     0 /sbin/launchd
-   88     1 /usr/libexec/logd
-```
-
-`ps`, `sysctl`, and PID 1 are the BSD half — the Unix interfaces engineers already know. PID 1 here is `launchd`, macOS's init, and everything descends from it.
-
-### Step 3 — Observe the Mach half: ports and messaging
-
-```bash
-sudo lsmp -p 1 2>/dev/null | head -6 || echo "lsmp needs sudo; showing task info instead"
-host_info() { sysctl hw.ncpu hw.memsize; }; host_info
-```
-
-```text
-hw.ncpu: 10
-hw.memsize: 17179869184
-```
-
-Mach's world is **ports and messages**, not files — the IPC substrate the BSD layer is built on. The same operation can often be reached through either lineage with different semantics, which is what surprises engineers who assume macOS is simply BSD.
-
-### Step 4 — Watch copy-on-write via fork
-
-```bash
-python3 - << 'EOF'
-import os
-data = bytearray(50*1024*1024)
-for i in range(0, len(data), 4096): data[i] = 1
-pid = os.fork()
-if pid == 0:
-    print("child sees shared data, first byte:", data[0])
-    os._exit(0)
-os.wait()
-print("parent unchanged, first byte:", data[0])
-EOF
-```
-
-```text
-child sees shared data, first byte: 1
-parent unchanged, first byte: 1
-```
-
-Mach virtual memory shares pages copy-on-write across `fork()` — the child pays for a page only when it writes. This is the same mechanism as Linux, implemented through Mach's `vm_map` regions.
-
-### Step 5 — Confirm Apple Silicon security posture
-
-```bash
-sysctl hw.optional.arm.FEAT_PAuth 2>/dev/null || echo "not Apple Silicon"
-csrutil status
-```
-
-```text
-hw.optional.arm.FEAT_PAuth: 1
-System Integrity Protection status: enabled.
-```
-
-`FEAT_PAuth` is pointer authentication — hardware signing of pointers that frustrates memory-corruption exploits, unique to Apple Silicon. SIP being enabled means even root cannot modify protected system locations.
-
-**Cleanup:** none — every command read state only.
-
-**What you should now be able to do:** name XNU's two lineages, reach the BSD layer through standard syscalls, explain Mach ports and copy-on-write, and confirm Apple Silicon protections.
-
 ## Cybersecurity Implications
 
 - **Memory acquisition:** task-port policy determines whether one process may inspect another; root alone is not always sufficient.
@@ -232,11 +137,13 @@ System Integrity Protection status: enabled.
 - **EDR architecture:** Endpoint Security and Network Extension are policy-controlled user-space interfaces, while kernel events originate in XNU.
 - **Forensics:** Darwin build, CPU architecture, page size, boot policy, and third-party extensions are essential case context.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Explain why XNU is hybrid and distinguish a BSD process from a Mach task.
-- **Operator:** Interpret task, thread, VM-region, port-right, System Extension, and panic-report evidence using native commands.
-- **Root:** Trace an event across libSystem, BSD or Mach entry, XNU policy, driver interaction, and Apple Silicon hardware trust—then identify the precise security boundary that allowed or denied it.
+You should now be able to:
+
+- Explain why XNU is hybrid and distinguish a BSD process from a Mach task.
+- Interpret task, thread, VM-region, port-right, System Extension, and panic-report evidence using native commands.
+- Trace an event across libSystem, BSD or Mach entry, XNU policy, driver interaction, and Apple Silicon hardware trust—then identify the precise security boundary that allowed or denied it.
 
 ---
 > 🔼 Up: [[macOS]]

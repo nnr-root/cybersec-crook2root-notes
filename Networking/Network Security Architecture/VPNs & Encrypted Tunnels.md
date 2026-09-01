@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/secarch
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Network Security Architecture]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Firewall Architecture & Policy -> Network Segmentation & Zero Trust -> VPNs & Encrypted Tunnels -> Intrusion Detection & Network Monitoring -> Egress Control & Web Proxies -> Network Access Control
 
-## Start at Zero: A Private Network Over a Public One
+## A Private Network Over a Public One
 
 A **VPN (Virtual Private Network)** makes two endpoints on an untrusted network — usually the Internet — behave as if they were on one private network, by building an encrypted **tunnel** between them. Traffic entering the tunnel is encrypted, carried across the public path unreadable, and decrypted at the far end.
 
@@ -70,7 +70,7 @@ interface: wg0
   listening port: 51820
 peer: <peer key>
   endpoint: 203.0.113.44:51820
-  allowed ips: 10.8.0.0/24
+  allowed ips: 10.10.60.0/24
   latest handshake: 41 seconds ago
   transfer: 1.24 MiB received, 892 KiB sent
 ```
@@ -115,34 +115,13 @@ There is no universally correct choice; it depends on whether the priority is vi
 
 All VPN configuration and testing described here must target only systems within an authorized scope. Establishing tunnels into networks you do not control, or probing VPN concentrators, requires explicit authorization.
 
-## Authorized Lab: Build a Tunnel and Test Its Reach
+## Summary
 
-Use two lab networks joined by a VPN you configure (WireGuard is the simplest to stand up), plus a client.
+You should now be able to:
 
-1. **Establish a tunnel.** Configure a WireGuard tunnel between two lab gateways and confirm with `wg show` that the handshake completes and traffic flows. Capture the underlying traffic and confirm it is encrypted and appears only as endpoint-to-endpoint packets.
-2. **Observe encapsulation overhead.** Compare the maximum unfragmented payload directly versus through the tunnel, confirming the tunnel reduces it by the encapsulation overhead — linking back to the MTU material.
-3. **Test the allowed-ips control.** Set a peer's allowed addresses narrowly and confirm it can reach only those; broaden it and confirm the reach expands — demonstrating that a too-broad tunnel is over-permissive.
-4. **Compare split and full tunnel.** Configure a remote-access client for split tunnel and confirm corporate traffic uses the tunnel while Internet traffic goes direct; switch to full tunnel and confirm all traffic now traverses the concentrator and is subject to its egress policy.
-5. **Demonstrate the extended-trust risk.** With the tunnel up, simulate a compromised remote device initiating a connection into the corporate network and confirm the VPN carries it — showing that the tunnel extends trust to the endpoint. Then add a per-resource authorization check (zero-trust style) and confirm the tunnel alone no longer grants access.
-6. **Add MFA and confirm** the tunnel cannot be established with a password alone.
-7. **Cleanup.** Tear down the tunnel and restore baseline configuration.
-
-Expected interpretation:
-
-```text
-Tunnel up        -> traffic encrypted; underlying network sees only endpoint-to-endpoint
-Encapsulation    -> usable payload reduced by tunnel overhead (MTU consequence)
-allowed-ips      -> defines exactly what the peer may reach; broad = over-permissive
-Full vs split    -> visibility/control versus performance; a real trade-off
-Compromised device -> VPN carries the attacker in; trust extended to the endpoint
-Per-resource authz -> tunnel completion no longer sufficient for access (zero trust)
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what a VPN does and how encapsulation carries private traffic across a public network; distinguish site-to-site from remote-access.
-- **Operator:** Compare IPsec, WireGuard, and TLS VPNs by layer and character; read tunnel state, explain the `allowed ips` control, and describe the split-versus-full-tunnel trade-off.
-- **Root:** Explain why a VPN extends the trust boundary to the remote device and how that motivates zero trust; argue why the concentrator is a prime target requiring MFA and priority patching, and how the same encapsulation that protects traffic can hide exfiltration past egress controls.
+- Explain what a VPN does and how encapsulation carries private traffic across a public network; distinguish site-to-site from remote-access.
+- Compare IPsec, WireGuard, and TLS VPNs by layer and character; read tunnel state, explain the `allowed ips` control, and describe the split-versus-full-tunnel trade-off.
+- Explain why a VPN extends the trust boundary to the remote device and how that motivates zero trust; argue why the concentrator is a prime target requiring MFA and priority patching, and how the same encapsulation that protects traffic can hide exfiltration past egress controls.
 
 ---
 > 🔼 Up: [[Network Security Architecture]]

@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/theory
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[OS Theory and Architecture]]"
 Color: "#FFA500"
@@ -206,90 +206,6 @@ File carving from unallocated space can recover recognizable content without ori
 
 Authorized anti-forensic testing should validate defensive resilience with harmless canary files and approved scope. The goal is to determine whether remote evidence and snapshots survive local manipulation—not to erase operational logs.
 
-## Hands-On Lab: The Page Cache, `fsync`, and the Lie of a Fast Write
-
-> [!info] Runs on one Linux machine — uses `dd`, `free`, and coreutils
-> Everything is written under `/tmp` and removed in Step 5. Dropping caches is safe but affects performance briefly.
-
-### Step 1 — Write 512 MB and watch it not reach the disk
-
-```bash
-sync; dd if=/dev/zero of=/tmp/iolab.bin bs=1M count=512 2>&1 | tail -1
-```
-
-```text
-512+0 records in
-512+0 records out
-536870912 bytes (537 MB, 512 MiB) copied, 0.183 s, 2.9 GB/s
-```
-
-**2.9 GB/s** — far faster than most disks can physically write. The write did not reach storage; it landed in the **page cache** in RAM and `dd` returned immediately. Confirm the memory it occupies:
-
-```bash
-free -m | head -2
-```
-
-```text
-               total        used        free      shared  buff/cache   available
-Mem:           15884        2104        9832          12        3948       13421
-```
-
-`buff/cache` holds your 512 MB. The kernel deliberately deferred the real work.
-
-### Step 2 — Force it to disk and see the true speed
-
-```bash
-rm -f /tmp/iolab.bin; sync
-dd if=/dev/zero of=/tmp/iolab.bin bs=1M count=512 conv=fsync 2>&1 | tail -1
-```
-
-```text
-536870912 bytes (537 MB, 512 MiB) copied, 1.94 s, 277 MB/s
-```
-
-Same data, **10× slower** — because `conv=fsync` waits for the device to confirm. The difference between these two numbers is the entire reason a "successful" write can still be lost in a power cut: without a flush, success means *accepted into cache*, not *stored*.
-
-### Step 3 — Prove the cache is what made reads fast
-
-```bash
-sync; echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null
-dd if=/tmp/iolab.bin of=/dev/null bs=1M 2>&1 | tail -1      # cold read
-dd if=/tmp/iolab.bin of=/dev/null bs=1M 2>&1 | tail -1      # warm read
-```
-
-```text
-536870912 bytes (537 MB, 512 MiB) copied, 1.71 s, 314 MB/s
-536870912 bytes (537 MB, 512 MiB) copied, 0.096 s, 5.6 GB/s
-```
-
-The first read touched the disk; the second came from RAM at **18× the speed**. Nothing about the file changed — only whether it was cached. This is why benchmarks that forget to drop caches produce meaningless numbers.
-
-### Step 4 — Bypass the cache entirely with direct I/O
-
-```bash
-dd if=/tmp/iolab.bin of=/dev/null bs=1M iflag=direct 2>&1 | tail -1
-```
-
-```text
-536870912 bytes (537 MB, 512 MiB) copied, 1.68 s, 320 MB/s
-```
-
-With `iflag=direct` the read is slow **even though the file was just cached**, because direct I/O deliberately bypasses the page cache. Databases use this to manage their own caching rather than let the kernel guess — and it explains why a database can be slower than a naive file copy while being far safer about durability.
-
-### Step 5 — Cleanup
-
-```bash
-rm -f /tmp/iolab.bin; sync; ls -l /tmp/iolab.bin 2>&1
-```
-
-```text
-ls: cannot access '/tmp/iolab.bin': No such file or directory
-```
-
-The error confirms removal. Cache pages for a deleted file are freed automatically.
-
-**What you should now be able to do:** explain from your own timings why a write that "succeeded" may not be durable, and why any I/O measurement is meaningless without stating the cache state.
-
 ## 11. Troubleshooting & Evidence Interpretation
 
 I/O troubleshooting must identify the layer at which progress or correctness fails. An application timeout may originate in userspace buffering, a lock, VFS path resolution, filesystem writeback, a block queue, a driver reset, controller firmware, the physical medium, or a remote server. Start at the application and move downward only when evidence justifies it.
@@ -326,11 +242,13 @@ This combination indicates tasks stalled for I/O while the device queue remained
 
 For pathname failures, remember that access is checked while traversing every directory component and may be further constrained by ACLs, mandatory access control, mount options, namespaces, and server-side identity mapping. For durability failures, reconstruct the exact order of `write`, `fsync`, `rename`, and directory synchronization calls. For suspected deletion, separate four questions: is the name gone, is the inode still referenced, have blocks been reallocated, and do snapshots or remote copies retain the content? Expert analysis states which layer made which guarantee—and which guarantee was never present.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Trace `open/read/write/close` through VFS; distinguish inode, dentry, file object, and descriptor; explain polling, interrupts, and DMA.
-- **Operator:** Interpret page-cache behavior, open-but-deleted files, device queues, interrupt distribution, IOMMU purpose, journal recovery, and `fsync()` boundaries using practical evidence.
-- **Root:** Design crash-consistent updates; reason about descriptor-ring ownership, DMA isolation, namespace races, SSD forensic limits, and multi-layer buffering; reconstruct an incident timeline from independent filesystem, device, and remote artifacts.
+You should now be able to:
+
+- Trace `open/read/write/close` through VFS; distinguish inode, dentry, file object, and descriptor; explain polling, interrupts, and DMA.
+- Interpret page-cache behavior, open-but-deleted files, device queues, interrupt distribution, IOMMU purpose, journal recovery, and `fsync()` boundaries using practical evidence.
+- Design crash-consistent updates; reason about descriptor-ring ownership, DMA isolation, namespace races, SSD forensic limits, and multi-layer buffering; reconstruct an incident timeline from independent filesystem, device, and remote artifacts.
 
 ---
 > 🔼 Up: [[OS Theory and Architecture]]

@@ -7,7 +7,7 @@
 *From `Crook` — an absolute novice fumbling in the dark — to `Root` — the master who owns the machine, the network, and their own tracks.*
 
 ![Domains](https://img.shields.io/badge/Domains-12-8A2BE2?style=for-the-badge)
-![Notes](https://img.shields.io/badge/Notes-76%2B-00BFFF?style=for-the-badge)
+![Notes](https://img.shields.io/badge/Notes-392-00BFFF?style=for-the-badge)
 ![Built for](https://img.shields.io/badge/Built%20for-Obsidian-7C3AED?style=for-the-badge&logo=obsidian)
 ![Focus](https://img.shields.io/badge/Focus-Offensive%20%7C%20Defensive-DC143C?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Educational-50C878?style=for-the-badge)
@@ -25,6 +25,25 @@
 ```
 
 Every note declares exactly **one** parent. There are **no lateral links between master notes** — only clean, vertical, four-level hierarchy. The result is a knowledge base you can *see*: open the Obsidian Graph View and twelve distinct, colour-separated constellations light up, each a domain you can master one branch at a time.
+
+---
+
+## 📖 What This Repository Is
+
+This is the **public documentation repository**: pure learning material, written to take a reader from zero to mastery by reading.
+
+Every technical note is a **room** read top to bottom. The opening section assumes nothing. Each section builds on the ones above it. By the last one you are looking at internals, edge cases and failure modes.
+
+| ✅ What lives here | ❌ What does not |
+|:--|:--|
+| Complete technical explanation | Labs and exercises |
+| **Worked examples** — real commands, real output, field-by-field interpretation | Practice questions and quizzes |
+| Mermaid diagrams, tables, ASCII layouts | CTF challenges and flags |
+| Failure modes and troubleshooting | Progress tracking and scoring |
+
+> **The interactive platform is a separate, private repository.** It consumes this repo as its source of content and images, and adds the labs, per-room practice questions, and CTFs on top. This repo teaches; that one assesses. Keeping the boundary clean keeps both simple.
+
+Difficulty is declared per note — `difficulty/easy`, `difficulty/medium`, `difficulty/hard`, and `difficulty/info` for navigation hubs — so a reader always knows what a room assumes.
 
 ---
 
@@ -69,7 +88,7 @@ flowchart TD
 
 ## ⚙️ Real-World Application
 
-This vault is academic and **optimized for practice**:
+This vault is academic and **written for practitioners**:
 
 - **⚔️ Offensive research on bare-metal, native Linux.** The material assumes a real attack host — e.g. a **ThinkPad running BlackArch** — where native hardware access unlocks Wi-Fi monitor mode & injection, full-speed GPU hash cracking, and USB/SDR tooling that virtual machines cripple. Bare-metal isn't a preference here; it's a capability.
 - **🏗️ Engineering secure backends & architectures.** The DevSecOps, Application Security, Cryptography, and Tooling trees are written for builders — hardening containers, choosing the right KDF, defending APIs, and designing systems that survive the very attacks documented in the offensive trees.
@@ -105,8 +124,9 @@ git clone https://github.com/s4l1hs/cybersec-crook2root-notes.git
 |:--|:--|
 | 🗂️ **Domains** | 12 colour-coded trees |
 | 🌿 **Structure** | Root → Hub → Branch → Master (4 levels, strictly hierarchical) |
-| 📄 **Notes** | 76+ interconnected Markdown notes |
-| 🖼️ **Assets** | 200+ diagrams & images (self-authored SVGs + localized graphics) |
+| 📄 **Notes** | 392 Markdown notes · 307 technical leaves |
+| 🧩 **Format** | Progressive sections per room, worked examples, per-note difficulty |
+| 🖼️ **Visuals** | Mermaid only — diffable, theme-aware, zero binary assets |
 | 🔗 **Integrity** | 0 broken links · 0 broken anchors · 0 broken images |
 
 ---
@@ -122,9 +142,10 @@ Crook2Root documents offensive techniques **so they can be understood, detected,
 Crook2Root is designed to grow with the community. The four newest domains — **Cloud Security, Reverse Engineering & Malware, Hardware & IoT, and AI Security** — are live scaffolds ready for their first branches. Contributions that respect the architecture are welcome:
 
 1. One note = one topic; give it a single parent (`Domain:` frontmatter).
-2. Tag it with its domain's `#tree/*` tag so it inherits the colour.
+2. Tag it with its domain's `#tree/*` tag so it inherits the colour, plus one `difficulty/*` tag.
 3. **No lateral links between master notes** — reference other topics in **bold**, not `[[wikilinks]]`.
-4. Keep it *crook2root*: start from zero, end at mastery, show real commands.
+4. Structure content as plain `## Descriptive Title` sections in teaching order, ending with a `## Summary`.
+5. Teach with **worked examples** — real commands and their real output. No labs, no questions, no flags; those belong in the website repo.
 
 Read the complete [Contribution Guide](CONTRIBUTION.md) and [Crook2Root Authoring Standard](docs/Crook2Root%20Authoring%20Standard.md) before opening a pull request.
 

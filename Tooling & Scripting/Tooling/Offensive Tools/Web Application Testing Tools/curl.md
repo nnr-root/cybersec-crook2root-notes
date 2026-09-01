@@ -1,7 +1,7 @@
 ---
 title: "curl"
 aliases: ["curl"]
-tags: [tree/tooling, cyber/tooling/offensive/web/curl, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/offensive/web/curl, type/tool, difficulty/medium]
 Domain: "[[Web Application Testing Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ curl is the universal command-line HTTP client — the tool that lets you *hand-
 ## Parent Learning Order
 curl -> Postman -> Burp Suite -> OWASP ZAP -> Nikto -> WPScan -> SQLmap
 
-## Crook — The Mental Model
+## Four parts of a request, four parts of a response
 
 Every web interaction is a **request** that produces a **response**, and each has the same four parts: a start line, headers, a blank line, and an optional body. curl builds the request; the flags map one-to-one onto the parts.
 
-![[tool_http_anatomy.svg]]
-
 Read the diagram left to right and you have curl's core flags: `-X` sets the method, `-H` adds a header, `-d` sends a body, and `-i` shows you the response status line and headers. Understand this picture and curl stops being a wall of flags and becomes "type out the message you want to send."
 
-## Operator — Make It Work
+## The everyday verbs, starting with -I
 
 The everyday verbs. `-I` fetches only headers (a `HEAD` request) — the fastest way to fingerprint a server:
 
@@ -48,6 +46,15 @@ www-authenticate: Bearer
 {"error":"invalid credentials"}
 ```
 
+Read what rejected that, because it decides where you look next. The `401` came
+from the application, not from nginx and not from TLS: the request completed, the
+server parsed the JSON body, looked `alice` up, and the credential check failed.
+`www-authenticate: Bearer` is the server naming the scheme it wants — so the
+endpoint expects a token, and username/password in the body was never going to
+work. A `401` from the proxy would have carried no `www-authenticate` and usually
+an HTML body; a TLS failure would never have produced an HTTP status at all.
+Distinguishing those three is most of what `-i` is for.
+
 The flags you will use constantly:
 
 | Flag | Does |
@@ -69,15 +76,15 @@ operator@lab:~$ curl -s -o /dev/null -w 'code=%{http_code} time=%{time_total}s s
 code=200 time=0.142s size=1256B
 ```
 
-## Root — Internals & The Deliberate Break
+## What -k costs you, and why that is the lesson
 
 curl exposes the protocol *honestly*, which is exactly why it teaches. Consider TLS verification — the difference between `-k` and its absence is a security lesson:
 
 ```shell-session
-operator@lab:~$ curl -sI https://93.0.2.10
+operator@lab:~$ curl -sI https://192.0.2.10
 curl: (60) SSL certificate problem: unable to get local issuer certificate /
-      subjectAltName does not match 93.0.2.10
-operator@lab:~$ curl -skI https://93.0.2.10
+      subjectAltName does not match 192.0.2.10
+operator@lab:~$ curl -skI https://192.0.2.10
 HTTP/2 200
 ```
 
@@ -85,11 +92,13 @@ HTTP/2 200
 
 Other internals worth mastering: curl does **not** follow redirects unless you pass `-L` (so a `301` shows you the redirect, not the destination — useful for testing open redirects); `-d` URL-encodes form data but `--data-raw` does not (matters for injection payloads); and `--resolve` / `-H 'Host:'` let you test **virtual-host routing** and reach a specific backend behind a load balancer. For untrusted input, remember curl is a *shell* command — never build a curl line by concatenating unescaped user data (a lesson from **Bash**).
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** What are the four parts of an HTTP request, and which curl flag builds each?
-- **Operator:** You need the status code and response time of an endpoint, nothing else. Write the curl command.
-- **Root:** Explain what `-k` disables and why reaching for it reflexively is dangerous, using the SAN-mismatch failure as your example.
+You should now be able to:
+
+- What are the four parts of an HTTP request, and which curl flag builds each?
+- You need the status code and response time of an endpoint, nothing else. Write the curl command.
+- Explain what `-k` disables and why reaching for it reflexively is dangerous, using the SAN-mismatch failure as your example.
 
 ---
 > 🔼 Up: [[Web Application Testing Tools]]

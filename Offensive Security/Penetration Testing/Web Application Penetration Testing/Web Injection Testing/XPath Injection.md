@@ -1,6 +1,6 @@
 ---
 title: "XPath Injection"
-tags: [tree/offensive, cyber/offensive/web/injection/xpath, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/web/injection/xpath, type/technique, difficulty/hard]
 Domain: "[[Web Injection Testing]]"
 Color: "#DC143C"
 ---
@@ -79,6 +79,13 @@ Content-Type: application/problem+json
 
 {"title":"Invalid laboratory credentials"}
 ```
+
+That `401` is the honest baseline: the XML engine accepted the expression,
+evaluated it against the document, and returned an empty node set, which the
+application reported as a failed login. Nothing was blocked and nothing errored —
+the expression simply matched no node. Establishing that first is what makes the
+next result meaningful, because from here the only variable is the *shape of the
+expression*, so any change in response comes from how the engine parsed it.
 
 The deliberately vulnerable fixture contains only:
 
@@ -160,62 +167,13 @@ Useful fields include route, principal, request ID, normalized parameter type, e
 
 The team replaced string construction with a precompiled expression and bound variable, migrated authentication to the enterprise identity service, and added regression tests for quotes, brackets, operators, malformed UTF-8, duplicate fields, and alternate encodings. Purple-team replay confirmed every test value remained a literal string and no request-dependent expression compilation occurred.
 
-## Runnable Lab (one machine, `xmllint`)
+## Summary
 
-XPath injection is SQLi's XML cousin: input concatenated into a path predicate can add `or '1'='1'` and select nodes it should not. This lab uses `xmllint` (bundled with libxml2, present on macOS and most Linux) against a synthetic user document — no code to write.
+You should now be able to:
 
-**Step 1 — the synthetic directory (`users.xml`).**
-
-```xml
-<users>
-  <user><name>alice</name><pass>wonderland</pass><role>user</role></user>
-  <user><name>admin</name><pass>S3cr3t!</pass><role>admin</role></user>
-</users>
-```
-
-The app authenticates with `//user[name/text()='<INPUT>' and pass/text()='<PW>']/role/text()`.
-
-**Step 2 — a valid login returns the role.**
-
-```console
-$ xmllint --xpath "//user[name/text()='alice' and pass/text()='wonderland']/role/text()" users.xml
-user
-```
-
-**Step 3 — inject `' or '1'='1` to make the predicate always true and dump names.**
-
-```console
-$ xmllint --xpath "//user[name/text()='x' or '1'='1']/name/text()" users.xml
-alice
-admin
-```
-
-The `or '1'='1'` short-circuits every element to true — the whole node-set leaks, no credentials needed.
-
-**Step 4 — the deliberate break: an unbalanced quote.**
-
-```console
-$ xmllint --xpath "//user[name/text()='x]/role" users.xml
-XPath set is empty
-XPath error : Unfinished literal
-```
-
-`Unfinished literal` is the XPath analogue of a SQL syntax error — it confirms your input reaches the expression parser, which is itself a finding. The fix is a **precompiled expression with a bound variable** (`$name`), so input can never add a predicate.
-
-**Step 5 — cleanup:** remove the lab file.
-
-```console
-$ rm -f users.xml && ls users.xml
-ls: users.xml: No such file or directory
-```
-
-**What you should now be able to do:** build the `' or '1'='1` tautology for XPath, read an `Unfinished literal` error as parser-reachability proof, and name variable binding as the fix.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Why does `' or '1'='1` return every user?
-- **Operator:** Output is suppressed (blind). How do you turn `substring()` and `string-length()` into a boolean oracle to read one canary node?
-- **Root:** XPath 1.0 lacks a comment token like SQL's `--`. Explain how that changes payload construction versus SQL injection.
+- Why does `' or '1'='1` return every user?
+- Output is suppressed (blind). How do you turn `substring()` and `string-length()` into a boolean oracle to read one canary node?
+- XPath 1.0 lacks a comment token like SQL's `--`. Explain how that changes payload construction versus SQL injection.
 
 ---
 > 🔼 Up: [[Web Injection Testing]]

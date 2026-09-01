@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/wireless
   - type/concept
-  - level/crook
+  - difficulty/easy
 Domain:
   - "[[Wireless Networking]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Wireless Fundamentals & 802.11 -> Wi-Fi Security & WPA -> Wireless Attacks & Rogue Infrastructure -> Cellular & Long-Range Wireless -> Bluetooth & Personal-Area Networks -> Wireless Reconnaissance & Defense
 
-## Start at Zero: A Wire You Cannot See or Contain
+## A Wire You Cannot See or Contain
 
 On a wired network, a frame travels down a cable to a switch that delivers it only where it should go. To intercept it, an attacker must physically tap the cable. The wire is a boundary.
 
@@ -68,6 +68,12 @@ Expected excerpt:
 
 `freq: 2437` is channel 6; `signal: -42 dBm` is strong (closer to zero is stronger, so -42 beats -71). Reading signal strength in dBm is basic wireless literacy: roughly, -30 is excellent, -67 is usable for most things, -80 is marginal, -90 is unusable.
 
+**The deliberate break:** Wi-Fi is presented as wireless Ethernet, so it is natural to expect it to behave like a switch — each client gets its own path, and adding clients adds capacity.
+
+It behaves like a **hub on a shared half-duplex medium**. Only one device on a channel may transmit at a time; everyone else waits. Bandwidth is divided among active devices and total throughput *falls* as the room fills, because collision avoidance overhead grows. And because the medium is shared and broadcast, every device in range receives every frame — the encryption is what stops them reading it, not the topology.
+
+**How you'd spot it:** watch throughput per client as the room fills. Switched Ethernet holds steady; a Wi-Fi channel degrades for everyone.
+
 ## How Frames Share the Air
 
 Wired Ethernet detects collisions after they happen. Radio cannot — a transmitting device cannot simultaneously listen for a collision on the same frequency. So 802.11 uses **CSMA/CA (Carrier Sense Multiple Access with Collision Avoidance)**: a device listens first, and if the medium is busy, waits a random interval before trying, actively *avoiding* collisions rather than detecting them.
@@ -114,39 +120,13 @@ The sequence shows that joining a network is a conversation of management frames
 
 All scanning and capture described here must target only networks you own or are explicitly authorized to assess. Capturing wireless frames intercepts other parties' communications, and doing so on networks you do not own is unlawful.
 
-## Authorized Lab: Read the Air
+## Summary
 
-Use a wireless adapter capable of monitor mode and a lab AP you control. Do not capture traffic from networks you do not own.
+You should now be able to:
 
-1. **Scan for networks.** Use the scan command above and identify your lab AP's SSID, channel (from frequency), and signal strength. Note other networks' channels and observe 2.4 GHz overlap.
-2. **Enter monitor mode** and capture management frames on your AP's channel:
-
-```bash
-sudo iw dev wlan0 set type monitor
-sudo tcpdump -i wlan0 -nn -c 20 'type mgt'
-```
-
-3. **Identify beacons.** Confirm your AP's beacon frames appear many times per second, advertising the SSID and capabilities — the continuous "I am here."
-4. **Watch an association.** Connect a lab client and capture the probe, authentication, and association exchange, confirming these management frames are visible before any encryption.
-5. **Observe probe leakage.** Capture a client's probe requests and confirm it reveals names of networks it has previously joined — the tracking concern.
-6. **Demonstrate the shared medium.** Connect several clients and observe throughput per client fall as more devices contend for the channel, confirming bandwidth is shared, not per-device.
-7. **Cleanup.** Return the adapter to managed mode and stop the capture.
-
-Expected interpretation:
-
-```text
-Scan            -> SSIDs, channels, signal in dBm; 2.4 GHz channels overlap
-Beacons         -> the AP continuously advertises itself and its security
-Association     -> management frames visible before encryption begins
-Probe requests  -> a client leaks names of networks it remembers
-Shared medium   -> per-client throughput drops as devices contend for the air
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why wireless has no physical boundary, what an SSID and a beacon frame are, and why bandwidth is shared among devices on a channel.
-- **Operator:** Scan for networks and read channel and signal strength; capture management frames and identify beacons, probes, and the association exchange, explaining what is visible before encryption.
-- **Root:** Explain why unauthenticated management frames enable deauthentication and handshake-capture attacks and what Protected Management Frames fix; argue why hidden SSIDs and MAC filtering are obscurity rather than control, and why signal reach is a measurable attack surface.
+- Explain why wireless has no physical boundary, what an SSID and a beacon frame are, and why bandwidth is shared among devices on a channel.
+- Scan for networks and read channel and signal strength; capture management frames and identify beacons, probes, and the association exchange, explaining what is visible before encryption.
+- Explain why unauthenticated management frames enable deauthentication and handshake-capture attacks and what Protected Management Frames fix; argue why hidden SSIDs and MAC filtering are obscurity rather than control, and why signal reach is a measurable attack surface.
 
 ---
 > 🔼 Up: [[Wireless Networking]]

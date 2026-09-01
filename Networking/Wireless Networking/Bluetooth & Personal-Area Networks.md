@@ -5,9 +5,13 @@ tags:
   - tree/networking
   - cyber/networking/wireless
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Wireless Networking]]"
+thread-exempt:
+  - "3B:1F:04: a BLE device address, not an Ethernet MAC — the note discusses address randomisation, which 00:00:5E would misrepresent"
+  - "4C:87:5D: same, a second BLE device address"
+  - "6F:2C:19: same, a third BLE device address"
 Color: "#42D4F4"
 ---
 
@@ -19,7 +23,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Wireless Fundamentals & 802.11 -> Wi-Fi Security & WPA -> Wireless Attacks & Rogue Infrastructure -> Cellular & Long-Range Wireless -> Bluetooth & Personal-Area Networks -> Wireless Reconnaissance & Defense
 
-## Start at Zero: The Network Around a Person
+## The Network Around a Person
 
 A **PAN (Personal-Area Network)** connects devices within a few metres of a person. **Bluetooth** is its dominant technology, and it comes in two quite different forms:
 
@@ -67,6 +71,61 @@ flowchart TD
 
 **Range is greater than assumed.** "It's only a few metres" is a false comfort. With a directional antenna and amplification, an attacker can reach Bluetooth devices from far beyond the nominal range. Short range raises the effort but is not a boundary, exactly as Wi-Fi's walls are not a boundary.
 
+## Worked Example: What a Device Broadcasts Before You Connect
+
+The personal-area attack surface is easiest to grasp by looking at what devices
+emit continuously, to anyone, with no connection and no pairing.
+
+> [!note] Representative output
+> Reconstructed from a lab of this shape rather than copied from one capture. Field layouts and flag names match the named tool; addresses and identifiers are synthetic.
+
+**Classic discovery.** A scan names the devices in range and tracks their signal
+strength:
+
+```shell-session
+analyst@lab:~$ bluetoothctl
+[bluetooth]# scan on
+Discovery started
+[NEW] Device 4C:87:5D:2A:11:E9 Wireless Earbuds
+[NEW] Device 3B:1F:04:9C:77:A2 Car-Audio-8842
+[CHG] Device 4C:87:5D:2A:11:E9 RSSI: -54
+[CHG] Device 4C:87:5D:2A:11:E9 RSSI: -41
+```
+
+Two things are already available without any interaction: a stable address and a
+name that often describes the product, the owner, or both. The falling-then-rising
+`RSSI` is a crude distance signal — enough to tell that the device is approaching.
+
+**Low-energy advertising, in detail.** `btmon` shows the raw advertising reports
+that BLE devices broadcast on a fixed interval:
+
+```shell-session
+analyst@lab:~$ sudo btmon
+> HCI Event: LE Meta Event (0x3e) plen 42
+      LE Advertising Report (0x02)
+        Address type: Random (0x01)
+        Address: 6F:2C:19:D4:8A:33 (Static)
+        Data length: 26
+        Flags: 0x06
+          LE General Discoverable Mode
+          BR/EDR Not Supported
+        Complete Local Name: Fitness Band 4
+        Service Data (UUID 0x180f): 4b
+        RSSI: -67 dBm (0xbd)
+```
+
+`Service Data (UUID 0x180f)` is the standard Battery Service, and `4b` is 75% —
+a device reporting its battery level to the whole room. Harmless in itself, and a
+good illustration of how much a beacon says before any trust is established.
+
+**The line that matters for privacy** is `Address: … (Static)`. BLE supports
+resolvable private addresses that rotate every fifteen minutes precisely so a
+device cannot be followed between locations. A *static* random address never
+rotates, so this beacon is a durable identifier — anyone with a receiver can
+recognise the same wearable in a shop today and an office tomorrow. The failure
+here is not broken cryptography; it is a device that never enabled the privacy
+feature, which is exactly the cheap-endpoint constraint this note opened with.
+
 ## Security Implications
 
 **The constrained-device problem defines PAN security.** Many Bluetooth and BLE devices cannot run strong cryptography, cannot be updated, and pair without authentication because they lack interfaces. Their security is set at manufacture and does not improve, and they are deployed in enormous numbers close to people and, increasingly, inside organizations (wireless peripherals, medical devices, building sensors). The realistic posture is to treat them as weakly secured, minimize what they can access, and monitor for anomalies — because hardening the devices is often impossible.
@@ -81,47 +140,13 @@ flowchart TD
 
 All scanning and testing described here must target only devices you own or are explicitly authorized to assess. Intercepting Bluetooth communications, attacking pairing, and injecting into peripherals belonging to others are unlawful.
 
-## Authorized Lab: Discover and Assess Your Own Devices
+## Summary
 
-Use a Bluetooth-capable host and BLE/Bluetooth devices you own. Scan and assess only your own devices.
+You should now be able to:
 
-1. **Scan for devices.** Enumerate nearby Bluetooth and BLE devices you own:
-
-```bash
-sudo hcitool lescan
-```
-
-Expected excerpt:
-
-```text
-LE Scan ...
-AA:BB:CC:11:22:33 (unknown)
-AA:BB:CC:11:22:33 MyFitnessBand
-DE:AD:BE:EF:00:01 (unknown)
-```
-
-2. **Check address randomization.** Observe one of your devices over time and determine whether its advertised address stays constant (trackable) or rotates (randomized) — assessing the tracking exposure.
-3. **Examine pairing methods.** For a device with no display (a headset or sensor), confirm it pairs via Just Works with no code confirmation; for one with a display, confirm it uses passkey or numeric comparison. Connect the pairing method to the authentication it does or does not provide.
-4. **Inspect services.** For a BLE device you own, enumerate its advertised services and characteristics and consider what data it exposes and whether it requires authentication to read.
-5. **Assess discoverability and update status.** Determine whether each device stays discoverable and whether it has any firmware-update capability, assessing the constrained-device posture.
-6. **Plan segmentation.** For wireless peripherals or sensors in a hypothetical office, document how you would limit their access and monitor them given that their per-device security is largely fixed.
-7. **Cleanup.** Stop scanning and return devices to non-discoverable where applicable.
-
-Expected interpretation:
-
-```text
-Scan             -> nearby owned devices and their advertised identifiers
-Static address   -> trackable over time; randomized address resists it
-Just Works       -> no peer authentication; MITM window during pairing
-BLE services     -> what data a device exposes and whether reads need auth
-No update path   -> security fixed at manufacture; treat as weakly secured
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what a personal-area network is, the difference between Bluetooth Classic and BLE, and what pairing establishes.
-- **Operator:** Enumerate your own Bluetooth devices, identify pairing methods and address randomization, and explain why "Just Works" provides no authentication.
-- **Root:** Explain how the constrained-device problem fixes PAN security at manufacture and why short range is not a boundary; connect weak pairing to the man-in-the-middle window and wireless-peripheral injection, and explain why the link encryption is more directly consequential here than where TLS backs it up.
+- Explain what a personal-area network is, the difference between Bluetooth Classic and BLE, and what pairing establishes.
+- Enumerate your own Bluetooth devices, identify pairing methods and address randomization, and explain why "Just Works" provides no authentication.
+- Explain how the constrained-device problem fixes PAN security at manufacture and why short range is not a boundary; connect weak pairing to the man-in-the-middle window and wireless-peripheral injection, and explain why the link encryption is more directly consequential here than where TLS backs it up.
 
 ---
 > 🔼 Up: [[Wireless Networking]]

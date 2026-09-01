@@ -5,7 +5,7 @@ tags:
   - tree/offensive
   - cyber/offensive/web
   - type/methodology
-  - level/operator
+  - difficulty/medium
 Domain: "[[Web Application Penetration Testing]]"
 Color: "#DC143C"
 ---
@@ -41,6 +41,14 @@ GET  /admin/export           administrator exports records
 ```
 
 For each route capture method, parameters, content type, authentication, role, object ownership, state change, data classification, and expected invariants.
+
+**The deliberate break:** the OWASP Top 10 is the list everyone knows, so "we tested the Top 10" sounds like a complete web assessment. It is not a test plan and was never meant to be one.
+
+The Top 10 is an **awareness document**: ten broad *risk categories*, ranked by prevalence and impact across the industry, published to tell organisations where attention generally belongs. It contains no procedures. The **Web Security Testing Guide** is the document with the procedures — hundreds of individual tests with identifiers — and the two are often confused because they carry the same logo.
+
+The difference shows up in coverage. A category like "Broken Access Control" tells you a class exists; it does not tell you to test horizontal *and* vertical authorisation, on every object, for every role, on every endpoint. And an assessment scoped to ten categories has no place at all for the flaws that belong to no category — the business-logic findings from the previous note, which are frequently the most valuable thing in the report.
+
+**How you'd spot a Top-10-shaped assessment:** the report's contents page is ten headings long and matches the Top 10 in order. Real coverage is tracked against WSTG test identifiers and states what was *not* tested, which is the half that tells a client what they still do not know.
 
 ## OWASP-aligned coverage
 
@@ -127,11 +135,13 @@ Assess a deliberately vulnerable multi-role service without starting from scanne
 
 Common failures include testing one account, equating UI absence with authorization, reporting headers without exploitability/context, using only payload lists, missing asynchronous side effects, overlooking mobile/API surfaces, and assigning severity before business impact. Correct them through explicit models and evidence, not more automated traffic.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why does a methodology start with mapping architecture, routes, and roles *before* sending any payload?
-- **Operator:** Given the route inventory above, design the two-identity baseline/differential test that proves an object-level authorization bug with a canary rather than real data.
-- **Root:** OWASP categories are prompts, not proof of coverage. Explain how a traceability matrix (component × role × objective × evidence) turns "we ran the checklist" into a defensible coverage claim.
+You should now be able to:
+
+- Why does a methodology start with mapping architecture, routes, and roles *before* sending any payload?
+- Given the route inventory above, design the two-identity baseline/differential test that proves an object-level authorization bug with a canary rather than real data.
+- OWASP categories are prompts, not proof of coverage. Explain how a traceability matrix (component × role × objective × evidence) turns "we ran the checklist" into a defensible coverage claim.
 
 ---
 > 🔼 Up: [[Web Application Penetration Testing]]

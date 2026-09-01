@@ -5,7 +5,7 @@ tags:
   - tree/defensive
   - cyber/defense/advanced
   - type/concept
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Defensive Security]]"
 Color: "#4363D8"
@@ -14,7 +14,7 @@ Color: "#4363D8"
 # 🛡️ 3.5 Advanced Defenses Masterclass
 
 > [!abstract] The Masterclass
-> This is the payoff chapter — where every offensive technique in Phase 3 becomes a **detection**. A master defender masters offense first (the whole point of Modules **3.1**, **3.3**, **3.4**) so they can build the telemetry, alerts, and hunts that catch it. This closes the Crook → Root loop: you now understand both sides of the fight. **`#level/root`**
+> This is the payoff chapter — where every offensive technique in Phase 3 becomes a **detection**. A master defender masters offense first (the whole point of Modules **3.1**, **3.3**, **3.4**) so they can build the telemetry, alerts, and hunts that catch it. This closes the Beginner → Expert loop: you now understand both sides of the fight. **`#difficulty/hard`**
 
 > [!tip] Chapter Map
 > **** · **** · **** · **** · **** · ****
@@ -132,6 +132,14 @@ index=wineventlog (EventCode=1102 OR EventCode=104)         // Security/System l
 > **Design principle:** make logs **immutable and off-host**, alert on **log-source silence**, and treat *any* clearing event as an incident. The attacker owns the endpoint; they don't own the SIEM.
 
 ---
+
+## Summary
+
+You should now be able to:
+
+- Adopt the detection mindset — assume compromise and hunt for the behaviour rather than waiting for a signature.
+- Build detections for privilege escalation, exploitation and shellcode, living-off-the-land, and anti-forensics.
+- Explain how EDR, SIEM and threat hunting compose into a layered defensive stack, and where each layer sees what.
 
 ## 🔗 Related Master Notes & Deep-Dives
 - **3.1 Privilege Escalation & Living off the Land** · **3.3 Exploit Development** · **3.4 Anti-Forensics & ShadowStep** — the offense these detections counter

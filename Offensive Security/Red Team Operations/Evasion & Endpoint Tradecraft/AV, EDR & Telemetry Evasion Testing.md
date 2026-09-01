@@ -10,7 +10,7 @@ tags:
   - tree/offensive
   - cyber/offensive/redteam
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain: "[[Evasion & Endpoint Tradecraft]]"
 Color: "#DC143C"
 ---
@@ -23,7 +23,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 AV, EDR & Telemetry Evasion Testing -> Payload Engineering & Obfuscation -> Process Injection & Direct Syscalls
 
-## Start at Zero: Knowing What the Endpoint Can See
+## Knowing What the Endpoint Can See
 
 Modern endpoints run a layered defense stack, and a red team's job is to *test what each layer actually catches*. Four layers dominate, and understanding what each one observes is the whole subject:
 
@@ -62,7 +62,73 @@ flowchart TD
     EDR -->|"direct syscalls / LOLBin -> harder"| OBJ["objective (still leaves ETW traces)"]
 ```
 
-## Failure Modes and Interpretation
+**The deliberate break:** the payload was not flagged, so the endpoint stack was evaded.
+
+Static antivirus and behavioural EDR are **different layers answering different questions**, and beating the first says nothing about the second. AV asks *do these bytes look like something I know* — obfuscation, packing and encoding defeat it, and that is the layer people mean when they report a "bypass". EDR asks *is this sequence of actions what a legitimate program does* — and it observes the process tree, the injection, the handle request, the network callback. Those events fire identically whether your payload was obfuscated or not, because the behaviour is the same behaviour.
+
+So "we got past AV" is a finding about one layer, and reporting it as endpoint evasion overstates the result to a client who will make defensive decisions on it.
+
+**How you'd spot which layer you actually beat:** if the file was never quarantined but an alert fired after execution, the static layer missed it and the behavioural layer caught it. Those need separate rows in the coverage matrix, because they need separate fixes.
+
+## Worked Example: A Coverage Matrix Across Two Detection Layers
+
+Evasion testing produces one deliverable above all others: a matrix of which
+payload variant each defensive layer catches. Two miniature detectors — one static
+like classic AV, one behavioural like an EDR — turn that abstract claim into a
+table the client can act on.
+
+**Static detection against the raw payload** — a signature is a literal match:
+
+```shell-session
+operator@lab:/tmp/av-lab$ ./av_static.sh payload.sh
+AV: SIGNATURE MATCH -> blocked
+```
+
+The raw payload contains the string the signature looks for, so the static layer
+stops it. This is the case AV was built for and handles well: known-bad bytes,
+recognised on sight.
+
+**Static detection against an obfuscated payload** — same behaviour, new bytes:
+
+```shell-session
+operator@lab:/tmp/av-lab$ ./av_static.sh payload_obf.sh
+AV: no signature match -> allowed
+```
+
+Base64-encoding the payload changed every byte the signature keyed on, and the
+static layer waves it through. On its own, that is the well-known limitation of
+signature matching — and where an evasion test would stop if the client only ran
+AV.
+
+**Behavioural detection against the same obfuscated payload:**
+
+```shell-session
+operator@lab:/tmp/av-lab$ ./edr_behavioral.sh payload_obf.sh
+EDR: BEHAVIOR MATCH (decode->shell) -> detected
+```
+
+The obfuscation that defeated the signature is itself the behavioural signal — a
+decode piped straight into a shell. The bytes changed; the action did not; the
+behavioural layer watches the action.
+
+**The matrix is the finding**, and it is what the client's report should contain:
+
+| Variant | Static (AV) | Behavioural (EDR) |
+|:--|:--|:--|
+| Raw payload | caught | caught |
+| Obfuscated | **missed** | caught |
+
+Read across the obfuscated row: the organisation is protected here only because a
+behavioural layer exists. An environment running signature AV alone has a hole in
+the exact place attackers operate, and the recommendation follows directly — the
+controls that hold are behavioural detection, plus the platform telemetry that
+feeds it. On Windows those are named: AMSI, which hands the *decoded* script back
+to the scanner so obfuscation no longer helps, and ETW, which surfaces the process
+and syscall behaviour the signature never sees. The value of the exercise is not
+"we evaded the AV" — it is the per-layer coverage map that tells the defender which
+control is load-bearing and which is theatre.
+
+## Beating static AV and calling it evasion
 
 - **Testing only AV.** Concluding "we evaded the endpoint" after beating static AV is wrong — the behavioral layer usually catches the *action*; test all layers.
 - **Assuming AMSI covers everything.** AMSI only instruments hooked script hosts; a compiled binary or non-instrumented language bypasses it — know its scope.
@@ -77,93 +143,13 @@ flowchart TD
 - **Behavioral rules over signatures:** detections keyed on actions (RWX allocation, injection, child-shell-from-service, LOLBin abuse) survive obfuscation that defeats file signatures.
 - **Coverage mapping:** run purple-team test cards (see the reporting leaf) per evasion technique to know exactly which layer fires — turning the red team's evasion into measured blue-team improvement.
 
-## Authorized Lab: Signature vs. Behavioral Detection
+## Summary
 
-> [!info] Runs on one Linux machine — build a mini two-layer detector (static signature + behavioral) and show a payload that evades the signature but not the behavior
-> Uses the industry-standard benign EICAR-style test concept and a canary payload. Step 5 cleans up.
+You should now be able to:
 
-### Step 1 — A canary "malicious" payload and a static-signature scanner
-
-```bash
-mkdir -p /tmp/av-lab && cd /tmp/av-lab
-echo 'bash -c "echo C2R-CANARY-PAYLOAD-RAN"' > payload.sh          # benign canary "malware"
-cat > av_static.sh <<'EOF'
-#!/bin/bash
-# a mini "AV": static signature = the literal suspicious string
-grep -q 'echo C2R-CANARY-PAYLOAD-RAN' "$1" && echo "AV: SIGNATURE MATCH -> blocked" || echo "AV: no signature match -> allowed"
-EOF
-chmod +x av_static.sh
-./av_static.sh payload.sh
-```
-
-```text
-AV: SIGNATURE MATCH -> blocked
-```
-
-### Step 2 — Obfuscate the payload: it evades the static signature
-
-```bash
-cd /tmp/av-lab
-B64=$(base64 -w0 payload.sh)
-echo "echo $B64 | base64 -d | bash" > payload_obf.sh              # same behavior, different bytes
-./av_static.sh payload_obf.sh
-```
-
-```text
-AV: no signature match -> allowed
-```
-
-The obfuscated variant does the *exact same thing* but no longer contains the signature string — classic static-AV evasion. This is why AV alone is insufficient.
-
-### Step 3 — A behavioral detector catches it anyway (it decodes/acts)
-
-```bash
-cd /tmp/av-lab
-cat > edr_behavioral.sh <<'EOF'
-#!/bin/bash
-# a mini "EDR": watch what the script DOES — flag base64-decode-piped-to-shell behavior
-if grep -qE 'base64 -d\s*\|\s*(bash|sh)' "$1"; then echo "EDR: BEHAVIOR MATCH (decode->shell) -> detected"; else echo "EDR: no suspicious behavior"; fi
-EOF
-chmod +x edr_behavioral.sh
-./edr_behavioral.sh payload_obf.sh
-```
-
-```text
-EDR: BEHAVIOR MATCH (decode->shell) -> detected
-```
-
-Obfuscation changed the bytes but not the *behavior* (decode → pipe to shell), so the behavioral layer catches what the signature missed — the central lesson of evasion testing.
-
-### Step 4 — State the coverage outcome
-
-```bash
-cd /tmp/av-lab
-echo "Coverage: raw payload -> AV catches; obfuscated -> AV MISS, EDR/behavioral CATCH."
-echo "Finding for the client: static AV is evadable; behavioral detection + AMSI (decoded-script scanning) + ETW telemetry are what hold."
-```
-
-```text
-Coverage: raw payload -> AV catches; obfuscated -> AV MISS, EDR/behavioral CATCH.
-Finding for the client: static AV is evadable; behavioral detection + AMSI (decoded-script scanning) + ETW telemetry are what hold.
-```
-
-### Step 5 — Cleanup
-
-```bash
-cd /; rm -rf /tmp/av-lab; ls -d /tmp/av-lab 2>&1 | tail -1
-```
-
-```text
-ls: cannot access '/tmp/av-lab': No such file or directory
-```
-
-**What you should now be able to do:** explain what AV/AMSI/EDR/ETW each observe, why static signatures are evadable while behavior is not, test which layer catches which technique, and articulate why behavioral detection + telemetry-integrity monitoring is the durable defense.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the difference between static AV and behavioral EDR, and what AMSI and ETW do.
-- **Operator:** Test a payload against static vs behavioral detection and show obfuscation evades the signature but not the behavior.
-- **Root:** Explain why ETW/AMSI tampering is itself a high-signal detection, why behavioral rules survive obfuscation, and how evasion testing produces a per-layer detection-coverage map for the blue team.
+- Explain the difference between static AV and behavioral EDR, and what AMSI and ETW do.
+- Test a payload against static vs behavioral detection and show obfuscation evades the signature but not the behavior.
+- Explain why ETW/AMSI tampering is itself a high-signal detection, why behavioral rules survive obfuscation, and how evasion testing produces a per-layer detection-coverage map for the blue team.
 
 ---
 > 🔼 Up: [[Evasion & Endpoint Tradecraft]]

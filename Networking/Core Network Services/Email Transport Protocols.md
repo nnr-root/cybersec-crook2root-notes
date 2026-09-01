@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/services
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Core Network Services]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 DNS Resolution & Records -> DNS Security & Encrypted Transports -> Local Name Resolution & Service Discovery -> Network Time Synchronization -> Email Transport Protocols -> Network Management Protocols
 
-## Start at Zero: Two Directions, Different Protocols
+## Two Directions, Different Protocols
 
 Email uses different protocols for sending and retrieving, and confusing them is the most common beginner error.
 
@@ -135,40 +135,13 @@ A properly configured server rejects relay for a sender and recipient both exter
 
 All testing described here must target mail infrastructure within an authorized scope. Sending spoofed mail, relay testing, or probing servers you do not own can constitute abuse and is out of bounds without explicit authorization.
 
-## Authorized Lab: Spoof a Domain, Then Stop It
+## Summary
 
-Use a lab with your own mail server and a controlled domain, isolated from real mail delivery.
+You should now be able to:
 
-1. **Watch an SMTP conversation.** Connect to your lab mail server and conduct the exchange manually, observing that sender addresses are simply typed and accepted:
-
-```bash
-swaks --to bob@lab.internal --from alice@lab.internal --server <lab server> --show-raw-out
-```
-
-2. **Spoof with no authentication.** With SPF, DKIM, and DMARC absent, send a message claiming `From: ceo@lab.internal` from an unauthorized host. Confirm it is accepted and appears authentic in the recipient's mailbox.
-3. **Publish SPF.** Add an SPF record authorizing only your legitimate mail host with `-all`. Resend from the unauthorized host and confirm the receiver now marks or rejects it on SPF failure.
-4. **Add DKIM.** Configure signing on the legitimate host and publish the public key. Confirm a legitimate message carries a valid signature and that a modified message fails verification.
-5. **Enforce with DMARC.** Publish a DMARC record at `p=reject` with alignment. Confirm that a spoofed message failing alignment is now rejected, and inspect the authentication-results headers to see each verdict.
-6. **Test for open relay.** Attempt to relay mail with both sender and recipient external to your server, and confirm it is refused.
-7. **Demonstrate the residual gap.** Send from a lookalike domain you also control (`lab-support.internal`) and confirm it passes its own authentication while still being a phishing attempt — showing what DMARC does not cover.
-8. **Cleanup.** Remove test records and messages, restore the baseline configuration, and confirm legitimate mail still flows.
-
-Expected interpretation:
-
-```text
-No authentication -> spoofed From: accepted and looks genuine
-SPF -all          -> unauthorized sending IP rejected (but envelope, not header)
-DKIM              -> tamper-evident signature survives forwarding
-DMARC p=reject    -> enforces From: alignment; direct domain spoofing blocked
-Open relay test   -> a sound server refuses external-to-external relay
-Lookalike domain  -> passes its own auth; DMARC never claimed to stop this
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Distinguish SMTP from IMAP/POP3 by direction, explain the port 25 versus 587 distinction, and state why classic SMTP lets anyone claim any sender.
-- **Operator:** Read SPF, DKIM, and DMARC records from DNS and explain what each verifies; read message headers to determine how a message authenticated and test a server for open relay.
-- **Root:** Explain how SPF, DKIM, and DMARC compose, why alignment is the piece SPF and DKIM individually lack, and precisely which impersonation techniques the stack stops versus leaves open; describe why opportunistic STARTTLS is downgradable and what requires TLS for server-to-server mail.
+- Distinguish SMTP from IMAP/POP3 by direction, explain the port 25 versus 587 distinction, and state why classic SMTP lets anyone claim any sender.
+- Read SPF, DKIM, and DMARC records from DNS and explain what each verifies; read message headers to determine how a message authenticated and test a server for open relay.
+- Explain how SPF, DKIM, and DMARC compose, why alignment is the piece SPF and DKIM individually lack, and precisely which impersonation techniques the stack stops versus leaves open; describe why opportunistic STARTTLS is downgradable and what requires TLS for server-to-server mail.
 
 ---
 > 🔼 Up: [[Core Network Services]]

@@ -1,6 +1,6 @@
 ---
 title: "WPA3 Security Testing"
-tags: [tree/offensive, cyber/offensive/wireless/wpa3, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/wireless/wpa3, type/technique, difficulty/medium]
 Domain: "[[Wireless & Physical Penetration Testing]]"
 Color: "#DC143C"
 ---
@@ -13,13 +13,21 @@ Color: "#DC143C"
 ## Parent Learning Order
 WPA2 Security Testing -> WPA3 Security Testing -> Rogue Access Points & Wireless Trust -> RFID & Physical Access Testing
 
-## Crook — WPA3 Removes the Offline Target
+## WPA3 Removes the Offline Target
 
 WPA2's weakness (see the previous leaf) is that a captured handshake lets an attacker guess passphrases **offline**, forever, at full speed. WPA3-Personal replaces that handshake with **SAE (Simultaneous Authentication of Equals)**, a *password-authenticated key exchange* (PAKE) also called **Dragonfly**. Its defining property: a passive observer captures **no material that lets them test a passphrase guess offline**. Each guess now requires a *fresh, live interaction* with the access point — which the AP can rate-limit and log.
 
 The consequence for a tester: the WPA2 "capture once, crack forever" model is gone. Attacks shift to **online guessing** (slow, detectable), **downgrade** (forcing a WPA2 fallback), and **implementation flaws** (the Dragonblood side-channels).
 
-## Operator — What You Actually Test on WPA3
+**The deliberate break:** WPA3 replaced the four-way handshake with SAE, which removes the offline dictionary attack. So a WPA3 network has nothing left to test.
+
+SAE does what it claims — you cannot capture a value and grind it offline, and that is a genuine advance. What it does not do is remove the network's other exposures, and one of them undoes the whole benefit: **transition mode**. A network advertising WPA3 *and* WPA2 for compatibility with older clients still accepts the WPA2 association, which still produces a crackable handshake. The upgrade is present, announced, and bypassed by asking politely for the old protocol.
+
+So the WPA3 test is not "can I crack it" but "**can I avoid it**" — transition mode, downgrade, whether Protected Management Frames are enforced or merely available, and what happens to a client that claims not to support SAE.
+
+**How you'd spot it:** read the advertised authentication suites in the beacon. Both SAE and PSK present means transition mode, and the WPA2 attack from the previous note applies unchanged.
+
+## What You Actually Test on WPA3
 
 | Target | Why it matters |
 |---|---|
@@ -37,52 +45,71 @@ flowchart LR
     T["Transition mode offers WPA2?"] --> DG["Downgrade -> attack WPA2 handshake offline"]
 ```
 
-## Root — Runnable Lab (one machine, Python, no radio)
+## Worked Example: The Only Way Back to Offline Cracking Is a Downgrade
 
-The point of this lab is a *contrast*: the WPA2 attack works because `PMK = f(passphrase, SSID)` is derivable by the attacker alone. SAE mixes in a **fresh per-exchange secret** from both parties, so the equivalent offline function does not exist. This lab models that difference.
+WPA3's SAE handshake removes the offline attack that defeats WPA2 — a passive
+capture yields nothing to grind. So the tester's highest-value question is not "can
+I crack the SAE handshake" but "can I make the client speak WPA2 instead", and the
+answer is visible in what the network advertises.
 
-**Step 1 — model both derivations (`wpa3_contrast.py`).**
+> [!note] Representative output
+> Reconstructed to match the fields `iw`/`hostapd` report for a transition-mode
+> BSS; SSID and addresses are synthetic. The AKM suite numbers are the real ones.
 
-```python
-import hashlib, os
-SSID="CorpWiFi"
-def wpa2_pmk(p):           # attacker can compute this alone -> offline dictionary works
-    return hashlib.pbkdf2_hmac("sha1", p.encode(), SSID.encode(), 4096, 32)
-def sae_key(p, ap_secret): # needs the AP's fresh secret -> no offline guess from a capture
-    return hashlib.sha256(p.encode()+ap_secret).digest()
-print("WPA2: attacker derives PMK for a guess with NO network contact:")
-print("  ", wpa2_pmk("Summer2024").hex()[:16], "(computable offline)")
-print("WPA3/SAE: the same guess needs a live per-exchange AP secret:")
-capture = b""                     # what a passive sniffer actually has
-try:
-    sae_key("Summer2024", capture) if capture else (_ for _ in ()).throw(ValueError("no AP secret in a passive capture"))
-except ValueError as e:
-    print("   offline guess ->", e)
-print("   => each guess must go ONLINE to the AP (rate-limited, logged)")
+**A transition-mode network advertises both handshakes at once:**
+
+```shell-session
+analyst@lab:~$ sudo iw dev wlan0 scan | grep -A8 'corp-wifi'
+    SSID: corp-wifi
+    RSN:  * Version: 1
+          * Authentication suites: PSK SAE
+          * Group cipher: CCMP
+          * Pairwise ciphers: CCMP
+          * Capabilities: MFP-capable (0x0080)
 ```
 
-**Step 2 — run it.**
+`Authentication suites: PSK SAE` is the finding. `SAE` is WPA3; `PSK` is the WPA2
+fallback offered so older clients can still join. The two coexist under one SSID,
+and that coexistence is the vulnerability — the network is only as strong as its
+weakest accepted handshake, and `PSK` is the weak one.
 
-```console
-$ python3 wpa3_contrast.py
-WPA2: attacker derives PMK for a guess with NO network contact:
-   bb818e7aa8d415e4 (computable offline)
-WPA3/SAE: the same guess needs a live per-exchange AP secret:
-   offline guess -> no AP secret in a passive capture
-   => each guess must go ONLINE to the AP (rate-limited, logged)
+**The downgrade** does not break SAE; it avoids it. An attacker stands up a rogue
+BSS for the same SSID advertising *only* `PSK`, and a transition-capable client that
+prefers availability will complete the WPA2 handshake there — which is exactly the
+handshake WPA2's offline attack needs. From that point the sibling WPA2 example
+applies unchanged: capture the four-way handshake, grind the PBKDF2 dictionary
+offline, and passphrase entropy is once again the only thing standing in the way.
+
+**What a pure-WPA3 network gives instead** is the reason to eliminate transition
+mode:
+
+```shell-session
+analyst@lab:~$ sudo iw dev wlan0 scan | grep -A6 'corp-wifi-6'
+    SSID: corp-wifi-6
+    RSN:  * Authentication suites: SAE
+          * Capabilities: MFP-required (0x00c0)
 ```
 
-**Step 3 — the deliberate insight.** The WPA2 line prints a key; the WPA3 line *cannot*, because a passive capture contains no per-exchange secret. That missing input is exactly why SAE defeats offline dictionary attacks — and why WPA3 testing pivots to transition-mode downgrade and implementation flaws.
+`SAE` alone, and `MFP-required` — Protected Management Frames are mandatory, not
+merely capable. That second detail closes the other WPA2 attack: the deauthentication
+flood that evil-twin and rogue-AP attacks use to force a client off its real AP is a
+forged management frame, and PMF rejects it. A network in this state has removed both
+the offline-cracking target and the deauth primitive, which is why the WPA3
+engagement's core recommendations are "disable transition mode once legacy clients
+are gone" and "require, not merely permit, PMF."
 
-**Step 4 — cleanup:** pure computation — no cleanup required.
+The remaining attack surface is genuinely narrower and genuinely harder: online
+guessing, which SAE forces to be live and which the AP should rate-limit and log,
+and implementation flaws in early SAE code — the Dragonblood timing and cache
+side-channels — which are a firmware-version question rather than a protocol one.
 
-**What you should now be able to do:** explain why SAE removes the offline attack, identify transition mode as the practical weak point, and name PMF and rate-limiting as the controls WPA3 adds.
+## Summary
 
-## Crook → Operator → Root Checkpoint
+You should now be able to:
 
-- **Crook:** Why can't you "capture once, crack forever" against WPA3 the way you can against WPA2?
-- **Operator:** A WPA3 network runs transition mode for legacy devices. What do you test, and what is the realistic finding?
-- **Root:** Summarise the Dragonblood class of flaws and explain why a PAKE's security still depends on a constant-time implementation.
+- Why can't you "capture once, crack forever" against WPA3 the way you can against WPA2?
+- A WPA3 network runs transition mode for legacy devices. What do you test, and what is the realistic finding?
+- Summarise the Dragonblood class of flaws and explain why a PAKE's security still depends on a constant-time implementation.
 
 ---
 > 🔼 Up: [[Wireless & Physical Penetration Testing]]

@@ -5,6 +5,7 @@ aliases:
 tags:
   - tree/offensive
   - cyber/offensive/guided
+  - difficulty/hard
 Domain: "[[Guided Assessments]]"
 Color: "#DC143C"
 ---
@@ -50,6 +51,14 @@ Canary group: CORP\Tier0-Test-Admins
 Cleanup owner: Identity Engineering
 ```
 
+**The deliberate break:** the assessment succeeds when you reach Domain Admin. It is the milestone everyone recognises and the one clients ask about first.
+
+Reaching Domain Admin proves a path existed. It does not tell the client which control failed, whether anything detected the traversal, or which single change would have broken the chain — and those are the deliverables. An assessment that sprints to DA in two hours and reports "we got Domain Admin" has produced one fact and no remediation guidance, on an estate where the same path may exist a dozen more times.
+
+The objective here is **measuring the control layers**, not collecting the title. Which edge was available to a standard user? Was the enumeration seen? Did the credential access alert? Would tiering have stopped step three? A path that was detected at step two is a *better* outcome for the client than one that was not, and a report that cannot tell them which happened has skipped the assessment.
+
+**How you'd spot a shallow one:** the findings section names an achievement rather than a control. "Obtained Domain Admin" is a result; "any authenticated user could enumerate SPNs, and no alert fired" is a finding.
+
 ## 2. Establish the baseline
 
 Capture the test identity’s group memberships, logon rights, reachable systems, authentication protocols, and assigned workstation. Validate clock synchronization and DNS because Kerberos and directory discovery depend on both. Preserve a before-state for every object that might be changed.
@@ -88,11 +97,13 @@ Assess tiering, privileged access workstations, local administrator password man
 
 Remove test memberships, certificates, tickets, scheduled actions, and temporary objects. Compare the after-state to the baseline. Retesting should show the path is severed at a durable control point and that the intended administrative workflow still works.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Explain why AD assessment models a *graph* of principals/permissions, and why the goal is proving trust-failures, not "domain admin at any cost."
-- **Operator:** Baseline a test identity, collect directory relationships, validate one edge at a time with reversible canary proofs, and demonstrate bounded privilege.
-- **Root:** Map each validated edge to the control layer that should have stopped it (tiering, LAPS, delegation review, LDAP signing, cert-template governance) and retest that the path is severed durably.
+You should now be able to:
+
+- Explain why AD assessment models a *graph* of principals/permissions, and why the goal is proving trust-failures, not "domain admin at any cost."
+- Baseline a test identity, collect directory relationships, validate one edge at a time with reversible canary proofs, and demonstrate bounded privilege.
+- Map each validated edge to the control layer that should have stopped it (tiering, LAPS, delegation review, LDAP signing, cert-template governance) and retest that the path is severed durably.
 
 ---
 > 🔼 Up: [[Guided Assessments]]

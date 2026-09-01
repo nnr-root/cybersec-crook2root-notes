@@ -1,6 +1,6 @@
 ---
 title: "NoSQL Injection"
-tags: [tree/offensive, cyber/offensive/web/injection/nosql, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/web/injection/nosql, type/technique, difficulty/hard]
 Domain: "[[Web Injection Testing]]"
 Color: "#DC143C"
 ---
@@ -26,6 +26,16 @@ Common operator families include comparisons (`$eq`, `$ne`, `$gt`), membership (
 Type confusion is as important as operator injection. An endpoint designed for a string may accept an array, object, Boolean, or null. JavaScript truthiness, loose equality, schema defaults, and object-spread behavior may then alter authorization or query selection. Prototype-pollution concerns are related but distinct: they affect inherited application object properties before the database request is created. The report should identify the exact object received by the driver, not merely label every JSON anomaly “NoSQL injection.”
 
 Safe construction combines strict schemas, scalar type checks, operator allowlists, and explicit query assembly. For a username, the accepted type should be a bounded string; objects and arrays should fail before database access. User-selectable filters should be translated from a small external vocabulary into fixed internal operators. Recursive key sanitization can add defense in depth, but stripping `$` or `.` characters alone is fragile if alternate encodings, nested arrays, or another datastore syntax remain.
+
+**The deliberate break:** "we moved to MongoDB, so SQL injection does not apply to us." True, and beside the point — the database changed and the boundary problem did not.
+
+NoSQL injection is usually not a *string* attack at all, which is why escaping defences miss it completely. The application expects `{"user": "alice"}` and receives `{"user": {"$ne": null}}` — no quote to escape, no comment sequence, nothing an SQL-shaped filter would notice. What crossed the boundary is a **type**: a scalar was expected and an object arrived, and the driver faithfully turned that object into a query operator. The vulnerable line is the one that passed user-controlled JSON straight into the query document.
+
+**This is the Parser Differential pattern**, in its type-confusion form.
+
+**The Twin — compare this with File Upload Security Testing.** An uploaded file and a JSON login body have nothing visibly in common. But in both, the flaw is that *what the value is* gets decided by a different component from the one that checked it: the upload validator reads an extension while the web server consults its own handler mapping, and the login handler expects a string while the driver reads an operator. Neither is defeated by sanitising characters, because in neither case was a character the problem — the **type** was.
+
+**How you'd spot it:** send a JSON object where the application expects a string. If the response changes at all — a different error, a different status, a successful login — the input is reaching the query document rather than being coerced to text.
 
 ## Visual Attack Flow
 
@@ -169,55 +179,13 @@ The SOC correlated three requests from one assessment identity: an absent scalar
 
 The engineering team added runtime JSON Schema validation at the route, constructed filters field by field, disabled unused JavaScript evaluation, and tested JSON, form, and duplicate-key variants. Purple-team replay confirmed that operator objects now receive HTTP 400 before a database span is created. The detection remains enabled because alternate endpoints and future regressions can reintroduce unsafe object construction.
 
-## Runnable Lab (one machine, pure Python)
+## Summary
 
-No database to install: this models a document store where a query is a dict and values may be `$`-operator objects — the exact shape that makes NoSQL auth bypass work. The classic bug is a JSON body that lets `password` arrive as `{"$ne":"x"}` (matches *anything not equal to x*) instead of a string.
+You should now be able to:
 
-**Step 1 — the vulnerable matcher (`nosql.py`).**
-
-```python
-users=[{"user":"alice","pass":"wonderland"},{"user":"admin","pass":"S3cr3t!"}]
-def match(cond,doc):
-    for k,v in cond.items():
-        if isinstance(v,dict):                 # operator object, e.g. {"$ne":"x"}
-            for op,operand in v.items():
-                if op=="$ne" and not(doc.get(k)!=operand): return False
-        elif doc.get(k)!=v: return False
-    return True
-def login(q): return [u["user"] for u in users if match(q,u)]
-```
-
-**Step 2 — baseline and the bypass.**
-
-```console
->>> login({"user":"alice","pass":"wonderland"})   # normal
-['alice']
->>> login({"user":"admin","pass":"guess"})        # wrong password
-[]
->>> login({"user":"admin","pass":{"$ne":"x"}})    # operator injection
-['admin']
-```
-
-The last call authenticates as `admin` without the password — `pass != "x"` is true for the real password.
-
-**Step 3 — the deliberate break: the fix that stops it.** Coercing every field to a string before matching turns the operator object into the literal text `{'$ne': 'x'}`, which equals no password:
-
-```console
->>> login_fixed({"user":"admin","pass":{"$ne":"x"}})   # str() coercion applied
-[]
-```
-
-Seeing the bypass *fail* under type coercion is the lesson: NoSQL injection is a **type** confusion, not a character-escaping problem.
-
-**Step 4 — cleanup:** read-only, in-memory — no cleanup required.
-
-**What you should now be able to do:** explain why `{"$ne":...}` bypasses a login, and why input-type enforcement (not quote escaping) is the fix.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Why does `{"$ne":"x"}` log in when `"guess"` does not?
-- **Operator:** The endpoint accepts JSON. What one property of the request lets an operator object reach the query, and how would you prove control with a canary rather than dumping the collection?
-- **Root:** Contrast this with SQL injection: why does parameterization fix SQLi but *type/schema validation* is the right fix here?
+- Why does `{"$ne":"x"}` log in when `"guess"` does not?
+- The endpoint accepts JSON. What one property of the request lets an operator object reach the query, and how would you prove control with a canary rather than dumping the collection?
+- Contrast this with SQL injection: why does parameterization fix SQLi but *type/schema validation* is the right fix here?
 
 ---
 > 🔼 Up: [[Web Injection Testing]]

@@ -5,6 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/linux
   - type/technique
+  - difficulty/easy
   - level/apprentice
 Domain:
   - "[[Linux]]"
@@ -32,8 +33,6 @@ Prerequisites are intentionally small: know how to run `printf`, `cat`, and `wc`
 
 ## The three streams
 Every process has three default channels, each with a **file descriptor** number:
-
-![[lnx_io_streams.svg]]
 
 - **stdin (0)** — input, normally the keyboard.
 - **stdout (1)** — normal output, normally the screen.
@@ -80,8 +79,8 @@ $ find / -perm -4000 -type f 2>/dev/null      # only the SUID hits, no error flo
 ```shell-session
 # Top 10 IPs hitting a web server, by hit count
 $ cat access.log | cut -d' ' -f1 | sort | uniq -c | sort -rn | head
-   4213 10.0.0.9
-    880 81.143.211.90
+   4213 10.10.10.9
+    880 198.51.100.9
 
 # Every unique user on the box, from /etc/passwd
 $ cut -d: -f1 /etc/passwd | sort
@@ -119,8 +118,8 @@ $ base64 -d <<< "cGFzc3dk"             # here-string: feed one line to stdin
 passwd
 ```
 
-> [!tip] Crook → Root
-> **Crook** runs `grep`, copies the result, runs the next command by hand. **Root** pipes the whole investigation into one expression — `cut | sort | uniq -c | sort -rn` is a reflex, not a lookup. Composition *is* the skill.
+> [!tip] Beginner → Expert
+> **A beginner** runs `grep`, copies the result, runs the next command by hand. **An expert** pipes the whole investigation into one expression — `cut | sort | uniq -c | sort -rn` is a reflex, not a lookup. Composition *is* the skill.
 
 ## How the shell builds a pipeline
 
@@ -227,126 +226,17 @@ pipeline=65 stages=0 65 0
 
 The correct repair belongs to the failing contract: data format, descriptor routing, quoting, termination, buffering, or status propagation—not an extra `2>/dev/null` that hides evidence.
 
-## Hands-On Lab: Streams, the Ordering Trap & Pipeline Exit Status
-
-> [!info] Runs on any Linux machine — creates only files under `/tmp/io-lab`
-> This lab is built around three mistakes almost everyone makes once. You will make them deliberately and see the result.
-
-### Step 1 — Prove there are two output streams
-
-```bash
-mkdir -p /tmp/io-lab && cd /tmp/io-lab
-ls /etc/hostname /etc/nope
-```
-
-```text
-ls: cannot access '/etc/nope': No such file or directory
-/etc/hostname
-```
-
-Both lines appeared on screen, so they look like one stream. They are not:
-
-```bash
-ls /etc/hostname /etc/nope > out.txt
-cat out.txt
-```
-
-```text
-ls: cannot access '/etc/nope': No such file or directory
-/etc/hostname
-```
-
-The error **still printed to the terminal** while only the success went to the file. `>` redirects stdout (stream 1) alone; stderr (stream 2) ignored it entirely.
-
-### Step 2 — The ordering trap
-
-```bash
-ls /etc/hostname /etc/nope 2>&1 > wrong.txt ; echo "--- wrong.txt ---"; cat wrong.txt
-ls /etc/hostname /etc/nope > right.txt 2>&1 ; echo "--- right.txt ---"; cat right.txt
-```
-
-```text
-ls: cannot access '/etc/nope': No such file or directory
---- wrong.txt ---
-/etc/hostname
---- right.txt ---
-ls: cannot access '/etc/nope': No such file or directory
-/etc/hostname
-```
-
-Identical-looking syntax, different results. `2>&1` means *"send stderr wherever stdout points **right now**"* — so it must come **after** `> file`. In `wrong.txt` stderr was aimed at the terminal before stdout was moved. This one rule explains most "my log is missing the errors" bugs.
-
-### Step 3 — Silence noise without hiding results
-
-```bash
-find /etc -name 'hosts' 2>/dev/null
-```
-
-```text
-/etc/hosts
-```
-
-Without `2>/dev/null` this floods with `Permission denied` lines for unreadable directories. Discarding **stream 2 only** keeps real results readable — and note you are choosing to discard errors, which is a decision, not a default.
-
-### Step 4 — The exit status of a pipeline is not what you expect
-
-```bash
-false | true; echo "pipeline status: $?"
-echo "each stage:  ${PIPESTATUS[@]}"
-```
-
-```text
-pipeline status: 0
-each stage:  1 0
-```
-
-The pipeline reports **success** even though its first stage failed, because `$?` reflects only the *last* command. `PIPESTATUS` exposes every stage. A script that checks `$?` after a pipeline can silently proceed on broken data — the fix is `set -o pipefail`:
-
-```bash
-set -o pipefail; false | true; echo "with pipefail: $?"; set +o pipefail
-```
-
-```text
-with pipefail: 1
-```
-
-### Step 5 — Build something useful with `tee`
-
-```bash
-printf 'INFO ok\nERROR disk\nINFO ok\nERROR net\n' > app.log
-grep ERROR app.log | tee errors.txt | wc -l
-cat errors.txt
-```
-
-```text
-2
-ERROR disk
-ERROR net
-```
-
-`tee` writes to a file **and** passes the data onward, so you keep evidence and continue the pipeline in one pass — the standard pattern for building an auditable log workflow.
-
-### Step 6 — Cleanup
-
-```bash
-cd /tmp && rm -rf /tmp/io-lab && ls -d /tmp/io-lab 2>&1
-```
-
-```text
-ls: cannot access '/tmp/io-lab': No such file or directory
-```
-
-**What you should now be able to do:** explain why `2>&1 > file` and `> file 2>&1` differ, and why `$?` after a pipeline can hide a failure.
-
 ## Security implications
 
 Shell composition can preserve evidence or destroy it. Unquoted variables, glob expansion, unsafe `eval`, ambiguous redirection, and unchecked pipeline status are common causes of command injection and automation failure. Defensively, use fixed commands, strict mode, least-privileged output paths, explicit delimiters, and immutable source evidence. Operationally, remember that command lines may appear in shell history, audit records, and process listings.
 
-### Crook → Operator → Root checkpoint
+## Summary
 
-- **Crook:** distinguish stdin, stdout, stderr, pipes, overwrite, append, and conditional chaining.
-- **Operator:** write quoted, NUL-safe pipelines with `pipefail`, structured outputs, bounded parallelism, and reliable error channels.
-- **Root:** explain descriptor duplication and kernel backpressure, debug buffering and hidden failures, and construct evidence-preserving pipelines whose result can be independently verified.
+You should now be able to:
+
+- distinguish stdin, stdout, stderr, pipes, overwrite, append, and conditional chaining.
+- write quoted, NUL-safe pipelines with `pipefail`, structured outputs, bounded parallelism, and reliable error channels.
+- explain descriptor duplication and kernel backpressure, debug buffering and hidden failures, and construct evidence-preserving pipelines whose result can be independently verified.
 
 ---
 > 🔼 Up: [[Linux]]

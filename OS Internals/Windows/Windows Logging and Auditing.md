@@ -6,7 +6,7 @@ tags:
   - cyber/foundations/windows
   - cyber/defense
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
@@ -20,7 +20,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations -> Windows Drivers I-O & Kernel Debugging -> Windows Processes, Services & Boot -> Windows File System & Registry -> Windows Networking Internals -> Windows Security & Access Control -> Windows Identity, Credentials & Authentication -> Windows Active Directory & Domains -> Windows Command Prompt & Batch -> Windows PowerShell -> Windows Logging & Auditing -> Windows Diagnostics, Crash Dumps & Performance -> Windows Sysinternals & Troubleshooting
 
-## Start at Zero: Event, Provider, Channel & Policy
+## Event, Provider, Channel & Policy
 
 An **event** is a timestamped record emitted by a **provider**. A **channel** is a routed stream of related events, and an EVTX file persists channel records. An **audit policy** decides which security-relevant successes and failures Windows asks providers to record; it does not retroactively recover events that were never enabled. ETW is the general event transport beneath many diagnostics, while Event Log channels, Sysmon, and forwarded subscriptions package selected data for retention. Event IDs only have meaning together with provider, version, fields, host, and time context.
 
@@ -182,96 +182,13 @@ Telemetry design begins with a question: what event proves the security-relevant
 
 Adversaries may clear logs, stop services, alter policy, overwhelm channels, corrupt time, or exploit collection exclusions. Resilience comes from off-host forwarding, protected policy, redundant sensors, immutable storage, collector-health alerts, and clock monitoring. Event 1102 is important, but detection should not depend on the attacker helpfully generating it.
 
-## Hands-On Lab: Generate an Event and Trace It Through the Logs
+## Summary
 
-> [!info] Runs on any Windows machine — run PowerShell as Administrator
-> You will produce a real security event and find it, the way an analyst does.
+You should now be able to:
 
-### Step 1 — Generate a failed logon on purpose
-
-```powershell
-$fake = New-Object System.Management.Automation.PSCredential('nosuchuser', (ConvertTo-SecureString 'wrongpass' -AsPlainText -Force))
-Start-Process cmd -Credential $fake -ErrorAction SilentlyContinue 2>$null
-"Attempted logon as a non-existent user"
-```
-
-```text
-Attempted logon as a non-existent user
-```
-
-### Step 2 — Find event 4625 (failed logon)
-
-```powershell
-Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4625} -MaxEvents 1 -ErrorAction SilentlyContinue |
-  ForEach-Object {
-    $x = [xml]$_.ToXml()
-    [pscustomobject]@{
-      Time    = $_.TimeCreated
-      Target  = ($x.Event.EventData.Data | Where-Object Name -eq 'TargetUserName').'#text'
-      Reason  = ($x.Event.EventData.Data | Where-Object Name -eq 'Status').'#text'
-    }
-  }
-```
-
-```text
-Time                 Target     Reason
-----                 ------     ------
-8/4/2026 6:14:02 PM  nosuchuser 0xC0000064
-```
-
-Event 4625 recorded the attempt with the target username and a status code — `0xC0000064` means "user does not exist." Parsing the **XML fields** rather than the localized message gives stable field names across languages.
-
-### Step 3 — See what auditing is actually enabled
-
-```powershell
-auditpol /get /category:'Logon/Logoff' | Select-String 'Logon '
-```
-
-```text
-  Logon                                    Success and Failure
-```
-
-Auditing must be **turned on** to record events — much of the most useful auditing is off by default. If this showed "No Auditing," the 4625 above would never have existed. Verifying audit policy is step zero of any log investigation.
-
-### Step 4 — Check whether PowerShell activity is logged
-
-```powershell
-$sb = Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging' -ErrorAction SilentlyContinue
-"Script-block logging enabled: {0}" -f ($sb.EnableScriptBlockLogging -eq 1)
-Get-WinEvent -LogName 'Microsoft-Windows-PowerShell/Operational' -MaxEvents 1 -ErrorAction SilentlyContinue |
-  Select-Object Id,TimeCreated
-```
-
-```text
-Script-block logging enabled: True
-  Id TimeCreated
-  -- -----------
-4104 8/4/2026 6:14:20 PM
-```
-
-Event 4104 captures the actual script content executed — the single most valuable log for detecting malicious PowerShell, and the reason attackers try to disable it.
-
-### Step 5 — Confirm logs survive locally (and why forwarding matters)
-
-```powershell
-(Get-WinEvent -ListLog Security).RecordCount
-"These logs live on THIS machine - an attacker with admin can clear them with 'wevtutil cl Security'."
-"That is why forwarding to a separate collector in real time is the actual control."
-```
-
-```text
-184722
-```
-
-**Cleanup:** none — the failed-logon and script-block events are meant to remain; deleting them would defeat the lesson. No files were created.
-
-**What you should now be able to do:** generate and locate a 4625 event, parse events as XML fields, verify audit policy is enabled, confirm script-block logging, and explain why local logs need forwarding.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Locate channels, query recent records, name core security events, and distinguish Event Log from ETW.
-- **Operator:** Configure targeted audit policy, parse event XML, engineer Sysmon filters, validate WEF delivery, and correlate identifiers across sources.
-- **Root:** Design a loss-aware enterprise telemetry architecture, identify collection blind spots, preserve evidentiary context, and express detections as security transitions with measurable coverage and false-positive control.
+- Locate channels, query recent records, name core security events, and distinguish Event Log from ETW.
+- Configure targeted audit policy, parse event XML, engineer Sysmon filters, validate WEF delivery, and correlate identifiers across sources.
+- Design a loss-aware enterprise telemetry architecture, identify collection blind spots, preserve evidentiary context, and express detections as security transitions with measurable coverage and false-positive control.
 
 ---
 > 🔼 Up: [[Windows]]

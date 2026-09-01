@@ -10,7 +10,7 @@ tags:
   - tree/offensive
   - cyber/offensive/redteam
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain: "[[Evasion & Endpoint Tradecraft]]"
 Color: "#DC143C"
 ---
@@ -23,7 +23,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 AV, EDR & Telemetry Evasion Testing -> Payload Engineering & Obfuscation -> Process Injection & Direct Syscalls
 
-## Start at Zero: Running Code Inside Another Process, Quietly
+## Running Code Inside Another Process, Quietly
 
 Two tradecraft techniques let attackers *act while evading behavioral detection*, and they are tightly linked. **Process injection** runs your code inside *another, trusted process* (explorer.exe, a browser) so the malicious activity appears to come from a legitimate program — evading process-lineage detection and blending in. **Direct syscalls** call the kernel *directly*, skipping the userland library functions that EDR **hooks** — so the EDR's inline instrumentation never sees the call. Together they are the heart of modern evasion tradecraft, and testing them measures whether the client's EDR sees past the disguise.
 
@@ -61,7 +61,66 @@ flowchart TD
 
 The arms race: EDR moved to **kernel callbacks** and **ETW Threat Intelligence** precisely because userland hooks are bypassable — so direct syscalls evade the hook but not necessarily the kernel-level telemetry.
 
-## Failure Modes and Interpretation
+## Worked Example: Making Another Process Do the Work
+
+Process injection is valuable to an attacker for one reason: the action then
+carries a trusted process's identity, not the attacker's. A benign demonstration
+with `ptrace` shows the mechanism without any malware.
+
+**The target does nothing on its own** — it idles in `pause()` and never writes
+anything:
+
+```c
+#include <unistd.h>
+int main(void){ for(;;) pause(); return 0; }
+```
+
+```shell-session
+analyst@lab:/tmp/inj-lab$ ./target > out.txt 2>&1 & echo "PID $!"
+PID 20481
+analyst@lab:/tmp/inj-lab$ cat out.txt
+```
+
+`out.txt` is empty, and will stay empty for as long as the process runs itself.
+
+**The injection** attaches to the running process and makes *its* thread call
+`write`:
+
+```shell-session
+analyst@lab:/tmp/inj-lab$ gdb -q -p 20481 -batch \
+    -ex 'call (int)write(1, "INJECTED\n", 9)' -ex detach
+analyst@lab:/tmp/inj-lab$ cat out.txt
+INJECTED
+```
+
+The string appeared on `target`'s own stdout. `target` has no `write` in its
+source and never called one — the byte came out of its file descriptor because
+its thread was made to execute the call. That is the whole idea: to any monitor
+watching outputs, the write came from `target`, a process with its own history,
+parentage and reputation, not from `gdb` or the attacker.
+
+`ptrace(PTRACE_ATTACH)` is the Linux primitive here, and it is exactly the signal
+a Linux EDR watches for — as `CreateRemoteThread`, `QueueUserAPC` and
+`WriteProcessMemory` are on Windows. The technique is not quiet; its value is the
+borrowed identity, paid for with a very noisy syscall.
+
+**Direct syscalls** are the response to that noise, and the reason they work is a
+layering fact:
+
+```shell-session
+analyst@lab:/tmp/inj-lab$ strace -f -e trace=write bash -c 'echo hi >/dev/null'
+write(1, "hi\n", 3)                     = 3
+```
+
+A normal `write` travels through libc (on Windows, through `ntdll`), and that
+library layer is precisely where a userland EDR installs its hooks. An attacker
+who instead emits the raw `syscall` instruction with the write number in `rax`
+reaches the kernel without ever calling the hooked function, so a userland hook
+on `write` never fires. The catch, and the reason this is an arms race rather than
+a win, is that the kernel still sees the syscall — kernel callbacks and, on
+Windows, ETW Threat Intelligence observe the transition the userland hook missed.
+
+## Injection blends the action, not the act
 
 - **Injection still leaves signals.** `CreateRemoteThread`/cross-process writes and ptrace-attach are themselves suspicious events on a good EDR — injection blends the *action* but the *injection act* is detectable.
 - **Direct syscalls ≠ invisible.** They bypass userland hooks, but kernel callbacks, ETW-TI, and the *anomaly of a non-ntdll syscall* can still catch them.
@@ -76,91 +135,13 @@ The arms race: EDR moved to **kernel callbacks** and **ETW Threat Intelligence**
 - **Detect syscall anomalies:** a `syscall` instruction originating outside `ntdll` (Windows) or unusual direct syscalls is itself an indicator.
 - **Process integrity & CFG/CET:** control-flow integrity and protected processes make hollowing/injection harder; least privilege limits what a foothold can inject into.
 
-## Authorized Lab: Inject a Benign Action into a Running Process (ptrace)
+## Summary
 
-> [!info] Runs on one Linux machine with gcc + gdb — inject a benign `write` into a process YOU started, using ptrace (the same primitive a debugger and an injector use)
-> Requires permission to ptrace your own child (default). Step 5 cleans up.
+You should now be able to:
 
-### Step 1 — Start a benign long-running target with a captured stdout
-
-```bash
-mkdir -p /tmp/inj-lab && cd /tmp/inj-lab
-cat > target.c <<'EOF'
-#include <unistd.h>
-int main(void){ for(;;) pause(); return 0; }   // idle; does nothing on its own
-EOF
-gcc target.c -o target
-./target > out.txt 2>&1 & TPID=$!
-echo "target running as PID $TPID; its stdout -> out.txt (currently empty)"
-sleep 1; echo "out.txt so far: [$(cat out.txt)]"
-```
-
-```text
-target running as PID <pid>; its stdout -> out.txt (currently empty)
-out.txt so far: []
-```
-
-### Step 2 — Inject a benign write() into the target via ptrace (gdb)
-
-```bash
-cd /tmp/inj-lab
-gdb -q -p "$TPID" -batch \
-  -ex 'call (int)write(1, "C2R-CANARY-INJECTED\n", 20)' \
-  -ex detach 2>/dev/null
-echo "injection issued"
-```
-
-```text
-injection issued
-```
-
-### Step 3 — Prove the code ran INSIDE the target process
-
-```bash
-cd /tmp/inj-lab
-sleep 1; echo "target's own stdout now contains: [$(cat out.txt)]"
-```
-
-```text
-target's own stdout now contains: [C2R-CANARY-INJECTED]
-```
-
-The `target` process — which only calls `pause()` and never writes anything itself — emitted the canary, because we made *its* thread execute `write()` via ptrace. The action came from a trusted process's identity: that is process injection. (`ptrace(PTRACE_ATTACH)` is exactly the signal a Linux EDR watches, just as `CreateRemoteThread` is on Windows.)
-
-### Step 4 — Direct syscall vs library call (the hook-bypass idea)
-
-```bash
-cd /tmp/inj-lab
-echo "EDR hooks the LIBRARY layer (ntdll/libc). Compare where a call is visible:"
-strace -f -e trace=write bash -c 'echo via-libc >/dev/null' 2>&1 | grep -m1 write
-echo "^ a normal write() traverses libc (hookable). A DIRECT 'syscall' instruction with rax=1 would hit the kernel"
-echo "  without calling libc's write() at all -> a userland EDR hook on write() never fires (but kernel/ETW-TI may still see it)."
-```
-
-```text
-write(1, "via-libc\n", 9)               = 9
-^ a normal write() traverses libc (hookable). A DIRECT 'syscall' instruction with rax=1 would hit the kernel
-  without calling libc's write() at all -> a userland EDR hook on write() never fires (but kernel/ETW-TI may still see it).
-```
-
-### Step 5 — Cleanup
-
-```bash
-cd /tmp/inj-lab; kill "$TPID" 2>/dev/null
-cd /; rm -rf /tmp/inj-lab; ls -d /tmp/inj-lab 2>&1 | tail -1
-```
-
-```text
-ls: cannot access '/tmp/inj-lab': No such file or directory
-```
-
-**What you should now be able to do:** explain the process-injection techniques and why they blend malicious action into a trusted process, demonstrate cross-process code execution via ptrace, explain how direct syscalls bypass userland EDR hooks (and why kernel telemetry still sees them), and name the injection-primitive and kernel-telemetry defenses.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why running code inside another process evades process-lineage detection, and what a syscall is.
-- **Operator:** Inject a benign action into a running process via ptrace, and explain how direct syscalls skip userland EDR hooks.
-- **Root:** Explain why the injection *act* (remote thread/ptrace/hollowing) is itself detectable, why EDR moved to kernel callbacks/ETW-TI because userland hooks are bypassable, and how CFI/protected-processes/least-privilege defend against injection.
+- Explain why running code inside another process evades process-lineage detection, and what a syscall is.
+- Inject a benign action into a running process via ptrace, and explain how direct syscalls skip userland EDR hooks.
+- Explain why the injection *act* (remote thread/ptrace/hollowing) is itself detectable, why EDR moved to kernel callbacks/ETW-TI because userland hooks are bypassable, and how CFI/protected-processes/least-privilege defend against injection.
 
 ---
 > 🔼 Up: [[Evasion & Endpoint Tradecraft]]

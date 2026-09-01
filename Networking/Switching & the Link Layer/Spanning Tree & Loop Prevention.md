@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/layer2
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Switching & the Link Layer]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbor Discovery -> VLANs & Trunking -> Spanning Tree & Loop Prevention -> Link Layer Security Controls
 
-## Start at Zero: Why a Loop Is Fatal at Layer 2
+## Why a Loop Is Fatal at Layer 2
 
 Redundant links are good engineering — two paths between switches survive a cable failure. But redundancy at Layer 2 creates a **loop**, and a loop is catastrophic, because the Ethernet frame has no field that limits how long it may circulate.
 
@@ -105,37 +105,13 @@ A network without BPDU Guard on its access ports is one crafted BPDU away from e
 
 All BPDU injection and topology manipulation described here must be confined to an isolated lab you own. Sending BPDUs on a production network can trigger a network-wide reconvergence or outage affecting every connected system.
 
-## Authorized Lab: Cause a Storm Safely, Then Prevent It
+## Summary
 
-Use three lab switches (virtualized is ideal, since a real storm is destructive) and a traffic-generating host. Snapshot the lab so a storm is trivially recoverable.
+You should now be able to:
 
-1. **Baseline with STP on.** Cable the three switches in a triangle (a physical loop). With Spanning Tree enabled, confirm one port is in `blocking` and the network is stable. Send a broadcast and confirm it does not multiply.
-2. Inspect the tree and identify the root bridge and the blocked port with the `showstp` command above.
-3. **Demonstrate the danger.** Disable Spanning Tree on all three switches. Send a single broadcast frame and immediately watch interface counters:
-
-```bash
-watch -n1 'ip -s link show eth1 | sed -n "3,4p"'
-```
-
-The packet counters climb explosively as the broadcast multiplies around the loop. Re-enable STP (or restore the snapshot) the moment the effect is clear — do not let it run.
-4. **Root takeover.** With STP restored, from the host send BPDUs advertising a superior (lower) bridge ID. Observe the root bridge change to the attacker and paths recalculate.
-5. **Apply the control.** Enable BPDU Guard on the access port facing the host. Repeat the BPDU injection and confirm the port is disabled immediately upon receiving a BPDU, with a log entry recording the event.
-6. Re-enable the port, restore the baseline configuration, and confirm one port is blocking, the intended switch is root, and the network is stable.
-
-Expected interpretation:
-
-```text
-STP on, loop present -> one port blocks; broadcasts do not multiply
-STP off, loop present -> single broadcast multiplies into a storm within seconds
-Superior BPDU        -> attacker becomes root; inter-switch traffic redirected
-BPDU Guard           -> access port shuts down on any BPDU; attack neutralized at the edge
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why a Layer 2 loop is catastrophic while a Layer 3 loop is merely wasteful, and what a broadcast storm is.
-- **Operator:** Read Spanning Tree state to identify the root bridge and blocked ports, explain what a blocked port is doing, and describe why PortFast exists and what it risks.
-- **Root:** Explain how an attacker takes over the root bridge with a superior BPDU and what that achieves; justify why BPDU Guard on access ports defeats both root takeover and BPDU flooding, and why it is deployed together with PortFast.
+- Explain why a Layer 2 loop is catastrophic while a Layer 3 loop is merely wasteful, and what a broadcast storm is.
+- Read Spanning Tree state to identify the root bridge and blocked ports, explain what a blocked port is doing, and describe why PortFast exists and what it risks.
+- Explain how an attacker takes over the root bridge with a superior BPDU and what that achieves; justify why BPDU Guard on access ports defeats both root takeover and BPDU flooding, and why it is deployed together with PortFast.
 
 ---
 > 🔼 Up: [[Switching & the Link Layer]]

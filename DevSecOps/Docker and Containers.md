@@ -6,7 +6,7 @@ tags:
   - cyber/foundations/docker
   - cyber/offensive/privesc
   - type/tool
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[DevSecOps]]"
 Color: "#3CB44B"
@@ -15,7 +15,7 @@ Color: "#3CB44B"
 # 🐳 1.4 Docker & Containers Masterclass
 
 > [!abstract] The Masterclass
-> **Docker** packages an app and all its dependencies into a portable, disposable **container** — letting you spin up vulnerable targets, full multi-service apps, or clean tooling in seconds. This chapter covers fundamentals and secure orchestration in depth — image layers, the build cache, multi-stage builds, volumes, and networking modes — then the dangerous flip-side: how the isolation model (namespaces, cgroups, capabilities, seccomp) is actually built, how containers are broken out of it step by step, and how to harden and detect against every vector. **`#level/apprentice` → `#level/operator`**
+> **Docker** packages an app and all its dependencies into a portable, disposable **container** — letting you spin up vulnerable targets, full multi-service apps, or clean tooling in seconds. This chapter covers fundamentals and secure orchestration in depth — image layers, the build cache, multi-stage builds, volumes, and networking modes — then the dangerous flip-side: how the isolation model (namespaces, cgroups, capabilities, seccomp) is actually built, how containers are broken out of it step by step, and how to harden and detect against every vector. **`#level/apprentice` → `#difficulty/medium`**
 
 > [!tip] Chapter Map
 > **** · ****
@@ -367,6 +367,14 @@ flowchart LR
 ```
 
 ---
+
+## Summary
+
+You should now be able to:
+
+- Build and reason about container images, including multi-stage builds that ship only the final artifact.
+- Identify and demonstrate the common container-escape paths — a mounted Docker socket, sensitive host mounts, dangerous capabilities — and explain why each breaks isolation.
+- Name the runtime controls (least privilege, dropped capabilities, read-only mounts, Falco-style monitoring) that detect or prevent an escape.
 
 ## 🔗 Related Master Notes & Deep-Dives
 - **1.5 Programming for Security** — build the services you containerize

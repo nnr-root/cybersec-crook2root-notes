@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/services
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Core Network Services]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 DNS Resolution & Records -> DNS Security & Encrypted Transports -> Local Name Resolution & Service Discovery -> Network Time Synchronization -> Email Transport Protocols -> Network Management Protocols
 
-## Start at Zero: Why Clocks Drift and Why It Matters
+## Why Clocks Drift and Why It Matters
 
 Every computer has a clock, and every clock drifts. The oscillators that keep time are imperfect and temperature-sensitive, so an unsynchronized machine gains or loses seconds per day. Independently drifting clocks across a network make it impossible to say which of two events happened first — and a surprising amount of security infrastructure depends on exactly that ability.
 
@@ -107,38 +107,13 @@ ntpq -c rv <server> 2>/dev/null || echo "monlist/mode6 disabled — good"
 
 All testing described here must be confined to systems within an authorized scope. Manipulating a time source affects authentication and logging for every system that trusts it, and amplification testing directs traffic at third parties.
 
-## Authorized Lab: Skew a Clock, Watch Authentication Fail
+## Summary
 
-Use a lab with a time server, a client, and — for the authentication portion — a service that depends on time (a Kerberos KDC and a domain-joined client is the clearest demonstration).
+You should now be able to:
 
-1. **Baseline.** Confirm the client is synchronized with `chronyc tracking` and `chronyc sources`, and confirm a time-dependent operation (a Kerberos authentication, or a TLS handshake against an internal certificate) succeeds.
-2. **Observe the exchange.** Capture NTP traffic and identify the request/reply on UDP 123:
-
-```bash
-sudo tcpdump -i eth0 -nn -c 4 'udp port 123'
-```
-
-3. **Skew the clock.** Stop the time daemon and manually set the client's clock outside the authentication tolerance — more than five minutes off for the Kerberos case.
-4. **Observe the consequence.** Retry the time-dependent operation and confirm it now fails. For Kerberos, expect a clock-skew error; for TLS, a certificate validity error. This demonstrates that time is a hard dependency, not a soft one.
-5. **Recover.** Restart the time daemon, watch the client discipline its clock back toward correct time, and confirm the operation succeeds again once the offset is within tolerance.
-6. **Demonstrate outlier rejection.** Configure the client with several sources, then have one source (in the lab) return a badly wrong time. Confirm the client rejects the outlier rather than following it, and that a sanity limit refuses an implausibly large jump.
-7. **Cleanup.** Restore correct time configuration and confirm `chronyc tracking` shows a small offset and the expected stratum.
-
-Expected interpretation:
-
-```text
-Synchronized     -> time-dependent authentication succeeds
-Clock skewed     -> Kerberos/TLS fails outright; time is a hard dependency
-Recovered        -> operation works again once offset is within tolerance
-Multiple sources -> a single lying server is outvoted, not believed
-Sanity limit     -> an implausible jump is refused, blunting manipulation
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why clocks drift, what NTP does beyond setting the clock, and what stratum measures.
-- **Operator:** Read `chronyc` output to confirm synchronization, identify the selected source and its stratum, and recognize a growing offset as impending failure; explain the four-timestamp offset calculation and its symmetry assumption.
-- **Root:** Explain why time is a hard dependency for Kerberos, certificates, and log correlation; describe how NTP amplification worked and why old software is dangerous, and how time manipulation enables replay or denial of service — and why NTS, multiple sources, and sanity limits are the defenses.
+- Explain why clocks drift, what NTP does beyond setting the clock, and what stratum measures.
+- Read `chronyc` output to confirm synchronization, identify the selected source and its stratum, and recognize a growing offset as impending failure; explain the four-timestamp offset calculation and its symmetry assumption.
+- Explain why time is a hard dependency for Kerberos, certificates, and log correlation; describe how NTP amplification worked and why old software is dangerous, and how time manipulation enables replay or denial of service — and why NTS, multiple sources, and sanity limits are the defenses.
 
 ---
 > 🔼 Up: [[Core Network Services]]

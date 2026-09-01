@@ -5,6 +5,7 @@ tags:
   - tree/appsec
   - cyber/web/basics
   - type/concept
+  - difficulty/easy
   - level/apprentice
 Domain:
   - "[[Web Security]]"
@@ -103,18 +104,12 @@ flowchart LR
 ### Inspector — the DOM is attacker-controlled
 The Inspector shows the *live* DOM (after CSS/JS run), and you can edit it locally. The classic lesson: a client-side "paywall" that only *hides* premium content with CSS.
 
-![[Pasted image 20251223080855.png]]
-
 Right-click the blocking element → **Inspect**, find the `div.premium-customer-blocker`, and flip its `display: block` to `none`:
-
-![[Pasted image 20251223080917.png]]
 
 The content (and the flag) appears — proving the control was **client-side only**. This generalises to a rule you'll rely on constantly: *the client is fully attacker-controlled; never enforce authorization, price, or role in the browser.* Hidden form fields, disabled buttons, and `type=hidden` price inputs are all editable here.
 
 ### Debugger — reading and pausing JavaScript
 The **Debugger** (Chrome: *Sources*) inspects and controls JS execution. Minified/**obfuscated** JS (variables renamed to gibberish, dummy code inserted, everything on one line) can be *Pretty-Print*'d (`{ }`) to restore formatting, then stepped through with **breakpoints** — pausing execution to freeze a page and read its logic. Here a `flash['remove']()` call wipes a popup; a breakpoint on that line freezes it in place so you can read what it was hiding:
-
-![[Pasted image 20251223081950.png]]
 
 > **On obfuscation & "web hacking" JS:** obfuscation *raises the effort* to read JS but is **not** a security control — a breakpoint, a deobfuscator site, or a JS beautifier recovers the logic. Never put secrets, API keys, or auth logic in client-side JS; it all ships to the attacker. Source maps (`.js.map`) often leak the original readable source entirely.
 
@@ -135,9 +130,6 @@ The **Network** tab logs every request the page makes, including background **AJ
 | `sitemap.xml` | Every page the owner *does* list — including forgotten/legacy ones |
 | `.git/`, `.env`, `*.bak` | Source code, credentials (see **OSINT**) |
 | HTTP headers | `Server`, `X-Powered-By` → software + version |
-
-![[Pasted image 20251223090036.png]]
-![[Pasted image 20251223090211.png]]
 
 ```bash
 curl https://target.thm/robots.txt
@@ -245,11 +237,17 @@ token = jwt.encode({"username":"user","admin":1}, public_key, algorithm="HS256")
 
 **7 — Cross-service relay (audience confusion).** One SSO issuer, many apps. If an app doesn't enforce the `aud` claim, a token minted (with `"admin":true`) for App A is replayed against App B → privilege escalation:
 
-![[Pasted image 20260609133933.png]]
-
 > **Secure JWT checklist:** pin the algorithm · reject `none` · strong random secret (or asymmetric keys, verify with the *public* key only) · verify `exp`, `aud`, `iss` server-side · never authorize on an unverified claim · keep lifetimes short. This is **OWASP A07** and API **API2**.
 
 ---
+
+## Summary
+
+You should now be able to:
+
+- Read and construct an HTTP transaction, and systematically walk an unfamiliar application's structure.
+- Discover hidden content and subdomains with calibrated fuzzing and enumeration, and feed the results into testing.
+- Decode and attack a JWT, and explain what each of its three segments controls and how tampering is detected.
 
 ## 🔗 Related Master Notes & Deep-Dives
 - **2.2 OWASP Top 10** — the vulnerability catalogue this recon feeds

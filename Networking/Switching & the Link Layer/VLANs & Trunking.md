@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/layer2
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Switching & the Link Layer]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbor Discovery -> VLANs & Trunking -> Spanning Tree & Loop Prevention -> Link Layer Security Controls
 
-## Start at Zero: One Switch, Many Networks
+## One Switch, Many Networks
 
 Without VLANs, a switch is one broadcast domain — every port can reach every other port at Layer 2. A **VLAN (Virtual Local Area Network)** partitions that single switch into multiple logical broadcast domains. Ports assigned to VLAN 10 form one network; ports in VLAN 20 form another; and a frame cannot pass between them without a routing decision.
 
@@ -105,46 +105,13 @@ Double tagging is one-directional — the attacker can inject frames into the ta
 
 All hopping and trunk-negotiation testing described here must occur only on an isolated lab you own. Successfully hopping a VLAN on a production network crosses a segmentation boundary that other systems depend on.
 
-## Authorized Lab: Configure, Then Hop, a VLAN
+## Summary
 
-Use two lab switches (hardware or virtualized) and three VMs. Record baseline port configurations first.
+You should now be able to:
 
-1. Configure Switch 1 with two access VLANs: place Host-A in VLAN 10 and Host-B in VLAN 20. Confirm A and B cannot reach each other at Layer 2.
-2. Configure the link between the two switches as a trunk carrying both VLANs, with a defined native VLAN. Place Host-C in VLAN 10 on Switch 2 and confirm A and C can now reach each other while B remains isolated.
-3. Verify the tagging by capturing on the trunk link:
-
-```bash
-sudo tcpdump -i eth0 -nn -e -c 4 vlan
-```
-
-Expected excerpt:
-
-```text
-00:0c:29:4a:9b:31 > ff:ff:ff:ff:ff:ff, ethertype 802.1Q (0x8100), vlan 10, ...
-00:0c:29:7b:2c:14 > ff:ff:ff:ff:ff:ff, ethertype 802.1Q (0x8100), vlan 20, ...
-```
-
-The `vlan 10` and `vlan 20` markers confirm both VLANs share the trunk, kept separate by their tags.
-
-4. Demonstrate switch spoofing: leave dynamic trunk negotiation enabled on Host-A's access port, have Host-A request a trunk, and observe the port becoming a trunk that exposes both VLANs. Then disable negotiation, hard-set the port to access, and confirm the request now fails.
-5. Demonstrate double tagging: set the native VLAN to a production VLAN (the misconfiguration), have Host-A on the native VLAN send a double-tagged frame targeting VLAN 20, and confirm it arrives at Host-B. Then change the native VLAN to a dedicated unused VLAN and confirm the injection no longer reaches VLAN 20.
-6. Restore all ports to their baseline configuration and confirm the original isolation: A and C reachable, B isolated, no port willing to trunk.
-
-Expected interpretation:
-
-```text
-Access ports        -> A (VLAN 10) and B (VLAN 20) isolated at Layer 2
-Trunk capture       -> both VLANs share one link, separated only by tags
-Negotiation enabled -> attacker's port becomes a trunk; all VLANs exposed
-Native = production  -> double-tagged frame injects into VLAN 20
-Native = unused      -> injection fails; the attacker is never on the native VLAN
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what a VLAN accomplishes, the difference between an access port and a trunk port, and why an endpoint never sees a tag.
-- **Operator:** Read the 802.1Q tag in a capture, configure access and trunk ports, and verify that two VLANs are isolated by testing reachability rather than trusting the design.
-- **Root:** Explain switch spoofing and double tagging in terms of the native VLAN and dynamic trunk negotiation; justify why VLANs are a segmentation control rather than a boundary for the highest-value assets, and why VLAN design and inter-VLAN routing policy must be reviewed together.
+- Explain what a VLAN accomplishes, the difference between an access port and a trunk port, and why an endpoint never sees a tag.
+- Read the 802.1Q tag in a capture, configure access and trunk ports, and verify that two VLANs are isolated by testing reachability rather than trusting the design.
+- Explain switch spoofing and double tagging in terms of the native VLAN and dynamic trunk negotiation; justify why VLANs are a segmentation control rather than a boundary for the highest-value assets, and why VLAN design and inter-VLAN routing policy must be reviewed together.
 
 ---
 > 🔼 Up: [[Switching & the Link Layer]]

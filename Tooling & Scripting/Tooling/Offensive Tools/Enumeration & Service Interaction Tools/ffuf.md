@@ -1,7 +1,7 @@
 ---
 title: "ffuf"
 aliases: ["Fuzz Faster U Fool"]
-tags: [tree/tooling, cyber/tooling/offensive/ffuf, type/tool, level/root]
+tags: [tree/tooling, cyber/tooling/offensive/ffuf, type/tool, difficulty/hard]
 Domain: "[[Enumeration & Service Interaction Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ ffuf ("Fuzz Faster U Fool") is a high-performance HTTP fuzzer. Its trick is a si
 ## Parent Learning Order
 Gobuster -> ffuf -> feroxbuster -> dirsearch -> Netcat -> enum4linux
 
-## Crook — The Mental Model
+## Put FUZZ here, and define what counts as interesting
 
 Everything ffuf does is "put `FUZZ` here, try every word, keep the interesting responses." *Interesting* is defined by matchers (`-m*`, keep) and filters (`-f*`, drop) on the response's status/size/words/lines — which is just the content-discovery status map applied programmatically.
 
-![[tool_content_discovery_status.svg]]
-
 Read the diagram and ffuf's filters make sense: `-fc 404` drops misses, `-fs 127` drops the soft-404 constant, `-mc 200,403` keeps the codes that mean "something's here." The keyword-and-filter model is why ffuf generalises beyond paths to *any* fuzzable position.
 
-## Operator — Make It Work
+## Moving the keyword to fuzz any position
 
 Directory discovery, with the soft-404 filtered by size:
 
@@ -44,7 +42,7 @@ operator@lab:~$ ffuf -w hosts.txt  -u https://192.0.2.10/ -H 'Host: FUZZ.example
 
 `-ac` (auto-calibration) sends baseline probes and derives the filters for you — but inspect its choices, don't trust them blindly. Output evidence with `-of json -o`.
 
-## Root — Internals & The Deliberate Break
+## Clusterbomb, and the combinatorics that bite you
 
 Multiple wordlists + a mode = a combinatorial engine, and this is where operators self-inflict pain:
 
@@ -58,11 +56,13 @@ at 20 req/s  →  ~5.8 days
 
 The other classic failure is filters: an over-broad `-fs` silently drops the *real* result (zero hits), while missing calibration returns millions of soft-404 "hits." When results look wrong, compare a single request with **curl** before changing five flags at once, and keep a response sample for every retained cluster rather than treating each matched line as a finding.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** What does the `FUZZ` keyword do, and why does it make ffuf more than a directory brute-forcer?
-- **Operator:** How do `-fs`, `-fc`, `-mc`, and `-ac` combine to cut false positives?
-- **Root:** Explain why `clusterbomb` with two wordlists can become a self-DoS, and how mode choice controls it.
+You should now be able to:
+
+- What does the `FUZZ` keyword do, and why does it make ffuf more than a directory brute-forcer?
+- How do `-fs`, `-fc`, `-mc`, and `-ac` combine to cut false positives?
+- Explain why `clusterbomb` with two wordlists can become a self-DoS, and how mode choice controls it.
 
 ---
 > 🔼 Up: [[Enumeration & Service Interaction Tools]]

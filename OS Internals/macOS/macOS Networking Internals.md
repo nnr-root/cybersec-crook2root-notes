@@ -6,7 +6,7 @@ tags:
   - cyber/foundations/macos
   - cyber/networking
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[macOS]]"
 Color: "#FFA500"
@@ -20,7 +20,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File System -> macOS Processes & Daemons -> macOS Identity, Keychain & Credentials -> macOS Networking Internals -> macOS Security Mechanisms -> macOS Binaries & Runtime Loading -> macOS Observability, Incident Response & Forensics
 
-## Crook — Follow One Packet
+## Follow One Packet
 
 ### Vocabulary & First Mental Model
 
@@ -88,7 +88,13 @@ IPv6 is enabled by default and often preferred. Link-local addresses use an inte
 > [!tip] The analogy, and where it breaks
 > A building where each department may have its own preferred courier and address book, rather than one central mailroom. The analogy breaks in the confusion it creates: name resolution can legitimately return *different answers* depending on which interface or VPN the request is scoped to, so 'DNS is broken' often means 'a different resolver answered than you assumed'.
 
-## Operator — DNS, Sockets, Routes & Packet Evidence
+**The deliberate break:** macOS is Unix, the shell is familiar, and `ifconfig` and `netstat` are right there — so it is reasonable to assume Linux networking knowledge transfers directly.
+
+The userland is BSD-derived, but the parts that decide what actually happens are Apple's and have no Linux equivalent. Filtering is `pf`, not iptables or nftables. Network Extensions and content filters can intercept traffic above the packet layer entirely, so a rule set that looks permissive may still be blocked by a system extension. And several familiar tools report a *stale or partial* view: `netstat -rn` on macOS does not show you everything routing decisions consult.
+
+**How you'd spot it:** if the firewall rules say allow and the traffic does not flow, look for a Network Extension or the Application Firewall before you re-read the `pf` rules — they are enforced somewhere the packet filter cannot see.
+
+## DNS, Sockets, Routes & Packet Evidence
 
 ### Scoped DNS & Proxies
 
@@ -153,7 +159,7 @@ Expected TCP metadata:
 
 Capture points matter. A tunnel interface such as `utun4` may show inner traffic while a physical interface shows encrypted outer transport. `lo0` shows local IPC over IP. `pktap` can include process metadata when supported. Document interface, filter, snap length, timestamps, and system clock source.
 
-## Root — pf, Application Firewall & Network Extension
+## pf, Application Firewall & Network Extension
 
 ### Packet Filter
 
@@ -230,93 +236,6 @@ profiles show -type configuration | grep -A12 -Ei 'VPN|DNS|Filter|Proxy'
 
 A timeout does not prove firewall filtering. It can result from unresolved neighbor discovery, black-holed route, remote service loss, packet loss, proxy failure, or deliberate drop. A reset proves an active endpoint or middlebox responded but does not identify which one without capture context.
 
-## Hands-On Lab: Scoped DNS, the pf Firewall and Per-App Networking
-
-> [!info] Runs on any Mac — read-only inspection in Terminal
-> macOS networking has surprises around name resolution and per-interface scope.
-
-### Step 1 — Map listeners to processes
-
-```bash
-sudo lsof -iTCP -sTCP:LISTEN -n -P 2>/dev/null | awk 'NR<=4{print $1, $9}'
-```
-
-```text
-COMMAND NAME
-launchd *:22 (LISTEN)
-rapportd *:49152 (LISTEN)
-ControlCe *:7000 (LISTEN)
-```
-
-`lsof` ties each listening port to its process — the macOS equivalent of `ss -tlnp`. `ControlCe` on 7000 is AirPlay receiver, a service many users do not realize is listening.
-
-### Step 2 — See scoped, per-service DNS
-
-```bash
-scutil --dns | grep -E 'resolver #|nameserver|domain' | head -8
-```
-
-```text
-resolver #1
-  nameserver[0] : 192.168.1.1
-resolver #2
-  domain   : corp.example.com
-  nameserver[0] : 10.0.0.53
-```
-
-This is the macOS surprise: **multiple resolvers scoped to different domains**. A query for `corp.example.com` uses a different server than a public lookup. "DNS is broken" often means "a different scoped resolver answered than you assumed."
-
-### Step 3 — Confirm which resolver a name actually uses
-
-```bash
-dscacheutil -q host -a name apple.com | head -3
-scutil --dns | grep -c 'resolver #'
-```
-
-```text
-name: apple.com
-ip_address: 17.253.144.10
-
-4
-```
-
-Four separate resolver configurations exist. Using `dscacheutil` (which respects the scoping) rather than a raw `dig` is how you see what the system will really do.
-
-### Step 4 — Read the pf firewall state
-
-```bash
-sudo pfctl -s info 2>/dev/null | grep -E 'Status|Rules' | head -2
-sudo pfctl -s rules 2>/dev/null | head -2 || echo "no explicit pf rules loaded (Application Firewall may still be active)"
-```
-
-```text
-Status: Enabled for 3 days
-```
-
-```text
-no explicit pf rules loaded (Application Firewall may still be active)
-```
-
-macOS has **two** firewalls: `pf` (the BSD packet filter, rule-based) and the Application Firewall (per-app allow/deny). Checking only one gives a false picture of the host's real policy.
-
-### Step 5 — Check the Application Firewall
-
-```bash
-/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null
-/usr/libexec/ApplicationFirewall/socketfilterfw --getblockall 2>/dev/null
-```
-
-```text
-Firewall is enabled. (State = 1)
-Block all DING setting is disabled
-```
-
-The Application Firewall decides by **application identity**, not port — a very different model from pf. A complete picture of macOS network policy requires reading both.
-
-**Cleanup:** none — every command read state only.
-
-**What you should now be able to do:** map listeners to processes with lsof, explain scoped per-domain DNS resolvers, and read both the pf and Application Firewall to see the true network policy.
-
 ## Cybersecurity Implications
 
 - Service names, BSD interfaces, tunnel interfaces, and physical ports are distinct objects.
@@ -326,11 +245,13 @@ The Application Firewall decides by **application identity**, not port — a ver
 - A listener proves local state, not remote reachability or secure authentication.
 - Network extensions are privileged policy components requiring identity, health, privacy, and fail-state engineering.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Map an application socket to DNS, route, interface, and remote endpoint.
-- **Operator:** Diagnose listeners, scoped DNS, IPv4/IPv6 routes, proxies, VPNs, and packet captures using native tools.
-- **Root:** Explain an end-to-end flow through XNU state, `pf`, Application Firewall, Network Extension, tunnel encapsulation, and physical transmission—then identify the exact control responsible for an allow, drop, reset, redirect, or leak.
+You should now be able to:
+
+- Map an application socket to DNS, route, interface, and remote endpoint.
+- Diagnose listeners, scoped DNS, IPv4/IPv6 routes, proxies, VPNs, and packet captures using native tools.
+- Explain an end-to-end flow through XNU state, `pf`, Application Firewall, Network Extension, tunnel encapsulation, and physical transmission—then identify the exact control responsible for an allow, drop, reset, redirect, or leak.
 
 ---
 > 🔼 Up: [[macOS]]

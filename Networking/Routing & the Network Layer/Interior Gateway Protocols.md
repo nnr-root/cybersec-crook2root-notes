@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/routing
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Routing & the Network Layer]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interior Gateway Protocols -> BGP & Internet Routing -> First-Hop Redundancy & Gateway Failover -> Routing Security & Path Validation
 
-## Start at Zero: Why Routers Must Talk
+## Why Routers Must Talk
 
 Static routing fails at scale for one reason: it cannot react to change. When a link goes down, someone must notice and reconfigure. **Dynamic routing** removes the human from the loop — routers exchange information about the networks they can reach, and when the topology changes, they recompute paths automatically within seconds.
 
@@ -80,8 +80,8 @@ ip route show proto ospf
 Expected excerpt:
 
 ```text
-10.0.20.0/24 via 10.0.255.2 dev eth1 proto ospf metric 20
-10.0.30.0/24 via 10.0.255.6 dev eth2 proto ospf metric 30
+10.10.20.0/24 via 10.10.250.2 dev eth1 proto ospf metric 20
+10.10.30.0/24 via 10.10.250.6 dev eth2 proto ospf metric 30
 ```
 
 `proto ospf` marks these as learned dynamically rather than configured by hand. The metrics reflect the computed path cost, and if a link fails, these entries update automatically as the protocol reconverges — the behaviour static routing cannot provide.
@@ -106,32 +106,13 @@ Every IGP shares one assumption: **the routers speaking the protocol are trustwo
 
 All routing-protocol configuration and testing described here must occur only on an isolated lab or authorized infrastructure. Injecting routing updates on a production network can redirect or blackhole traffic for every system that depends on the affected paths.
 
-## Authorized Lab: Converge, Fail Over, and Inject
+## Summary
 
-Use three or four lab routers (virtualized routers running an OSPF daemon are ideal) arranged with at least one redundant path, plus a host on each end.
+You should now be able to:
 
-1. **Bring up OSPF** on the inter-router links, leaving host-facing interfaces passive. Confirm adjacencies form and that each router learns the remote networks with `ip route show proto ospf`.
-2. **Verify path selection.** Confirm end-to-end connectivity and, using `ip route get`, identify which path traffic takes and why (lowest cost).
-3. **Test convergence.** Disable the active link. Watch the routes update automatically to the redundant path within seconds, and confirm connectivity survives with only a brief interruption — the behaviour static routing cannot match. Restore the link.
-4. **Demonstrate injection without authentication.** From a router (or a host emulating one) on an unauthenticated segment, advertise a false, attractive route to a target network. Confirm traffic is redirected through the injecting device with no error visible to the end hosts.
-5. **Apply the controls.** Enable cryptographic authentication on the routing adjacencies and set host-facing interfaces passive. Repeat the injection and confirm the false updates are now rejected because the injector lacks the key.
-6. **Cleanup.** Restore the baseline configuration, confirm adjacencies and learned routes match the starting state, and verify end-to-end connectivity over the intended path.
-
-Expected interpretation:
-
-```text
-Adjacency formed  -> routers exchange maps and learn remote networks automatically
-Link failure      -> routes reconverge to the backup path in seconds, unlike static
-Unauthenticated   -> a false route is injected and silently redirects traffic
-Authenticated     -> updates from a keyless device are rejected; injection fails
-Passive interfaces-> the protocol never listens on user-facing segments
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why routers need to exchange routing information, and the difference between "routing by rumour" (distance-vector) and "routing by shared map" (link-state).
-- **Operator:** Read dynamically learned routes, verify adjacencies, and demonstrate automatic convergence after a link failure; explain why an adjacency that fails to form makes destinations unreachable while both routers look healthy.
-- **Root:** Explain how unauthenticated updates let an attacker inject routes for interception or blackholing in both protocol families; justify passive interfaces and cryptographic authentication as the controls, and describe how flooding updates attacks the control plane itself.
+- Explain why routers need to exchange routing information, and the difference between "routing by rumour" (distance-vector) and "routing by shared map" (link-state).
+- Read dynamically learned routes, verify adjacencies, and demonstrate automatic convergence after a link failure; explain why an adjacency that fails to form makes destinations unreachable while both routers look healthy.
+- Explain how unauthenticated updates let an attacker inject routes for interception or blackholing in both protocol families; justify passive interfaces and cryptographic authentication as the controls, and describe how flooding updates attacks the control plane itself.
 
 ---
 > 🔼 Up: [[Routing & the Network Layer]]

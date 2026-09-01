@@ -1,6 +1,6 @@
 ---
 title: "Influence, Decision-Making & Human Risk"
-tags: [tree/offensive, cyber/offensive/social/psychology]
+tags: [tree/offensive, cyber/offensive/social/psychology, difficulty/easy]
 Domain: "[[Human Factors & Pretext Development]]"
 Color: "#DC143C"
 ---
@@ -46,44 +46,13 @@ Required control: two-person approval outside the message channel
 
 Mastery means designing systems in which refusal is socially safe, verification is fast, and urgent exceptions leave a reviewable audit trail.
 
-## Runnable Lab (one machine, Python)
+## Summary
 
-Social-engineering messages engineer a decision context out of a handful of psychological levers — urgency, authority, scarcity, fear. This lab scores a message for those levers, turning a fuzzy "feels like phishing" into a countable signal.
+You should now be able to:
 
-**Step 1 — the trigger scorer (`influence.py`).**
-
-```python
-triggers={"urgency":["now","immediately","within 30 minutes","expires"],
-          "authority":["CEO","director","on behalf of"],
-          "scarcity":["last chance","limited","only today"],
-          "fear":["suspended","locked","legal action","fired"]}
-msg="URGENT: on behalf of the CEO — your account will be suspended within 30 minutes unless you verify now"
-m=msg.lower()
-hits={c:[w for w in ws if w in m] for c,ws in triggers.items()}
-```
-
-**Step 2 — run it.**
-
-```console
-$ python3 influence.py
-  urgency  : ['now', 'within 30 minutes']
-  authority: ['on behalf of']
-  fear     : ['suspended']
-influence_pressure_score = 4  (high score = engineered decision context, not a real request)
-control: high-pressure + sensitive action  =>  mandatory slow-path verification
-```
-
-**Step 3 — the deliberate contrast.** Re-run with a normal message ("Here's the report you asked for") and the score drops to 0. The point is not to block words — it is that **pressure + a sensitive action** is the pattern that should force a slow, out-of-band check.
-
-**Step 4 — cleanup:** read-only text scoring — no cleanup required.
-
-**What you should now be able to do:** name the classic influence levers, spot them in a message, and design the process control (a mandatory slow path) that neutralises them regardless of wording.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Why do attackers manufacture urgency and invoke authority?
-- **Operator:** Two messages score identically. Why is *scoring* still less reliable than a process that makes the safe action the easy action?
-- **Root:** Explain why security awareness training that relies on individuals "spotting" pressure fails at scale, and what system-level control replaces it.
+- Why do attackers manufacture urgency and invoke authority?
+- Two messages score identically. Why is *scoring* still less reliable than a process that makes the safe action the easy action?
+- Explain why security awareness training that relies on individuals "spotting" pressure fails at scale, and what system-level control replaces it.
 
 ---
 > 🔼 Up: [[Human Factors & Pretext Development]]

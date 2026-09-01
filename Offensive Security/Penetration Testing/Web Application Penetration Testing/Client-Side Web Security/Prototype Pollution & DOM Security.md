@@ -1,7 +1,7 @@
 ---
 title: "Prototype Pollution & DOM Security"
 aliases: ["Prototype Pollution", "DOM Security", "JavaScript Prototype Pollution"]
-tags: [tree/offensive, cyber/offensive/web/client-side/prototype, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/web/client-side/prototype, type/technique, difficulty/hard]
 Domain: "[[Client-Side Web Security]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 CORS & Clickjacking -> Cross-Site Scripting -> CSRF & SameSite Testing -> Prototype Pollution & DOM Security
 
-## Start at Zero: Poisoning the Blueprint Every Object Shares
+## Poisoning the Blueprint Every Object Shares
 
 In JavaScript, almost every object inherits from a shared blueprint: `Object.prototype`. Properties on that blueprint are visible to *every* object in the program. **Prototype pollution** is a flaw where attacker input can *write* to that shared blueprint — typically via a specially-crafted key like `__proto__` — so a property the attacker sets appears on *all* objects at once. This is uniquely dangerous because it corrupts the application globally: a single polluted property can change how unrelated code behaves, and combined with a "gadget" (code that reads that property), it escalates to XSS or even server-side code execution in Node.js.
 
@@ -75,7 +75,7 @@ flowchart TD
     G -->|"none"| L["Pollution present, impact latent"]
 ```
 
-## Failure Modes and Interpretation
+## Pollution with no gadget is still a finding
 
 - **Pollution without a gadget.** You can pollute the prototype but find no gadget to escalate — still a finding (the pollution primitive), because a future code change or library update can add a gadget. Report the primitive.
 - **Invisible in own-properties.** The polluted property does not appear in the object's own keys (`Object.keys()` misses it) — check inherited properties (`obj.polluted`, `in` operator) to detect it.
@@ -91,82 +91,13 @@ flowchart TD
 - **Schema-validate untrusted JSON** so unexpected keys like `__proto__` are rejected before any merge.
 - **Detection** is hard because the payload is valid JSON; look for `__proto__`/`constructor` keys in inputs and the downstream *effects* (unexpected global property behavior). The durable defense is prevention at the merge boundary.
 
-## Authorized Lab: Pollute a Prototype You Build
+## Summary
 
-> [!info] Runs on one machine with Node.js — demonstrates the pollution primitive and a benign auth-bypass gadget
-> All in-process; no network, no real users. Step 4 needs no cleanup (nothing persists).
+You should now be able to:
 
-### Step 1 — Show a vulnerable merge polluting the global prototype
-
-```bash
-node -e '
-const merge = (t,s) => { for (const k in s){ if(s[k]&&typeof s[k]==="object"){t[k]=t[k]||{};merge(t[k],s[k]);}else t[k]=s[k]; } return t; };
-const attacker = JSON.parse("{\"__proto__\":{\"polluted\":\"CANARY-PP\"}}");
-merge({}, attacker);
-console.log("unrelated object .polluted =", ({}).polluted);
-'
-```
-
-```text
-unrelated object .polluted = CANARY-PP
-```
-
-A fresh object inherits the attacker's `polluted` property — global contamination from one merge.
-
-### Step 2 — Escalate via an auth-bypass gadget
-
-```bash
-node -e '
-const merge = (t,s) => { for (const k in s){ if(s[k]&&typeof s[k]==="object"){t[k]=t[k]||{};merge(t[k],s[k]);}else t[k]=s[k]; } return t; };
-// the app checks user.isAdmin somewhere (the gadget)
-function isAdminUser(u){ return !!u.isAdmin; }
-const normalUser = {name:"alice"};                 // NOT an admin
-console.log("before pollution, alice admin?", isAdminUser(normalUser));
-merge({}, JSON.parse("{\"__proto__\":{\"isAdmin\":true}}"));   // attacker input
-console.log("after  pollution, alice admin?", isAdminUser(normalUser));
-'
-```
-
-```text
-before pollution, alice admin? false
-after  pollution, alice admin? true
-```
-
-The gadget (`isAdminUser`) reads `user.isAdmin`. Alice's object never had that property — but after pollution she inherits `isAdmin:true` from the prototype, so the auth check passes. Prototype pollution escalated to a **privilege bypass** via an existing gadget.
-
-### Step 3 — Show the fix
-
-```bash
-node -e '
-const safeMerge = (t,s) => { for (const k in s){ if(k==="__proto__"||k==="constructor"||k==="prototype") continue; if(s[k]&&typeof s[k]==="object"){t[k]=t[k]||{};safeMerge(t[k],s[k]);}else t[k]=s[k]; } return t; };
-safeMerge({}, JSON.parse("{\"__proto__\":{\"isAdmin\":true}}"));
-console.log("with dangerous keys rejected, unrelated object .isAdmin =", ({}).isAdmin);
-'
-```
-
-```text
-with dangerous keys rejected, unrelated object .isAdmin = undefined
-```
-
-Rejecting `__proto__`/`constructor`/`prototype` keys stops the pollution — `undefined`, not `true`. That key-rejection at the merge boundary is the direct fix.
-
-### Step 4 — No cleanup needed
-
-```bash
-echo "Each node -e ran in its own process that has already exited; nothing persists on disk or in memory."
-```
-
-```text
-Each node -e ran in its own process that has already exited; nothing persists on disk or in memory.
-```
-
-**What you should now be able to do:** explain how `__proto__` in a recursive merge pollutes the global prototype, demonstrate the primitive with a benign canary, escalate via an auth-bypass gadget, and name the key-rejection and `Object.create(null)` fixes.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why writing to `Object.prototype` affects every object, and why a `__proto__` key in untrusted JSON is dangerous.
-- **Operator:** Demonstrate prototype pollution with a benign canary and escalate it via an existing gadget (auth bypass), and detect pollution via inherited (not own) properties.
-- **Root:** Explain how gadgets turn the pollution primitive into XSS/RCE, why the pollution is invisible in own-properties, and why key rejection, `Object.create(null)`, and prototype freezing are the layered fixes.
+- Explain why writing to `Object.prototype` affects every object, and why a `__proto__` key in untrusted JSON is dangerous.
+- Demonstrate prototype pollution with a benign canary and escalate it via an existing gadget (auth bypass), and detect pollution via inherited (not own) properties.
+- Explain how gadgets turn the pollution primitive into XSS/RCE, why the pollution is invisible in own-properties, and why key rejection, `Object.create(null)`, and prototype freezing are the layered fixes.
 
 ---
 > 🔼 Up: [[Client-Side Web Security]]

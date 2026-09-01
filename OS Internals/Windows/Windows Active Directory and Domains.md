@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/windows
   - type/technique
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
@@ -22,7 +22,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations -> Windows Drivers I-O & Kernel Debugging -> Windows Processes, Services & Boot -> Windows File System & Registry -> Windows Networking Internals -> Windows Security & Access Control -> Windows Identity, Credentials & Authentication -> Windows Active Directory & Domains -> Windows Command Prompt & Batch -> Windows PowerShell -> Windows Logging & Auditing -> Windows Diagnostics, Crash Dumps & Performance -> Windows Sysinternals & Troubleshooting
 
-## Start at Zero: A Directory Is a Distributed Identity Database
+## A Directory Is a Distributed Identity Database
 
 A **workgroup** lets each computer maintain its own users; a **domain** centralizes identities, policy, authentication, and resource discovery. Active Directory Domain Services stores those objects in a replicated database on **domain controllers**. A user name is only a label: the durable identity is a SID, and access depends on group membership, credentials, tickets, and ACLs. Learn four nouns first: an **object** is a directory record, an **attribute** is one field on that record, a **distinguished name** locates it in the hierarchy, and a **domain controller** authenticates identities while replicating directory state. This mental model prevents the beginner mistake of treating AD as merely a list of users.
 
@@ -59,7 +59,7 @@ flowchart LR
 # authorized recon
 crackmapexec smb 10.10.10.0/24 -u user -p pass          # sweep, sessions, shares
 ldapsearch -x -H ldap://dc01 -b "dc=corp,dc=local"      # dump directory
-GetUserSPNs.py corp/user:pass -dc-ip 10.0.0.1 -request  # kerberoast
+GetUserSPNs.py corp/user:pass -dc-ip 10.10.20.10 -request  # kerberoast
 secretsdump.py corp/user@dc01                            # DCSync if privileged
 ```
 **SMB** (445) carries file shares, named pipes, and `PsExec`-style execution; **null/guest sessions** and open shares are classic footholds.
@@ -70,8 +70,8 @@ GPOs push settings/scripts to OUs. **Write access to a GPO** linked to many mach
 ## Detection (bridge to Blue Team)
 DC event logs: **4768/4769** (Kerberos TGT/TGS — spot roasting bursts), **4624/4625** (logons), **4662** (DCSync), plus honeytokens and BloodHound-driven tiering. See **Windows Logging and Auditing**.
 
-> [!tip] Crook → Root
-> **Root** treats AD as a graph: find a path from a low user to Domain Admin via Kerberoast → cracked service account → GPO/ACL abuse → DCSync — then hands the blue team the exact Event IDs that would have caught each hop.
+> [!tip] Beginner → Expert
+> **An expert** treats AD as a graph: find a path from a low user to Domain Admin via Kerberoast → cracked service account → GPO/ACL abuse → DCSync — then hands the blue team the exact Event IDs that would have caught each hop.
 
 ## Directory Architecture
 
@@ -185,90 +185,13 @@ AD security is graph security. A low-privilege principal can become consequentia
 
 Evidence spans controller Security events, directory-service changes, Kerberos service requests, NTLM validation, DNS, endpoint logons, SMB sessions, and administrative tooling. Useful events include 4768/4769/4771 for Kerberos, 4776 for NTLM validation, 4624/4625 for logons, 4728/4732 for group membership, 5136 for directory modification, and 4662 for audited directory-object access. Interpret with account, source, encryption, ticket options, SPN, object GUID, and expected workflow.
 
-## Hands-On Lab: Read Domain Identity and Trust
+## Summary
 
-> [!info] Runs on a domain-joined Windows machine — read-only queries
-> If your machine is not domain-joined, the commands still run and report the standalone state, which is itself instructive.
+You should now be able to:
 
-### Step 1 — Determine domain membership
-
-```powershell
-$cs = Get-CimInstance Win32_ComputerSystem
-"Part of domain: {0}" -f $cs.PartOfDomain
-"Domain/Workgroup: {0}" -f $cs.Domain
-```
-
-```text
-Part of domain: True
-Domain/Workgroup: corp.example.com
-```
-
-This single fact changes everything about the security model: a domain member trusts identities minted by a central authority, so compromising that authority compromises the member.
-
-### Step 2 — Find the domain controllers
-
-```powershell
-nltest /dclist:corp.example.com 2>$null | Select-String '\\\\' | Select-Object -First 3
-```
-
-```text
-       dc01.corp.example.com [PDC]  [DS] Site: Default-First-Site-Name
-       dc02.corp.example.com        [DS] Site: Default-First-Site-Name
-```
-
-Domain controllers are the identity authority. `[PDC]` marks the primary — the highest-value target on the network, because control of a DC is control of every identity in the domain.
-
-### Step 3 — Query a user via LDAP
-
-```powershell
-([adsisearcher]"(&(objectClass=user)(sAMAccountName=$env:USERNAME))").FindOne().Properties['memberof'] |
-  Select-Object -First 3
-```
-
-```text
-CN=Domain Users,CN=Users,DC=corp,DC=example,DC=com
-CN=IT Staff,OU=Groups,DC=corp,DC=example,DC=com
-```
-
-Group membership is the basis of domain authorization. The distinguished names show the directory's tree structure — the `OU` (organizational unit) hierarchy that group policy and delegation follow.
-
-### Step 4 — Inspect the Kerberos service tickets in use
-
-```powershell
-klist | Select-String 'Server:' | Select-Object -First 4
-```
-
-```text
-        Server: krbtgt/CORP.EXAMPLE.COM
-        Server: cifs/dc01.corp.example.com
-        Server: ldap/dc01.corp.example.com
-```
-
-Each service you access produces a service ticket. This list is a map of what the host has authenticated to — and an attacker who requests tickets for many services (Kerberoasting) leaves exactly this kind of trace.
-
-### Step 5 — Check the domain password policy
-
-```powershell
-net accounts | Select-String 'password|Lockout'
-```
-
-```text
-Minimum password length:                              14
-Maximum password age (days):                          90
-Lockout threshold:                                    5
-```
-
-The domain-wide policy governs every account's resistance to guessing. A weak policy here (short minimum, no lockout) multiplies the value of every credential attack across the whole domain.
-
-**Cleanup:** none — every command read state only.
-
-**What you should now be able to do:** confirm domain membership, locate the domain controllers, query a user's groups via LDAP, read Kerberos service tickets, and check the domain password policy.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain forest, domain, OU, controller, DNS, LDAP, Kerberos, NTLM, SMB, GPO, and trust.
-- **Operator:** Diagnose discovery/replication/authentication, read tickets and SPNs, evaluate delegation, interpret directory ACLs, and correlate controller plus endpoint events.
-- **Root:** Model the forest as control paths, remove unintended privilege edges, design tiering and protocol hardening, preserve recovery, and prove that authentication, authorization, delegation, replication, and policy remain functional after remediation.
+- Explain forest, domain, OU, controller, DNS, LDAP, Kerberos, NTLM, SMB, GPO, and trust.
+- Diagnose discovery/replication/authentication, read tickets and SPNs, evaluate delegation, interpret directory ACLs, and correlate controller plus endpoint events.
+- Model the forest as control paths, remove unintended privilege edges, design tiering and protocol hardening, preserve recovery, and prove that authentication, authorization, delegation, replication, and policy remain functional after remediation.
 
 ---
 > 🔼 Up: [[Windows]]

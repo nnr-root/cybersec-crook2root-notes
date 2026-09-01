@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/foundations
   - type/technique
+  - difficulty/easy
   - level/apprentice
 Domain:
   - "[[Network Foundations]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation & Protocol Data Units -> Network Devices & Traffic Paths -> Reachability Testing & ICMP
 
-## Start at Zero: ICMP Is Not a Ping Tool
+## ICMP Is Not a Ping Tool
 
 **ICMP (Internet Control Message Protocol)** is the diagnostic and error-reporting protocol of the Internet layer. It rides directly inside IP with protocol number 1 — it is not carried over TCP or UDP and has no ports. Its job is to let routers and hosts report conditions that IP itself cannot express, because IP is a fire-and-forget delivery mechanism with no feedback channel of its own.
 
@@ -43,19 +44,19 @@ The reason this table matters more than the ping command is that **blocking ICMP
 ## What Ping Proves, and What It Does Not
 
 ```bash
-ping -c 4 192.168.20.10
+ping -c 4 10.10.20.10
 ```
 
 Expected output:
 
 ```text
-PING 192.168.20.10 (192.168.20.10) 56(84) bytes of data.
-64 bytes from 192.168.20.10: icmp_seq=1 ttl=63 time=1.42 ms
-64 bytes from 192.168.20.10: icmp_seq=2 ttl=63 time=1.38 ms
-64 bytes from 192.168.20.10: icmp_seq=3 ttl=63 time=1.51 ms
-64 bytes from 192.168.20.10: icmp_seq=4 ttl=63 time=1.44 ms
+PING 10.10.20.10 (10.10.20.10) 56(84) bytes of data.
+64 bytes from 10.10.20.10: icmp_seq=1 ttl=63 time=1.42 ms
+64 bytes from 10.10.20.10: icmp_seq=2 ttl=63 time=1.38 ms
+64 bytes from 10.10.20.10: icmp_seq=3 ttl=63 time=1.51 ms
+64 bytes from 10.10.20.10: icmp_seq=4 ttl=63 time=1.44 ms
 
---- 192.168.20.10 ping statistics ---
+--- 10.10.20.10 ping statistics ---
 4 packets transmitted, 4 received, 0% packet loss, time 3005ms
 rtt min/avg/max/mdev = 1.380/1.437/1.510/0.048 ms
 ```
@@ -87,15 +88,15 @@ Silence is not evidence of absence. It is evidence that *this particular probe* 
 Compare against an explicit rejection:
 
 ```bash
-ping -c 2 192.168.30.7
+ping -c 2 10.10.30.7
 ```
 
 ```text
-From 192.168.10.1 icmp_seq=1 Destination Host Unreachable
-From 192.168.10.1 icmp_seq=2 Destination Host Unreachable
+From 10.10.10.1 icmp_seq=1 Destination Host Unreachable
+From 10.10.10.1 icmp_seq=2 Destination Host Unreachable
 ```
 
-Here the gateway told you something concrete: it tried to deliver on the local segment and got no address resolution. That is a far stronger finding than silence, and note that the message came from `192.168.10.1` — the *router* — not the target.
+Here the gateway told you something concrete: it tried to deliver on the local segment and got no address resolution. That is a far stronger finding than silence, and note that the message came from `10.10.10.1` — the *router* — not the target.
 
 ## Traceroute: Weaponizing TTL for Good
 
@@ -127,8 +128,8 @@ traceroute -n -T -p 443 203.0.113.10
 Expected excerpt:
 
 ```text
- 1  192.168.10.1     0.498 ms  0.472 ms  0.510 ms
- 2  10.255.0.1       2.104 ms  2.081 ms  2.190 ms
+ 1  10.10.10.1     0.498 ms  0.472 ms  0.510 ms
+ 2  10.10.250.1       2.104 ms  2.081 ms  2.190 ms
  3  * * *
  4  198.51.100.9    12.410 ms 12.377 ms 12.502 ms
  5  203.0.113.10    13.011 ms 12.958 ms 13.033 ms
@@ -146,8 +147,8 @@ Expected excerpt:
 
 ```text
 HOST: workstation           Loss%   Snt   Last   Avg  Best  Wrst StDev
-  1.|-- 192.168.10.1         0.0%    20    0.5   0.5   0.4   0.7   0.1
-  2.|-- 10.255.0.1           0.0%    20    2.1   2.2   2.0   3.1   0.3
+  1.|-- 10.10.10.1         0.0%    20    0.5   0.5   0.4   0.7   0.1
+  2.|-- 10.10.250.1           0.0%    20    2.1   2.2   2.0   3.1   0.3
   3.|-- ???                 100.0%    20    0.0   0.0   0.0   0.0   0.0
   4.|-- 198.51.100.9         0.0%    20   12.4  12.5  12.3  13.9   0.4
   5.|-- 203.0.113.10         5.0%    20   13.0  13.1  12.9  15.2   0.6
@@ -169,45 +170,13 @@ ICMP sits in an awkward position: it is genuinely useful to attackers and genuin
 
 All sweeping, tracing, and probing described here applies only to systems inside an authorized scope. Host discovery is logged by any competent monitoring stack, and enumeration of ranges outside an agreed boundary is out of scope regardless of how benign the payload is.
 
-## Authorized Lab: Build a Defensible Reachability Conclusion
+## Summary
 
-Use two lab VMs on segments you control, with a firewall you can configure between them.
+You should now be able to:
 
-1. **Baseline.** From Host-A, run `ping -c 3 <Host-B>` and `traceroute -n <Host-B>`. Record TTL, RTT, and hop count.
-2. **Drop.** On the firewall, silently drop ICMP echo to Host-B. Repeat both commands. Ping reports 100% loss; traceroute stops at the firewall.
-3. **Prove the host is alive anyway.** Run a transport-layer probe against a port you know is open:
-
-```bash
-nmap -Pn -p 22 <Host-B>
-```
-
-Expected excerpt:
-
-```text
-PORT   STATE SERVICE
-22/tcp open  ssh
-```
-
-`-Pn` skips host discovery entirely, which is the correct flag once you know ICMP is filtered. An open port is positive proof of life that ping could not obtain.
-
-4. **Reject instead of drop.** Change the rule to reject with an ICMP administratively-prohibited response. Repeat the ping and observe the explicit message identifying the control.
-5. **Break PMTU deliberately.** Block ICMP type 3 code 4 on the path, then transfer a large file across a tunnel with a reduced MTU. Observe the handshake succeeding and the transfer stalling. Restore the rule and confirm the transfer completes.
-6. **Cleanup.** Remove every lab rule and re-run step 1, confirming the baseline output returns exactly.
-
-Expected interpretation:
-
-```text
-Silence                     -> "no ICMP response", not "host down"
-Open TCP port with -Pn      -> positive proof of life independent of ICMP
-Administratively prohibited -> a policy exists and identified itself
-Handshake OK, transfer hangs-> PMTU black hole from suppressing type 3 code 4
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what ICMP is, why it has no ports, and what a successful ping does and does not prove about a host.
-- **Operator:** Interpret TTL and RTT correctly, choose a probe protocol suited to a filtered path, and explain why intermediate-hop loss in an `mtr` report that does not persist to the destination is an artefact.
-- **Root:** Justify an ICMP policy that permits Fragmentation Needed and Time Exceeded while rate-limiting echo; describe how ICMP tunnelling evades header-based controls and what behavioural telemetry would detect it; and state a reachability conclusion with the evidence and its limits attached.
+- Explain what ICMP is, why it has no ports, and what a successful ping does and does not prove about a host.
+- Interpret TTL and RTT correctly, choose a probe protocol suited to a filtered path, and explain why intermediate-hop loss in an `mtr` report that does not persist to the destination is an artefact.
+- Justify an ICMP policy that permits Fragmentation Needed and Time Exceeded while rate-limiting echo; describe how ICMP tunnelling evades header-based controls and what behavioural telemetry would detect it; and state a reachability conclusion with the evidence and its limits attached.
 
 ---
 > 🔼 Up: [[Network Foundations]]

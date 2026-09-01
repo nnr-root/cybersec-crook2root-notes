@@ -8,7 +8,7 @@ tags:
   - tree/offensive
   - cyber/offensive/methodology
   - type/concept
-  - level/crook
+  - difficulty/easy
 Domain: "[[Methodologies & Frameworks]]"
 Color: "#DC143C"
 ---
@@ -21,7 +21,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Penetration Testing Fundamentals -> Rules of Engagement & Scoping -> Penetration Testing Standards & Frameworks -> Cyber Kill Chain -> Threat Modeling & MITRE ATT&CK
 
-## Start at Zero: What This Whole Domain Is For
+## What This Whole Domain Is For
 
 Before any tool or exploit, you need the *mental frame* of the job: what a penetration test is, how it differs from criminal hacking, what the words vulnerability / threat / risk actually mean, and what separates a professional operator from someone who just runs scanners. This note is that frame — the vocabulary and mindset every later leaf assumes. Get this right and the technical leaves make sense as *evidence-gathering toward a risk story*; skip it and you are just poking systems.
 
@@ -52,10 +52,6 @@ While penetration testers and malicious attackers may use similar tools, the way
 
 Web application penetration testing focuses on finding gaps and weaknesses in a web application. Testing is commonly performed from a user perspective by interacting with the application's user interface and its APIs. The goal is to assess how the application handles user input, authentication, authorisation, sessions, and data processing. Weaknesses in web applications can have great impact on its users because web applications are usually exposed to the internet.
 
-![[lab_68f9e128ba199589d7ad0335-1780435724559.svg]]
-
-The diagram above outlines a simple interaction between a penetration tester and a web application. A web application test covers **authentication**, **authorisation**, **session management**, **input/output validation**, and **security configuration** — each of which is a full discipline in its own right. The detailed methodology and per-weakness testing for these areas lives in the dedicated **Web Application Penetration Testing** sub-index; here it is enough to know they are the five surfaces a web test evaluates.
-
 ## Network Penetration Testing
 
 Network penetration testing focuses on finding vulnerabilities in the underlying infrastructure that connects systems together. Testing could be performed from an external or an internal user perspective.
@@ -64,10 +60,15 @@ External network penetration testing is performed from an external user perspect
 
 Internal network penetration testing, on the other hand, is an "assumed breach" scenario where a threat actor already has access to a system in the network. This type of assessment evaluates what an attacker could do next, such as moving between systems, escalating privileges, or accessing sensitive data. The goal is to assess trust relationships, access controls, and network segmentation to identify weak configurations and determine whether the security controls can limit the impact of a compromise.
 
-![[lab_68f9e128ba199589d7ad0335-1780435724440.svg]]
-
-The diagram above shows a penetration tester interacting with a network from both external and internal perspectives. A network test evaluates **authentication mechanisms**, **authorisation and access controls**, **network segmentation and trust relationships**, and **configuration/patch management**. The per-technique depth — from external service attacks to internal lateral movement — lives in the dedicated **Network Penetration Testing** sub-index.
 Ultimately, modern web applications and networks are built with different interconnected components and systems. Identifying the attack surface helps organisations find all entry points that could contain weaknesses and provide unauthorised access to threat actors. Additionally, it helps in defining the scope of a penetration test prior to the engagement execution.
+
+**The deliberate break:** *vulnerability*, *threat* and *risk* are used interchangeably in ordinary speech, so it is natural to read them as three words for "something bad". Treating them as synonyms is the single most expensive vocabulary error in this field, and the three sections that follow exist to separate them.
+
+They are three different objects and only one of them is a decision. A **vulnerability** is a weakness that exists whether or not anyone ever exploits it. A **threat** is an actor with the capability and intent to try. **Risk** is what you get when you combine them with impact — and it is the only one a business can act on.
+
+The consequence is counterintuitive and worth holding onto: **a CVSS 9.8 vulnerability can be a low risk**, and a CVSS 5.0 can be a critical one. An unauthenticated RCE on a lab box with no data and no route from the internet is a 9.8 that threatens nothing. A moderate flaw in the one system that processes payments, reachable from the internet, and with a public exploit is a different matter entirely. A report that ranks by CVSS alone has skipped the only step the client is paying for.
+
+**How you'd spot a report that skipped it:** it lists findings by severity score with no mention of which asset, which data, or which threat actor. That is a scanner export with a cover page — the analysis is precisely the part that is missing.
 
 ## Vulnerability
 
@@ -76,8 +77,6 @@ A vulnerability is a weakness or gap in an organisation's environment that could
 Vulnerabilities come in many types. For simplicity, we will focus on technical vulnerabilities, which are weaknesses in software, systems, or configurations that can be exploited due to coding errors, insecure settings, or flawed system design.
 
 For example, a web server running outdated software with known flaws is a vulnerability. The weakness exists, but nothing happens unless it is taken advantage of.
-
-![[lab_68f9e128ba199589d7ad0335-1780435967179.svg]]
 
 ## Threat
 
@@ -88,8 +87,6 @@ Threats may include malicious actors such as cybercriminals, insider threats, or
 For example, an attacker scanning the internet for outdated servers is a threat. They have the capability and intent to exploit the vulnerability.
 
 More recently, attackers utilise artificial intelligence (AI) to automate attacks, discover weaknesses at scale, and accelerate exploitation. This makes AI a significant threat in modern environments due to its capacity to increase the speed and sophistication of attacks.
-
-![[lab_68f9e128ba199589d7ad0335-1780435967293.svg]]
 
 ## Risk
 
@@ -223,25 +220,43 @@ flowchart LR
 
 A vulnerability alone is not risk; a threat alone is not risk. **Risk is what happens when a threat can reach a vulnerability, weighted by business impact** — and the organization then *decides* what to do with each risk. Your report's job is to make those decisions well-informed.
 
-## Practical Exercise: Turn a Finding into a Risk Story
+## Worked Mapping: A Finding Driven to a Risk Decision
 
-> [!info] No shell needed — this is the reasoning skill the whole domain builds on. Work it on paper or in your notes.
+The reasoning this domain builds toward is turning a technical fact into a business
+decision a stakeholder can own. Here that reasoning is carried out in full for two
+findings — one that must be fixed and one that may rationally be accepted — as the
+worked artifact a report contains.
 
-Take one concrete finding and drive it all the way to a business-framed risk, the way a report must:
+| Step | High-risk finding | Low-risk finding |
+|:--|:--|:--|
+| Vulnerability | `/api/invoice/{id}` returns any invoice without checking ownership | The server response includes a precise version banner |
+| Threat | Any authenticated low-privilege user changes `{id}` | An attacker fingerprints the version to look up known CVEs |
+| Impact | Exposure of all customers' financial data → regulatory + reputational | Marginal — speeds recon slightly; no direct access |
+| Likelihood | Trivial — no special access, just increment the ID | Low value — banner alone grants nothing |
+| **Risk** | **High** (high impact × high likelihood) | **Low** (low impact × low leverage) |
+| Decision | **Mitigate** — enforce object-level authorization server-side | **Accept** — patch on the normal cycle; note in the report |
+| Retest | Request another user's invoice ID → expect `403`; own invoice still `200` | None required — informational |
 
-1. **State the vulnerability** precisely: e.g. "the `/api/invoice/{id}` endpoint returns any invoice without checking ownership."
-2. **Name the threat** that reaches it: "any authenticated low-privilege user can change the `{id}`."
-3. **Compute the risk**: impact (exposure of all customers' financial data → regulatory + reputational) × likelihood (trivial, no special access) = **High**.
-4. **Recommend the decision**: mitigate — enforce object-level authorization server-side; do not merely hide the ID.
-5. **Define the retest**: re-request another user's invoice ID and confirm a `403`, and confirm legitimate access to your *own* invoice still works.
+The two rows exist to make one point: a risk rating is a defensible argument, not a
+scanner's label. The high finding is high because impact and likelihood are both high,
+and the recommendation is to enforce authorization server-side rather than hide the ID
+— because hiding the identifier addresses neither the impact nor the likelihood. The
+banner is low because, argued honestly to a skeptical stakeholder, it grants an
+attacker nothing on its own; an organisation can rationally accept it and spend the
+remediation budget on the invoice endpoint instead.
 
-Do the same for a *low*-risk finding (e.g. a version banner) and articulate *why* the organization might rationally **accept** it. The mastery signal is that you can defend the risk rating and the recommended decision to a skeptical stakeholder — not just that you found a bug.
+The mastery signal the note names is exactly this: being able to defend both the rating
+*and* the decision — including the decision to accept — to someone who will be
+accountable for it. A finding that cannot be driven to a decision a stakeholder can
+own is not yet a finding; it is a bug report.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Define penetration testing, state why authorization+scope is what separates it from crime, and correctly use the words vulnerability, threat, and risk.
-- **Operator:** Take a raw finding and turn it into a defensible risk story (impact × likelihood) with a concrete remediation and retest, and distinguish web vs network testing scope.
-- **Root:** Explain the risk-management cycle and when accept/transfer beats mitigate, articulate the good-vs-bad tester mindset, and justify why the report — not the exploit — is the deliverable.
+You should now be able to:
+
+- Define penetration testing, state why authorization+scope is what separates it from crime, and correctly use the words vulnerability, threat, and risk.
+- Take a raw finding and turn it into a defensible risk story (impact × likelihood) with a concrete remediation and retest, and distinguish web vs network testing scope.
+- Explain the risk-management cycle and when accept/transfer beats mitigate, articulate the good-vs-bad tester mindset, and justify why the report — not the exploit — is the deliverable.
 
 ---
 > 🔼 Up: [[Methodologies & Frameworks]]

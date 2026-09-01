@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/transport
   - type/concept
-  - level/crook
+  - difficulty/easy
 Domain:
   - "[[Transport Layer & Sockets]]"
 Color: "#42D4F4"
@@ -19,9 +19,9 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Control -> UDP & Connectionless Transport -> QUIC & Modern Transport -> Transport Layer Threats & Controls
 
-## Start at Zero: The Problem an Address Cannot Solve
+## The Problem an Address Cannot Solve
 
-A packet arrives at `192.168.10.24`. That machine is running a web server, an SSH daemon, a database, and a dozen background processes. The IP address identified the *host*, but nothing so far identifies which *program* should receive the data.
+A packet arrives at `10.10.20.30`. That machine is running a web server, an SSH daemon, a database, and a dozen background processes. The IP address identified the *host*, but nothing so far identifies which *program* should receive the data.
 
 A **port** solves this. It is a 16-bit number — 0 to 65535 — carried in the transport header, naming a communication endpoint on the host. The receiving kernel reads the destination port and delivers the payload to whichever program registered an interest in it. This is called **demultiplexing**, and it is the transport layer's defining job.
 
@@ -56,14 +56,14 @@ The table is abstract until you *use* a port. The two oldest remote-access ports
 **SSH — port 22 — encrypted remote shell + file copy.** SSH gives you an encrypted interactive shell on a remote host, and file transfer over the same secure channel:
 
 ```shell-session
-user@laptop:~$ ssh admin@192.168.10.24
-The authenticity of host '192.168.10.24' can't be established.
+user@laptop:~$ ssh admin@10.10.20.30
+The authenticity of host '10.10.20.30' can't be established.
 ED25519 key fingerprint is SHA256:Xr4k...  
 Are you sure you want to continue connecting? yes
-admin@192.168.10.24's password:
+admin@10.10.20.30's password:
 admin@server:~$ whoami
 admin
-user@laptop:~$ scp report.pdf admin@192.168.10.24:/home/admin/   # copy over the same encrypted channel
+user@laptop:~$ scp report.pdf admin@10.10.20.30:/home/admin/   # copy over the same encrypted channel
 report.pdf                          100%  482KB   4.1MB/s   00:00
 ```
 
@@ -72,9 +72,9 @@ The login, the commands, and the file bytes are all encrypted. The host-key fing
 **FTP — port 21 — legacy file transfer, cleartext.** FTP predates ubiquitous encryption and sends credentials and data in plaintext:
 
 ```shell-session
-user@laptop:~$ ftp 192.168.10.24
+user@laptop:~$ ftp 10.10.20.30
 220 (vsFTPd 3.0.5)
-Name (192.168.10.24:user): admin
+Name (10.10.20.30:user): admin
 331 Please specify the password.
 Password:                       # ← sent in CLEARTEXT over the wire
 230 Login successful.
@@ -91,7 +91,7 @@ FTP also uses a **second port, 20**, for the data channel: the control connectio
 **The security lesson.** Capture both sessions with `tcpdump`/Wireshark and the contrast is stark — the FTP username, password, and file contents are readable in the clear, while the SSH session is opaque ciphertext. This is why **FTP is deprecated for anything sensitive**; its modern replacement is **SFTP** (file transfer *inside* the SSH channel, on port 22) or FTPS (FTP wrapped in TLS). Recognising `21` on a scan is recognising a plaintext-credential exposure.
 
 ```shell-session
-user@laptop:~$ sftp admin@192.168.10.24     # same copy, encrypted — rides SSH port 22, not 21
+user@laptop:~$ sftp admin@10.10.20.30     # same copy, encrypted — rides SSH port 22, not 21
 sftp> get backup.tar.gz
 Fetching /home/admin/backup.tar.gz to backup.tar.gz   100%   10MB
 ```
@@ -100,6 +100,12 @@ Fetching /home/admin/backup.tar.gz to backup.tar.gz   100%   10MB
 
 > [!tip] The analogy, and where it breaks
 > An apartment building has one street address and many apartment numbers; the address gets mail to the building, the apartment number gets it to the right person. The analogy breaks because the postal worker does not need the *sender's* apartment number to deliver, whereas a network connection is identified by all five values at once — both addresses, both ports, and the protocol. That is what lets thousands of separate conversations share one destination port without confusion.
+
+**The deliberate break:** "port 22 is open on that host" sounds like a fact about the host, the way a door is open or shut.
+
+It is a fact about a **five-tuple** and a vantage point. A port is open *to you, from where you are, right now*: the same port can be open from the LAN, filtered from the DMZ, and closed from the internet, and all three are simultaneously true. A scanner reporting "filtered" has not learned that the port is shut — it has learned that nothing came back, which is what a firewall dropping probes looks like *and* what a dead host looks like.
+
+**How you'd spot the difference:** a closed port answers with RST; a filtered one answers with silence. Silence plus a working route means something is deciding not to reply.
 
 ## The Socket and the Five-Tuple
 
@@ -163,7 +169,7 @@ Expected excerpt:
 
 ```text
 Recv-Q Send-Q   Local Address:Port      Peer Address:Port  Process
-     0      0   192.168.10.24:52418     93.184.216.34:443  users:(("firefox",pid=4412,fd=91))
+     0      0   10.10.10.14:52418      203.0.113.20:443  users:(("firefox",pid=4412,fd=91))
 ```
 
 `Recv-Q` and `Send-Q` are queue depths. Persistently non-zero values are diagnostic: a large `Send-Q` means data is queued locally and not being acknowledged — the peer or the path is the problem. A large `Recv-Q` means data has arrived but the local application is not reading it fast enough — the application is the problem, not the network.
@@ -202,51 +208,13 @@ The output names the process and PID holding the port, converting a vague error 
 
 Enumerating sockets on systems you administer is ordinary operations. Scanning ports on hosts you do not own requires authorization, and is covered by the scoping rules of whatever engagement you are operating under.
 
-## Authorized Lab: Prove That Bind Address Is the Control
+## Summary
 
-Use two lab VMs on a segment you control: a server and a client.
+You should now be able to:
 
-1. **Bind to loopback.** On the server, start a simple service listening on `127.0.0.1:8080` (any minimal test server will do). Confirm the binding:
-
-```bash
-ss -tlnp '( sport = :8080 )'
-```
-
-Expected excerpt:
-
-```text
-tcp LISTEN 127.0.0.1:8080 users:(("testsrv",pid=2201,fd=3))
-```
-
-2. From the server itself, connect to `127.0.0.1:8080` and confirm it works.
-3. From the **client**, attempt to connect to the server's network address on port 8080. It fails — connection refused or timed out — with **no firewall rule involved at all**.
-4. **Rebind to all interfaces.** Stop the service and restart it bound to `0.0.0.0:8080`. Confirm with `ss` that the local address changed.
-5. From the client, retry the connection. It now succeeds. Nothing about the firewall, the network, or the client changed — only the bind address.
-6. **Add the secondary control.** With the service still on `0.0.0.0`, add a firewall rule denying port 8080 from the client. Confirm the connection fails again, demonstrating layered control.
-7. **Observe the five-tuple.** Open three simultaneous connections from the client and inspect them on the server:
-
-```bash
-ss -tnp state established '( sport = :8080 )'
-```
-
-Confirm three rows sharing a destination address and port but differing in source port — three unique five-tuples on one listening port.
-
-8. **Cleanup.** Stop the test service, remove the firewall rule, and confirm `ss -tlnp` no longer lists port 8080.
-
-Expected interpretation:
-
-```text
-Bound to 127.0.0.1 -> unreachable from the network, no firewall needed
-Bound to 0.0.0.0   -> reachable from every attached network
-Firewall added     -> secondary layer; the bind address was the primary one
-Three connections  -> one listening port, three five-tuples, fully separated
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why an IP address alone cannot deliver data to the right program, what a port is, and the difference between a listening and an established socket.
-- **Operator:** Read `ss` output to identify exposed versus loopback-only services and their owning processes; diagnose "address already in use" by finding the holder, and interpret `Recv-Q`/`Send-Q` to distinguish an application problem from a network one.
-- **Root:** Explain the five-tuple as the mechanism enabling massive concurrency on one port and the source of ephemeral exhaustion; argue why bind address is a stronger exposure control than firewall policy, and why port numbers are a convention that neither identifies nor hides a service.
+- Explain why an IP address alone cannot deliver data to the right program, what a port is, and the difference between a listening and an established socket.
+- Read `ss` output to identify exposed versus loopback-only services and their owning processes; diagnose "address already in use" by finding the holder, and interpret `Recv-Q`/`Send-Q` to distinguish an application problem from a network one.
+- Explain the five-tuple as the mechanism enabling massive concurrency on one port and the source of ephemeral exhaustion; argue why bind address is a stronger exposure control than firewall policy, and why port numbers are a convention that neither identifies nor hides a service.
 
 ---
 > 🔼 Up: [[Transport Layer & Sockets]]

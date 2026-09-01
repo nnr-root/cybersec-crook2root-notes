@@ -1,7 +1,7 @@
 ---
 title: "File Inclusion & Path Traversal"
 aliases: ["Path Traversal", "Local File Inclusion", "Remote File Inclusion", "LFI", "RFI", "Directory Traversal"]
-tags: [tree/offensive, cyber/offensive/web/files, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/web/files, type/technique, difficulty/medium]
 Domain: "[[File, Parser & Serialization Security]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 File Inclusion & Path Traversal -> File Upload Security Testing -> Insecure Deserialization Testing -> XML External Entity Testing
 
-## Start at Zero: When a Filename Is Attacker-Controlled
+## When a Filename Is Attacker-Controlled
 
 Web applications constantly turn user input into file paths — `?page=about` loads `about.html`, `?lang=en` includes `lang/en.php`. When that input is not properly constrained, three closely-related flaws appear, all from the same root cause: **an attacker-controlled value reaches a file operation**.
 
@@ -44,6 +44,16 @@ Each `../` climbs one level; enough of them reach the filesystem root, then desc
 
 The variant neighborhood matters enormously (from the retest leaf): a naive filter blocking `../` is bypassed by URL-encoding (`..%2f`), double-encoding (`..%252f`), or overlong sequences (`....//`). A "fixed" traversal must be retested against all of these.
 
+**The deliberate break:** "we strip `../` from the input, so traversal is blocked." It is the most common fix and one of the least effective, because stripping is not the same operation as **normalising**.
+
+A single-pass strip is a filter that runs once; path resolution runs afterwards and follows completely different rules. `....//` survives one removal pass and becomes `../` in the leftovers. `%2e%2e%2f` is not `../` when the check reads it and is by the time the filesystem does, because decoding happened in between. Absolute paths sidestep traversal entirely — no `../` required. And a null byte or an appended extension can end the string somewhere the validator did not expect. In every case the validator read a **string** and the filesystem resolved a **path**, and those are different languages.
+
+**This is the Parser Differential pattern.**
+
+**The Twin — compare this with SQL Injection.** A `../` in a filename and a `'` in a search box look like different problems and get different remediation advice. They are the same failure: a component inspected the value as text, and a second component — the filesystem resolver, the SQL parser — interpreted the same characters as structure. Notice that both "fixes by escaping" fail for the same reason, and both real fixes have the same shape: stop passing the value into a place where it can become structure. Parameterise the query; resolve the path and confirm it is inside the permitted directory.
+
+**How you'd spot it:** the response differs between a path that exists and one that does not — a different error, a different length, a different timing — even when no file content is returned. That difference is a file-existence oracle, and it confirms your input reached the resolver.
+
 ## LFI: From Reading to Executing
 
 LFI is traversal into a context where the file is *included* (executed), most classically in PHP's `include($_GET['page'])`. Reading `/etc/passwd` proves the flaw, but the escalation to code execution is what makes LFI severe:
@@ -70,7 +80,7 @@ flowchart TD
     RFI --> P
 ```
 
-## Failure Modes and Interpretation
+## Choosing the most benign file that proves the crossing
 
 - **Proving with sensitive data.** Reading `/etc/passwd` is traditional but `/etc/hostname` proves the same boundary crossing without exposing user hashes. Use the most benign file that demonstrates the flaw.
 - **Filter bypass variants.** A block on `../` is defeated by encoding — always test `..%2f`, `..%252f`, `....//`, and absolute paths. Concluding "fixed" from the literal payload failing is the classic retest error.
@@ -86,94 +96,13 @@ flowchart TD
 - **Detection** looks for `../`, encoded traversal, and `php://`/`http://` in file parameters — a WAF signature, though canonicalization at the app is the real fix.
 - **Least privilege limits blast radius:** a web process that cannot read `/etc/shadow` or write to log directories contains both the read and the LFI-to-RCE escalation.
 
-## Authorized Lab: Traverse a Boundary You Build
+## Summary
 
-> [!info] Runs on one Linux machine — builds a vulnerable file-serving app locally with a canary "secret"
-> Loopback-bound; the traversal reads only a canary you place. Step 5 removes everything.
+You should now be able to:
 
-### Step 1 — Build an app that concatenates input into a path
-
-```bash
-mkdir -p /tmp/filab/public
-echo "public brochure" > /tmp/filab/public/brochure.txt
-echo "TRAVERSAL-CANARY-7781" > /tmp/filab/secret.txt          # OUTSIDE public/, the target
-cat > /tmp/filab/app.py << 'EOF'
-import http.server, urllib.parse, os
-BASE = "/tmp/filab/public"
-class H(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        name = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("name",["brochure.txt"])[0]
-        path = BASE + "/" + name          # VULNERABLE: no canonicalization
-        try:
-            data = open(path).read()
-            self.send_response(200); self.end_headers(); self.wfile.write(data.encode())
-        except Exception:
-            self.send_response(404); self.end_headers(); self.wfile.write(b"not found")
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8102),H).serve_forever()
-EOF
-python3 /tmp/filab/app.py &>/dev/null &
-sleep 1; echo "file app up on 127.0.0.1:8102 (serves from public/)"
-```
-
-```text
-file app up on 127.0.0.1:8102 (serves from public/)
-```
-
-### Step 2 — Normal request (baseline)
-
-```bash
-curl -s "http://127.0.0.1:8102/?name=brochure.txt"
-```
-
-```text
-public brochure
-```
-
-The app serves the intended file from `public/`.
-
-### Step 3 — Traverse out of the directory (the finding)
-
-```bash
-curl -s "http://127.0.0.1:8102/?name=../secret.txt"
-```
-
-```text
-TRAVERSAL-CANARY-7781
-```
-
-`../secret.txt` escaped `public/` and read the canary that lives *outside* the served directory — path traversal, proven. On a real app this same technique reads `/etc/passwd` or config files; here it reads only a benign canary you placed.
-
-### Step 4 — Show the encoding-bypass variant
-
-```bash
-# even if the app blocked literal "../", the encoded form is a separate test
-echo "encoded -> $(curl -s "http://127.0.0.1:8102/?name=..%2fsecret.txt")"
-```
-
-```text
-encoded -> TRAVERSAL-CANARY-7781
-```
-
-The URL-encoded `..%2f` also works — the variant a naive `../` filter would miss, and the reason canonicalize-then-validate (decoding first) is the real fix.
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -rf /tmp/filab; wait 2>/dev/null; ls -d /tmp/filab 2>&1
-```
-
-```text
-ls: cannot access '/tmp/filab': No such file or directory
-```
-
-**What you should now be able to do:** explain how path traversal, LFI, and RFI share one root cause, prove a directory-escape with a benign canary, test the encoding-bypass neighborhood, and distinguish file-read from the LFI/RFI escalation to code execution.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain how attacker-controlled input in a file path causes traversal/LFI/RFI, and the severity ladder between reading and executing.
-- **Operator:** Prove path traversal with a benign canary, test encoding-bypass variants, and classify whether a flaw is read-only or escalates to RCE via inclusion.
-- **Root:** Explain why allowlist mapping (not concatenation) and canonicalize-then-validate are the definitive fixes, why decoding order matters, and how least privilege contains the LFI-to-RCE escalation.
+- Explain how attacker-controlled input in a file path causes traversal/LFI/RFI, and the severity ladder between reading and executing.
+- Prove path traversal with a benign canary, test encoding-bypass variants, and classify whether a flaw is read-only or escalates to RCE via inclusion.
+- Explain why allowlist mapping (not concatenation) and canonicalize-then-validate are the definitive fixes, why decoding order matters, and how least privilege contains the LFI-to-RCE escalation.
 
 ---
 > 🔼 Up: [[File, Parser & Serialization Security]]

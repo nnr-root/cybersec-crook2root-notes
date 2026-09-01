@@ -5,6 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/macos
   - type/concept
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[macOS]]"
@@ -19,7 +20,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File System -> macOS Processes & Daemons -> macOS Identity, Keychain & Credentials -> macOS Networking Internals -> macOS Security Mechanisms -> macOS Binaries & Runtime Loading -> macOS Observability, Incident Response & Forensics
 
-## Crook — From Physical Store to Namespace
+## From Physical Store to Namespace
 
 ### Vocabulary & First Mental Model
 
@@ -74,7 +75,7 @@ Files are represented by object identifiers and metadata records in B-trees. Rel
 > [!tip] The analogy, and where it breaks
 > A shared warehouse where several departments draw from one pool of space rather than each owning a fixed room, and where a 'copy' is initially just a second label on the same crate. The analogy breaks at snapshots: the warehouse can preserve a complete picture of a past moment at almost no cost, which is why deleted data may persist and why forensic recovery differs sharply from older filesystems.
 
-## Operator — Clones, Snapshots, Encryption & Firmlinks
+## Clones, Snapshots, Encryption & Firmlinks
 
 ### Clones & Sparse Allocation
 
@@ -147,7 +148,7 @@ csrutil authenticated-root status
 
 This architecture means `/System` and most of `/usr` are poor persistence targets. Writable surfaces such as `/Library`, `/Applications`, `/Users`, and `/usr/local` deserve more attention. A root account cannot silently replace a sealed system binary while authenticated root remains enforced.
 
-## Root — Hierarchy, Bundles, Metadata & DFIR
+## Hierarchy, Bundles, Metadata & DFIR
 
 ### Security-Relevant Paths
 
@@ -237,85 +238,6 @@ diskutil apfs listVolumeGroups
 diskutil info /System/Volumes/Data | egrep 'Volume Free|Allocation Block|File System Personality'
 ```
 
-## Hands-On Lab: Snapshots, Clones and the Shared Container
-
-> [!info] Runs on any Mac — read-only plus a temporary clone removed in Step 5
-> APFS behaves unlike older filesystems in ways that matter for both space and forensics.
-
-### Step 1 — See the container and its volumes sharing space
-
-```bash
-diskutil apfs list | grep -E 'APFS Container|Volume|Capacity' | head -8
-```
-
-```text
-+-- Container disk3 926.4 GB
-    |   APFS Container Reference:     disk3
-    +-> Volume disk3s1 (Macintosh HD)
-    +-> Volume disk3s5 (Macintosh HD - Data)
-    +-> Volume disk3s4 (Preboot)
-```
-
-Multiple volumes draw from **one shared pool** rather than each owning a fixed partition. This is why every volume can report the same large free space — they are all drawing from the same container.
-
-### Step 2 — Create a clone and watch it cost nothing
-
-```bash
-LAB=$(mktemp -d); cd "$LAB"
-mkfile 20m original.bin 2>/dev/null || dd if=/dev/zero of=original.bin bs=1m count=20 2>/dev/null
-cp -c original.bin clone.bin        # -c = APFS clone
-ls -lh *.bin | awk '{print $5, $9}'
-du -sh . | awk '{print "actual space used:", $1}'
-```
-
-```text
-20M original.bin
-20M clone.bin
-actual space used:  20M
-```
-
-Two 20 MB files, but only **20 MB used**. `cp -c` made an APFS clone — a second name sharing the same blocks until one is modified. It is copy-on-write at the file level, so "copying" a large file is instant and free until you edit it.
-
-### Step 3 — Prove the clone diverges only on write
-
-```bash
-echo "changed" >> clone.bin
-du -sh . | awk '{print "space after editing clone:", $1}'
-```
-
-```text
-space after editing clone: 20M
-```
-
-Space barely moved because only the changed blocks were copied. On a traditional filesystem the copy would have cost a full 20 MB up front.
-
-### Step 4 — List the automatic system snapshots
-
-```bash
-tmutil listlocalsnapshots / 2>/dev/null | head -3
-```
-
-```text
-com.apple.TimeMachine.2026-08-04-081204.local
-com.apple.TimeMachine.2026-08-03-191130.local
-```
-
-APFS snapshots preserve a complete point-in-time image at almost no cost. This is why "deleted" data often persists in a snapshot — a critical fact for both recovery and forensics, since data a user believes gone may still be recoverable.
-
-### Step 5 — Cleanup
-
-```bash
-cd /tmp && rm -rf "$LAB" && ls -d "$LAB" 2>&1
-```
-
-```text
-ls: /var/folders/.../tmp.XYZ: No such file or directory
-```
-
-**Note:** the file clones are gone, but any Time Machine snapshot referencing them may retain blocks until it ages out — which is precisely the persistence property from Step 4.
-
-**What you should now be able to do:** explain why APFS volumes share free space, demonstrate that a clone costs nothing until modified, and describe why snapshots make deleted data recoverable.
-
 ## Troubleshooting Workflow
 
 When an APFS symptom is ambiguous, identify the physical store, container, volume role, mount point, encryption state, and snapshot state before changing anything. Compare `diskutil apfs list`, `mount`, `df -h`, `tmutil listlocalsnapshots /`, and a read-only `fsck_apfs -n` result from an appropriate recovery context. A path that appears missing may be hidden behind a firmlink, another Data/System volume relationship, or an unmounted encrypted volume rather than deleted. Preserve timestamps and snapshot identifiers before repair, and never run destructive filesystem repair against the only evidence copy.
@@ -329,11 +251,13 @@ When an APFS symptom is ambiguous, identify the physical store, container, volum
 - APFS snapshots can preserve deleted evidence, but retention is not guaranteed.
 - Bundle structure, signatures, entitlements, quarantine, and plist configuration must be interpreted together.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Distinguish disks, containers, volumes, volume groups, files, and snapshots.
-- **Operator:** Inspect APFS layout, clone behavior, FileVault, firmlinks, bundles, plists, and metadata without changing evidence.
-- **Root:** Reconstruct how a file reached the host, where its blocks and metadata live, whether the boot chain trusts it, how snapshots preserve it, and which independent artifacts corroborate the timeline.
+You should now be able to:
+
+- Distinguish disks, containers, volumes, volume groups, files, and snapshots.
+- Inspect APFS layout, clone behavior, FileVault, firmlinks, bundles, plists, and metadata without changing evidence.
+- Reconstruct how a file reached the host, where its blocks and metadata live, whether the boot chain trusts it, how snapshots preserve it, and which independent artifacts corroborate the timeline.
 
 ---
 > 🔼 Up: [[macOS]]

@@ -9,7 +9,7 @@ tags:
   - tree/offensive
   - cyber/offensive/redteam
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain: "[[Red Team Operations]]"
 Color: "#DC143C"
 ---
@@ -22,7 +22,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Red Team Campaign Planning & Initial Access -> C2 Infrastructure & Operational Security -> Evasion & Endpoint Tradecraft -> Lateral Operations & Objectives -> Cloud Red Team Operations
 
-## Start at Zero: Designing an Operation, Then Getting In
+## Designing an Operation, Then Getting In
 
 A red team campaign is not "hack the client stealthily." It is a **planned, threat-informed operation** that tests whether the organization's detection and response can catch a *specific* adversary pursuing a *specific* objective. This note covers the two front-end disciplines: **campaign planning** (translating an executive concern into a scoped, safe, measurable operation) and **initial access** (the authorized, canary-based methods of establishing the first foothold). They belong together because the plan *defines* which initial-access scenario is in play, its safety rails, and how its outcome will be measured.
 
@@ -32,6 +32,14 @@ The defining principle, which separates a professional red team from a criminal:
 > A red team campaign is like a hospital running a surprise emergency drill: leadership authorizes it, a controller (white team) watches safely from the side, and the point is to measure whether the staff and alarms respond correctly — not to actually harm a patient. The analogy breaks on realism: a drill is obviously fake, whereas a red team's initial access must be *realistic enough to genuinely test controls* (a convincing phish, a real exposed service) while remaining perfectly safe — that tension, realistic-yet-harmless, is the whole craft.
 
 **Prerequisites:** **Threat Modeling & MITRE ATT&CK** (choosing the adversary/behaviors), **Rules of Engagement & Scoping** (authorization/safety), and the **Guided Red Team & Purple Team Operation** walkthrough.
+
+**The deliberate break:** a red team is a stealthier penetration test — same activity, better tradecraft, quieter tools.
+
+They measure different things, and that changes what "success" means. A penetration test measures the **estate**: how many exploitable weaknesses exist, so they can be fixed. A red team measures the **defenders**: whether this organisation's people, process and tooling detect and respond to a realistic adversary. The deliverable is not a list of holes, it is a scored account of what was seen, when, by whom, and what happened next.
+
+Which produces the counterintuitive rule: an operation optimised for *not getting caught* has failed at its purpose. If you evade everything and nobody ever notices, you have learned that one path was undetected and nothing about the response capability the client is paying to assess. The plan must therefore state, up front, which behaviours you will emit deliberately so the blue team has something to catch.
+
+**How you'd spot a plan that has drifted:** it lists techniques and no expected detections. A campaign plan without a behaviour matrix — what we will do, where it should be seen — is a pentest wearing a red team's vocabulary.
 
 ## Campaign Planning: From Concern to Measurable Operation
 
@@ -74,7 +82,7 @@ flowchart TD
     D --> S["Score the control outcome -> proceed or stop"]
 ```
 
-## Failure Modes and Interpretation
+## Optimising for measurement, not for stealth
 
 - **Planning for stealth instead of measurement.** If the plan optimizes "don't get caught" over "test whether they can catch this," it fails its purpose — the aim is a scored blue-team outcome.
 - **Unrealistic adversary.** Emulating a nation-state for a small business (or vice versa) wastes the campaign; the profile must fit the client's real threat.
@@ -89,25 +97,48 @@ flowchart TD
 - **Deconfliction protects live detection:** the SOC keeps hunting real threats while the white team can distinguish exercise traffic.
 - **Measured outcomes drive investment:** "phishing is blocked but installation isn't detected" tells leadership exactly where to spend — the campaign's real deliverable.
 
-## Practical Exercise: Plan a Campaign and Its Initial Access
+## Worked Mapping: A Campaign Plan and Its Behaviour Matrix
 
-> [!info] No shell — planning is a design skill. Produce the two artifacts a real operation starts from.
+A red-team operation starts from two artifacts precise enough that the white team could
+run it and the blue team could be scored from them alone. Here both are completed for one
+scenario — a fintech worried about contractor-credential abuse — as the operation would
+begin.
 
-For a fintech worried about contractor-credential abuse:
+**The campaign plan:**
 
-1. **State the objective** in measurable terms (e.g. "determine whether a contractor identity can reach `ENG-CANARY-REPO` and whether the SOC detects the path within the exercise window").
-2. **Pick the adversary profile** and list 5–8 ATT&CK techniques you will emulate (initial access → credential access → lateral → collection).
-3. **Choose the initial-access scenario** (here: supplied contractor credentials = assumed breach) and its canary payload + safety rails (revoke plan, excluded cohorts).
-4. **Write the behavior matrix**: for each technique, the expected telemetry and the pass/detect criterion.
-5. **Define deconfliction + stop conditions**: the authenticated phrase, white-team contact, and what halts the op.
+| Element | This operation |
+|:--|:--|
+| Objective (measurable) | Determine whether a contractor identity can reach `ENG-CANARY-REPO`, and whether the SOC detects the path within the exercise window |
+| Adversary profile | Malicious contractor / supply-chain foothold |
+| Initial access | Assumed breach — supplied contractor credentials |
+| Safety rails | Canary payloads only; revoke plan for the test identity; excluded cohorts named; stop phrase agreed |
+| Stop conditions | Authenticated stop phrase, white-team contact reachable, any real customer data touched halts the op |
 
-Deliverable: a one-page campaign plan + the behavior matrix. The mastery signal is that the white team could run the exercise, and the blue team could be scored, from your artifacts alone.
+**The behaviour matrix** — each emulated technique with its detection criterion:
 
-## Crook → Operator → Root Checkpoint
+| ATT&CK technique | Expected telemetry | Pass / detect criterion |
+|:--|:--|:--|
+| T1078 Valid Accounts (initial) | Contractor login from a new device/location | SOC flags anomalous contractor logon |
+| T1087 Account Discovery | Directory/role enumeration by a contractor identity | Alert on enumeration volume |
+| T1003 Credential Access | Attempt to read a secret store | EDR/DLP flags the access |
+| T1021 Lateral Movement | Auth to a system outside contractor scope | Segmentation blocks or SOC detects |
+| T1213 Collection | Access to `ENG-CANARY-REPO` | Canary-repo access fires a honeytoken alert |
 
-- **Crook:** Explain why a red team campaign measures the blue team rather than optimizing stealth, and why initial access uses canaries.
-- **Operator:** Build a campaign plan (objective, adversary, scenario, safety, scoring) with an ATT&CK behavior matrix, and select a safe, realistic initial-access scenario.
-- **Root:** Explain why the campaign's deliverable is a detection-coverage outcome, how deconfliction protects live detection, and how injects/branches and threat-informed profiles make the exercise genuinely test response.
+The two artifacts together are the operation's contract. The plan fixes what "success"
+means in advance — a specific canary reached, detection within a specific window — so the
+result is a measured outcome rather than a story. The matrix turns each attacker action
+into a testable question for the defenders: for every technique, what should the SOC have
+seen, and did they. That is what makes a red-team engagement scoreable rather than merely
+narrated, and it is why an operation planned this way produces a detection-coverage finding
+the blue team can act on, exactly like the ATT&CK coverage map in the methodology branch.
+
+## Summary
+
+You should now be able to:
+
+- Explain why a red team campaign measures the blue team rather than optimizing stealth, and why initial access uses canaries.
+- Build a campaign plan (objective, adversary, scenario, safety, scoring) with an ATT&CK behavior matrix, and select a safe, realistic initial-access scenario.
+- Explain why the campaign's deliverable is a detection-coverage outcome, how deconfliction protects live detection, and how injects/branches and threat-informed profiles make the exercise genuinely test response.
 
 ---
 > 🔼 Up: [[Red Team Operations]]

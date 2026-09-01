@@ -8,7 +8,7 @@ tags:
   - tree/offensive
   - cyber/offensive/reporting
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain: "[[Reporting & Purple Teaming]]"
 Color: "#DC143C"
 ---
@@ -21,7 +21,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Evidence & Risk Prioritization -> Finding & Report Writing -> Purple Team Exercise Design -> Retesting, Closure & Lessons Learned
 
-## Start at Zero: Proving a Fix Is Real
+## Proving a Fix Is Real
 
 The engagement ends where remediation begins — but a fix *claimed* is not a fix *verified*. **Retesting** is the discipline of proving that a remediation actually closed the finding, at its root, without breaking legitimate use. **Closure** is the formal decision (with evidence) that the finding is resolved. **Lessons learned** feeds systemic root causes back into the organization so the *whole class* of defect becomes less likely. This note is the closure *craft*; the **Guided Retest & Closure** leaf is the step-by-step walkthrough.
 
@@ -65,7 +65,66 @@ If only some paths are fixed, **preserve the original finding** and state the re
 
 Closure includes artifact reconciliation, credential/certificate rotation for anything exposed, evidence retention per contract, a final access review, and a retrospective. Then the highest-value step: **lessons learned** asks *why the defect entered, why it escaped review, why it stayed exposed, and why it was (or wasn't) detected* — and converts the answers into reusable design standards, tests, CI policy, detection content, inventory improvements, and ownership changes. A successful retest should reduce the probability of the **entire vulnerability class**, not just one recurrence.
 
-## Failure Modes and Interpretation
+## Worked Example: When "Fixed" Is Not Fixed
+
+A retest exists to answer one question — was the vulnerability actually
+remediated — and a naive retest answers a weaker one: does the exact proof from the
+report still work. The gap between those two is where superficial fixes hide. One
+app with three modes — vulnerable, superficially patched, and properly patched —
+shows why variant testing is the whole job.
+
+**The original vulnerability**, confirmed as a baseline:
+
+```shell-session
+analyst@lab:~$ python3 app.py vuln
+vuln        | probe="' OR '1'='1"  -> CANARY-SECRET
+vuln        | probe="' OR 'a'='a"  -> CANARY-SECRET
+```
+
+Both tautologies leak the secret — a working SQL injection.
+
+**The superficial fix, tested naively**, looks remediated:
+
+```shell-session
+analyst@lab:~$ python3 app.py superficial | head -1
+superficial | probe="' OR '1'='1"  -> blocked
+```
+
+The exact string from the report is now blocked. A retest that replays only the
+original proof-of-concept stops here, marks the finding closed, and is wrong.
+
+**The same fix, tested with a variant**, exposes it:
+
+```shell-session
+analyst@lab:~$ python3 app.py superficial | tail -1
+superficial | probe="' OR 'a'='a"  -> CANARY-SECRET
+```
+
+A one-character change — `'1'='1'` to `'a'='a'` — sails straight through, because
+the fix blocked a *string* rather than the *behaviour*. The vulnerability class is
+fully intact; only the specific payload in the report was patched. Closing this
+finding would leave the client exactly as exposed as before, with a report that
+says otherwise.
+
+**The root-cause fix** holds against both:
+
+```shell-session
+analyst@lab:~$ python3 app.py rootcause
+rootcause   | probe="' OR '1'='1"  -> no results
+rootcause   | probe="' OR 'a'='a"  -> no results
+```
+
+Parameterisation treats input as data that is never interpreted, so neither the
+original nor any variant is a query any more. The class is closed, not the payload.
+
+This is the discipline a retest enforces: a finding is remediated when the
+*vulnerability class* is closed at its root, verified with variants the original
+report never listed — not when the one proof-of-concept string stops working.
+Distinguishing a superficial fix from a real one is the single most valuable thing
+a retest delivers, because a falsely-closed finding is more dangerous than an open
+one: the client has stopped worrying about it.
+
+## The superficial fix that passes a naive retest
 
 - **The superficial fix passes a naive retest.** Repeating only the exact original request misses a fix that blocked one string but not the class — always test root-cause variants (the lab proves this).
 - **Retesting a stale environment.** If the fix hasn't reached the affected asset/build, a "pass" or "fail" is meaningless — verify deployment first.
@@ -80,95 +139,13 @@ Closure includes artifact reconciliation, credential/certificate rotation for an
 - **Closure hygiene is a control:** rotating exposed credentials/certs and reconciling artifacts ensures the *test itself* left no residual exposure.
 - **Honest classification feeds the risk register:** "partially remediated, residual scope X" keeps the real remaining risk visible and owned, rather than a false "closed."
 
-## Authorized Lab: Superficial Fix vs. Root-Cause Fix
+## Summary
 
-> [!info] Runs on one machine with Python — retest a "fixed" injection two ways; the superficial fix passes the naive retest but fails the variant, the root-cause fix holds
-> Benign canary oracle only. Step 5 cleans up.
+You should now be able to:
 
-### Step 1 — A search endpoint with an injection oracle, plus two "fixes"
-
-```bash
-mkdir -p /tmp/retest-lab && cat > /tmp/retest-lab/app.py <<'PY'
-import sys
-MODE=sys.argv[1]  # 'vuln' | 'superficial' | 'rootcause'
-SECRET="CANARY-SECRET"
-def handle(q):
-    # superficial fix: block the literal string "' OR '1'='1"
-    if MODE=="superficial" and q=="' OR '1'='1": return "blocked"
-    # rootcause fix: treat input as data (parameterized) - never interpret it
-    if MODE=="rootcause": return "no results"
-    # vuln + superficial: naive interpretation - any tautology leaks
-    if "OR" in q.upper() and "=" in q: return SECRET   # injection succeeds
-    return "no results"
-for probe in ["' OR '1'='1", "' OR 'a'='a"]:
-    print(f"{MODE:11} | probe={probe!r:16} -> {handle(probe)}")
-PY
-echo "app ready with 3 modes: vuln, superficial, rootcause"
-```
-
-```text
-app ready with 3 modes: vuln, superficial, rootcause
-```
-
-### Step 2 — Confirm the original vulnerability (baseline)
-
-```bash
-python3 /tmp/retest-lab/app.py vuln
-```
-
-```text
-vuln        | probe="' OR '1'='1"  -> CANARY-SECRET
-vuln        | probe="' OR 'a'='a"  -> CANARY-SECRET
-```
-
-### Step 3 — Naive retest of the "superficial fix" — LOOKS fixed
-
-```bash
-python3 /tmp/retest-lab/app.py superficial | head -1
-echo "^ original exact proof is now blocked -- a naive retest would CLOSE this. But watch the variant:"
-```
-
-```text
-superficial | probe="' OR '1'='1"  -> blocked
-^ original exact proof is now blocked -- a naive retest would CLOSE this. But watch the variant:
-```
-
-### Step 4 — Root-cause variant testing exposes the superficial fix; root-cause fix holds
-
-```bash
-echo "--- superficial fix, root-cause VARIANT ---"; python3 /tmp/retest-lab/app.py superficial | tail -1
-echo "--- root-cause fix, original + variant ---"; python3 /tmp/retest-lab/app.py rootcause
-echo "Classification: superficial = NOT remediated (variant leaks CANARY-SECRET); rootcause = remediated (class closed)."
-```
-
-```text
---- superficial fix, root-cause VARIANT ---
-superficial | probe="' OR 'a'='a"  -> CANARY-SECRET
---- root-cause fix, original + variant ---
-rootcause   | probe="' OR '1'='1"  -> no results
-rootcause   | probe="' OR 'a'='a"  -> no results
-Classification: superficial = NOT remediated (variant leaks CANARY-SECRET); rootcause = remediated (class closed).
-```
-
-The superficial fix blocked the exact original payload but a trivial variant still leaks the canary — a naive retest would have wrongly closed it. Only the root-cause fix (treat input as data) closes the whole class. **This is why retest = original proof + root-cause variants.**
-
-### Step 5 — Cleanup
-
-```bash
-rm -rf /tmp/retest-lab; ls -d /tmp/retest-lab 2>&1 | tail -1
-```
-
-```text
-ls: cannot access '/tmp/retest-lab': No such file or directory
-```
-
-**What you should now be able to do:** validate deployment readiness, retest the original proof *and* root-cause variants, run negative controls, classify results honestly (including partial/residual), and convert root causes into lessons-learned that reduce the whole vulnerability class.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** State the closure standard and explain why a blocked payload or changed status code is not proof of a fix.
-- **Operator:** Verify deployment, retest original + root-cause variants with negative controls, and classify the result honestly (remediated / partial / not / risk-accepted / unable-to-verify).
-- **Root:** Explain why superficial fixes pass naive retests, why partial fixes must preserve the original finding with residual scope, and how lessons-learned converts a root cause into CI checks, standards, and detections that close the whole class.
+- State the closure standard and explain why a blocked payload or changed status code is not proof of a fix.
+- Verify deployment, retest original + root-cause variants with negative controls, and classify the result honestly (remediated / partial / not / risk-accepted / unable-to-verify).
+- Explain why superficial fixes pass naive retests, why partial fixes must preserve the original finding with residual scope, and how lessons-learned converts a root cause into CI checks, standards, and detections that close the whole class.
 
 ---
 > 🔼 Up: [[Reporting & Purple Teaming]]

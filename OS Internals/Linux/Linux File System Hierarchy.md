@@ -5,6 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/linux
   - type/concept
+  - difficulty/easy
   - level/apprentice
 Domain:
   - "[[Linux]]"
@@ -188,115 +189,17 @@ TARGET SOURCE    FSTYPE OPTIONS
 
 This output describes two separate blockers: parent traversal and a read-only mount. Repair only the control that conflicts with the documented requirement.
 
-## Hands-On Lab: Inodes, Links & the Filesystem That Is Not on Disk
-
-> [!info] Runs on any Linux machine — read-only except for a sandbox in `/tmp`
-> This lab makes three abstract ideas concrete: the inode, the difference between link types, and pseudo-filesystems.
-
-### Step 1 — A filename is a label, not the file
-
-```bash
-mkdir -p /tmp/fs-lab && cd /tmp/fs-lab
-echo "original content" > real.txt
-ln real.txt hard.txt          # hard link  - another name for the SAME inode
-ln -s real.txt soft.txt       # soft link  - a pointer to the NAME
-ls -li
-```
-
-```text
-total 8
-1712043 -rw-r--r-- 2 you you  17 Aug  4 16:30 hard.txt
-1712043 -rw-r--r-- 2 you you  17 Aug  4 16:30 real.txt
-1712044 lrwxrwxrwx 1 you you   8 Aug  4 16:30 soft.txt -> real.txt
-```
-
-Read the first column: `real.txt` and `hard.txt` share inode **1712043** — they are one file with two names, which is why the link count reads `2`. `soft.txt` has its own inode and merely stores the text `real.txt`.
-
-### Step 2 — Delete the original and watch which link survives
-
-```bash
-rm real.txt
-cat hard.txt
-cat soft.txt
-```
-
-```text
-original content
-cat: soft.txt: No such file or directory
-```
-
-The **hard link still works** — the data lives in the inode, and one name still references it. The **soft link is now broken** because the name it pointed at is gone. This is the practical difference, and it explains why deleting a file does not free space while any process or hard link still holds it.
-
-### Step 3 — Prove `/proc` is generated, not stored
-
-```bash
-ls -l /proc/self/status | head -1
-stat -c '%s bytes on disk' /proc/self/status
-wc -c < /proc/self/status
-```
-
-```text
--r--r--r-- 1 you you 0 Aug  4 16:31 /proc/self/status
-0 bytes on disk
-1387
-```
-
-The file reports **size 0** yet reading it returns 1,387 bytes. Nothing is stored — the kernel manufactures the contents at the moment you read. `/proc` and `/sys` are windows onto live kernel state, which is why you cannot back them up and why their timestamps are meaningless.
-
-### Step 4 — See where one directory tree ends and another begins
-
-```bash
-df -h /tmp /boot 2>/dev/null | awk '{print $1, $6}'
-findmnt -no SOURCE,FSTYPE,TARGET /
-```
-
-```text
-Filesystem Mounted
-/dev/sda2 /
-/dev/sda1 /boot
-/dev/sda2 ext4 /
-```
-
-Walking from `/` into `/boot` silently crosses onto a **different device**, with no change in path syntax. That invisible boundary is why "the disk is full" can be true for one directory and false for another.
-
-### Step 5 — Follow a path to its real target
-
-```bash
-ln -s /tmp/fs-lab/hard.txt /tmp/fs-lab/chain.txt
-readlink -f /tmp/fs-lab/chain.txt
-namei -l /tmp/fs-lab/chain.txt | tail -3
-```
-
-```text
-/tmp/fs-lab/hard.txt
- lrwxrwxrwx you  you  chain.txt -> /tmp/fs-lab/hard.txt
- drwxrwxrwt root root fs-lab
- -rw-r--r-- you  you  hard.txt
-```
-
-`readlink -f` resolves the final target; `namei -l` shows **every component's permissions along the way** — the tool to reach for when a file is readable but the path to it is not.
-
-### Step 6 — Cleanup
-
-```bash
-cd /tmp && rm -rf /tmp/fs-lab && ls -d /tmp/fs-lab 2>&1
-```
-
-```text
-ls: cannot access '/tmp/fs-lab': No such file or directory
-```
-
-**What you should now be able to do:** explain from your own output why a hard link survived deletion, why `/proc` files report size 0, and how to find which path component denies access.
-
 ## Security implications
 
 Path traversal, symlink races, unsafe temporary files, writable service paths, exposed pseudo-filesystems, and permissive mount options all arise from misunderstanding pathname resolution. Secure code uses directory-relative operations such as `openat`, rejects unexpected symlinks, creates temporary files atomically, and applies least privilege. Investigators distinguish namespace views and preserve metadata rather than assuming the host's `/` is the process's `/`.
 
-### Crook → Operator → Root checkpoint
+## Summary
 
-- **Crook:** navigate the FHS, explain every major top-level directory, and survive Nano or Vi.
-- **Operator:** trace a path through mounts and inodes, inspect links, attributes, ACLs, and pseudo-filesystems, and make validated privileged edits.
-- **Root:** reason about VFS lookup, deleted-open files, mount namespaces, evidence timestamps, and filesystem controls when diagnosing security boundaries or reconstructing events.
+You should now be able to:
+
+- navigate the FHS, explain every major top-level directory, and survive Nano or Vi.
+- trace a path through mounts and inodes, inspect links, attributes, ACLs, and pseudo-filesystems, and make validated privileged edits.
+- reason about VFS lookup, deleted-open files, mount namespaces, evidence timestamps, and filesystem controls when diagnosing security boundaries or reconstructing events.
 
 ---
 > 🔼 Up: [[Linux]]

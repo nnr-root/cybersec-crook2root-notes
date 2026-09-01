@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/osi
   - type/concept
-  - level/crook
+  - difficulty/easy
 Domain:
   - "[[Network Foundations]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation & Protocol Data Units -> Network Devices & Traffic Paths -> Reachability Testing & ICMP
 
-## Start at Zero: Why Layer a Network at All
+## Why Layer a Network at All
 
 Sending data between two programs on different machines is a large problem: signals must be encoded onto a medium, addressed to a machine on the local link, routed across unfamiliar networks, delivered to the correct program, and finally interpreted as meaningful content. Solving all of that as one monolithic system would make every change catastrophic — swapping copper for fibre would require rewriting the email client.
 
@@ -29,6 +29,10 @@ The **OSI (Open Systems Interconnection) Model** is the ISO reference framework 
 
 > [!tip] The analogy, and where it breaks
 > Layering is often compared to posting a letter: you write content, put it in an envelope, the postal service routes it, a courier carries it. The analogy is good for encapsulation and bad for everything else — real layers negotiate, retransmit, and give feedback to each other, whereas an envelope never asks the letter to be rewritten. Do not let the analogy suggest that layers are strictly independent in practice.
+
+**The deliberate break:** OSI is taught as though it describes how networks work. It does not. It is a *reference model* from a competing protocol suite that lost — and the stack your packets actually traverse is TCP/IP, which has four layers, not seven.
+
+Layers 5 and 6 have almost no independent existence in real implementations: TLS is routinely called "Layer 6" and is nothing of the kind, and no running system has a "session layer" you can point at. Keep OSI for what it is genuinely good at — a shared vocabulary for *where a problem lives* — and stop expecting to find its seven layers in a packet.
 
 ## The Seven Layers
 
@@ -90,8 +94,8 @@ The model's real value is diagnostic. When something "doesn't work," resolve the
 
 ```bash
 ip link show eth0                      # L1/L2: is the interface up, is carrier present?
-ip neigh show 192.168.10.1             # L2: did the gateway answer at the link layer?
-ping -c 2 192.168.10.1                 # L3: is the local gateway reachable?
+ip neigh show 10.10.10.1             # L2: did the gateway answer at the link layer?
+ping -c 2 10.10.10.1                 # L3: is the local gateway reachable?
 ping -c 2 1.1.1.1                      # L3: does routing off-segment work?
 getent hosts example.com               # L7: does name resolution work?
 curl -sS -o /dev/null -w '%{http_code}\n' https://example.com   # L4-L7
@@ -101,7 +105,7 @@ Expected excerpt:
 
 ```text
 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP
-192.168.10.1 dev eth0 lladdr 00:1a:2b:3c:4d:5e REACHABLE
+10.10.10.1 dev eth0 lladdr 00:00:5e:00:53:01 REACHABLE
 2 packets transmitted, 2 received, 0% packet loss
 2 packets transmitted, 2 received, 0% packet loss
 200
@@ -122,6 +126,8 @@ Routing is healthy and the Internet is reachable, yet a browser reports "no Inte
 
 The reverse error is equally common: concluding "the network is fine" because ping succeeds. Ping exercises Layers 1 through 3 only. An application failure over an established TCP connection is above transport by definition, and the network team cannot fix it.
 
+**How you'd spot the layer:** work upward and stop at the first failure. No link light is L1. Link but no ARP entry for the gateway is L2. ARP resolves but ping fails is L3. Ping works but the port refuses is L4. The port answers but the application errors is L7. Each answer eliminates everything below it, which is the entire practical value of the model.
+
 ## Security Implications by Layer
 
 Because attacks target mechanisms, and mechanisms live at layers, the model is also a threat taxonomy.
@@ -137,31 +143,13 @@ Because attacks target mechanisms, and mechanisms live at layers, the model is a
 
 Two structural lessons follow. First, a control at one layer does not protect another: encrypting traffic at Layer 6 does nothing about a Layer 2 attacker who can still redirect and drop it. Second, most modern breaches occur at Layer 7, because the lower layers now work reliably and the application is where business logic — and therefore ambiguity — lives.
 
-## Authorized Lab: Fault Isolation Drill
+## Summary
 
-On an isolated lab VM you control, break one layer at a time and confirm that layered diagnosis identifies it. Record baseline output for every command before starting.
+You should now be able to:
 
-1. Baseline: run the six commands from the procedure above and save the results.
-2. **Layer 1/2 fault:** `sudo ip link set eth0 down`. Re-run the procedure. Expect `state DOWN` and every subsequent test to fail. Restore with `sudo ip link set eth0 up`.
-3. **Layer 3 fault:** `sudo ip route del default`. Re-run. Expect the gateway ping to succeed and the off-segment ping to fail with `Network is unreachable`. Restore with `sudo ip route add default via <gateway> dev eth0`.
-4. **Layer 7 fault:** point `/etc/resolv.conf` at an unused address in your lab range. Re-run. Expect both pings to succeed and name resolution to time out. Restore the original file from a copy taken in step 1.
-5. Confirm the baseline output returns exactly.
-
-Expected interpretation:
-
-```text
-Fault at L1/L2 -> link state fails first; all higher tests are uninformative
-Fault at L3    -> local link fine, gateway fine, off-segment unreachable
-Fault at L7    -> all connectivity fine, name resolution alone fails
-```
-
-Cleanup matters here: step 4 edits a system file, so take the copy before you change anything and verify restoration rather than assuming it.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Name the seven layers in order, state the PDU at each, and explain in plain language what decision each layer makes.
-- **Operator:** Run a bottom-up isolation procedure, read the output of each step, and state which layer failed and which tests the failure invalidated.
-- **Root:** Explain why TLS and QUIC resist clean layer placement, why a control at one layer cannot compensate for a weakness at another, and how you would design telemetry so that a reported Layer 7 symptom can be attributed to the correct layer without guesswork.
+- Name the seven layers in order, state the PDU at each, and explain in plain language what decision each layer makes.
+- Run a bottom-up isolation procedure, read the output of each step, and state which layer failed and which tests the failure invalidated.
+- Explain why TLS and QUIC resist clean layer placement, why a control at one layer cannot compensate for a weakness at another, and how you would design telemetry so that a reported Layer 7 symptom can be attributed to the correct layer without guesswork.
 
 ---
 > 🔼 Up: [[Network Foundations]]

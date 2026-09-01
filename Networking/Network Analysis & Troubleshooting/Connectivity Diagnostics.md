@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/analysis
   - type/technique
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Network Analysis & Troubleshooting]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Packet Capture & Analysis -> Structured Network Troubleshooting -> Traffic Analysis & Flow Inspection -> Performance & Latency Analysis -> Connectivity Diagnostics -> Protocol Debugging & Deep Inspection
 
-## Start at Zero: The Right Tool for the Layer
+## The Right Tool for the Layer
 
 Connectivity diagnostics is a small toolkit, and each tool answers a question at a specific layer. Knowing the map is most of the skill, because reaching for the wrong tool produces a confident answer to a question you did not ask.
 
@@ -61,7 +62,7 @@ nc -vz example.com 443
 Expected excerpt:
 
 ```text
-Connection to example.com (93.184.216.34) 443 port [tcp/*] succeeded!
+Connection to example.com (203.0.113.20) 443 port [tcp/*] succeeded!
 ```
 
 An open port is positive proof the host is up *and* the service is listening — a stronger, more useful result than ping, because it tests what you actually care about. When ping fails but the port answers, the host was never down; ICMP was simply filtered. `nc -vz` (or `nmap -Pn`) is the correct tool once you suspect ICMP filtering.
@@ -88,7 +89,7 @@ ip route get 8.8.8.8
 Expected excerpt:
 
 ```text
-8.8.8.8 via 192.168.1.1 dev eth0 src 192.168.1.24 uid 1000
+8.8.8.8 via 10.10.10.1 dev eth0 src 10.10.10.14 uid 1000
 ```
 
 This answers "how will my host actually try to reach this?" — which gateway, which interface, which source address — turning a routing question into a definite answer before any packet leaves. It is the fastest way to catch a wrong mask, a missing route, or a poisoned default.
@@ -132,34 +133,13 @@ The discipline is to run them in order and read each honestly, stopping at the f
 
 These tools are non-intrusive diagnostics on systems you administer. Directed at systems you do not own, they are reconnaissance requiring authorization.
 
-## Authorized Lab: Build the Toolkit Reflex
+## Summary
 
-Use a lab with a client, a target host running a service, and a controllable firewall.
+You should now be able to:
 
-1. **Map tools to layers.** For each tool in the table, run it against the lab and state which layer's question it answered.
-2. **Demonstrate the ping trap.** Confirm `ping` reaches the target, then firewall-drop ICMP and confirm `ping` now reports 100% loss while `nc -vz` to the open port still succeeds — proving the host is up and ping's silence was filtering, not death.
-3. **Use the right tool after filtering.** With ICMP filtered, use `nmap -Pn` / `nc -vz` to confirm reachability, articulating why these are correct once ICMP is unreliable.
-4. **Separate DNS from connectivity.** Break DNS resolution and confirm `ping <IP>` works while `ping <name>` fails; use `dig` against two resolvers to localize the fault to the resolver versus the record.
-5. **Predict routing without sending.** Use `ip route get` for several destinations and confirm it reports the exact gateway, interface, and source before any traffic — then introduce a wrong mask and confirm `ip route get` reveals the misrouting.
-6. **Inspect local state.** Use `ss -tunp` to list your host's connections and listeners, then start a new connection and confirm it appears with its owning process — the compromise-detection use.
-7. **Cleanup.** Restore firewall and DNS configuration.
-
-Expected interpretation:
-
-```text
-Tool-to-layer   -> each answers one specific layer's question
-Ping trap       -> 100% loss with an open port = ICMP filtered, host is up
-Right tool      -> nc/nmap -Pn confirm reachability when ICMP is unreliable
-DNS vs conn     -> IP works, name fails = resolution fault, localized with dig
-ip route get    -> the exact forwarding decision, before sending anything
-ss -tunp        -> connections tied to processes; a compromise-detection primitive
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Map the core tools to the layers they test, and explain what a successful ping does and does not prove.
-- **Operator:** Choose the right tool for each question, use `nc`/`nmap -Pn` when ICMP is filtered, separate a DNS fault from a connectivity fault with `dig`, and predict routing with `ip route get` before sending traffic.
-- **Root:** Explain why honest interpretation ("silence means no answer") resists both self-deception and an attacker manipulating your tools; argue why the diagnostic toolkit is also reconnaissance and why local-state tools like `ss` are compromise-detection primitives whose output is perishable evidence.
+- Map the core tools to the layers they test, and explain what a successful ping does and does not prove.
+- Choose the right tool for each question, use `nc`/`nmap -Pn` when ICMP is filtered, separate a DNS fault from a connectivity fault with `dig`, and predict routing with `ip route get` before sending traffic.
+- Explain why honest interpretation ("silence means no answer") resists both self-deception and an attacker manipulating your tools; argue why the diagnostic toolkit is also reconnaissance and why local-state tools like `ss` are compromise-detection primitives whose output is perishable evidence.
 
 ---
 > 🔼 Up: [[Network Analysis & Troubleshooting]]

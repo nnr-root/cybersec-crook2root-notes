@@ -28,9 +28,9 @@ Color: "#FFA500"
 
 ## Curriculum Outcomes
 
-- **Crook:** navigate macOS safely and recognize its major architectural boundaries.
-- **Operator:** diagnose system behavior with native commands, expected output, and repeatable authorized labs.
-- **Root:** reason across kernel, storage, identity, network, execution, trust, and evidence layers without flattening macOS into generic Unix assumptions.
+- **Easy:** navigate macOS safely and recognize its major architectural boundaries.
+- **Medium:** diagnose system behavior with native commands, expected output, and repeatable authorized labs.
+- **Hard:** reason across kernel, storage, identity, network, execution, trust, and evidence layers without flattening macOS into generic Unix assumptions.
 
 ---
 > 🔼 Up: [[OS Internals]]

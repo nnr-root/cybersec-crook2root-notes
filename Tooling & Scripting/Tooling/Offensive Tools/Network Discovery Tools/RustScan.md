@@ -1,7 +1,7 @@
 ---
 title: "RustScan"
 aliases: ["Rust Port Scanner"]
-tags: [tree/tooling, cyber/tooling/offensive/rustscan, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/offensive/rustscan, type/tool, difficulty/medium]
 Domain: "[[Network Discovery Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ RustScan is a fast TCP port-discovery front end that finds open ports quickly an
 ## Parent Learning Order
 Nmap -> Masscan -> RustScan
 
-## Crook — The Mental Model
+## Letting the OS complete the handshake
 
 RustScan uses the simplest probe of all: a full TCP `connect()`.
 
-![[tool_port_scan_states.svg]]
-
 Unlike Masscan's stateless SYN or Nmap's half-open `-sS`, RustScan lets the OS complete the handshake (the "Connect -sT" row of the diagram) — so it needs **no root**, but the target application **does** see the connection. It races through ports with many concurrent sockets, collects the open set, and then invokes Nmap on just those ports. The model is "sprint to find the doors, then let Nmap describe each one."
 
-## Operator — Make It Work
+## Everything after -- goes straight to Nmap
 
 Everything after `--` is passed straight to Nmap, so all your Nmap knowledge transfers:
 
@@ -48,7 +46,7 @@ The knobs that matter:
 | Skip Nmap | `--scripts none` |
 | Nmap handoff | everything after `--` |
 
-## Root — Internals & The Deliberate Break
+## Batch size against the file-descriptor ceiling
 
 RustScan's speed is `-b` (batch size = simultaneous socket attempts), and that number collides directly with an OS limit: the **file-descriptor ceiling** (`ulimit -n`). Each in-flight connection is a socket = a descriptor; ask for more than the ceiling and the kernel refuses new sockets.
 
@@ -70,11 +68,13 @@ batch=200 elapsed=0.48
 
 The fastest run is **not** automatically the best: validate that a known-open canary port still appears at your chosen batch. If it vanishes at `-b 200`, local or network pressure invalidated the optimisation — back off. Record `run_id`, ports, batch, timeout, and the exact downstream Nmap arguments, because the combined pipeline is otherwise impossible to reproduce.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** What does RustScan do quickly, and what does it hand to Nmap — and why does it need no root?
-- **Operator:** Write a RustScan command that finds open ports and runs `nmap -sV` on only those ports.
-- **Root:** Explain how batch size collides with `ulimit -n`, and why a too-high batch can cause false negatives rather than an error.
+You should now be able to:
+
+- What does RustScan do quickly, and what does it hand to Nmap — and why does it need no root?
+- Write a RustScan command that finds open ports and runs `nmap -sV` on only those ports.
+- Explain how batch size collides with `ulimit -n`, and why a too-high batch can cause false negatives rather than an error.
 
 ---
 > 🔼 Up: [[Network Discovery Tools]]

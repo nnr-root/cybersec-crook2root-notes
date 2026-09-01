@@ -6,7 +6,7 @@ tags:
   - cyber/foundations/linux
   - cyber/defensive/boot-security
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Linux]]"
 Color: "#FFA500"
@@ -60,6 +60,7 @@ sequenceDiagram
     S->>U: Start targets, sockets, mounts & services
 ```
 
+
 ## Firmware, boot entries & kernel command line
 
 UEFI boot variables identify loader paths and order. `efibootmgr -v` displays them. The EFI System Partition is normally FAT and mounted at `/boot/efi`; access should be restricted because modifying a trusted loader path can persist below userspace. Measured boot extends hashes into TPM Platform Configuration Registers, enabling remote attestation or secrets bound to expected measurements. It complements Secure Boot by recording what executed.
@@ -95,6 +96,12 @@ $ systemd-analyze time
 Startup finished in 8.421s (firmware) + 2.318s (loader) + 3.774s (kernel) + 6.902s (userspace) = 21.416s
 graphical.target reached after 6.201s in userspace.
 ```
+
+**The deliberate break:** systemd is often described as "init with more features," which implies it does the same thing in the same order, only bigger.
+
+It does not run things in an order at all. systemd is a **dependency engine**: it starts everything whose dependencies are satisfied, in parallel, as soon as they are satisfied. There is no script executing top to bottom. That is why boot got faster, and it is also why a service that "worked yesterday" can fail today with no configuration change — the race it had been winning, it lost. If you are looking for the line that starts your service, there isn't one; there is a declared relationship, and it may not say what you assume.
+
+**How you'd spot it:** `systemd-analyze critical-chain` shows what actually gated the boot, and `systemctl list-dependencies` shows the relationships. A service failing intermittently at boot is almost always a missing `After=` or `Requires=`, not a broken service.
 
 ## systemd: dependency engine & supervisor
 
@@ -150,146 +157,6 @@ $ journalctl -b -p warning..alert --no-pager | tail -3
 data.mount: Failed to mount /data: wrong fs type, bad option, bad superblock
 ```
 
-## Hands-On Lab: Read the Boot You Just Performed
-
-> [!info] Runs on any systemd Linux machine — read-only except one disposable unit in Step 4
-> Nothing here reboots the machine. Every command inspects the boot that already happened.
-
-### Step 1 — How long did each stage take?
-
-```bash
-systemd-analyze
-```
-
-```text
-Startup finished in 3.412s (firmware) + 812ms (loader) + 2.104s (kernel) + 6.884s (userspace) = 13.213s
-graphical.target reached after 6.881s in userspace
-```
-
-Four measured stages: firmware → bootloader → kernel → userspace. Knowing *which* stage is slow tells you where to look — firmware time is a BIOS/UEFI matter, userspace time is services.
-
-```bash
-systemd-analyze blame | head -5
-```
-
-```text
-4.221s NetworkManager-wait-online.service
-1.803s snapd.service
- 912ms systemd-udev-settle.service
- 611ms dev-sda2.device
- 402ms systemd-journal-flush.service
-```
-
-The single slowest unit is usually a `wait-online`-style service that blocks on the network — a classic and fixable boot delay.
-
-### Step 2 — See the dependency chain that ordered it
-
-```bash
-systemctl list-dependencies graphical.target | head -8
-```
-
-```text
-graphical.target
-● ├─gdm.service
-● ├─systemd-update-utmp-runlevel.service
-● └─multi-user.target
-●   ├─cron.service
-●   ├─dbus.service
-●   ├─ssh.service
-●   └─basic.target
-```
-
-Targets are **grouping points**, not runlevels-with-new-names: `graphical.target` pulls in `multi-user.target`, which pulls in `basic.target`. This tree is why systemd can start units in parallel yet still respect ordering.
-
-### Step 3 — Inspect a real unit's definition and state
-
-```bash
-systemctl cat ssh.service 2>/dev/null | head -8
-systemctl show ssh.service -p ExecMainPID -p ActiveState -p UnitFileState
-```
-
-```text
-# /lib/systemd/system/ssh.service
-[Unit]
-Description=OpenBSD Secure Shell server
-After=network.target auditd.service
-[Service]
-ExecStart=/usr/sbin/sshd -D $SSHD_OPTS
-Restart=on-failure
-ExecMainPID=1142
-ActiveState=active
-UnitFileState=enabled
-```
-
-Note the distinction beginners trip on: **`enabled`** means it starts at boot; **`active`** means it is running now. A unit can be active but disabled (started by hand, gone after reboot) or enabled but failed.
-
-### Step 4 — Create a unit that fails, then diagnose it
-
-```bash
-sudo tee /etc/systemd/system/boot-lab.service >/dev/null << 'EOF'
-[Unit]
-Description=Boot lab test unit
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/false
-EOF
-sudo systemctl daemon-reload
-sudo systemctl start boot-lab.service 2>&1 | tail -2
-systemctl is-failed boot-lab.service
-```
-
-```text
-Job for boot-lab.service failed because the control process exited with error code.
-See "systemctl status boot-lab.service" and "journalctl -xeu boot-lab.service" for details.
-failed
-```
-
-Now read the evidence the way you would in an incident:
-
-```bash
-systemctl status boot-lab.service --no-pager | head -6
-```
-
-```text
-× boot-lab.service - Boot lab test unit
-     Loaded: loaded (/etc/systemd/system/boot-lab.service; static)
-     Active: failed (Result: exit-code) since Tue 2026-08-04 16:52:11; 8s ago
-    Process: 22841 ExecStart=/usr/bin/false (code=exited, status=1/FAILURE)
-```
-
-`status=1/FAILURE` names the exact exit code, and `Process:` names the command that produced it. That two-line pair answers "what failed and why" faster than any log search.
-
-### Step 5 — Find the same event in the journal
-
-```bash
-sudo journalctl -u boot-lab.service --no-pager | tail -3
-sudo journalctl -b -p err --no-pager | tail -3
-```
-
-```text
-Aug 04 16:52:11 host systemd[1]: boot-lab.service: Main process exited, code=exited, status=1/FAILURE
-Aug 04 16:52:11 host systemd[1]: boot-lab.service: Failed with result 'exit-code'.
-Aug 04 16:52:11 host systemd[1]: Failed to start Boot lab test unit.
-```
-
-`-b` limits to **this boot** and `-p err` to error priority and above — the two flags that turn an unreadable journal into a short list worth reading.
-
-### Step 6 — Cleanup
-
-```bash
-sudo systemctl reset-failed boot-lab.service 2>/dev/null
-sudo rm /etc/systemd/system/boot-lab.service && sudo systemctl daemon-reload
-systemctl status boot-lab.service --no-pager 2>&1 | head -2
-```
-
-```text
-Unit boot-lab.service could not be found.
-```
-
-The "not found" is the confirmation. `daemon-reload` is required after removing a unit file, or systemd keeps the stale definition in memory.
-
-**What you should now be able to do:** attribute boot time to a stage, distinguish enabled from active, and read a failed unit's exit code and journal entries without guessing.
-
 ## Unified kernel images, rescue & rollback
 
 A **Unified Kernel Image (UKI)** packages an EFI stub, kernel, initrd, command line, OS metadata, and optionally signatures into one EFI executable. This reduces ambiguity about which initramfs and command line accompany a kernel and fits measured-boot workflows. It does not remove the need for protected keys, revocation, rollback policy, or recovery entries. Keep a separately tested rescue path and understand whether boot counting automatically falls back after repeated failure.
@@ -312,11 +179,13 @@ Practice rollback in the VM: boot the previous entry, verify kernel and services
 
 Boot security is cumulative. Signed firmware handoff is undermined by an editable loader; signed kernels are undermined by an unprotected command line; encrypted root can be undermined by an untrusted initramfs; hardened services are undermined by writable units or environment files. Keep firmware and bootloaders updated, enforce signatures and measured boot where required, encrypt storage, restrict recovery paths, minimize initramfs contents, protect `/boot`, and sandbox services. Preserve multiple known-good kernels and tested recovery media so hardening does not become fragility.
 
-### Crook → Operator → Root checkpoint
+## Summary
 
-- **Crook:** narrate firmware → bootloader → kernel → initramfs → real root → PID 1 → target.
-- **Operator:** inspect boot state, build and validate units, analyze dependency timing, and recover a root-device or mount failure in a VM.
-- **Root:** design a signed/measured/encrypted chain of trust, explain early-userspace storage discovery, and harden service startup without sacrificing recoverability.
+You should now be able to:
+
+- narrate firmware → bootloader → kernel → initramfs → real root → PID 1 → target.
+- inspect boot state, build and validate units, analyze dependency timing, and recover a root-device or mount failure in a VM.
+- design a signed/measured/encrypted chain of trust, explain early-userspace storage discovery, and harden service startup without sacrificing recoverability.
 
 ---
 > 🔼 Up: [[Linux]]

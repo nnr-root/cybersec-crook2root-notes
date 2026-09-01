@@ -1,7 +1,7 @@
 ---
 title: "Aperisolve"
 aliases: ["Aperisolve", "aperisolve"]
-tags: [tree/tooling, cyber/tooling/offensive/web-tools/aperisolve, type/tool, level/apprentice]
+tags: [tree/tooling, cyber/tooling/offensive/web-tools/aperisolve, type/tool, level/apprentice, difficulty/easy]
 Domain: "[[Web-Based Tools & References]]"
 Color: "#708090"
 ---
@@ -16,7 +16,7 @@ Aperisolve (`aperisolve.com`) is an online **steganography analysis** platform. 
 ## Parent Learning Order
 GTFOBins -> LOLBAS -> CrackStation -> Aperisolve -> revshells.com
 
-## Crook — The Mental Model
+## Data tucked into every layer of an image
 
 Steganography hides data *inside* a carrier file. An image is just numbers (pixel colour values + metadata + trailing bytes), and data can be tucked into any of those layers: the least-significant bits of pixels, an EXIF field, a password-protected `steghide` blob, or extra bytes appended after the image ends. No single tool checks all of them — so you run *all* of them.
 
@@ -36,7 +36,7 @@ flowchart TD
 
 Aperisolve is the "run every stego check in parallel and show me anything unusual" button.
 
-## Operator — Make It Work
+## Chaining what each tool leaks into the next
 
 Upload the image; Aperisolve returns each tool's output in tabs. A typical CTF find:
 
@@ -50,7 +50,7 @@ Upload the image; Aperisolve returns each tool's output in tabs. A typical CTF f
 
 The layers chain: `exiftool` leaks a passphrase → you use it with `steghide`; `binwalk` finds an appended ZIP → you carve and extract it. Aperisolve surfaces the leads; you follow the chain.
 
-## Root — Internals & The Deliberate Break
+## Why the format decides which technique is possible
 
 The bit-plane view is the conceptual heart, and it reveals why **format matters**:
 
@@ -62,11 +62,13 @@ JPEG (lossy)     → recompression destroys LSBs → LSB stego does NOT survive
 
 **The deliberate break:** LSB steganography — hiding data in the least-significant bit of each pixel — only works in **lossless** formats (PNG, BMP). Try it in a JPEG and the lossy DCT compression *rewrites* those low bits, destroying the payload. So when Aperisolve's bit-plane view shows clean noise on a JPEG, that's not "no stego" — it's "LSB can't live here; look for DCT-based hiding or appended data instead." Understanding *which* technique a given format permits stops you from concluding "nothing hidden" when you simply used the wrong lens. Aperisolve runs the tools; format literacy tells you which result is meaningful.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Why does stego analysis run many tools instead of one?
-- **Operator:** Aperisolve's `binwalk` tab reports a ZIP at an offset. What does that mean and what do you do?
-- **Root:** Explain why LSB steganography survives in PNG but not JPEG, and what that tells you when the bit-plane view is clean.
+You should now be able to:
+
+- Why does stego analysis run many tools instead of one?
+- Aperisolve's `binwalk` tab reports a ZIP at an offset. What does that mean and what do you do?
+- Explain why LSB steganography survives in PNG but not JPEG, and what that tells you when the bit-plane view is clean.
 
 ---
 > 🔼 Up: [[Web-Based Tools & References]]

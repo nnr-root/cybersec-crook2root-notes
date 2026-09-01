@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/wireless
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Wireless Networking]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Wireless Fundamentals & 802.11 -> Wi-Fi Security & WPA -> Wireless Attacks & Rogue Infrastructure -> Cellular & Long-Range Wireless -> Bluetooth & Personal-Area Networks -> Wireless Reconnaissance & Defense
 
-## Start at Zero: A Different Design Goal
+## A Different Design Goal
 
 Wi-Fi serves a building; **cellular** serves a country. The design constraints are different — devices move at speed between towers, the operator is a licensed carrier rather than a local admin, and the network must authenticate millions of subscribers. This produces a very different architecture, but the security ideas rhyme with Wi-Fi.
 
@@ -68,6 +68,76 @@ The design trade-off is severe and security-relevant: to save power and reach di
 
 This is the same pattern seen with IoT generally: devices too constrained for strong, updatable security, deployed in large numbers, in physically accessible locations. The networking concern is that these long-range links extend an organization's attack surface across a wide area, often with weak per-device security, and often unmonitored.
 
+## Worked Example: What the Modem Reports About Its Serving Cell
+
+A phone's own modem exposes the two facts an IMSI-catcher cannot hide: which
+generation it has been persuaded to use, and which cell it is attached to.
+
+> [!note] Representative output
+> Reconstructed from a lab of this shape rather than copied from one capture. Field layouts and flag names match the named tool; addresses and identifiers are synthetic.
+
+**Normal attachment.** On a healthy modern network the modem reports mutual
+authentication and a current radio technology:
+
+```shell-session
+analyst@lab:~$ mmcli -m 0
+  --------------------------------
+  Status   |             state: connected
+           |       power state: on
+           |       access tech: lte
+           |    signal quality: 71% (recent)
+  --------------------------------
+  3GPP     |      operator id: 23415
+           |    operator name: Example Mobile
+           |     registration: home
+```
+
+```shell-session
+analyst@lab:~$ mmcli -m 0 --location-get
+  --------------------------------
+  3GPP location |    operator code: 23415
+                |          tracking area code: 0A1C
+                |                     cell id: 01A2B3C4
+```
+
+`access tech: lte` matters more than the signal quality. From 4G onward the
+network must prove itself to the device as well as the reverse, so a device that
+stays on LTE or 5G cannot be attached to a tower that does not hold the operator's
+keys.
+
+**A forced downgrade.** The same modem, moments later, in the presence of a
+device suppressing the LTE bands:
+
+```shell-session
+analyst@lab:~$ mmcli -m 0
+  --------------------------------
+  Status   |             state: connected
+           |       access tech: gsm
+           |    signal quality: 94% (recent)
+  --------------------------------
+  3GPP     |      operator id: 23415
+           |     registration: home
+```
+
+```shell-session
+analyst@lab:~$ mmcli -m 0 --location-get
+  --------------------------------
+  3GPP location |          cell id: 0F00FF01
+```
+
+Three signals together tell the story, and no single one is conclusive. The
+access technology has dropped to `gsm`, where the network never authenticates
+itself to the phone. The signal quality has jumped to 94% — a nearby transmitter,
+not a distant tower. And the cell ID is one never previously seen in this area.
+A phone showing full bars on a two-generation-old technology in a city with LTE
+coverage everywhere is reporting an anomaly, even though every individual field
+looks like a normal successful connection.
+
+This is why the fix was generational rather than a patch: the vulnerability is
+that an older protocol *without* mutual authentication remains reachable, so the
+defence is refusing to speak it. A device configured to require LTE or better
+simply fails to attach instead of attaching to an impostor.
+
 ## Security Implications
 
 **"Impersonate the infrastructure" is universal.** The IMSI catcher is the evil twin at cellular scale, and its defeat — mutual authentication so the client verifies the network — is the same fix as Enterprise Wi-Fi certificate validation. Across Wi-Fi and cellular, the security of a wireless client rests on whether it can cryptographically verify the infrastructure it connects to. Where it cannot (2G, misconfigured Enterprise, open Wi-Fi), impersonation succeeds.
@@ -82,32 +152,13 @@ This is the same pattern seen with IoT generally: devices too constrained for st
 
 This note is conceptual. Operating a rogue tower or intercepting cellular traffic is unlawful and requires licensed spectrum; the lab below stays within legal, observational bounds and does not transmit on cellular frequencies.
 
-## Authorized Lab: Observe Without Transmitting
+## Summary
 
-Cellular experimentation is legally constrained — transmitting on licensed cellular spectrum is unlawful. This lab is observational and conceptual only.
+You should now be able to:
 
-1. **Read your device's generation and identifiers.** On a phone you own, use the device's own diagnostic screens or settings to observe which generation it is connected to and that a SIM-based identity is in use. Do not use any tool that transmits.
-2. **Observe downgrade behaviour conceptually.** In your device settings, examine whether 2G can be disabled and reason about why disabling it removes the downgrade path — connecting the control to the mechanism without performing any attack.
-3. **Study mutual authentication.** Using documentation for 3G/4G/5G authentication, trace how the SIM's secret key lets the phone verify the network and the network verify the phone, and articulate why 2G's one-way model enabled IMSI catchers.
-4. **Examine a LoRaWAN device (if you have one you own).** Review its key provisioning and update capability in its documentation, and identify whether keys are updatable — assessing the constrained-device security posture without attacking anything.
-5. **Verify the encryption backstop.** On your phone, confirm that a messaging or web app uses validated TLS, and reason about why that protects content regardless of the cellular link's security.
-6. **Document a segmentation plan** for hypothetical long-range sensors: how you would isolate them from sensitive systems given that their per-device security cannot be strengthened.
-
-Expected interpretation:
-
-```text
-Generation shown  -> newer generations provide mutual authentication
-2G disable option -> removes the downgrade path an IMSI catcher relies on
-Mutual auth       -> SIM key lets phone verify network; 2G could not
-LoRaWAN keys      -> often fixed at manufacture; security set at deployment
-TLS on device     -> content protected regardless of link security (the backstop)
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain how cellular differs from Wi-Fi in design goal, what the IMSI and SIM are, and what an IMSI catcher does.
-- **Operator:** Explain why 2G's one-way authentication enabled IMSI catchers and how mutual authentication in 3G+ defeats the basic version; describe why downgrade attacks reintroduce the weakness and how disabling 2G helps.
-- **Root:** Connect the IMSI catcher to the Wi-Fi evil twin as one "impersonate the infrastructure" pattern with one fix (client verifies infrastructure); explain 5G identity encryption, why the encryption backstop holds even on a compromised link, and why constrained long-range devices are a wide, weak surface best handled by segmentation.
+- Explain how cellular differs from Wi-Fi in design goal, what the IMSI and SIM are, and what an IMSI catcher does.
+- Explain why 2G's one-way authentication enabled IMSI catchers and how mutual authentication in 3G+ defeats the basic version; describe why downgrade attacks reintroduce the weakness and how disabling 2G helps.
+- Connect the IMSI catcher to the Wi-Fi evil twin as one "impersonate the infrastructure" pattern with one fix (client verifies infrastructure); explain 5G identity encryption, why the encryption backstop holds even on a compromised link, and why constrained long-range devices are a wide, weak surface best handled by segmentation.
 
 ---
 > 🔼 Up: [[Wireless Networking]]

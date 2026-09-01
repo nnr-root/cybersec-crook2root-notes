@@ -1,7 +1,7 @@
 ---
 title: "DNS & Subdomain Reconnaissance"
 aliases: ["DNS Reconnaissance", "Subdomain Reconnaissance", "Domain Reconnaissance"]
-tags: [tree/offensive, cyber/offensive/recon, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/recon, type/technique, difficulty/medium]
 Domain: "[[Reconnaissance & Attack Surface]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Passive Reconnaissance & OSINT -> DNS & Subdomain Reconnaissance -> Active Reconnaissance & Port Scanning -> Cloud & Internet Exposure Discovery
 
-## Start at Zero: The Namespace Is a Map
+## The Namespace Is a Map
 
 Every organization publishes a **DNS namespace** — the tree of names under its domain — and that tree is a map of its infrastructure. `mail.example.com` names a mail server, `vpn.example.com` a remote-access gateway, `dev.example.com` a system nobody meant to expose. Enumerating that tree is often the highest-yield recon an attacker performs, because each name is a candidate target and the forgotten ones are the softest.
 
@@ -83,7 +83,7 @@ done
 ```
 
 ```text
-www.example.com -> 93.184.216.34
+www.example.com -> 203.0.113.20
 ```
 
 Only `www` resolves for the reserved documentation domain; against a real target this list would grow. A serious enumeration uses a large wordlist and a dedicated tool, but the mechanism is exactly this loop — resolve each candidate, keep the hits.
@@ -100,6 +100,12 @@ flowchart TD
     L --> N["Next: which are alive, what do they run? -> active recon"]
 ```
 
+**The deliberate break:** a DNS record pointing at something that no longer exists looks like the most harmless kind of mess — a dead link. Nobody is there, so nothing can happen.
+
+The opposite is true, and it is one of the highest-impact findings in recon. When `shop.example.test` still CNAMEs to a cloud provider hostname whose resource was deleted, that name is **claimable**: anyone who registers the provider resource with the right identifier now serves content at your subdomain. And because it *is* your subdomain, they inherit everything the browser grants it — cookies scoped to the parent domain, your CORS allowances, your SSO redirect allowlist, and often a valid certificate the provider issues automatically. A dangling record is not a dead link, it is an unclaimed key to your origin.
+
+**How you'd spot it:** resolve the name and follow the CNAME. If the final target is a provider hostname returning that provider's "no such application" or "bucket does not exist" page rather than an NXDOMAIN, the record is dangling and the resource is very likely claimable.
+
 ## The Subdomain Takeover: When a Name Outlives Its Target
 
 A **CNAME** pointing at a decommissioned cloud resource is a serious finding. If `blog.example.com` is a CNAME to `example.github.io` and the GitHub Pages site was deleted, an attacker who claims that GitHub name now controls content served at `blog.example.com` — inheriting the domain's trust, cookies scoped to `.example.com`, and reputation. Detect it by resolving each CNAME and checking whether the target still exists:
@@ -113,7 +119,7 @@ dig blog.example.com CNAME +short
 
 Empty output here (no dangling CNAME). A takeover-vulnerable result would show a CNAME to a cloud service returning a "no such site" page — the signature of an abandoned resource waiting to be claimed.
 
-## Failure Modes and Interpretation
+## How wildcard DNS makes brute-force meaningless
 
 - **Wildcard DNS defeats naive brute-force.** If `*.example.com` resolves to one IP, *every* guess "resolves" and the enumeration is meaningless. Detect wildcards by resolving a random name (`asdf1234.example.com`) first — if it resolves, filter results against that wildcard IP.
 - **CDN and cloud IPs mislead.** Many subdomains resolve to the same CDN address; that shared IP is not a single server to attack. Group by hostname, not IP.
@@ -128,94 +134,13 @@ Empty output here (no dangling CNAME). A takeover-vulnerable result would show a
 - **Wildcard DNS is a double-edged control** — it frustrates brute-force enumeration but can mask which subdomains genuinely exist, complicating your own asset inventory.
 - **You cannot hide CT-visible names**, so internal-only services should not appear in publicly-trusted certificates at all.
 
-## Authorized Lab: Enumerate a Namespace You Control
+## Summary
 
-> [!info] Runs on any machine with `dig` — plus a local authoritative zone you build, so brute-force is against *your own* server
-> This builds a real DNS zone in a container-free local resolver, so the intrusive steps target only you.
+You should now be able to:
 
-### Step 1 — Read a real public namespace (safe, passive-ish)
-
-```bash
-dig example.com NS +short; dig example.com MX +short; dig example.com TXT +short | head -1
-```
-
-```text
-a.iana-servers.net.
-b.iana-servers.net.
-0 .
-"v=spf1 -all"
-```
-
-You just profiled a domain's nameservers, mail, and sender policy from public records.
-
-### Step 2 — Build your own zone to enumerate
-
-```bash
-cat > /tmp/reclab.zone << 'EOF'
-$TTL 60
-@   IN SOA ns.reclab.test. admin.reclab.test. (1 60 60 60 60)
-@   IN NS  ns.reclab.test.
-ns  IN A   127.0.0.1
-www IN A   127.0.0.1
-dev IN A   127.0.0.1
-vpn IN A   127.0.0.1
-EOF
-dnsmasq --no-daemon --port=5354 --auth-zone=reclab.test --auth-server=ns.reclab.test \
-  --host-record=www.reclab.test,127.0.0.1 --host-record=dev.reclab.test,127.0.0.1 \
-  --host-record=vpn.reclab.test,127.0.0.1 &>/dev/null &
-sleep 1; echo "local authoritative resolver up on :5354"
-```
-
-```text
-local authoritative resolver up on :5354
-```
-
-### Step 3 — Brute-force your own zone and see the hits
-
-```bash
-for sub in www mail dev staging vpn api admin; do
-  ip=$(dig +short @127.0.0.1 -p 5354 "$sub.reclab.test" | head -1)
-  [ -n "$ip" ] && echo "FOUND: $sub.reclab.test -> $ip"
-done
-```
-
-```text
-FOUND: www.reclab.test -> 127.0.0.1
-FOUND: dev.reclab.test -> 127.0.0.1
-FOUND: vpn.reclab.test -> 127.0.0.1
-```
-
-Three of seven guesses hit — exactly how real enumeration works: a wordlist of candidates, resolve each, keep the live ones. `mail`, `staging`, `api`, `admin` returned nothing (NXDOMAIN), the misses.
-
-### Step 4 — Detect the wildcard trap
-
-```bash
-dig +short @127.0.0.1 -p 5354 randomxyz123.reclab.test
-echo "empty above = no wildcard; a resolving random name would mean every guess is a false positive"
-```
-
-```text
-empty above = no wildcard; a resolving random name would mean every guess is a false positive
-```
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/reclab.zone; wait 2>/dev/null; jobs
-```
-
-```text
-```
-
-Empty output confirms the local resolver is stopped and the zone file removed.
-
-**What you should now be able to do:** profile a namespace from DNS records, explain why a refused zone transfer is the correct result, brute-force subdomains and filter wildcard false-positives, and recognize a dangling CNAME as a takeover risk.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain what a DNS namespace reveals about infrastructure, name the high-value record types, and state why a refused zone transfer is the secure result.
-- **Operator:** Enumerate subdomains passively (CT) then actively (brute-force), detect and filter wildcard DNS, and read SPF/verification TXT records to enumerate an organization's SaaS.
-- **Root:** Explain how a dangling CNAME enables subdomain takeover and why record hygiene is the fix; describe which enumeration steps are observable and how a defender detects brute-force from NXDOMAIN bursts.
+- Explain what a DNS namespace reveals about infrastructure, name the high-value record types, and state why a refused zone transfer is the secure result.
+- Enumerate subdomains passively (CT) then actively (brute-force), detect and filter wildcard DNS, and read SPF/verification TXT records to enumerate an organization's SaaS.
+- Explain how a dangling CNAME enables subdomain takeover and why record hygiene is the fix; describe which enumeration steps are observable and how a defender detects brute-force from NXDOMAIN bursts.
 
 ---
 > 🔼 Up: [[Reconnaissance & Attack Surface]]

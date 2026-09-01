@@ -5,7 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/wireless
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Wireless Networking]]"
 Color: "#42D4F4"
@@ -19,7 +19,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Wireless Fundamentals & 802.11 -> Wi-Fi Security & WPA -> Wireless Attacks & Rogue Infrastructure -> Cellular & Long-Range Wireless -> Bluetooth & Personal-Area Networks -> Wireless Reconnaissance & Defense
 
-## Start at Zero: Why the Encryption Is Everything
+## Why the Encryption Is Everything
 
 On the shared radio medium, a passive listener captures every frame. The only thing standing between that listener and your traffic is encryption. If the encryption is weak, the physical exposure becomes a full compromise; if it is strong, the listener gets ciphertext. This is why Wi-Fi security *is* Wi-Fi encryption, and why the history of Wi-Fi is a history of encryption schemes being broken and replaced.
 
@@ -40,6 +40,12 @@ On the shared radio medium, a passive listener captures every frame. The only th
 
 > [!tip] The analogy, and where it breaks
 > Two ways to control entry: a single shared door code everyone in the building knows, versus a personal keycard issued to each employee. The analogy breaks on what an eavesdropper can do afterwards — with the shared code, overhearing one person's entry sequence lets an attacker guess the code offline, at leisure, forever, with no lockout. That offline guessing has no physical equivalent, and it is exactly the WPA2 weakness.
+
+**The deliberate break:** "WPA2 was cracked" gets repeated constantly, and it implies the encryption is broken and any WPA2 network is readable.
+
+The encryption is not broken. What an attacker captures is the **four-way handshake**, which contains a value derived from the passphrase — and then guesses passphrases offline, at whatever speed their hardware allows. Nothing about WPA2's cryptography fails; the passphrase does. A network with a long random passphrase is not meaningfully attackable this way, and a network with `Summer2024!` was never protected by its encryption in the first place.
+
+**How you'd spot the exposure:** the question is never "is it WPA2" but "how was the passphrase chosen, and how many people know it". For WPA2-Personal, one shared secret protects everyone on it.
 
 ## The Four-Way Handshake
 
@@ -121,34 +127,13 @@ The presence of EAP/identity exchange distinguishes Enterprise (individual authe
 
 All handshake capture and cracking described here must target only networks you own or are explicitly authorized to test. Capturing and attacking handshakes on networks you do not control is unlawful interception.
 
-## Authorized Lab: Capture and Compare
+## Summary
 
-Use a monitor-capable adapter and lab APs you control, configured for WPA2-Personal, WPA3, and (if available) WPA-Enterprise.
+You should now be able to:
 
-1. **Capture a WPA2 handshake.** On your WPA2-Personal lab AP, capture the four-way handshake as a client connects; if needed, force a reconnection with a deauthentication frame (on your own network) and capture the resulting handshake.
-2. **Attempt an offline guess.** Against the captured handshake, run a passphrase guess using a small wordlist that includes your lab passphrase, and confirm a weak passphrase is recovered offline — no further network interaction needed. Then set a long random passphrase and confirm the same wordlist fails, demonstrating that strength is the only defense.
-3. **Observe WPA3 resistance.** On the WPA3 lab AP, confirm the SAE handshake does not yield a capturable value that supports the same offline attack, and that guessing would require repeated online interaction.
-4. **Distinguish Enterprise.** On the WPA-Enterprise AP, capture the association and confirm the EAP/802.1X identity exchange, showing per-user authentication rather than a shared passphrase.
-5. **Demonstrate revocation.** On the Enterprise setup, disable one user's credentials and confirm that user can no longer connect while others are unaffected — the capability Personal mode lacks.
-6. **Show transition-mode downgrade.** On a WPA3 AP in transition mode, confirm a client can be pushed to WPA2 and the handshake weakness reappears; set the AP to WPA3-only and confirm the downgrade fails.
-7. **Cleanup.** Restore lab AP configurations and stop all captures.
-
-Expected interpretation:
-
-```text
-WPA2 handshake   -> captured; a weak passphrase falls to offline guessing
-Strong passphrase-> the same attack fails; strength is the only Personal defense
-WPA3 SAE         -> no capturable value for offline guessing; attacks must go online
-Enterprise EAP   -> per-user identity, not a shared passphrase
-Revocation       -> one user disabled without affecting others
-Transition mode  -> downgradable to WPA2; WPA3-only prevents it
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain why Wi-Fi security is fundamentally about encryption, name the WEP→WPA3 progression, and state what the four-way handshake establishes.
-- **Operator:** Capture a WPA2 handshake and explain the offline attack it enables; distinguish Personal from Enterprise by the presence of an 802.1X/EAP exchange and explain why the shared passphrase is a management liability.
-- **Root:** Explain precisely why the WPA2 handshake is offline-crackable and how WPA3's SAE removes that exposure; argue Enterprise as the organizational answer for revocation and attribution, and why transition modes and WPA2 fallback reintroduce the old weakness.
+- Explain why Wi-Fi security is fundamentally about encryption, name the WEP→WPA3 progression, and state what the four-way handshake establishes.
+- Capture a WPA2 handshake and explain the offline attack it enables; distinguish Personal from Enterprise by the presence of an 802.1X/EAP exchange and explain why the shared passphrase is a management liability.
+- Explain precisely why the WPA2 handshake is offline-crackable and how WPA3's SAE removes that exposure; argue Enterprise as the organizational answer for revocation and attribution, and why transition modes and WPA2 fallback reintroduce the old weakness.
 
 ---
 > 🔼 Up: [[Wireless Networking]]

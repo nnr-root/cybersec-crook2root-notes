@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/transport
   - type/concept
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Transport Layer & Sockets]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Control -> UDP & Connectionless Transport -> QUIC & Modern Transport -> Transport Layer Threats & Controls
 
-## Start at Zero: A Connection Is an Agreement, Not a Wire
+## A Connection Is an Agreement, Not a Wire
 
 IP delivers individual packets independently, with no memory that one packet has anything to do with the next. **TCP (Transmission Control Protocol)** builds on that a **connection**: an agreement between two endpoints that they are engaged in one ordered, reliable conversation.
 
@@ -42,6 +43,12 @@ The flags that matter for state are four: **SYN** (synchronize — open), **ACK*
 
 > [!tip] The analogy, and where it breaks
 > A phone call: you dial, they pick up, and you both say hello before real conversation starts. The analogy breaks in the most important way — no wire is reserved for you. The 'connection' is nothing but matching notes kept at each end, so if one side loses its notes the call is dead even though every cable between you is perfectly fine.
+
+**The deliberate break:** a TCP connection sounds like a thing that exists — a pipe, a circuit, something laid between two machines that you could point at.
+
+Nothing is created anywhere. A "connection" is **matching state held independently at both ends**: sequence numbers, buffers, and a state value, agreed by exchanging three packets. That is why a connection can be half-open with one side convinced it is live, why a SYN flood costs the attacker almost nothing and the server a real table entry, and why an on-path RST can tear down a session neither endpoint wanted to end. There is no pipe to cut, only two opinions to desynchronise.
+
+**How you'd spot it:** `ss -tan` shows each end's opinion. `SYN-RECV` piling up is a server holding state for handshakes nobody completed; `CLOSE-WAIT` piling up is an application that never called close.
 
 ## The Three-Way Handshake
 
@@ -134,7 +141,7 @@ Port scanning is entirely an exercise in provoking state-machine responses and r
 A **SYN scan** sends SYN and, on receiving SYN+ACK, sends RST rather than completing the handshake — learning the port is open without ever reaching ESTABLISHED. A **connect scan** completes the handshake fully, which is more visible in application logs because the service actually accepts a connection.
 
 ```bash
-nmap -sS -p 22,80,3306 192.168.10.24
+nmap -sS -p 22,80,3306 10.10.20.30
 ```
 
 Expected excerpt:
@@ -160,77 +167,13 @@ The three states are three different facts. `closed` proves a host is alive and 
 
 Scanning and flood testing described here must be confined to systems within an authorized scope. SYN flooding in particular affects availability for every user of the target and is destructive outside a controlled lab.
 
-## Authorized Lab: Walk the State Machine
+## Summary
 
-Use two lab VMs. Record a baseline of connection states before starting.
+You should now be able to:
 
-1. **Watch a handshake.** Start a capture, then make one connection:
-
-```bash
-sudo tcpdump -i eth0 -nn -c 8 'tcp port 8080' &
-curl -s http://<server>:8080/ > /dev/null
-```
-
-Expected excerpt:
-
-```text
-IP client.52418 > server.8080: Flags [S], seq 1829304857, win 64240
-IP server.8080 > client.52418: Flags [S.], seq 998172634, ack 1829304858
-IP client.52418 > server.8080: Flags [.], ack 998172635
-...
-IP client.52418 > server.8080: Flags [F.], seq ..., ack ...
-IP server.8080 > client.52418: Flags [F.], seq ..., ack ...
-```
-
-Confirm the acknowledgment numbers are each peer's sequence plus one, and identify the four teardown segments.
-
-2. **Observe TIME-WAIT.** Immediately after the transfer, on the side that closed first:
-
-```bash
-ss -tan state time-wait '( sport = :8080 or dport = :8080 )'
-```
-
-Confirm the entry exists and disappears on its own after the timer. No action is needed or appropriate.
-
-3. **Create CLOSE-WAIT deliberately.** Write or run a small server that accepts a connection and then never closes its socket. Connect and disconnect from the client, then check the server:
-
-```bash
-ss -tan state close-wait
-```
-
-Confirm the entry persists indefinitely — this is the application-bug signature, and note that it does **not** clear on a timer.
-
-4. **Compare scan states.** From the client, scan three ports on the server: one with a listener, one with nothing listening, and one blocked by a firewall rule you add. Confirm you get `open`, `closed`, and `filtered` respectively, and articulate what each proves.
-
-5. **Observe half-open state under load.** Generate a burst of connection attempts that do not complete, and watch `SYN-RECV` entries accumulate:
-
-```bash
-watch -n1 "ss -tan state syn-recv | wc -l"
-```
-
-Then enable SYN cookies and repeat, confirming the queue no longer grows the same way:
-
-```bash
-sudo sysctl -w net.ipv4.tcp_syncookies=1
-```
-
-6. **Cleanup.** Stop the test servers, remove the firewall rule, restore `tcp_syncookies` to its original value, and confirm the connection-state distribution matches your baseline.
-
-Expected interpretation:
-
-```text
-Handshake     -> three segments exchange and confirm both initial sequence numbers
-TIME-WAIT     -> normal, self-clearing, protects a reused five-tuple
-CLOSE-WAIT    -> application never closed the socket; will not self-clear
-open/closed/filtered -> a listener, a live host with no listener, and a policy device
-SYN cookies   -> state allocated only on handshake completion, so floods consume nothing
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain that a connection is matching state rather than a physical path; describe the three-way handshake and what each segment accomplishes.
-- **Operator:** Read connection-state distributions and correctly diagnose accumulating TIME-WAIT versus CLOSE-WAIT versus SYN-RECV; explain the difference between `closed` and `filtered` scan results and why conflating them misleads.
-- **Root:** Explain why half-open state is exhaustible and how SYN cookies remove the resource without breaking the protocol; describe why initial sequence number randomization defeats off-path injection and RST attacks, and why stateful middleboxes inherit the same exhaustion risk.
+- Explain that a connection is matching state rather than a physical path; describe the three-way handshake and what each segment accomplishes.
+- Read connection-state distributions and correctly diagnose accumulating TIME-WAIT versus CLOSE-WAIT versus SYN-RECV; explain the difference between `closed` and `filtered` scan results and why conflating them misleads.
+- Explain why half-open state is exhaustible and how SYN cookies remove the resource without breaking the protocol; describe why initial sequence number randomization defeats off-path injection and RST attacks, and why stateful middleboxes inherit the same exhaustion risk.
 
 ---
 > 🔼 Up: [[Transport Layer & Sockets]]

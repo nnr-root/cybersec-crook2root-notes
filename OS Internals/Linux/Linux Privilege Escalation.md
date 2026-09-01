@@ -6,7 +6,7 @@ tags:
   - cyber/foundations/linux
   - cyber/offensive/privesc
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Linux]]"
 Color: "#FFA500"
@@ -48,8 +48,6 @@ Automated by **LinPEAS** / **linux-smart-enumeration**, but knowing the manual c
 ## Mechanism 1 — `$PATH` hijacking
 `$PATH` is a colon-separated list the shell searches **left → right** to resolve a bare command name:
 
-![[lnx_path_resolution.svg]]
-
 **The abuse:** if a **root-run** program (SUID binary or cron job) calls another command by its *bare name* — `system("ls")` instead of `/bin/ls` — and you can prepend a directory you control, your malicious `ls` runs as root:
 ```shell-session
 $ echo $PATH
@@ -87,8 +85,6 @@ Also watch for **wildcard injection** (a cron `tar *`/`rsync` in a writable dir)
 
 ## Mechanism 3 — SUID / SGID and the `euid`
 Normally a process runs with **your** identity. A **SUID** binary runs with its **owner's** identity — its **effective UID (euid)** becomes the owner's, often **root** — no matter who launches it. That's how `passwd` edits root-only `/etc/shadow` while you run it. Misused, it hands root away:
-
-![[lnx_suid_flow.svg]]
 
 ### Find the attack surface, then match to GTFOBins
 ```shell-session
@@ -207,150 +203,17 @@ $ sudo -l
 
 The wildcard, called binary, and input parser require analysis, but no write edge is yet proven. Validate with a benign canary under the Rules of Engagement, capture effective identity and logs, remove the canary, apply the narrow remediation, and demonstrate that the same precondition no longer crosses the boundary.
 
-## Hands-On Lab: Build, Find & Fix Four Escalation Paths
-
-> [!warning] Authorized simulation only — run entirely inside a disposable VM or container you own
-> You will create real misconfigurations, detect them, and remove them. Never leave any of these on a shared system. Step 6 reverses everything.
-
-### Step 1 — Set up a low-privilege identity to test against
-
-```bash
-sudo useradd -m -s /bin/bash lowpriv 2>/dev/null; sudo mkdir -p /tmp/pe-lab; echo ready
-id lowpriv
-```
-
-```text
-ready
-uid=1001(lowpriv) gid=1001(lowpriv) groups=1001(lowpriv)
-```
-
-Everything below is judged by what `lowpriv` can reach — the attacker's starting position.
-
-### Step 2 — A writable SUID binary (the classic)
-
-```bash
-cp /bin/bash /tmp/pe-lab/rootbash && sudo chown root:root /tmp/pe-lab/rootbash && sudo chmod 4755 /tmp/pe-lab/rootbash
-# the enumeration an attacker runs:
-find / -perm -4000 -type f 2>/dev/null | grep pe-lab
-```
-
-```text
-/tmp/pe-lab/rootbash
-```
-
-That one-line `find` is exactly what a foothold script runs first. The result is a root-owned SUID shell:
-
-```bash
-sudo -u lowpriv /tmp/pe-lab/rootbash -p -c 'id -u'
-```
-
-```text
-0
-```
-
-`lowpriv` just became root (`id -u` = 0) by running a SUID copy of bash. **Fix and confirm:**
-
-```bash
-sudo rm /tmp/pe-lab/rootbash; find / -perm -4000 -type f 2>/dev/null | grep -c pe-lab
-```
-
-```text
-0
-```
-
-### Step 3 — A world-writable directory on `PATH`
-
-```bash
-sudo mkdir -p /tmp/pe-lab/bin && sudo chmod 777 /tmp/pe-lab/bin
-# simulate a root cron/script that calls a bare command name with this dir early in PATH:
-echo 'id -u' | sudo tee /tmp/pe-lab/victim.sh >/dev/null && sudo chmod +x /tmp/pe-lab/victim.sh
-printf '#!/bin/sh\nid -u > /tmp/pe-lab/PROOF\n' > /tmp/pe-lab/bin/id && chmod +x /tmp/pe-lab/bin/id
-sudo env PATH=/tmp/pe-lab/bin:/usr/bin /tmp/pe-lab/victim.sh; cat /tmp/pe-lab/PROOF
-```
-
-```text
-0
-```
-
-A root process resolved `id` from the writable directory and ran the attacker's version as root — the `PROOF` file contains `0`. The lesson: an attacker who controls **any** directory on a privileged process's `PATH` controls that process. **Fix:**
-
-```bash
-sudo rm -rf /tmp/pe-lab/bin /tmp/pe-lab/PROOF; echo "writable PATH dir removed"
-```
-
-```text
-writable PATH dir removed
-```
-
-### Step 4 — An over-broad sudo rule
-
-```bash
-echo 'lowpriv ALL=(ALL) NOPASSWD: /usr/bin/find' | sudo tee /etc/sudoers.d/pe-lab >/dev/null
-sudo -u lowpriv sudo -n find /etc/hostname -exec id -u \; 2>/dev/null
-```
-
-```text
-0
-```
-
-`find` was allowed via sudo for a harmless-seeming reason, but `find -exec` runs **arbitrary commands** — so the narrow-looking rule is total root. This is why sudo rules must be audited against what each binary can actually do, not what it is "meant" for. **Fix:**
-
-```bash
-sudo rm /etc/sudoers.d/pe-lab; sudo -u lowpriv sudo -n find /etc/hostname 2>&1 | head -1
-```
-
-```text
-sudo: a password is required
-```
-
-### Step 5 — A dangerous capability on a binary
-
-```bash
-cp /usr/bin/python3 /tmp/pe-lab/pycap && sudo setcap cap_setuid+ep /tmp/pe-lab/pycap
-getcap /tmp/pe-lab/pycap
-sudo -u lowpriv /tmp/pe-lab/pycap -c 'import os; os.setuid(0); os.system("id -u")'
-```
-
-```text
-/tmp/pe-lab/pycap cap_setuid+ep
-0
-```
-
-No SUID bit here — a **file capability** granted the single power to change UID, which is enough to become root. Capabilities are finer-grained than SUID but each one must still be justified. **Fix:**
-
-```bash
-sudo rm /tmp/pe-lab/pycap; echo "capability binary removed"
-```
-
-```text
-capability binary removed
-```
-
-### Step 6 — Full cleanup and verification
-
-```bash
-sudo rm -rf /tmp/pe-lab; sudo rm -f /etc/sudoers.d/pe-lab; sudo userdel -r lowpriv 2>/dev/null
-find / -perm -4000 -type f 2>/dev/null | grep -c pe-lab; ls /tmp/pe-lab 2>&1 | tail -1
-```
-
-```text
-0
-ls: cannot access '/tmp/pe-lab': No such file or directory
-```
-
-Every artifact is gone and the SUID search returns nothing. **This verification step is not optional** — the whole point of the lab is that these are the exact things you must never leave behind.
-
-**What you should now be able to do:** run the enumeration an attacker runs (SUID search, writable PATH dirs, `sudo -l`, `getcap`), explain why each misconfiguration grants root, and — critically — remove each one and confirm it is gone.
-
 ## Security implications
 
 Most local escalation is legitimate functionality crossing an unintended trust boundary: a scheduler trusts writable content, policy delegates a general interpreter, a binary preserves excess identity, or a capability grants more kernel authority than the service needs. Reliable assessment identifies the exact consumer and credential transition. Reliable remediation removes that transition, constrains environment and arguments, applies `nosuid`/`noexec` where appropriate, narrows capabilities, and verifies the fix with the original minimal proof.
 
-### Crook → Operator → Root checkpoint
+## Summary
 
-- **Crook:** enumerate sudo, SUID/SGID, capabilities, PATH, cron, timers, and writable privileged inputs.
-- **Operator:** explain real/effective/saved IDs and capability sets, eliminate false positives, and produce a reversible canary proof.
-- **Root:** model namespace and `execve` credential transitions, chain only authorized conditions, remediate the underlying trust boundary, and verify that privilege can no longer be gained.
+You should now be able to:
+
+- enumerate sudo, SUID/SGID, capabilities, PATH, cron, timers, and writable privileged inputs.
+- explain real/effective/saved IDs and capability sets, eliminate false positives, and produce a reversible canary proof.
+- model namespace and `execve` credential transitions, chain only authorized conditions, remediate the underlying trust boundary, and verify that privilege can no longer be gained.
 
 ---
 > 🔼 Up: [[Linux]]

@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/windows
   - type/concept
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
@@ -19,7 +19,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations -> Windows Drivers I-O & Kernel Debugging -> Windows Processes, Services & Boot -> Windows File System & Registry -> Windows Networking Internals -> Windows Security & Access Control -> Windows Identity, Credentials & Authentication -> Windows Active Directory & Domains -> Windows Command Prompt & Batch -> Windows PowerShell -> Windows Logging & Auditing -> Windows Diagnostics, Crash Dumps & Performance -> Windows Sysinternals & Troubleshooting
 
-## Start at Zero: Why Drivers Exist
+## Why Drivers Exist
 
 Applications ask for operations such as “read this file” or “send this frame,” but hardware speaks device-specific protocols. A **driver** translates between Windows I/O conventions and a device or virtual facility. A **device object** represents an endpoint in the kernel object namespace; an **IRP** carries one I/O operation through a stack of drivers; an **IOCTL** is a device-specific control request; and a **device stack** lets bus, function, and filter drivers cooperate. Kernel drivers share the operating system’s privilege, so one unchecked length or stale pointer can become a system-wide integrity failure.
 
@@ -54,6 +54,14 @@ sequenceDiagram
     F->>IO: IoCompleteRequest with status
     IO-->>App: Win32 result & bytes returned
 ```
+
+**The deliberate break:** a driver sounds like a program for a device — a translator that sits between Windows and your printer, with about as much reach as a printer deserves.
+
+A driver runs in **kernel mode**, in the same address space as the kernel, with no memory protection separating it from anything else. There is no such thing as a driver bug confined to its device. A flaw in a graphics or peripheral driver is arbitrary code execution at ring 0, which is the top of the machine — above the kernel's own defences, above EDR, above every user-mode boundary you were relying on.
+
+Worse, being **signed does not mean being safe**. A legitimately signed driver with a legitimate vulnerability is a fully trusted way into the kernel, which is the entire basis of BYOVD — bring your own vulnerable driver — where an attacker installs a signed, known-buggy driver precisely because Windows will load it.
+
+**How you'd spot it:** a signed driver from a real vendor, loaded on a machine that has none of that vendor's hardware, is the shape of a BYOVD attack.
 
 ## I/O Manager & IRPs
 
@@ -153,115 +161,13 @@ A vulnerable signed driver can become a bridge from administrator to kernel even
 
 Driver telemetry is also a defensive root of trust. Endpoint products rely on process, thread, image, registry, object, network, and minifilter callbacks. A kernel attacker may target callback arrays, filter registration, protected-process enforcement, or telemetry buffers. Debugging knowledge is required to distinguish malicious tampering from normal callback ownership and to avoid treating every undocumented structure as stable across builds.
 
-## Hands-On Lab: Enumerate the Driver Stack and Kernel Modules
+## Summary
 
-> [!info] Runs on any Windows machine — read-only, run PowerShell as Administrator
-> Driver enumeration reveals what runs with full kernel authority. Nothing is loaded or unloaded.
+You should now be able to:
 
-### Step 1 — List loaded kernel drivers
-
-```powershell
-Get-CimInstance Win32_SystemDriver | Where-Object State -eq 'Running' |
-  Measure-Object | Select-Object -ExpandProperty Count
-Get-CimInstance Win32_SystemDriver | Where-Object State -eq 'Running' |
-  Select-Object -First 4 Name,StartMode,PathName | Format-Table -Auto
-```
-
-```text
-178
-
-Name     StartMode PathName
-----     --------- --------
-ACPI     Boot      C:\Windows\system32\drivers\ACPI.sys
-disk     Boot      C:\Windows\system32\drivers\disk.sys
-tcpip    System    C:\Windows\system32\drivers\tcpip.sys
-```
-
-**178 drivers**, each running in kernel mode with full authority over the machine. `StartMode Boot` drivers load before the OS is fully up — the earliest and most privileged code after firmware.
-
-### Step 2 — Find drivers NOT signed by Microsoft
-
-```powershell
-Get-CimInstance Win32_SystemDriver | Where-Object State -eq 'Running' | ForEach-Object {
-  $sig = Get-AuthenticodeSignature $_.PathName -ErrorAction SilentlyContinue
-  if ($sig.SignerCertificate.Subject -notlike '*Microsoft*') {
-    [pscustomobject]@{ Name=$_.Name; Signer=($sig.SignerCertificate.Subject -split ',')[0] }
-  }
-} | Select-Object -First 5
-```
-
-```text
-Name      Signer
-----      ------
-nvlddmkm  CN=NVIDIA Corporation
-vmci      CN=VMware, Inc.
-```
-
-Third-party drivers are the highest-value attack surface — a vulnerable signed driver is the classic "bring your own vulnerable driver" path into the kernel. This filter is exactly what a defender audits.
-
-### Step 3 — Inspect the minifilter (I/O interception) stack
-
-```powershell
-fltmc filters
-```
-
-```text
-Filter Name                     Num Instances    Altitude    Frame
-------------------------------  -------------  ------------  -----
-WdFilter                                12       328010         0
-storqosflt                               1       244000         0
-wcifs                                    4       189900         0
-FileInfo                                12        45000         0
-```
-
-Minifilters sit in the I/O path and see **every file operation**. `WdFilter` is Defender; the `Altitude` number is its fixed position in the stack, which determines the order filters see a request. This is how antivirus and encryption hook the filesystem without patching it.
-
-### Step 4 — Confirm kernel-protection features
-
-```powershell
-$dg = Get-CimInstance -ClassName Win32_DeviceGuard -Namespace root\Microsoft\Windows\DeviceGuard
-"HVCI running: {0}" -f ($dg.SecurityServicesRunning -contains 2)
-"Test signing:  {0}" -f ((bcdedit /enum '{current}' | Select-String 'testsigning') -ne $null)
-```
-
-```text
-HVCI running: True
-Test signing:  False
-```
-
-HVCI (memory integrity) uses virtualization to stop even a kernel-level attacker from injecting unsigned code. `testsigning: False` confirms the machine will not load unsigned drivers — a common weakening an attacker tries to enable.
-
-### Step 5 — Read the driver-relevant portion of the kernel log
-
-```powershell
-Get-WinEvent -FilterHashtable @{LogName='System'; ProviderName='Microsoft-Windows-Kernel-PnP'} -MaxEvents 3 -ErrorAction SilentlyContinue |
-  Select-Object TimeCreated,Id,LevelDisplayName | Format-Table -Auto
-```
-
-```text
-TimeCreated          Id LevelDisplayName
------------          -- ----------------
-8/4/2026 8:12:04 AM 400 Information
-8/4/2026 8:12:03 AM 410 Information
-```
-
-**Cleanup:** none — every command read state only.
-
-**What you should now be able to do:** enumerate running drivers, isolate non-Microsoft ones as attack surface, read the minifilter stack, and confirm HVCI and driver-signing enforcement.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Define a driver, device object, handle, IOCTL, IRP, ISR, DPC, and kernel bugcheck.
-- **Operator:** Read a device stack, distinguish buffering methods, reason about IRQL constraints, and use symbols plus core WinDbg extensions.
-- **Root:** Audit an IOCTL attack surface, identify a memory-corruption or authorization primitive, reconstruct its IRP path from a dump, and specify framework, ACL, validation, signing, and platform mitigations.
-
-### Root Review Questions
-
-For every exposed operation, document the device security descriptor, required IOCTL access bits, requestor mode, buffer method, minimum and maximum lengths, integer-arithmetic checks, cancellation behavior, execution IRQL, object lifetime, and completion owner. Then ask what happens during surprise removal, concurrent close, process termination, power transition, malformed output length, and partial lower-stack failure. A driver is not secure merely because the normal vendor application sends well-formed requests; the kernel boundary must remain correct under hostile ordering and arbitrary user buffers.
-
-Require a minimal reproducer, matching public and private symbols, complete crash context, and source-to-binary traceability before assigning root cause. If verifier changes the failure mode, document which invariant it surfaced and why normal timing delayed detection.
-
-Root-level analysis explains the violated kernel contract, not merely the final bugcheck code.
+- Define a driver, device object, handle, IOCTL, IRP, ISR, DPC, and kernel bugcheck.
+- Read a device stack, distinguish buffering methods, reason about IRQL constraints, and use symbols plus core WinDbg extensions.
+- Audit an IOCTL attack surface, identify a memory-corruption or authorization primitive, reconstruct its IRP path from a dump, and specify framework, ACL, validation, signing, and platform mitigations.
 
 ---
 > 🔼 Up: [[Windows]]

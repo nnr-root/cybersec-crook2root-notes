@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/routing
   - type/concept
+  - difficulty/easy
   - level/apprentice
 Domain:
   - "[[Routing & the Network Layer]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interior Gateway Protocols -> BGP & Internet Routing -> First-Hop Redundancy & Gateway Failover -> Routing Security & Path Validation
 
-## Start at Zero: Every Host Routes
+## Every Host Routes
 
 Routing is not something only routers do. Every device with an IP stack consults a routing table for every packet it sends, to answer one question: **is this destination directly reachable, or must I hand the packet to a gateway?**
 
@@ -32,54 +33,60 @@ ip route
 Expected excerpt:
 
 ```text
-default via 192.168.10.1 dev eth0 proto dhcp metric 100
-192.168.10.0/24 dev eth0 proto kernel scope link src 192.168.10.24
-10.8.0.0/24 via 192.168.10.254 dev eth0 proto static metric 50
+default via 10.10.10.1 dev eth0 proto dhcp metric 100
+10.10.10.0/24 dev eth0 proto kernel scope link src 10.10.10.14
+10.10.20.0/24 via 10.10.10.254 dev eth0 proto static metric 50
 ```
 
 Three route types appear here, and reading them fluently is the whole skill:
 
-- **`192.168.10.0/24 dev eth0 scope link`** — a directly connected network. `scope link` means these destinations are reachable without a gateway; the kernel added this automatically when the interface got its address.
-- **`default via 192.168.10.1`** — the route of last resort, `0.0.0.0/0`, matching anything not matched more specifically. Its next hop is the gateway.
-- **`10.8.0.0/24 via 192.168.10.254`** — a specific route to a particular network through a different next hop, added by an administrator (`proto static`).
+- **`10.10.10.0/24 dev eth0 scope link`** — a directly connected network. `scope link` means these destinations are reachable without a gateway; the kernel added this automatically when the interface got its address.
+- **`default via 10.10.10.1`** — the route of last resort, `0.0.0.0/0`, matching anything not matched more specifically. Its next hop is the gateway.
+- **`10.10.20.0/24 via 10.10.10.254`** — a specific route to a particular network through a different next hop, added by an administrator (`proto static`).
 
 **Prerequisites:** IP addressing, subnet masks, and the idea of a default gateway.
 
 > [!tip] The analogy, and where it breaks
 > Road signs at every junction listing only the next town, never the whole route — each driver asks one question and moves one hop closer. The analogy breaks on specificity: if two signs point to the same destination, a road network has no rule preferring the more detailed one, whereas routing *always* takes the longest prefix. That rule is why a single injected specific route silently captures traffic while every broader, correct route remains in place.
 
+**The deliberate break:** "routers route, hosts send" is how most people picture it — your laptop hands the packet to the gateway and the clever decisions happen elsewhere.
+
+Your laptop makes a routing decision on **every single packet it sends**. It consults a table, applies longest-prefix match, and picks an interface and a next hop, exactly as a router does. The only difference is table size. This matters practically: a machine that "cannot reach" something often has a perfectly healthy network and a wrong local route, and no amount of investigating the router will show it.
+
+**How you'd spot it:** `ip route get <destination>` reports the decision the kernel will actually make, resolving every overlapping route for you. If it names an unexpected interface or next hop, the problem is on this host.
+
 ## Longest-Prefix Match: The One Rule
 
 When several routes match a destination, the router does **not** pick the first, the cheapest, or the newest. It picks the one with the **longest prefix** — the most specific route, the one with the most network bits fixed. Metric only breaks ties between routes of equal prefix length.
 
-Consider a destination `10.8.0.50` against this table:
+Consider a destination `10.10.20.50` against this table:
 
 ```text
-0.0.0.0/0        via 192.168.10.1     (prefix length 0)
-10.0.0.0/8       via 192.168.10.200   (prefix length 8)
-10.8.0.0/24      via 192.168.10.254   (prefix length 24)
-10.8.0.50/32     via 192.168.10.99    (prefix length 32)
+0.0.0.0/0        via 10.10.10.1     (prefix length 0)
+10.10.0.0/16     via 10.10.10.200   (prefix length 16)
+10.10.20.0/24    via 10.10.10.254   (prefix length 24)
+10.10.20.50/32   via 10.10.10.99    (prefix length 32)
 ```
 
-All four match `10.8.0.50` — the default matches everything, `/8` matches all of `10.x`, `/24` matches `10.8.0.x`, and `/32` matches this exact host. Longest-prefix match selects the `/32`. Ask the kernel to confirm the decision without sending anything:
+All four match `10.10.20.50` — the default matches everything, `/16` matches all of `10.10.x`, `/24` matches `10.10.20.x`, and `/32` matches this exact host. Longest-prefix match selects the `/32`. Ask the kernel to confirm the decision without sending anything:
 
 ```bash
-ip route get 10.8.0.50
+ip route get 10.10.20.50
 ```
 
 Expected excerpt:
 
 ```text
-10.8.0.50 via 192.168.10.99 dev eth0 src 192.168.10.24
+10.10.20.50 via 10.10.10.99 dev eth0 src 10.10.10.14
 ```
 
 `ip route get` is the single most valuable routing diagnostic: it reports the exact decision the kernel will make for a destination, resolving all the overlapping routes for you. Trace several destinations and the rule becomes concrete:
 
 ```text
-10.8.0.50   -> via .99   (matched the /32, most specific)
-10.8.0.77   -> via .254  (matched the /24)
-10.9.0.5    -> via .200  (matched the /8)
-8.8.8.8     -> via .1    (matched only the default)
+10.10.20.50   -> via .99   (matched the /32, most specific)
+10.10.20.77   -> via .254  (matched the /24)
+10.10.99.5    -> via .200  (matched the /16)
+8.8.8.8       -> via .1    (matched only the default)
 ```
 
 ```mermaid
@@ -114,53 +121,13 @@ The forwarding rule that makes routing work is exactly what makes route injectio
 
 Inspecting and modifying routing tables must be confined to systems within an authorized scope. Routing tables reveal internal topology, and altering a route on a shared device affects everyone whose traffic it carries.
 
-## Authorized Lab: Watch the Most Specific Route Win
+## Summary
 
-Use one lab host, or a host plus a lab router for the forwarding portion. Record the baseline table first.
+You should now be able to:
 
-1. Display the baseline table and confirm you can explain every line's type (connected, default, static).
-2. Add overlapping routes of increasing specificity toward a lab destination through different (lab) next hops:
-
-```bash
-sudo ip route add 10.8.0.0/8   via <next hop A>
-sudo ip route add 10.8.0.0/24  via <next hop B>
-sudo ip route add 10.8.0.50/32 via <next hop C>
-```
-
-3. Query the decision for several destinations and confirm longest-prefix match each time:
-
-```bash
-ip route get 10.8.0.50
-ip route get 10.8.0.77
-ip route get 10.9.0.5
-```
-
-Expected excerpt:
-
-```text
-10.8.0.50 via <next hop C>   # /32 wins
-10.8.0.77 via <next hop B>   # /24 wins
-10.9.0.5  via <next hop A>   # /8 wins
-```
-
-4. **Simulate injection.** Add a single more-specific route for a destination currently using the default, and confirm `ip route get` immediately shows the new next hop — with no error and no change to the default route, which is still present and still correct.
-5. **Simulate a poisoned default.** Change the default route to a lab next hop and confirm every off-segment `ip route get` now points there. Observe that a directly connected destination is unaffected, because it matches a more specific connected route.
-6. **Cleanup.** Delete every route added during the lab, restore the original default, and confirm `ip route` and a few `ip route get` queries match the baseline exactly.
-
-Expected interpretation:
-
-```text
-Overlapping routes -> the most specific is always chosen, regardless of order added
-Injected /32       -> silently overrides the default with no visible failure
-Poisoned default   -> redirects the host's entire off-segment world
-Connected route    -> immune, because it is more specific than any injected default
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain that every host routes, not just routers, and describe the direct-versus-gateway decision a host makes for each packet.
-- **Operator:** Read a routing table and classify each route; use `ip route get` to predict the exact next hop for any destination and explain the choice by longest-prefix match.
-- **Root:** Distinguish the RIB from the FIB and explain "the route is known but not used"; describe why longest-prefix match lets an injected specific route redirect traffic invisibly, and why a poisoned default route has a host-wide blast radius.
+- Explain that every host routes, not just routers, and describe the direct-versus-gateway decision a host makes for each packet.
+- Read a routing table and classify each route; use `ip route get` to predict the exact next hop for any destination and explain the choice by longest-prefix match.
+- Distinguish the RIB from the FIB and explain "the route is known but not used"; describe why longest-prefix match lets an injected specific route redirect traffic invisibly, and why a poisoned default route has a host-wide blast radius.
 
 ---
 > 🔼 Up: [[Routing & the Network Layer]]

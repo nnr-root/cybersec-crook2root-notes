@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/macos
   - type/technique
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[macOS]]"
 Color: "#FFA500"
@@ -19,7 +19,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File System -> macOS Processes & Daemons -> macOS Identity, Keychain & Credentials -> macOS Networking Internals -> macOS Security Mechanisms -> macOS Binaries & Runtime Loading -> macOS Observability, Incident Response & Forensics
 
-## Crook — Read the Mach-O Map
+## Read the Mach-O Map
 
 ### Vocabulary & First Mental Model
 
@@ -80,7 +80,7 @@ Mach header
 > [!tip] The analogy, and where it breaks
 > A shipping crate that can hold the same product built for two different machines, with a packing list naming every part it needs on arrival. The analogy breaks at trust: the crate is also sealed with a signature checked at opening time, and the list of parts it requests is exactly where an attacker tries to substitute their own component.
 
-## Operator — Loading, Fixups & Shared Cache
+## Loading, Fixups & Shared Cache
 
 The dynamic loader, **dyld**, selects a compatible architecture slice, maps segments, resolves dependent image install names, applies rebases and binds, runs initializers, and transfers control to the program entry. Dependencies can be expressed as absolute paths, `@rpath`, `@loader_path`, or `@executable_path`. These tokens support relocatable application bundles but can create risk when a signed program resolves a library from an attacker-writable path.
 
@@ -115,7 +115,7 @@ otool -ov /Applications/Example.app/Contents/MacOS/Example | sed -n '1,80p'
 otool -tvV /Applications/Example.app/Contents/MacOS/Example | sed -n '1,60p'
 ```
 
-## Root — Code Signatures, Entitlements & Runtime Boundaries
+## Code Signatures, Entitlements & Runtime Boundaries
 
 An embedded signature includes a CodeDirectory with hashes for executable pages, identifier, flags, special-slot hashes, and optional entitlements. A CMS signature links that CodeDirectory to a certificate chain. The **designated requirement** defines identity across updates. Bundle resource sealing protects selected non-code resources. `LC_CODE_SIGNATURE` points into signature data usually stored in `__LINKEDIT`.
 
@@ -175,92 +175,6 @@ In a report, match every image UUID to the exact binary used for symbolication. 
 
 Load failures also appear through dyld diagnostics such as `Library not loaded`, `image not found`, or code-signature rejection. Preserve the entire report and environment context before relaunching the application, because an updater or cache refresh can alter the evidence.
 
-## Hands-On Lab: Mach-O, Signatures and Dependency Hijack Risk
-
-> [!warning] Authorized use only — the hijack check uses a copy in a temp dir, never a system binary
-> Nothing is placed in a system location. Step 6 removes everything.
-
-### Step 1 — Identify a Mach-O binary and its architectures
-
-```bash
-file /bin/ls
-lipo -archs /bin/ls
-```
-
-```text
-/bin/ls: Mach-O universal binary with 2 architectures: [x86_64] [arm64e]
-/bin/ls: x86_64 arm64e
-```
-
-A **universal binary** carries code for multiple CPUs in one file — the same product built for Intel and Apple Silicon, selected at launch. This is the Mach-O equivalent of a shipping crate holding two variants.
-
-### Step 2 — Read the load commands (the "packing list")
-
-```bash
-otool -l /bin/ls | grep -A2 LC_LOAD_DYLIB | grep name | head -3
-```
-
-```text
-         name /usr/lib/libutil.dylib (offset 24)
-         name /usr/lib/libSystem.B.dylib (offset 24)
-```
-
-`LC_LOAD_DYLIB` entries list every library the binary needs at load time. `dyld` reads these at launch — and this list is exactly where an attacker tries to substitute a malicious library.
-
-### Step 3 — Verify the code signature
-
-```bash
-codesign -dv /bin/ls 2>&1 | grep -E 'Identifier|Authority' | head -2
-codesign --verify --verbose /bin/ls 2>&1 | tail -1
-```
-
-```text
-Identifier=com.apple.ls
-Authority=Software Signing
-valid on disk
-```
-
-The signature is checked at load. A modified binary fails `--verify`, and on a hardened/notarized binary the OS refuses to run it — the trust check that guards Step 2's dependency list.
-
-### Step 4 — Safely review dependency-hijack exposure
-
-```bash
-LAB=$(mktemp -d); cp /bin/echo "$LAB/mytool"; cd "$LAB"
-otool -l mytool | grep -A1 LC_RPATH | grep path || echo "no @rpath dependencies - low hijack risk"
-codesign -dv mytool 2>&1 | grep -c 'flags.*runtime' || echo "not hardened-runtime: dylib substitution possible if unsigned deps exist"
-```
-
-```text
-no @rpath dependencies - low hijack risk
-not hardened-runtime: dylib substitution possible if unsigned deps exist
-```
-
-Analysis only — we never place a library anywhere. A binary with `@rpath` dependencies and **without** hardened runtime is the profile at risk of dylib hijacking. Permission analysis and controlled copies are sufficient to assess this; proving it by planting a library into a real path is never necessary.
-
-### Step 5 — Read the unified log for signing/launch events
-
-```bash
-log show --last 2m --predicate 'subsystem == "com.apple.securityd"' --style compact 2>/dev/null | tail -3 || echo "no recent securityd events"
-```
-
-```text
-2026-08-04 18:52:01 securityd  evaluate: com.apple.ls -> allowed
-```
-
-The unified log records signing evaluations. This is where you confirm what the OS decided about a binary's trust — the audit trail behind Gatekeeper and codesign.
-
-### Step 6 — Cleanup
-
-```bash
-cd /tmp && rm -rf "$LAB" && ls -d "$LAB" 2>&1
-```
-
-```text
-ls: /var/folders/.../tmp.XYZ: No such file or directory
-```
-
-**What you should now be able to do:** identify a universal Mach-O and its load commands, verify a code signature, assess dylib-hijack exposure through analysis alone, and find signing decisions in the unified log.
-
 ## Cybersecurity Implications
 
 - Load commands are executable policy: they define mappings, dependencies, entry, fixups, and signature location.
@@ -270,11 +184,13 @@ ls: /var/folders/.../tmp.XYZ: No such file or directory
 - Shared-cache awareness prevents analysts from mistaking absent standalone libraries for missing dependencies.
 - Static imports and strings suggest behavior but require runtime or forensic corroboration.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Identify a Mach-O header, load commands, segments, dependencies, and architecture slices.
-- **Operator:** Resolve install names, inspect symbols, verify signatures, interpret entitlements, and compare static layout with runtime mappings.
-- **Root:** Explain the complete chain from fat-slice selection through dyld fixups, shared-cache resolution, AMFI validation, Hardened Runtime policy, and Apple Silicon pointer authentication—then assess dependency and entitlement risk without executing untrusted code.
+You should now be able to:
+
+- Identify a Mach-O header, load commands, segments, dependencies, and architecture slices.
+- Resolve install names, inspect symbols, verify signatures, interpret entitlements, and compare static layout with runtime mappings.
+- Explain the complete chain from fat-slice selection through dyld fixups, shared-cache resolution, AMFI validation, Hardened Runtime policy, and Apple Silicon pointer authentication—then assess dependency and entitlement risk without executing untrusted code.
 
 ---
 > 🔼 Up: [[macOS]]

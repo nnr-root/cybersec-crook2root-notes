@@ -1,7 +1,7 @@
 ---
 title: "API Security Fundamentals"
 aliases: ["API Authorization Testing", "API Business Logic Security", "API Rate Limit Security", "API Authorization", "API Rate Limiting"]
-tags: [tree/offensive, cyber/offensive/api, type/concept, level/operator]
+tags: [tree/offensive, cyber/offensive/api, type/concept, difficulty/medium]
 Domain: "[[API & Modern Protocol Testing]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Modern API Security Testing -> Legacy XML Web Services Testing -> API Security Fundamentals -> WebSocket Security Testing
 
-## Start at Zero: The Three Concerns Every API Shares
+## The Three Concerns Every API Shares
 
 Whatever the transport — REST, GraphQL, gRPC, SOAP — every API faces the same three security concerns, and they map directly to the most-exploited API weaknesses. This note is the cross-cutting layer beneath the style-specific testing:
 
@@ -94,7 +94,7 @@ flowchart TD
     RL -->|"no"| R["Brute-force / scrape / exhaust"]
 ```
 
-## Failure Modes and Interpretation
+## Testing one authorization dimension and missing half the risk
 
 - **Authorization tested one-dimensionally.** Testing object authz (BOLA) but forgetting function authz (BFLA), or vice versa, misses half the risk. Test both, for every role.
 - **Business logic needs intent.** Without understanding what the workflow is *supposed* to do, you cannot spot its abuse — this is where automated tools fail and human testing is essential.
@@ -110,105 +110,13 @@ flowchart TD
 - **Detection is behavioral:** sequential object-ID access (BOLA), a low-privilege token hitting admin endpoints (BFLA), impossible workflow sequences, and request bursts are all valid-but-anomalous patterns that monitoring catches.
 - **The API is the UI-less attack surface** — every implicit constraint the browser used to enforce must now be an explicit server check, which is the mental model that closes the whole class.
 
-## Authorized Lab: Test All Three Concerns
+## Summary
 
-> [!info] Runs on one Linux machine — builds an API with a BFLA flaw and a rate limit locally
-> Loopback-bound, synthetic tokens. Step 5 removes it.
+You should now be able to:
 
-### Step 1 — Build an API with roles and a rate limit
-
-```bash
-cat > /tmp/apisec.py << 'EOF'
-import http.server, time
-tokens={"user-token":"user","admin-token":"admin"}
-hits=[]
-class H(http.server.BaseHTTPRequestHandler):
-    def _role(self): return tokens.get(self.headers.get("Authorization","").replace("Bearer ",""))
-    def do_GET(self):
-        now=time.time(); hits[:]=[t for t in hits if now-t<10]; hits.append(now)
-        if len(hits)>3: self.send_response(429); self.end_headers(); self.wfile.write(b"rate limited"); return
-        self.send_response(200); self.end_headers(); self.wfile.write(b'{"data":"ok"}')
-    def do_POST(self):
-        role=self._role()
-        if not role: self.send_response(401); self.end_headers(); return
-        # BUG: checks authentication but NOT role for the admin endpoint
-        if self.path=="/admin/stats":
-            self.send_response(200); self.end_headers(); self.wfile.write(b'{"secret_admin_stats":42}')
-        else:
-            self.send_response(404); self.end_headers()
-    def log_message(self,*a): pass
-http.server.HTTPServer(("127.0.0.1",8100),H).serve_forever()
-EOF
-python3 /tmp/apisec.py &>/dev/null &
-sleep 1; echo "API up (user-token, admin-token; rate limit 3/10s)"
-```
-
-```text
-API up (user-token, admin-token; rate limit 3/10s)
-```
-
-### Step 2 — Function-level authorization (BFLA) finding
-
-```bash
-echo "no token   -> $(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8100/admin/stats)"
-echo "USER token -> $(curl -s -H 'Authorization: Bearer user-token' -X POST http://127.0.0.1:8100/admin/stats)"
-```
-
-```text
-no token   -> 401
-USER token -> {"secret_admin_stats":42}
-```
-
-Authentication is enforced (401 unauth), but a **regular user** token reached the admin function and got secret admin data — broken function-level authorization. The endpoint never checked the role.
-
-### Step 3 — Rate limiting works (a passing control to report)
-
-```bash
-for i in 1 2 3 4 5; do echo "req $i -> $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8100/data)"; done
-```
-
-```text
-req 1 -> 200
-req 2 -> 200
-req 3 -> 200
-req 4 -> 429
-req 5 -> 429
-```
-
-The 429 after three requests confirms rate limiting functions — a *verified control*, reported as a pass. Its absence would be the finding.
-
-### Step 4 — Articulate the business-logic dimension
-
-```bash
-echo "Authorization: BFLA confirmed (user reached /admin/stats)."
-echo "Rate limiting: works (429 after 3)."
-echo "Business logic: would require modeling the app's workflow — e.g. can /admin/stats be reached via an unintended sequence? — the human-judgment concern."
-```
-
-```text
-Authorization: BFLA confirmed (user reached /admin/stats).
-Rate limiting: works (429 after 3).
-Business logic: would require modeling the app's workflow — e.g. can /admin/stats be reached via an unintended sequence? — the human-judgment concern.
-```
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; rm -f /tmp/apisec.py; wait 2>/dev/null
-curl -s -o /dev/null -w "api gone: %{http_code}\n" --max-time 2 http://127.0.0.1:8100/data 2>&1 | grep -o 'gone.*' || echo "api gone: connection refused"
-```
-
-```text
-api gone: connection refused
-```
-
-**What you should now be able to do:** test object- and function-level authorization, recognize business-logic abuse as a human-judgment concern automation misses, verify rate limiting and what it is keyed on, and explain why the API is the UI-less surface where every constraint must be an explicit server check.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Name the three cross-cutting API concerns and explain why an API strips away the constraints a browser UI used to enforce.
-- **Operator:** Test object (BOLA) and function (BFLA) authorization, verify rate limiting and what it keys on, and explain why business-logic flaws resist automated scanning.
-- **Root:** Explain why server-side per-request authorization and server-enforced business logic are non-negotiable, why rate limits must key on the principal (and query-cost for GraphQL), and how all three flaws surface as valid-but-anomalous behavior to a defender.
+- Name the three cross-cutting API concerns and explain why an API strips away the constraints a browser UI used to enforce.
+- Test object (BOLA) and function (BFLA) authorization, verify rate limiting and what it keys on, and explain why business-logic flaws resist automated scanning.
+- Explain why server-side per-request authorization and server-enforced business logic are non-negotiable, why rate limits must key on the principal (and query-cost for GraphQL), and how all three flaws surface as valid-but-anomalous behavior to a defender.
 
 ---
 > 🔼 Up: [[API & Modern Protocol Testing]]

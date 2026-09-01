@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/theory
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[OS Theory and Architecture]]"
 Color: "#FFA500"
@@ -37,10 +37,18 @@ program file → process protection domain → one or more execution threads
 
 Several terms recur throughout the note. **State** means the information required to describe an object at a particular instant. **Context** means the CPU-visible state needed to pause and later resume execution. A **resource** is an OS-managed object such as a file, socket, timer, or shared-memory region. **Concurrency** means tasks overlap in time; **parallelism** means they literally execute at the same instant on different CPU cores. **Synchronization** preserves an intended order when concurrent execution would otherwise make results unpredictable. An **invariant** is a rule that must remain true—for example, “the queue count equals the number of stored jobs.” Security bugs often appear when an unexpected interleaving breaks an invariant.
 
-Read the note in three passes. At **Crook** level, follow ownership and lifecycle: who created the process, which resources it owns, and which state its threads occupy. At **Operator** level, inspect those claims using process listings, tracing, debuggers, and race detectors. At **Root** level, reason about happens-before relationships, object lifetime, memory ordering, lock graphs, and the exact kernel authority that permits one process to affect another.
+Read the note in three passes. At **A beginner** level, follow ownership and lifecycle: who created the process, which resources it owns, and which state its threads occupy. At **A practitioner** level, inspect those claims using process listings, tracing, debuggers, and race detectors. At **An expert** level, reason about happens-before relationships, object lifetime, memory ordering, lock graphs, and the exact kernel authority that permits one process to affect another.
 
 > [!tip] The analogy, and where it breaks
 > A restaurant kitchen: the recipe is the program, a chef actually cooking it is the process, and several chefs sharing one worktop are threads. The analogy breaks on the sharing — two chefs reaching for the same knife merely wait their turn, whereas two threads touching the same memory without coordination can leave it half-written and corrupt, which is why locks and memory ordering exist at all.
+
+**The deliberate break:** "process" and "program" get used interchangeably, so it is natural to think of a running program as the program itself, in motion.
+
+A **program is a file** — bytes on disk, inert, identical every time you look at it. A **process is a program plus everything the kernel had to invent to run it**: an address space, a PID, open file descriptors, a credential set, a scheduling state, a parent. Open the same binary twice and you have two processes that share the file and nothing else — separate memory, separate descriptors, and no ability to see each other's data.
+
+That distinction is the whole basis of process isolation, and it is why "the malware is `svchost.exe`" is never a finding. The file may be Microsoft's, signed and unmodified; what matters is the process built around it — its parent, its command line, and what it opened.
+
+**How you'd spot it:** compare the binary and the process separately. A legitimate path with an illegitimate **parent** (`winword.exe` spawning `powershell.exe`) is the signal, and no amount of hashing the file will show it.
 
 ## 1. From Program to Process
 
@@ -59,6 +67,7 @@ The kernel records that container in a **Process Control Block (PCB)**. Implemen
 | Accounting | limits, cgroup/job membership, audit identity | containment, billing, and investigation |
 
 The executable's entry point is not necessarily the first user instruction. A dynamic loader may map libraries, apply relocations, initialize thread-local storage, and invoke constructors first. For defenders, this explains why execution provenance includes loaders and shared objects. For authorized security research, it explains why writable loader state, inherited handles, or unsafe library search paths can alter behavior before `main()` executes.
+
 
 ## 2. Process States & Lifecycle
 
@@ -198,129 +207,6 @@ Deadlock requires the four Coffman conditions: mutual exclusion, hold-and-wait, 
 
 For cybersecurity, these are availability and isolation concerns. An adversarial request can capture a coarse application lock, exhaust a worker queue, or trigger deadlocked code paths. Defenses include bounded queues, lock timeouts, cancellation, watchdogs, per-tenant quotas, lock-order assertions, and observability for wait duration rather than CPU alone.
 
-## Hands-On Lab: Watch Threads Share What Processes Do Not
-
-> [!info] Runs on one Linux machine — only `python3` required
-> Every command is complete. Run them in order; each shows what you should actually see.
-
-### Step 1 — A process and its threads
-
-```bash
-python3 -c "
-import threading, time, os
-print('PID', os.getpid())
-[threading.Thread(target=lambda: time.sleep(30)).start() for _ in range(3)]
-time.sleep(30)" &
-sleep 1
-PID=$!
-ls /proc/$PID/task
-```
-
-```text
-PID 20514
-1  20514  20515  20516  20517
-```
-
-One process, **four entries** under `task/` — the main thread plus the three we created. This directory *is* the kernel's thread list, and it proves threads are schedulable entities living inside one process.
-
-```bash
-ps -o pid,tid,comm -L -p $PID | head -6
-```
-
-```text
-    PID     TID COMMAND
-  20514   20514 python3
-  20514   20515 python3
-  20514   20516 python3
-  20514   20517 python3
-```
-
-Same PID, different TIDs. The PID is the *container*; the TID is what actually gets CPU time.
-
-### Step 2 — Prove threads share memory and processes do not
-
-```bash
-python3 - << 'EOF'
-import threading, os
-shared = [0]
-def bump(): shared[0] += 1
-t = threading.Thread(target=bump); t.start(); t.join()
-print("after thread :", shared[0])
-
-val = [0]
-if os.fork() == 0:
-    val[0] += 1
-    os._exit(0)
-os.wait()
-print("after fork   :", val[0])
-EOF
-```
-
-```text
-after thread : 1
-after fork   : 0
-```
-
-This is the core distinction in two numbers. The **thread** changed the parent's memory. The **forked process** changed its own private copy, so the parent still sees `0`. Same code, different memory model.
-
-### Step 3 — Create a real race condition
-
-```bash
-python3 - << 'EOF'
-import threading
-counter = 0
-def work():
-    global counter
-    for _ in range(200000):
-        counter += 1          # read, add, write - NOT atomic
-ts = [threading.Thread(target=work) for _ in range(4)]
-[t.start() for t in ts]; [t.join() for t in ts]
-print("expected 800000, got", counter)
-EOF
-```
-
-```text
-expected 800000, got 693418
-```
-
-Over 100,000 increments vanished. Nothing crashed and no error appeared — two threads read the same value, both added one, and both wrote back, so one update was silently lost. **Your number will differ every run**, which is exactly what makes race conditions so hard to debug.
-
-### Step 4 — Fix it with a lock and confirm
-
-```bash
-python3 - << 'EOF'
-import threading
-counter = 0; lock = threading.Lock()
-def work():
-    global counter
-    for _ in range(200000):
-        with lock:
-            counter += 1
-ts = [threading.Thread(target=work) for _ in range(4)]
-[t.start() for t in ts]; [t.join() for t in ts]
-print("expected 800000, got", counter)
-EOF
-```
-
-```text
-expected 800000, got 800000
-```
-
-Exact, every time. The lock makes read-add-write indivisible. Note the cost: this version is measurably slower — correctness under concurrency is bought with serialization.
-
-### Step 5 — Cleanup
-
-```bash
-kill %1 2>/dev/null; wait 2>/dev/null; jobs
-```
-
-```text
-```
-
-Empty output means the background python from Step 1 is gone. Everything else ran in the foreground and has already exited.
-
-**What you should now be able to do:** explain from your own output why a thread bug corrupted a counter while a forked process could not, and why the fix costs performance.
-
 ## 10. Troubleshooting & Evidence Interpretation
 
 Do not diagnose concurrency from one symptom. A frozen application might be deadlocked, blocked on legitimate I/O, waiting on an empty queue, stopped by a debugger, or starved of CPU time. Build an evidence chain:
@@ -360,11 +246,13 @@ Thread 3: pthread_mutex_lock → transfer_b_to_a
 
 The stacks alone show waiting; they do not prove a cycle until lock ownership is identified. Record which thread owns each mutex and draw the wait-for graph. When a race disappears under a debugger, avoid concluding it was repaired: debugging changes timing. Prefer sanitizer instrumentation, deterministic barriers, event tracing, and many controlled repetitions. The final diagnosis should state the violated invariant, the interleaving that violates it, and the synchronization or ownership rule that prevents recurrence.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Explain the difference between a program, process, and thread; identify PCB versus TCB state; recognize Ready, Running, Blocked, and Zombie states.
-- **Operator:** Select mutexes, semaphores, condition variables, futex-backed locks, spinlocks, or atomics appropriately; inspect IPC permissions; reproduce and repair a race in an authorized lab.
-- **Root:** Reason about happens-before relationships and memory ordering; prove a lock order is deadlock-free; diagnose priority inversion; connect process handles, thread context, object lifetime, and scheduler behavior to concrete offensive and defensive security controls.
+You should now be able to:
+
+- Explain the difference between a program, process, and thread; identify PCB versus TCB state; recognize Ready, Running, Blocked, and Zombie states.
+- Select mutexes, semaphores, condition variables, futex-backed locks, spinlocks, or atomics appropriately; inspect IPC permissions; reproduce and repair a race in an authorized lab.
+- Reason about happens-before relationships and memory ordering; prove a lock order is deadlock-free; diagnose priority inversion; connect process handles, thread context, object lifetime, and scheduler behavior to concrete offensive and defensive security controls.
 
 ---
 > 🔼 Up: [[OS Theory and Architecture]]

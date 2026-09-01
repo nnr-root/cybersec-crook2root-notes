@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/windows
   - type/tool
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
@@ -19,7 +19,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations -> Windows Drivers I-O & Kernel Debugging -> Windows Processes, Services & Boot -> Windows File System & Registry -> Windows Networking Internals -> Windows Security & Access Control -> Windows Identity, Credentials & Authentication -> Windows Active Directory & Domains -> Windows Command Prompt & Batch -> Windows PowerShell -> Windows Logging & Auditing -> Windows Diagnostics, Crash Dumps & Performance -> Windows Sysinternals & Troubleshooting
 
-## Start at Zero: Observation Before Intervention
+## Observation Before Intervention
 
 Troubleshooting is controlled hypothesis testing. Establish the symptom and time window, capture volatile evidence, form one falsifiable explanation, collect the narrowest evidence that can disprove it, and change one variable at a time. Sysinternals tools expose different object types: processes and handles, file and Registry operations, autostart configuration, endpoints, signatures, and memory maps. Their output is evidence—not a verdict. “Unsigned,” “remote,” or “unusual parent” raises a question; provenance, baseline, access context, and correlated timing answer it.
 
@@ -58,8 +58,8 @@ Troubleshooting is controlled hypothesis testing. Establish the symptom and time
 > [!warning] Dual-use
 > `PsExec` is admin gold *and* attacker gold — its use is a monitored event (service creation **7045**, `PSEXESVC`). Know that running it lights up the SIEM.
 
-> [!tip] Crook → Root
-> **Crook** opens Task Manager and gives up. **Root** runs Process Explorer + Procmon + Autoruns and reconstructs exactly what a binary did, where it persists, and who it talks to — the same skill whether you're hunting malware or checking your own implant's footprint.
+> [!tip] Beginner → Expert
+> **A beginner** opens Task Manager and gives up. **An expert** runs Process Explorer + Procmon + Autoruns and reconstructs exactly what a binary did, where it persists, and who it talks to — the same skill whether you're hunting malware or checking your own implant's footprint.
 
 ## Evidence-First Live Response
 
@@ -193,107 +193,13 @@ Live-response tools are dual-use because operating-system introspection is dual-
 
 An investigation becomes defensible when several sources agree: Process Explorer identifies image and token, TCPView identifies endpoint, Procmon identifies file/Registry behavior, Autoruns identifies persistence, Sigcheck establishes signer/hash, and Event Logs establish historical context. Disagreement is valuable—it may expose collection gaps, race conditions, PID reuse, or tampering.
 
-## Hands-On Lab: Live Triage With Built-in Equivalents
+## Summary
 
-> [!info] Runs on any Windows machine — read-only. Uses built-in cmdlets that mirror the Sysinternals tools.
-> Where a Sysinternals tool is named, the built-in equivalent is shown so the lab runs with nothing to download.
+You should now be able to:
 
-### Step 1 — Autoruns: enumerate every autostart location
-
-```powershell
-Get-CimInstance Win32_StartupCommand | Select-Object Name,Location -First 5 | Format-Table -Auto
-Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run' | Out-Null
-(Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run').PSObject.Properties |
-  Where-Object Name -notmatch 'PS' | Select-Object Name -First 3
-```
-
-```text
-Name            Location
-----            --------
-SecurityHealth  HKLM\...\Run
-OneDrive        HKCU\...\Run
-
-Name
-----
-RTHDVCPL
-```
-
-This is what Sysinternals **Autoruns** does — enumerate persistence points. An entry pointing at `%TEMP%` or an unsigned binary is the finding.
-
-### Step 2 — Process Explorer: verify signatures on running processes
-
-```powershell
-Get-Process | Where-Object Path | Select-Object -First 20 | ForEach-Object {
-  $sig = Get-AuthenticodeSignature $_.Path -ErrorAction SilentlyContinue
-  if ($sig.Status -ne 'Valid') { [pscustomobject]@{ Name=$_.Name; SigStatus=$sig.Status } }
-} | Select-Object -First 3
-```
-
-```text
-Name           SigStatus
-----           ---------
-customtool     NotSigned
-```
-
-Process Explorer's key power is showing **which running code is unsigned**. An unsigned process running from a user-writable path is exactly what triage looks for. If nothing returns, every checked process is validly signed — a clean result.
-
-### Step 3 — TCPView: connections mapped to processes
-
-```powershell
-Get-NetTCPConnection -State Established |
-  Select-Object -First 4 RemoteAddress,RemotePort,@{n='Process';e={(Get-Process -Id $_.OwningProcess -EA SilentlyContinue).Name}}
-```
-
-```text
-RemoteAddress   RemotePort Process
--------------   ---------- -------
-20.70.246.20           443 chrome
-52.113.194.132         443 Teams
-185.199.108.153        443 unknown.exe
-```
-
-An established connection from an unfamiliar process to an unfamiliar address is the C2 pattern. Mapping every connection to its owning process is TCPView's whole job.
-
-### Step 4 — Handle/Process: what is locking a file
-
-```powershell
-$f = "$env:TEMP\locktest.txt"; $stream = [System.IO.File]::Open($f,'Create','ReadWrite','None')
-Get-Process | Where-Object { $_.Modules.FileName -contains $f } | Out-Null
-"File is open with an exclusive lock by PID $PID"
-$stream.Close(); Remove-Item $f -Force
-```
-
-```text
-File is open with an exclusive lock by PID 6120
-```
-
-"Which process has this file open?" is the question Sysinternals **Handle** answers — the way out of "the file is in use by another program" with no named program.
-
-### Step 5 — Build a one-screen triage snapshot
-
-```powershell
-[pscustomobject]@{
-  UnsignedProcs   = (Get-Process | Where-Object Path | Where-Object { (Get-AuthenticodeSignature $_.Path -EA SilentlyContinue).Status -ne 'Valid' }).Count
-  ExternalConns   = (Get-NetTCPConnection -State Established | Where-Object { $_.RemoteAddress -notmatch '^(127\.|::1|192\.168\.|10\.)' }).Count
-  AutostartCount  = (Get-CimInstance Win32_StartupCommand).Count
-} | Format-List
-```
-
-```text
-UnsignedProcs  : 1
-ExternalConns  : 7
-AutostartCount : 14
-```
-
-**Cleanup:** the lock-test file was removed in Step 4; no other state changed.
-
-**What you should now be able to do:** enumerate autostarts, flag unsigned running processes, map connections to processes, find what locks a file, and assemble a fast triage snapshot — the core Sysinternals workflow with built-in tools.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Navigate Process Explorer, Procmon, Autoruns, TCPView, Handle, and Sigcheck without changing system state unnecessarily.
-- **Operator:** Design precise filters, interpret stacks and result codes, correlate process/token/module/handle/network/persistence evidence, and preserve exports with provenance.
-- **Root:** Lead a live-response investigation, quantify tool-induced change, reconcile conflicting evidence, distinguish anomaly from causality, and verify remediation against a captured baseline.
+- Navigate Process Explorer, Procmon, Autoruns, TCPView, Handle, and Sigcheck without changing system state unnecessarily.
+- Design precise filters, interpret stacks and result codes, correlate process/token/module/handle/network/persistence evidence, and preserve exports with provenance.
+- Lead a live-response investigation, quantify tool-induced change, reconcile conflicting evidence, distinguish anomaly from causality, and verify remediation against a captured baseline.
 
 ---
 > 🔼 Up: [[Windows]]

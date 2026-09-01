@@ -6,7 +6,7 @@ tags:
   - cyber/foundations/linux
   - cyber/tooling
   - type/concept
-  - level/crook
+  - difficulty/easy
 Domain:
   - "[[Linux]]"
 Color: "#FFA500"
@@ -35,7 +35,7 @@ The beginner objective is reliable recall; the operator objective is reproducibi
 - **Engagements** — record every host, credential, command, and finding *as you go*. The deliverable of a pentest is the **report**; disciplined notes make writing it possible (and repeatable when a client asks "how did you get in?").
 - **Legal & scope safety** — timestamps and command logs prove you stayed in scope. If it isn't written down, it didn't happen.
 - **Labs & simulations** — you'll revisit a system hours later; notes on observations, tested hypotheses, and dead ends stop you looping.
-- **Research & learning** — turning "I read about SUID once" into a searchable, linked knowledge base is how a Crook compounds into a Root. *This vault is that principle applied.*
+- **Research & learning** — turning "I read about SUID once" into a searchable, linked knowledge base is how a beginner compounds into an expert. *This vault is that principle applied.*
 
 ```mermaid
 flowchart LR
@@ -165,111 +165,6 @@ Documentation fix: add signed-package prerequisite and verification command
 
 Do not rewrite raw evidence to fit the narrative. Amend the interpretation, retain the original artifact and hash, record who changed the note and why, and schedule revalidation when versions or assumptions change.
 
-## Hands-On Lab: Produce an Auditable Mini-Case File
-
-> [!info] Runs on any Linux machine — produces a real evidence file under `/tmp`, removed in Step 6
-> Security notes can become evidence, so this lab practises capturing findings with provenance, not just prose.
-
-### Step 1 — Start a case file with unambiguous context
-
-```bash
-mkdir -p /tmp/case-lab && cd /tmp/case-lab
-{
-  echo "# Case: unexpected listener investigation"
-  echo "Date (UTC): $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  echo "Host: $(hostname) | Kernel: $(uname -r)"
-  echo "Analyst: $(id -un) (uid $(id -u))"
-} | tee case.md
-```
-
-```text
-# Case: unexpected listener investigation
-Date (UTC): 2026-08-04T17:30:11Z
-Host: workstation | Kernel: 6.8.0-45-generic
-Analyst: you (uid 1000)
-```
-
-Every case file opens with **when, where, and who**, in UTC. A finding without this context cannot be correlated with anyone else's timeline and is worthless as evidence.
-
-### Step 2 — Capture a command with its exact invocation and output
-
-```bash
-run() { echo -e "\n\$ $*" | tee -a case.md; "$@" 2>&1 | tee -a case.md; }
-run ss -tlnp
-```
-
-```text
-$ ss -tlnp
-State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process
-LISTEN 0      4096       127.0.0.53%lo:53        0.0.0.0:*  users:(("systemd-resolve",pid=812,fd=14))
-```
-
-The `run` wrapper records the **exact command** alongside its output. Reproducibility means a colleague can run the identical command — paraphrasing "I checked the listeners" is not reproducible.
-
-### Step 3 — Hash any artifact you collect
-
-```bash
-ss -tlnp > listeners.txt 2>&1
-sha256sum listeners.txt | tee -a case.md
-```
-
-```text
-3f9a1c...e2 listeners.txt
-```
-
-A hash makes the evidence **tamper-evident**: anyone can later verify the file has not changed. This is the difference between a note and an exhibit.
-
-### Step 4 — Record a negative finding explicitly
-
-```bash
-run sh -c 'grep -c ":4444" listeners.txt || echo "port 4444: not present"'
-```
-
-```text
-$ sh -c grep -c ":4444" listeners.txt || echo "port 4444: not present"
-0
-port 4444: not present
-```
-
-"I looked for a backdoor port and did not find it" is a **result**, not a blank. Recorded negatives are what let a reviewer trust that the check was actually performed.
-
-### Step 5 — Close with a scoped conclusion and verify the file
-
-```bash
-{
-  echo -e "\n## Conclusion"
-  echo "- All listeners attributable to system services (systemd-resolve)."
-  echo "- No unexpected high ports observed at $(date -u +%H:%M:%SZ)."
-  echo "- Scope: this host only; no remote systems examined."
-} | tee -a case.md
-echo "--- final artifact size ---"; wc -l case.md
-```
-
-```text
-## Conclusion
-- All listeners attributable to system services (systemd-resolve).
-- No unexpected high ports observed at 17:31:44Z.
-- Scope: this host only; no remote systems examined.
---- final artifact size ---
-18 case.md
-```
-
-The **scope statement** is what keeps a finding honest — it says exactly what was and was not examined, so no one over-reads the conclusion.
-
-### Step 6 — Cleanup
-
-```bash
-cd /tmp && rm -rf /tmp/case-lab && ls -d /tmp/case-lab 2>&1
-```
-
-```text
-ls: cannot access '/tmp/case-lab': No such file or directory
-```
-
-In a real engagement you would **preserve** this file, not delete it — the removal here is only because it is a practice run.
-
-**What you should now be able to do:** open a case file with UTC/host/analyst context, capture commands with exact invocations, hash artifacts for tamper-evidence, record negatives, and bound every conclusion with an explicit scope.
-
 ## Review, handoff & knowledge decay
 
 A note is complete only when another qualified person can act on it. Peer review should verify scope, commands, expected output, assumptions, safety boundaries, evidence references, and remediation tests. Resolve contradictions explicitly; never overwrite uncertainty with a cleaner story. Handoffs need current status, open hypotheses, credentials or keys through an approved secret channel, changes made, cleanup remaining, and the next safe action.
@@ -295,14 +190,13 @@ This discipline turns personal memory into institutional capability while preven
 
 Weak notes create legal, operational, and technical risk: scope cannot be demonstrated, destructive actions cannot be reconstructed, findings become irreproducible, and secrets leak into unmanaged notebooks. Strong documentation is evidence engineering. It preserves provenance, minimizes sensitive collection, supports peer review, and turns one operator's observation into a repeatable organizational control.
 
-### Crook → Operator → Root checkpoint
+## Summary
 
-- **Crook:** capture scope, commands, output, timestamps, and conclusions in a consistent structure.
-- **Operator:** preserve raw artifacts and hashes, separate observation from inference, write reproducible findings, and handle sensitive data safely.
-- **Root:** design a reviewable knowledge architecture, evidence lifecycle, versioning policy, and reporting workflow that another operator can independently validate.
+You should now be able to:
 
-> [!tip] Crook → Root
-> **Crook** keeps everything in their head and re-Googles the same command weekly. **Root** built a knowledge base years ago, links every new finding into it, and pastes a working payload from memory-on-disk while others are still searching. Document relentlessly — it's the cheapest force-multiplier in the field.
+- capture scope, commands, output, timestamps, and conclusions in a consistent structure.
+- preserve raw artifacts and hashes, separate observation from inference, write reproducible findings, and handle sensitive data safely.
+- design a reviewable knowledge architecture, evidence lifecycle, versioning policy, and reporting workflow that another operator can independently validate.
 
 ---
 > 🔼 Up: [[Linux]]

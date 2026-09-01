@@ -5,6 +5,7 @@ aliases:
 tags:
   - tree/offensive
   - cyber/offensive/guided
+  - difficulty/hard
 Domain: "[[Guided Assessments]]"
 Color: "#DC143C"
 ---
@@ -90,11 +91,13 @@ Attach timestamps, asset/build identity, sanitized requests and responses, telem
 
 Convert systemic root causes into secure design standards, reusable tests, CI checks, detection content, developer education, and asset-wide review. A successful retest should reduce the probability of the entire vulnerability class, not merely one recurrence.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** State the closure standard — root cause remediated, original proof dead, variants controlled, legitimate function intact, evidence supports it.
-- **Operator:** Rebuild the baseline, repeat the original proof, test remediation-class variants, and verify negative controls (authorized use still works).
-- **Root:** Explain why status codes alone are insufficient, classify results (remediated / partial / not / risk-accepted / unable-to-verify), and feed systemic root causes back into design standards and CI checks.
+You should now be able to:
+
+- State the closure standard — root cause remediated, original proof dead, variants controlled, legitimate function intact, evidence supports it.
+- Rebuild the baseline, repeat the original proof, test remediation-class variants, and verify negative controls (authorized use still works).
+- Explain why status codes alone are insufficient, classify results (remediated / partial / not / risk-accepted / unable-to-verify), and feed systemic root causes back into design standards and CI checks.
 
 ---
 > 🔼 Up: [[Guided Assessments]]

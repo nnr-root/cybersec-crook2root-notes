@@ -1,7 +1,7 @@
 ---
 title: "Active Reconnaissance & Port Scanning"
 aliases: ["Active Reconnaissance Methodology", "Port Scanning Methodology", "Active Recon", "Port Scanning"]
-tags: [tree/offensive, cyber/offensive/recon, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/recon, type/technique, difficulty/medium]
 Domain: "[[Reconnaissance & Attack Surface]]"
 Color: "#DC143C"
 ---
@@ -14,7 +14,7 @@ Color: "#DC143C"
 ## Parent Learning Order
 Passive Reconnaissance & OSINT -> DNS & Subdomain Reconnaissance -> Active Reconnaissance & Port Scanning -> Cloud & Internet Exposure Discovery
 
-## Start at Zero: Now You Touch the Target
+## Now You Touch the Target
 
 Passive recon told you what exists; **active recon** confirms what is *alive* and *listening*. The moment you send a packet to the target, you cross a line: the activity is observable, logged, and — outside an authorized scope — potentially illegal. Everything here trades stealth for certainty.
 
@@ -30,11 +30,11 @@ Active recon answers three questions in order: **which hosts are up** (host disc
 Before scanning ports, find live hosts. The naive approach — ping — fails often because hosts drop ICMP:
 
 ```bash
-nmap -sn 192.168.56.0/24
+nmap -sn 10.10.20.0/24
 ```
 
 ```text
-Nmap scan report for 192.168.56.101
+Nmap scan report for 10.10.20.30
 Host is up (0.00042s latency).
 Nmap done: 256 IP addresses (1 host up) scanned in 2.35 seconds
 ```
@@ -54,7 +54,7 @@ The core scan interprets TCP handshake responses:
 The **SYN scan** (`-sS`) sends SYN and, on SYN/ACK, replies RST instead of completing — learning "open" without a full connection, which is slightly stealthier and does not always appear in application logs. The **connect scan** (`-sT`) completes the handshake and is more visible.
 
 ```bash
-sudo nmap -sS -p 22,80,443,3306 192.168.56.101
+sudo nmap -sS -p 22,80,443,3306 10.10.20.30
 ```
 
 ```text
@@ -72,7 +72,7 @@ Three different facts: `open` (test it), `closed` (host alive, no service — us
 An open port is a starting point; the *service and version* is what maps to vulnerabilities:
 
 ```bash
-sudo nmap -sV -p 22,80 192.168.56.101
+sudo nmap -sV -p 22,80 10.10.20.30
 ```
 
 ```text
@@ -100,7 +100,7 @@ Every scanning decision trades three things. **Timing** (`-T0` paranoid to `-T5`
 
 There is no universally correct setting — an internal authorized scan wants speed and completeness (`-T4 -p-`), while a red-team engagement wants stealth (`-T1`, few ports, spread over time). Choosing deliberately, and stating the choice in the report, is the skill.
 
-## Failure Modes and Interpretation
+## Filtered is not closed, and other misreads
 
 - **Filtered ≠ closed.** The single most common misread. A firewall dropping probes makes ports appear filtered; the service behind may be wide open to permitted sources.
 - **Rate limiting distorts results.** A target that rate-limits RST responses makes closed ports intermittently appear filtered. Slow down and rescan to confirm.
@@ -118,99 +118,13 @@ Active recon is the most detectable phase, which makes it a defender's opportuni
 - **Deception** (honeypot ports, tarpits) turns scanning against the attacker: a port that accepts every connection and delays responses wastes the scanner's time and flags the source.
 - **The results are only as good as the scope.** A defender's own authorized scan of their perimeter — seeing what an attacker's scan would see — is the highest-value use of these exact tools.
 
-## Authorized Lab: Scan a Target You Build
+## Summary
 
-> [!info] Runs on one Linux machine — builds a real target in a network namespace, so every scan hits only you
-> No external host is ever contacted. The netns is a genuine second host with its own services.
+You should now be able to:
 
-### Step 1 — Build a target host with services
-
-```bash
-sudo ip netns add scanlab
-sudo ip link add veth-s type veth peer name veth-t
-sudo ip link set veth-t netns scanlab
-sudo ip addr add 10.66.0.1/24 dev veth-s && sudo ip link set veth-s up
-sudo ip netns exec scanlab sh -c 'ip addr add 10.66.0.2/24 dev veth-t && ip link set veth-t up && ip link set lo up'
-# start two services and leave one port firewalled
-sudo ip netns exec scanlab python3 -m http.server 80 &>/dev/null &
-sudo ip netns exec scanlab sh -c 'python3 -m http.server 8080 &>/dev/null & sleep 0.3; iptables -A INPUT -p tcp --dport 3306 -j DROP'
-sleep 1; echo "target 10.66.0.2 up: :80 open, :3306 filtered, :22 closed"
-```
-
-```text
-target 10.66.0.2 up: :80 open, :3306 filtered, :22 closed
-```
-
-### Step 2 — Host discovery
-
-```bash
-nmap -sn 10.66.0.0/24 | grep -E 'report|up'
-```
-
-```text
-Nmap scan report for 10.66.0.2
-Host is up (0.000091s latency).
-```
-
-### Step 3 — See all three port states in one scan
-
-```bash
-sudo nmap -sS -p 22,80,3306,8080 10.66.0.2 | grep -E '^[0-9]'
-```
-
-```text
-22/tcp   closed http-alt
-80/tcp   open   http
-3306/tcp filtered mysql
-8080/tcp open   http-proxy
-```
-
-There are the three states from the theory, produced by real packets: `:80`/`:8080` open (services running), `:22` closed (host alive, nothing listening → RST), `:3306` filtered (the `iptables DROP` swallowed the probe → silence).
-
-### Step 4 — Prove filtered ≠ closed
-
-```bash
-sudo ip netns exec scanlab iptables -D INPUT -p tcp --dport 3306 -j DROP
-sudo nmap -sS -p 3306 10.66.0.2 | grep 3306
-```
-
-```text
-3306/tcp closed mysql
-```
-
-Removing the firewall rule flipped `:3306` from `filtered` to `closed`. The port never had a service — the firewall was hiding a *closed* port. This is exactly why you cannot equate filtered with closed: the control masked the true state.
-
-### Step 5 — Version detection
-
-```bash
-sudo nmap -sV -p 80 10.66.0.2 | grep -E '^80'
-```
-
-```text
-80/tcp open  http    SimpleHTTPServer 0.6 (Python 3.11.2)
-```
-
-The banner identified the exact server and version — the pivot to vulnerability research.
-
-### Step 6 — Cleanup
-
-```bash
-sudo ip netns del scanlab; ip link show veth-s 2>&1 | tail -1
-```
-
-```text
-Device "veth-s" does not exist.
-```
-
-Deleting the namespace removes the target, its services, and its firewall rules together.
-
-**What you should now be able to do:** discover live hosts and explain why silence isn't absence, distinguish open/closed/filtered by their handshake responses, prove filtered≠closed, and identify a service version as the bridge to vulnerability assessment.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Explain the line active recon crosses, name the three questions it answers, and state what open/closed/filtered each mean.
-- **Operator:** Run host discovery and a SYN scan, interpret all three port states, use version detection, and choose timing/breadth deliberately for the engagement type.
-- **Root:** Explain why filtered≠closed and how a firewall masks true state; describe the scan's detection signature and why minimizing exposed surface — not detecting the scan — is the real defense.
+- Explain the line active recon crosses, name the three questions it answers, and state what open/closed/filtered each mean.
+- Run host discovery and a SYN scan, interpret all three port states, use version detection, and choose timing/breadth deliberately for the engagement type.
+- Explain why filtered≠closed and how a firewall masks true state; describe the scan's detection signature and why minimizing exposed surface — not detecting the scan — is the real defense.
 
 ---
 > 🔼 Up: [[Reconnaissance & Attack Surface]]

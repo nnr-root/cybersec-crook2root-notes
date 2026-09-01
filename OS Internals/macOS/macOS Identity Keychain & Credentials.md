@@ -6,7 +6,7 @@ tags:
   - cyber/foundations/macos
   - cyber/identity
   - type/concept
-  - level/operator
+  - difficulty/medium
 Domain:
   - "[[macOS]]"
 Color: "#FFA500"
@@ -20,7 +20,7 @@ Color: "#FFA500"
 ## Parent Learning Order
 macOS Darwin & XNU Kernel -> macOS CLI & Unix Backend -> macOS APFS & File System -> macOS Processes & Daemons -> macOS Identity, Keychain & Credentials -> macOS Networking Internals -> macOS Security Mechanisms -> macOS Binaries & Runtime Loading -> macOS Observability, Incident Response & Forensics
 
-## Crook — Identity Is More Than a Username
+## Identity Is More Than a Username
 
 ### Vocabulary & First Mental Model
 
@@ -77,7 +77,7 @@ UID membership and administrator-group membership are different from an active r
 > [!tip] The analogy, and where it breaks
 > A safe whose contents each carry a note saying which staff members may open them, kept inside a building that separately controls who may approach the safe. The analogy breaks because the safe's own key can be derived from a login password, so a change in how the user authenticates can silently change what the safe will release.
 
-## Operator — Keychain, securityd & Authorization Services
+## Keychain, securityd & Authorization Services
 
 ### Keychain Architecture
 
@@ -141,7 +141,7 @@ Output may be XML containing fields such as `class`, `group`, `authenticate-user
 
 The safest privileged architecture separates an unprivileged UI from a narrowly scoped helper. The helper obtains caller identity from the XPC audit token, evaluates a named right or code requirement, validates all parameters, uses safe filesystem APIs, and records an attributable result. A caller-supplied “authorized=true” field has no security value.
 
-## Root — SecureToken, FileVault, Enterprise Identity & Credential Forensics
+## SecureToken, FileVault, Enterprise Identity & Credential Forensics
 
 **SecureToken** is an authorization attribute associated with volume ownership and FileVault workflows. On modern Macs, Bootstrap Token can be escrowed to MDM and used for selected account and security operations. These concepts interact with APFS cryptographic users but are not interchangeable with administrator-group membership.
 
@@ -205,83 +205,6 @@ guard status == errSecSuccess else {
 
 The application should use an access-control object appropriate to data sensitivity, avoid logging secret bytes, handle locked-keychain errors, and rotate the item through a documented lifecycle.
 
-## Hands-On Lab: Keychain, Authorization and SecureToken
-
-> [!info] Runs on any Mac — creates a test keychain item removed in Step 5
-> macOS layers its own credential model over Unix identity. This lab shows where secrets live and who guards them.
-
-### Step 1 — Unix identity underneath
-
-```bash
-id
-dscl . -read /Users/$(whoami) UniqueID PrimaryGroupID 2>/dev/null
-```
-
-```text
-uid=501(you) gid=20(staff) groups=20(staff),12(everyone),...
-UniqueID: 501
-PrimaryGroupID: 20
-```
-
-macOS keeps standard Unix uid/gid, but user records live in the **Directory Service** (`dscl`), not `/etc/passwd` — the first divergence from Linux.
-
-### Step 2 — Store a secret in the Keychain
-
-```bash
-security add-generic-password -a labuser -s lab-service -w 'SecretValue123'
-security find-generic-password -a labuser -s lab-service 2>&1 | grep -E 'svce|acct'
-```
-
-```text
-    "acct"<blob>="labuser"
-    "svce"<blob>="lab-service"
-```
-
-The secret is stored, but note `find` showed only metadata — not the password. The Keychain releases the value only to authorized callers, examined next.
-
-### Step 3 — Retrieving the value requires authorization
-
-```bash
-security find-generic-password -a labuser -s lab-service -w
-```
-
-```text
-SecretValue123
-```
-
-Adding `-w` triggered an authorization check (and, in the GUI, would prompt). Each keychain item carries an access-control list of which apps may read it — a per-item guard on top of your login. The keychain's own key derives from your login password.
-
-### Step 4 — Inspect the Authorization database
-
-```bash
-security authorizationdb read system.preferences 2>/dev/null | grep -A1 -E '<key>class|<key>group' | head -4
-```
-
-```text
-	<key>class</key>
-	<string>user</string>
-	<key>group</key>
-	<string>admin</string>
-```
-
-macOS Authorization Services decides, per named right, who may perform privileged operations — here, that changing system preferences requires the `admin` group. This is finer-grained than Unix's root/not-root split.
-
-### Step 5 — Cleanup
-
-```bash
-security delete-generic-password -a labuser -s lab-service 2>&1 | grep -o 'password has been deleted' || echo removed
-security find-generic-password -a labuser -s lab-service 2>&1 | tail -1
-```
-
-```text
-removed
-security: SecKeychainSearchCopyNext: The specified item could not be found in the keychain.
-```
-
-The "could not be found" confirms the secret is gone from the keychain.
-
-**What you should now be able to do:** explain that macOS keeps Unix ids but stores users in the Directory Service, store and retrieve a keychain secret under authorization, and describe how the Authorization database gates privileged rights.
-
 ## Troubleshooting Workflow
 
 Separate identity, authorization, and credential-storage failures. First confirm the effective UID, groups, directory-service record, SecureToken/FileVault status, and active console user. Then inspect the target keychain’s search list, lock state, item access-control policy, code-signing requirement, and TCC context without exporting secrets. A successful Unix login does not prove Keychain access, and `sudo` does not automatically satisfy an application-bound access-control list. Record the exact process identity and error code before changing Keychain or authorization settings.
@@ -294,11 +217,13 @@ Separate identity, authorization, and credential-storage failures. First confirm
 - Authorization Services must be applied to narrow operations; privileged helpers must authenticate XPC callers independently.
 - Credential evidence must be handled like live authentication material and exposure requires rotation.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Explain UID/GID, Directory Services, Keychain item classes, certificates, and administrator membership.
-- **Operator:** Audit identity, keychain metadata, signing identities, authorization rights, SecureToken, and FileVault without revealing secrets.
-- **Root:** Trace one privileged request from user session and code identity through XPC, Authorization Services, Keychain access control, Secure Enclave policy, and enterprise identity—then prove the exact authority granted at each boundary.
+You should now be able to:
+
+- Explain UID/GID, Directory Services, Keychain item classes, certificates, and administrator membership.
+- Audit identity, keychain metadata, signing identities, authorization rights, SecureToken, and FileVault without revealing secrets.
+- Trace one privileged request from user session and code identity through XPC, Authorization Services, Keychain access control, Secure Enclave policy, and enterprise identity—then prove the exact authority granted at each boundary.
 
 ---
 > 🔼 Up: [[macOS]]

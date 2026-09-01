@@ -1,6 +1,6 @@
 ---
 title: "MFA Recovery Process Testing"
-tags: [tree/offensive, cyber/offensive/social/mfa-recovery, type/technique, level/operator]
+tags: [tree/offensive, cyber/offensive/social/mfa-recovery, type/technique, difficulty/medium]
 Domain: "[[Voice, Help Desk & Identity Verification]]"
 Color: "#DC143C"
 ---
@@ -13,13 +13,13 @@ Color: "#DC143C"
 ## Parent Learning Order
 Help Desk Identity Verification -> MFA Recovery Process Testing -> Vishing & Executive Impersonation Testing
 
-## Crook — Recovery Is the Back Door to MFA
+## Recovery Is the Back Door to MFA
 
 Multi-factor authentication is only as strong as the process that runs when a user says **"I lost my device."** Every MFA deployment needs a recovery path — and that path, by design, must let someone in *without* the second factor. If recovery is weaker than the front door, an attacker simply doesn't attack the front door; they trigger recovery.
 
 This is why account takeover so often ignores the password and the authenticator entirely: the attacker targets **recovery codes, SMS/email reset, help-desk MFA re-enrolment, or a SIM swap.** Each is a legitimate feature; each can bypass the very MFA it supports.
 
-## Operator — The Recovery Attack Surface
+## The Recovery Attack Surface
 
 | Recovery path | Bypass risk |
 |---|---|
@@ -40,38 +40,64 @@ flowchart LR
     R -- no --> OK
 ```
 
-## Root — Runnable Lab (one machine, Python)
+## Worked Example: Attacking the Back Door Instead of the Front
 
-The same verification gate that protects password resets must protect MFA re-enrolment — otherwise recovery is the weakest door. This lab shows an MFA reset passing *only* when out-of-band verification is present.
-
-**Step 1 — the gate (`verify.py`).**
+MFA account-takeover rarely touches the password or the authenticator. It targets
+recovery, because recovery must — by design — let someone in *without* the second
+factor. Modelling an attacker's capabilities against the available recovery paths
+shows how much of MFA the recovery process quietly undoes.
 
 ```python
-def decide(req):
-    sensitive = req["action"] in {"password_reset","mfa_reset","bank_change"}
-    ob = req.get("out_of_band_callback") and req.get("directory_number")
-    return "ALLOW" if (not sensitive or ob) else "BLOCK (requires independent callback verification)"
+cap = {"sim_swap", "osint_facts", "phish_email_otp"}     # what the attacker can do
+paths = {
+    "SMS one-time code":      "sim_swap",
+    "Email reset link":       "phish_email_otp",
+    "Security questions":     "osint_facts",
+    "Printed backup codes":   "steal_physical_code",      # attacker cannot
+    "Help-desk re-enrolment": "osint_facts",              # reduces to KBA
+}
+for p, need in paths.items():
+    print(p, "BYPASSES MFA" if need in cap else "holds")
 ```
 
-**Step 2 — run it (the `mfa_reset` case is verified out-of-band).**
+```shell-session
+$ python3 mfarec.py
+SMS one-time code          -> BYPASSES MFA
+Email reset link           -> BYPASSES MFA
+Security questions         -> BYPASSES MFA
+Printed backup codes       -> holds
+Help-desk re-enrolment     -> BYPASSES MFA
 
-```console
-$ python3 verify.py
-'exec' inbound     payment        -> BLOCK (requires independent callback verification)
-user               mfa_reset      -> ALLOW
+4/5 recovery paths defeat MFA without ever touching the 2nd factor
 ```
 
-**Step 3 — the deliberate insight.** `mfa_reset` is ALLOW here *because* the request carried an out-of-band callback. Flip that flag to `False` and it BLOCKs — an attacker who only controls an inbound channel (a spoofed call, a SIM-swapped number for SMS) cannot re-enrol. Treating re-enrolment as sensitive is what closes the back door.
+Four of five. An organisation can deploy hardware security keys at the front door
+and still lose the account through any of these, because each recovery path is a
+legitimate feature that exists precisely to bypass the factor the attacker cannot
+otherwise beat. The SMS code falls to a SIM swap; the email link is only as strong
+as an email account whose own MFA is usually weaker; the security questions are a
+knowledge check the OSINT already answered; and help-desk re-enrolment reduces to
+the help-desk's identity verification, which — as the sibling leaf shows — is itself
+usually knowledge-based.
 
-**Step 4 — cleanup:** decision simulation only — no cleanup required.
+The single path that holds, printed backup codes, holds only because this attacker
+cannot physically steal them; a phishing lure that asks the user to type one, or a
+mailbox where they were saved, would flip it too.
 
-**What you should now be able to do:** enumerate the recovery paths that bypass MFA, explain the SIM-swap risk of SMS recovery, and state why re-enrolling a new factor must itself require out-of-band verification.
+The testing lesson is that an MFA assessment which stops at the login screen has
+tested the strongest part of the system. The account's real strength is the
+*weakest enabled recovery path*, and the engagement's job is to enumerate every one
+and find the floor. The remediation follows: recovery must be raised to the
+assurance of the primary factor — possession-bound, rate-limited, and alerting —
+because an attacker always attacks the floor, never the ceiling.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** If an account has MFA, why would an attacker attack "forgot my device" instead of the login?
-- **Operator:** Design a canary-based test proving whether your help desk will re-enrol MFA for an unverified caller.
-- **Root:** Rank SMS, email, backup codes, and help-desk re-enrolment by residual risk, and justify the ordering with the specific bypass each enables.
+You should now be able to:
+
+- If an account has MFA, why would an attacker attack "forgot my device" instead of the login?
+- Design a canary-based test proving whether your help desk will re-enrol MFA for an unverified caller.
+- Rank SMS, email, backup codes, and help-desk re-enrolment by residual risk, and justify the ordering with the specific bypass each enables.
 
 ---
 > 🔼 Up: [[Voice, Help Desk & Identity Verification]]

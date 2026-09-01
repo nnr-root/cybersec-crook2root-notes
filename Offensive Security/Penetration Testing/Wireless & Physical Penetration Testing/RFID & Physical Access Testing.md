@@ -6,7 +6,7 @@ tags:
   - cyber/offensive/physical
   - cyber/hardware/rfid
   - type/methodology
-  - level/root
+  - difficulty/hard
 Domain: "[[Wireless & Physical Penetration Testing]]"
 Color: "#DC143C"
 ---
@@ -129,15 +129,13 @@ Observed: two grants; replay protection absent at controller workflow
 
 Use cryptographic credentials, diversified keys, secure enrollment, rapid revocation, anti-passback where appropriate, PIN/biometric for high-risk zones, reader tamper monitoring, encrypted panel communication, segmented management, camera/alarm correlation, and physical-key governance. Reader replacement alone does not fix weak controller rules or identity lifecycle.
 
-## Mastery lab
+## Summary
 
-Model a three-zone facility with canary cards. Test issue/revoke, schedule, role, anti-passback, lost-card response, reader tamper alert, and log correlation. Produce an attack-path diagram from credential acquisition to business asset while respecting life safety and stopping at the first bounded proof.
+You should now be able to:
 
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Why is a 125 kHz proximity badge that transmits only a static ID trivially cloneable?
-- **Operator:** In an authorized test, how do you demonstrate a badge-cloning risk using a synthetic credential without cloning a real employee's badge?
-- **Root:** Contrast low-frequency 125 kHz cards with 13.56 MHz smartcards (e.g. DESFire): explain which uses cryptographic challenge-response and why that defeats simple UID replay.
+- Why is a 125 kHz proximity badge that transmits only a static ID trivially cloneable?
+- In an authorized test, how do you demonstrate a badge-cloning risk using a synthetic credential without cloning a real employee's badge?
+- Contrast low-frequency 125 kHz cards with 13.56 MHz smartcards (e.g. DESFire): explain which uses cryptographic challenge-response and why that defeats simple UID replay.
 
 ---
 > 🔼 Up: [[Wireless & Physical Penetration Testing]]

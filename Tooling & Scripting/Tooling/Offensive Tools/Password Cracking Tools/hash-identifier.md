@@ -1,7 +1,7 @@
 ---
 title: "hash-identifier"
 aliases: ["hash-identifier", "hashid", "hash-id"]
-tags: [tree/tooling, cyber/tooling/offensive/cracking/hashid, type/tool, level/apprentice]
+tags: [tree/tooling, cyber/tooling/offensive/cracking/hashid, type/tool, level/apprentice, difficulty/easy]
 Domain: "[[Password Cracking Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,13 @@ hash-identifier (and the related `hashid`) is the classic interactive hash-type 
 ## Parent Learning Order
 name-that-hash -> hash-identifier -> John the Ripper -> Hashcat
 
-## Crook — The Mental Model
+## Reading the structural fingerprint of a hash
 
 Every hash type leaves a structural fingerprint — a prefix, a length, a charset. A hash *identifier* is a lookup that reads those fingerprints and lists the algorithms they could be.
 
-![[tool_hash_anatomy.svg]]
-
 The diagram is what these tools automate. hash-identifier is the older, simpler engine: it matches length and charset against a fixed list. That simplicity is both its speed and its weakness — it will confidently list *many* possibilities for an ambiguous value, and you must reason about which is real from the diagram's three signals.
 
-## Operator — Make It Work
+## Ranking candidate types, and the -m bridge
 
 `hashid` is the fast, scriptable, modern variant; `hash-identifier` is the interactive legacy tool. Both take a hash and rank types:
 
@@ -50,7 +48,7 @@ Possible Hashs:
 [+] Domain Cached Credentials
 ```
 
-## Root — Internals & The Deliberate Break
+## A fixed rule table with no sense of likelihood
 
 hash-identifier matches against a **fixed rule table**, and it has no notion of *likelihood* — it lists every structural match with equal weight.
 
@@ -65,11 +63,13 @@ operator@lab:~$ hashid '5f4dcc3b5aa765d61d8327deb882cf99'
 
 Note `hashid` reads from files/stdin (scriptable) while `hash-identifier` is interactive only — for automation, `hashid` or name-that-hash; for a quick manual check, either.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** What structural signals does a hash identifier read to guess a type?
-- **Operator:** `hashid -m` prints a `Hashcat Mode`. Why is that the most useful part of the output?
-- **Root:** Explain why hash-identifier lists MD5/DCC/NTLM together with no ranking, and how you resolve the ambiguity in practice.
+You should now be able to:
+
+- What structural signals does a hash identifier read to guess a type?
+- `hashid -m` prints a `Hashcat Mode`. Why is that the most useful part of the output?
+- Explain why hash-identifier lists MD5/DCC/NTLM together with no ranking, and how you resolve the ambiguity in practice.
 
 ---
 > 🔼 Up: [[Password Cracking Tools]]

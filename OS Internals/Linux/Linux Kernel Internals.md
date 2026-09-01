@@ -5,7 +5,7 @@ tags:
   - tree/os
   - cyber/foundations/linux
   - type/concept
-  - level/root
+  - difficulty/hard
 Domain:
   - "[[Linux]]"
 Color: "#FFA500"
@@ -80,8 +80,8 @@ dmesg -T | grep -iE 'oops|panic|BUG|segfault'
 ```
 > **Defensive signal:** repeated Oopses/segfaults on a service are a fingerprint of **exploit development / fuzzing** in progress (see the Offensive tree's exploit-dev notes).
 
-> [!tip] Crook → Root
-> **Root** knows containers are just **namespaces + cgroups + capabilities**, reaches for **eBPF** to watch every `execve` live, hunts file **capabilities** for privesc, and reads `dmesg` panics as either a bug — or someone building an exploit.
+> [!tip] Beginner → Expert
+> **An expert** knows containers are just **namespaces + cgroups + capabilities**, reaches for **eBPF** to watch every `execve` live, hunts file **capabilities** for privesc, and reads `dmesg` panics as either a bug — or someone building an exploit.
 
 ## Syscall ABI & execution path
 
@@ -211,120 +211,17 @@ $ sudo cat /proc/7124/stack
 
 This establishes a storage-backed wait but not its root cause. Correlate block latency, device errors, filesystem state, and the specific mapping before attributing a kernel defect.
 
-## Hands-On Lab: Observe a Running Kernel Without Modifying It
-
-> [!info] Runs on any modern Linux machine — read-only observation of live kernel state
-> Everything here reads from `/proc`, `/sys`, and eBPF tooling. Nothing loads a module or changes configuration.
-
-### Step 1 — See the syscall boundary in action
-
-```bash
-strace -c -f ls /etc >/dev/null 2>/tmp/strace.txt; grep -E 'syscall|openat|read|total' /tmp/strace.txt | head -6; rm /tmp/strace.txt
-```
-
-```text
-% time     seconds  usecs/call     calls    errors syscall
- 24.13    0.000112           7        15           openat
- 18.02    0.000084           5        16           read
- 11.44    0.000053           4        12           mmap
-100.00    0.000465                   118        11 total
-```
-
-A simple `ls` crossed into the kernel **118 times**. Every file opened, every byte read, is a syscall — the only doorway from userland to kernel. This count *is* the userland/kernel boundary made countable.
-
-### Step 2 — Read live kernel structures through `/proc`
-
-```bash
-grep -E 'MemTotal|Threads' /proc/meminfo /proc/loadavg 2>/dev/null | head -2
-awk '{print "running/total threads:", $4}' /proc/loadavg
-cat /proc/sys/kernel/pid_max
-```
-
-```text
-/proc/meminfo:MemTotal:       16265216 kB
-running/total threads: 2/1843
-4194304
-```
-
-These are not files — they are the kernel's internal counters rendered on demand. `pid_max` is a live tunable; `loadavg`'s fourth field is the scheduler's current runnable/total thread count.
-
-### Step 3 — Watch namespaces isolate a process
-
-```bash
-ls -l /proc/self/ns/ | awk '{print $9, $11}' | grep -E 'net|mnt|pid'
-sudo unshare --net --pid --fork --mount-proc sh -c 'echo "inside new namespaces:"; ip link show | grep -c ":"; ps aux | wc -l'
-```
-
-```text
-net ../net:[4026531840]
-mnt ../mnt:[4026531841]
-pid ../pid:[4026531836]
-inside new namespaces: 
-1
-2
-```
-
-Inside fresh namespaces the process sees **one** network interface (just loopback) and **two** processes — its own isolated world. Those inode numbers are namespace identities; containers are nothing more than a process given its own set. You just built the core of a container in one command.
-
-### Step 4 — Trace kernel events live with eBPF
-
-```bash
-sudo timeout 3 bpftrace -e 'tracepoint:syscalls:sys_enter_openat { @[comm] = count(); }' 2>/dev/null | grep -A6 '@\[' | head -6
-```
-
-```text
-@[systemd-journal]: 12
-@[bpftrace]: 18
-@[ls]: 4
-@[cron]: 22
-```
-
-This attached a probe to **every `openat` syscall on the whole system** for three seconds, counted by process — with no code change, no reboot, and no module. That safe live instrumentation of a running kernel is what eBPF makes possible and what makes it central to modern observability and detection.
-
-### Step 5 — Inspect loaded modules and the kernel's own log
-
-```bash
-lsmod | head -4
-sudo dmesg -T --level=err,warn 2>/dev/null | tail -3
-```
-
-```text
-Module                  Size  Used by
-overlay               212992  3
-ext4                  978944  2
-xt_conntrack           16384  4
-```
-
-```text
-[Tue Aug  4 08:12:04 2026] usb 1-3: device descriptor read/64, error -71
-```
-
-`lsmod` shows the kernel's loadable components and their **use count** (why a busy module cannot be unloaded). `dmesg` is the kernel's own voice — the first place hardware faults and driver problems surface.
-
-### Step 6 — Confirm nothing was changed
-
-```bash
-lsmod | wc -l; echo "modules unchanged; no probes remain (bpftrace exited)"
-```
-
-```text
-48
-modules unchanged; no probes remain (bpftrace exited)
-```
-
-Every eBPF probe detached when `bpftrace` exited, and no module was loaded or removed. **Cleanup:** none required — this lab only ever observed.
-
-**What you should now be able to do:** count syscalls as the kernel boundary, read live state from `/proc`, build isolation with `unshare`, and attach an eBPF probe to a running kernel without modifying it.
-
 ## Security implications
 
 Kernel privilege makes small mistakes systemic. Namespace isolation can be pierced by retained handles or excess capabilities; resource control fails when cgroup limits are absent; eBPF and modules create powerful observability and equally powerful persistence surfaces; asynchronous I/O multiplies lifetime complexity. Keep kernels current, minimize enabled attack surface, restrict privileged APIs, enforce signed modules, inventory eBPF objects, and preserve crash evidence.
 
-### Crook → Operator → Root checkpoint
+## Summary
 
-- **Crook:** explain user/kernel mode, syscalls, tasks, namespaces, cgroups, capabilities, modules, and panics.
-- **Operator:** trace syscalls, inspect namespace mappings and cgroup v2 controls, inventory eBPF maps/programs, and triage an Oops.
-- **Root:** reason about ABI entry, synchronization and lifetime, verifier state, BTF/CO-RE portability, `io_uring`, module trust, and postmortem kernel debugging.
+You should now be able to:
+
+- explain user/kernel mode, syscalls, tasks, namespaces, cgroups, capabilities, modules, and panics.
+- trace syscalls, inspect namespace mappings and cgroup v2 controls, inventory eBPF maps/programs, and triage an Oops.
+- reason about ABI entry, synchronization and lifetime, verifier state, BTF/CO-RE portability, `io_uring`, module trust, and postmortem kernel debugging.
 
 ---
 > 🔼 Up: [[Linux]]

@@ -5,6 +5,7 @@ tags:
   - tree/networking
   - cyber/networking/osi
   - type/concept
+  - difficulty/easy
   - level/apprentice
 Domain:
   - "[[Network Foundations]]"
@@ -19,7 +20,7 @@ Color: "#42D4F4"
 ## Parent Learning Order
 Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation & Protocol Data Units -> Network Devices & Traffic Paths -> Reachability Testing & ICMP
 
-## Start at Zero: Headers All the Way Down
+## Headers All the Way Down
 
 When a program sends data, each layer beneath it prepends its own **header** — a fixed structure of fields that the peer layer on the receiving side knows how to read. The layer's data plus its header is called a **PDU (Protocol Data Unit)**, and each layer has its own name for it.
 
@@ -50,7 +51,7 @@ Without these keys, a receiver would have a pile of bytes and no way to parse th
 flowchart TB
     D["Application data: GET /cart"]
     D --> S["+ TCP header (src 52418, dst 443, SEQ, flags) = Segment"]
-    S --> P["+ IP header (src 192.168.10.24, dst 93.184.216.34, TTL 64, proto 6) = Packet"]
+    S --> P["+ IP header (src 10.10.10.14, dst 203.0.113.20, TTL 64, proto 6) = Packet"]
     P --> F["+ Ethernet header (src host MAC, dst gateway MAC, ethertype 0x0800) = Frame"]
     F --> B["Bits on the medium"]
     B --> F2["Frame received: checksum verified, ethertype 0x0800 -> IP"]
@@ -74,15 +75,15 @@ sudo tcpdump -i eth0 -nn -e -c 2 -v 'tcp port 443 and tcp[tcpflags] & tcp-syn !=
 Expected excerpt:
 
 ```text
-00:1a:2b:3c:4d:5e > 00:50:56:aa:bb:cc, ethertype IPv4 (0x0800), length 74:
+00:00:5e:00:53:0e > 00:00:5e:00:53:01, ethertype IPv4 (0x0800), length 74:
     (tos 0x0, ttl 64, id 41207, offset 0, flags [DF], proto TCP (6), length 60)
-    192.168.10.24.52418 > 93.184.216.34.443: Flags [S], seq 2419087713,
+    10.10.10.14.52418 > 203.0.113.20.443: Flags [S], seq 2419087713,
     win 64240, options [mss 1460,sackOK,TS val 88213 ecr 0,nop,wscale 7], length 0
 ```
 
 Every element of the header stack is visible in those four lines:
 
-- `00:1a:...  > 00:50:...` — link layer. The destination is the **gateway's** hardware address, not the server's, because the server is not on this link.
+- `...:53:0e > ...:53:01` — link layer. The destination is the **gateway's** hardware address, not the server's, because the server is not on this link.
 - `ethertype IPv4 (0x0800)` — the demultiplexing key telling the receiver an IP header follows.
 - `ttl 64` — the initial hop budget. Common initial values are 64 (Linux, macOS), 128 (Windows), and 255 (many network devices), which is why an observed TTL hints at both the sender's platform and the hop count travelled.
 - `flags [DF]` — Don't Fragment. This single bit is responsible for a large share of "works for small requests, hangs for large ones" incidents, explained below.
@@ -101,14 +102,14 @@ Here is where it breaks. If an administrator blocks all ICMP at a firewall "for 
 Reproduce the diagnosis with a payload-size sweep:
 
 ```bash
-ping -M do -s 1472 -c 2 192.168.20.10     # 1472 + 8 ICMP + 20 IP = exactly 1500
-ping -M do -s 1473 -c 2 192.168.20.10     # one byte over
+ping -M do -s 1472 -c 2 10.10.20.10     # 1472 + 8 ICMP + 20 IP = exactly 1500
+ping -M do -s 1473 -c 2 10.10.20.10     # one byte over
 ```
 
 Expected excerpt:
 
 ```text
-1480 bytes from 192.168.20.10: icmp_seq=1 ttl=63 time=1.42 ms
+1480 bytes from 10.10.20.10: icmp_seq=1 ttl=63 time=1.42 ms
 
 ping: local error: message too long, mtu=1500
 ```
@@ -116,15 +117,15 @@ ping: local error: message too long, mtu=1500
 The `-M do` flag sets DF, so the kernel refuses rather than fragments. If the first command succeeds and the second fails locally, your own MTU is 1500 and the path is fine. If a *smaller* size fails with no reply at all — silence rather than a local error — a device on the path is discarding oversized packets without signalling, and you have found the black hole. Tunnels are the usual culprit, because each layer of encapsulation subtracts from the usable payload.
 
 ```bash
-tracepath 192.168.20.10
+tracepath 10.10.20.10
 ```
 
 Expected excerpt:
 
 ```text
- 1:  192.168.10.1       0.412ms
- 2:  192.168.30.1       1.104ms  pmtu 1420
- 3:  192.168.20.10      1.881ms  reached
+ 1:  10.10.10.1       0.412ms
+ 2:  10.10.30.1       1.104ms  pmtu 1420
+ 3:  10.10.20.10      1.881ms  reached
      Resume: pmtu 1420 hops 3
 ```
 
@@ -142,44 +143,13 @@ Header fields also leak. Initial TTL narrows the sender's operating system. IP i
 
 Any capture described here must be performed only on networks and systems within an authorized scope, since packet capture exposes the contents of other parties' traffic.
 
-## Authorized Lab: Add a Layer and Watch the Budget Shrink
+## Summary
 
-On two isolated lab VMs you control, observe encapsulation overhead directly.
+You should now be able to:
 
-1. On VM-A, record the baseline: `ip link show eth0` and note `mtu 1500`.
-2. Find the largest payload that fits without fragmentation:
-
-```bash
-ping -M do -s 1472 -c 2 <VM-B address>     # succeeds
-ping -M do -s 1473 -c 2 <VM-B address>     # fails locally
-```
-
-3. Create a tunnel interface between the two VMs (any encapsulation your lab supports — GRE, WireGuard, or an IP-in-IP tunnel is fine). Record its MTU with `ip link show <tunnel>`; it will be lower than 1500 by the size of the added headers.
-4. Repeat the sweep across the tunnel address. The largest successful size drops by exactly the encapsulation overhead.
-5. Capture one packet on the underlying interface while sending across the tunnel:
-
-```bash
-sudo tcpdump -i eth0 -nn -c 1 -v host <VM-B address>
-```
-
-Observe two IP headers in the single frame — the outer tunnel header and the inner original packet.
-
-6. Remove the tunnel interface (`sudo ip link del <tunnel>`) and confirm the baseline MTU and ping sweep return to their original values.
-
-Expected interpretation:
-
-```text
-Direct path      -> max unfragmented payload 1472, one IP header per frame
-Through tunnel   -> max payload reduced by the encapsulation overhead
-Capture          -> outer header routes the tunnel; inner header is the real conversation
-After teardown   -> baseline restored, proving the change was the tunnel
-```
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** Name the PDU at each layer, explain what a header is, and identify the three demultiplexing keys that let a receiver parse a frame.
-- **Operator:** Read a verbose capture and attribute each field to its layer; diagnose an MTU problem with a DF-set payload sweep and explain why the connection succeeded for small responses.
-- **Root:** Explain why the link header is rebuilt every hop while the IP header survives end-to-end; describe how a PMTU black hole forms from a well-intentioned ICMP block, and why differing fragment-reassembly behaviour between an inspection device and a host constitutes an evasion surface.
+- Name the PDU at each layer, explain what a header is, and identify the three demultiplexing keys that let a receiver parse a frame.
+- Read a verbose capture and attribute each field to its layer; diagnose an MTU problem with a DF-set payload sweep and explain why the connection succeeded for small responses.
+- Explain why the link header is rebuilt every hop while the IP header survives end-to-end; describe how a PMTU black hole forms from a well-intentioned ICMP block, and why differing fragment-reassembly behaviour between an inspection device and a host constitutes an evasion surface.
 
 ---
 > 🔼 Up: [[Network Foundations]]

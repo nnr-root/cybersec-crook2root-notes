@@ -1,6 +1,6 @@
 ---
 title: "CRLF Injection"
-tags: [tree/offensive, cyber/offensive/web/injection/crlf, type/technique, level/root]
+tags: [tree/offensive, cyber/offensive/web/injection/crlf, type/technique, difficulty/hard]
 Domain: "[[Web Injection Testing]]"
 Color: "#DC143C"
 ---
@@ -158,54 +158,13 @@ Response-side monitoring should flag headers absent from the route’s normal al
 
 The application team replaced string assignment with a validated redirect helper restricted to relative paths, upgraded the framework, and rejected control bytes after final decoding. Regression tests cover lowercase and uppercase percent encoding, double encoding, mixed `%0d`/literal characters, Unicode separators, duplicate parameters, and HTTP/2-to-HTTP/1 downgrade. Purple-team replay confirmed no canary header at origin or edge and consistent HTTP 400 telemetry.
 
-## Runnable Lab (one machine, Python)
+## Summary
 
-HTTP/1.x headers are separated by `\r\n` (CRLF). If a value reflected into a header isn't filtered, an injected CRLF ends the intended header and starts an attacker-chosen one; a double CRLF ends the header block and begins a body (classic *response splitting*). This lab shows the byte-level mechanism with `repr()` so the control characters are visible.
+You should now be able to:
 
-**Step 1 — vulnerable vs. filtered header builders (`crlf.py`).**
-
-```python
-def vuln(v):
-    return "HTTP/1.1 200 OK\r\nContent-Language: " + v + "\r\n"   # no filtering
-def fixed(v):
-    if any(c in v for c in "\r\n"): raise ValueError("rejected control char in header value")
-    return "HTTP/1.1 200 OK\r\nContent-Language: " + v + "\r\n"
-```
-
-**Step 2 — a benign value stays on one header line.**
-
-```console
->>> repr(vuln("en"))
-"'HTTP/1.1 200 OK\\r\\nContent-Language: en\\r\\n'"
-```
-
-**Step 3 — inject `\r\n` to smuggle a `Set-Cookie` header (and a body).**
-
-```console
->>> repr(vuln("en\r\nSet-Cookie: admin=1"))
-"'HTTP/1.1 200 OK\\r\\nContent-Language: en\\r\\nSet-Cookie: admin=1\\r\\n'"
-```
-
-The injected `\r\n` created a second, attacker-controlled `Set-Cookie` header the developer never wrote — extend it with `\r\n\r\n<html>` and everything after becomes the response body.
-
-**Step 4 — the deliberate break: the filter rejects it.**
-
-```console
->>> fixed("en\r\nSet-Cookie: admin=1")
-ValueError: rejected control char in header value
-```
-
-Rejecting `\r`/`\n` *after final decoding* is the fix; a framework's validated redirect/header API does this for you. Note it must run after URL-decoding, since attackers send `%0d%0a`.
-
-**Step 5 — cleanup:** pure string construction, no I/O — no cleanup required.
-
-**What you should now be able to do:** see why `\r\n` in a reflected header value is dangerous, distinguish header injection from full response splitting, and state where in the pipeline the control-character check must sit.
-
-## Crook → Operator → Root Checkpoint
-
-- **Crook:** What two bytes separate HTTP headers, and what happens when a user controls them inside a header value?
-- **Operator:** You control the `Location` header of a 302. Describe a *bounded, authorized* canary that proves injection without poisoning a shared cache.
-- **Root:** Explain why HTTP/2 is largely immune to classic CRLF splitting, and how an HTTP/2-to-HTTP/1 downgrade at a proxy can reintroduce it.
+- What two bytes separate HTTP headers, and what happens when a user controls them inside a header value?
+- You control the `Location` header of a 302. Describe a *bounded, authorized* canary that proves injection without poisoning a shared cache.
+- Explain why HTTP/2 is largely immune to classic CRLF splitting, and how an HTTP/2-to-HTTP/1 downgrade at a proxy can reintroduce it.
 
 ---
 > 🔼 Up: [[Web Injection Testing]]

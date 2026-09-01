@@ -1,7 +1,7 @@
 ---
 title: "name-that-hash"
 aliases: ["name-that-hash", "nth", "name that hash"]
-tags: [tree/tooling, cyber/tooling/offensive/cracking/nth, type/tool, level/operator]
+tags: [tree/tooling, cyber/tooling/offensive/cracking/nth, type/tool, difficulty/medium]
 Domain: "[[Password Cracking Tools]]"
 Color: "#708090"
 ---
@@ -16,15 +16,11 @@ name-that-hash (`nth`) answers the very first question of any cracking job: **"w
 ## Parent Learning Order
 name-that-hash -> hash-identifier -> John the Ripper -> Hashcat
 
-## Crook — The Mental Model
+## Different algorithms leave different shapes
 
 A hash is a fixed-length fingerprint of some input, but different algorithms leave different **shapes**. An unsalted MD5 is 32 hex characters; SHA-1 is 40; bcrypt starts with `$2b$`; a Windows dump gives you `LM:NTLM` pairs separated by a colon. You do not need to memorise them all — you need to *read the signals*.
 
-![[tool_hash_anatomy.svg]]
-
-The diagram above is the whole skill in one picture: **prefix**, **length**, and **charset/separators** are the three fingerprints. `nth` automates reading them, but understanding *why* `$2b$` means bcrypt (and therefore "slow, GPU-resistant") is what lets you judge whether cracking is even worth attempting.
-
-## Operator — Make It Work
+## Identifying one hash, with the crack modes attached
 
 Install and identify a single hash with `-t` (text):
 
@@ -50,7 +46,7 @@ $krb5tgs$23$...   Kerberos 5 TGS-REP etype 23, HC: 13100  JtR: krb5tgs
 
 That last line is the payoff: `nth` recognised a Kerberoast ticket and told you to run `hashcat -m 13100` — the exact bridge from **Impacket**'s `GetUserSPNs` to a crack.
 
-## Root — Internals & The Deliberate Break
+## Reasoning about format instead of matching a database
 
 `nth` matches against a library of **regexes and structural rules**, not a database of known hashes — it reasons about format, so it works on values it has never seen. That design has a sharp edge: when a hash has **no prefix and a common length**, structure alone cannot decide.
 
@@ -65,11 +61,13 @@ Most Likely
 
 Edge cases worth knowing: salted formats (`$id$salt$hash`) are self-describing and unambiguous; raw hashes are not. Truncated or encoded hashes (base64 vs hex) change the length signal — decode first. And `nth` reports *format*, never *strength*: it will happily identify a bcrypt hash it could never help you crack.
 
-## Crook → Operator → Root Checkpoint
+## Summary
 
-- **Crook:** What three visual signals let you identify a hash type by eye?
-- **Operator:** `nth` returns both MD5 and NTLM for a 32-hex value. How do you decide which mode to actually run?
-- **Root:** Explain why a prefixed hash like `$2b$...` is unambiguous but a bare 32-hex string is not, and what goes wrong if you crack with the wrong `-m`.
+You should now be able to:
+
+- What three visual signals let you identify a hash type by eye?
+- `nth` returns both MD5 and NTLM for a 32-hex value. How do you decide which mode to actually run?
+- Explain why a prefixed hash like `$2b$...` is unambiguous but a bare 32-hex string is not, and what goes wrong if you crack with the wrong `-m`.
 
 ---
 > 🔼 Up: [[Password Cracking Tools]]
