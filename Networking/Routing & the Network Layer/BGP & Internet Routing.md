@@ -78,7 +78,7 @@ operator@router-c:~$ sudo vtysh -c "show ip bgp 203.0.113.0/24"
 BGP routing table entry for 203.0.113.0/24
 Paths: (1 available, best #1, table default)
   65002 65001
-    10.0.23.2 from 10.0.23.2 (10.0.0.2)
+    192.0.2.23 from 192.0.2.23 (192.0.2.2)
       Origin IGP, valid, external, best (First path received)
       Last update: Sun Apr 12 09:41:18 2026
 ```
@@ -94,8 +94,8 @@ that /24, and the table changes without complaint:
 ```shell-session
 operator@router-c:~$ sudo vtysh -c "show ip bgp"
    Network          Next Hop      Metric LocPrf Weight Path
-*> 203.0.113.0/24   10.0.23.2                       0 65002 65001 i
-*> 203.0.113.0/25   10.0.13.2                       0 65003 i
+*> 203.0.113.0/24   192.0.2.23                       0 65002 65001 i
+*> 203.0.113.0/25   192.0.2.13                       0 65003 i
 ```
 
 Both routes are marked `*>` — valid and best *for their own prefix*. Nothing is
@@ -107,7 +107,7 @@ range now leaves toward AS 65003:
 operator@router-c:~$ sudo vtysh -c "show ip route 203.0.113.20"
 Routing entry for 203.0.113.0/25
   Known via "bgp", distance 20, metric 0, best
-  * 10.0.13.2, via eth1
+  * 192.0.2.13, via eth1
 ```
 
 This is the shape of almost every real hijack. Nothing was overwritten, no alarm
@@ -122,7 +122,7 @@ everywhere it propagates, which is why a hijack of a /25 out of someone else's
 ```shell-session
 operator@router-c:~$ sudo vtysh -c "show bgp ipv4 unicast rpki invalid"
    Network          Next Hop      Path
-*  203.0.113.0/25   10.0.13.2     65003 i
+*  203.0.113.0/25   192.0.2.13     65003 i
 ```
 
 The route is now marked `invalid` and, with a policy that acts on that state, is

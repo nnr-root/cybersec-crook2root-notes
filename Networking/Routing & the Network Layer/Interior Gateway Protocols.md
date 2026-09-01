@@ -80,8 +80,8 @@ ip route show proto ospf
 Expected excerpt:
 
 ```text
-10.0.20.0/24 via 10.0.255.2 dev eth1 proto ospf metric 20
-10.0.30.0/24 via 10.0.255.6 dev eth2 proto ospf metric 30
+10.10.20.0/24 via 10.10.250.2 dev eth1 proto ospf metric 20
+10.10.30.0/24 via 10.10.250.6 dev eth2 proto ospf metric 30
 ```
 
 `proto ospf` marks these as learned dynamically rather than configured by hand. The metrics reflect the computed path cost, and if a link fails, these entries update automatically as the protocol reconverges — the behaviour static routing cannot provide.

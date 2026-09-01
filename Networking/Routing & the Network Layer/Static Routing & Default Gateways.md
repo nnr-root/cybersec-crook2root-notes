@@ -41,15 +41,15 @@ flowchart TD
 The diagram exposes the defining weakness on its right edge: the forwarding decision is made purely from the configured table, and nothing verifies that the chosen next hop is alive. A static route is obeyed identically whether the gateway is healthy or failed.
 
 ```bash
-sudo ip route add 10.20.0.0/16 via 192.168.10.254
-sudo ip route add default via 192.168.10.1
+sudo ip route add 10.20.0.0/16 via 10.10.10.254
+sudo ip route add default via 10.10.10.1
 ```
 
 Expected result in the table:
 
 ```text
-default via 192.168.10.1 dev eth0
-10.20.0.0/16 via 192.168.10.254 dev eth0 proto static
+default via 10.10.10.1 dev eth0
+10.20.0.0/16 via 10.10.10.254 dev eth0 proto static
 ```
 
 The `proto static` marker distinguishes these from routes the kernel derived or a protocol learned. They persist exactly as written, which is both their strength and their weakness.
@@ -91,14 +91,14 @@ Diagnose a dead static next hop:
 
 ```bash
 ip route get 10.20.5.5
-ping -c 2 192.168.10.254
+ping -c 2 10.10.10.254
 ```
 
 Expected excerpt when the next hop is down:
 
 ```text
-10.20.5.5 via 192.168.10.254 dev eth0 src 192.168.10.24
---- 192.168.10.254 ping statistics ---
+10.20.5.5 via 10.10.10.254 dev eth0 src 10.10.10.14
+--- 10.10.10.254 ping statistics ---
 2 packets transmitted, 0 received, 100% packet loss
 ```
 

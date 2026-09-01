@@ -42,16 +42,16 @@ The mechanism is elegant: two or more physical routers cooperate to present a si
 
 ```mermaid
 sequenceDiagram
-    participant H as Host (gateway = 192.168.10.1 virtual)
+    participant H as Host (gateway = 10.10.10.1 virtual)
     participant A as Router A (active, holds virtual IP)
     participant B as Router B (standby)
-    H->>A: Traffic to virtual gateway 192.168.10.1
+    H->>A: Traffic to virtual gateway 10.10.10.1
     A->>A: Forwards normally
     A-->>B: Periodic hello ("I am alive")
     Note over A: Router A fails
     B->>B: Hellos stop -> take over virtual IP + virtual MAC
     B-->>H: Gratuitous ARP: virtual MAC is now here
-    H->>B: Traffic to 192.168.10.1 continues, unaware anything changed
+    H->>B: Traffic to 10.10.10.1 continues, unaware anything changed
 ```
 
 The critical detail is the **virtual MAC**. Because the standby takes over not just the virtual IP but the same virtual MAC, the host's ARP cache is still correct after failover — the gateway is still at the same MAC address, just reachable through a different physical router now. The host does not need to re-resolve ARP, which is what makes failover fast and transparent. The standby sends a gratuitous ARP so the switches update which port leads to the virtual MAC, and traffic continues within seconds.
@@ -67,7 +67,7 @@ Expected excerpt:
 ```text
 Keepalived_vrrp: VRRP_Instance(VI_1) Entering MASTER STATE
 Keepalived_vrrp: VRRP_Instance(VI_1) setting protocol VIPs.
-Keepalived_vrrp: Sending gratuitous ARP on eth0 for 192.168.10.1
+Keepalived_vrrp: Sending gratuitous ARP on eth0 for 10.10.10.1
 ```
 
 `Entering MASTER STATE` followed by the gratuitous ARP is a failover in the logs: this router has taken over the virtual IP and told the segment where it now lives.

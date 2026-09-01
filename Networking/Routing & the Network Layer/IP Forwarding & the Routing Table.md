@@ -33,16 +33,16 @@ ip route
 Expected excerpt:
 
 ```text
-default via 192.168.10.1 dev eth0 proto dhcp metric 100
-192.168.10.0/24 dev eth0 proto kernel scope link src 192.168.10.24
-10.8.0.0/24 via 192.168.10.254 dev eth0 proto static metric 50
+default via 10.10.10.1 dev eth0 proto dhcp metric 100
+10.10.10.0/24 dev eth0 proto kernel scope link src 10.10.10.14
+10.10.20.0/24 via 10.10.10.254 dev eth0 proto static metric 50
 ```
 
 Three route types appear here, and reading them fluently is the whole skill:
 
-- **`192.168.10.0/24 dev eth0 scope link`** — a directly connected network. `scope link` means these destinations are reachable without a gateway; the kernel added this automatically when the interface got its address.
-- **`default via 192.168.10.1`** — the route of last resort, `0.0.0.0/0`, matching anything not matched more specifically. Its next hop is the gateway.
-- **`10.8.0.0/24 via 192.168.10.254`** — a specific route to a particular network through a different next hop, added by an administrator (`proto static`).
+- **`10.10.10.0/24 dev eth0 scope link`** — a directly connected network. `scope link` means these destinations are reachable without a gateway; the kernel added this automatically when the interface got its address.
+- **`default via 10.10.10.1`** — the route of last resort, `0.0.0.0/0`, matching anything not matched more specifically. Its next hop is the gateway.
+- **`10.10.20.0/24 via 10.10.10.254`** — a specific route to a particular network through a different next hop, added by an administrator (`proto static`).
 
 **Prerequisites:** IP addressing, subnet masks, and the idea of a default gateway.
 
@@ -53,34 +53,34 @@ Three route types appear here, and reading them fluently is the whole skill:
 
 When several routes match a destination, the router does **not** pick the first, the cheapest, or the newest. It picks the one with the **longest prefix** — the most specific route, the one with the most network bits fixed. Metric only breaks ties between routes of equal prefix length.
 
-Consider a destination `10.8.0.50` against this table:
+Consider a destination `10.10.20.50` against this table:
 
 ```text
-0.0.0.0/0        via 192.168.10.1     (prefix length 0)
-10.0.0.0/8       via 192.168.10.200   (prefix length 8)
-10.8.0.0/24      via 192.168.10.254   (prefix length 24)
-10.8.0.50/32     via 192.168.10.99    (prefix length 32)
+0.0.0.0/0        via 10.10.10.1     (prefix length 0)
+10.10.0.0/16     via 10.10.10.200   (prefix length 16)
+10.10.20.0/24    via 10.10.10.254   (prefix length 24)
+10.10.20.50/32   via 10.10.10.99    (prefix length 32)
 ```
 
-All four match `10.8.0.50` — the default matches everything, `/8` matches all of `10.x`, `/24` matches `10.8.0.x`, and `/32` matches this exact host. Longest-prefix match selects the `/32`. Ask the kernel to confirm the decision without sending anything:
+All four match `10.10.20.50` — the default matches everything, `/16` matches all of `10.10.x`, `/24` matches `10.10.20.x`, and `/32` matches this exact host. Longest-prefix match selects the `/32`. Ask the kernel to confirm the decision without sending anything:
 
 ```bash
-ip route get 10.8.0.50
+ip route get 10.10.20.50
 ```
 
 Expected excerpt:
 
 ```text
-10.8.0.50 via 192.168.10.99 dev eth0 src 192.168.10.24
+10.10.20.50 via 10.10.10.99 dev eth0 src 10.10.10.14
 ```
 
 `ip route get` is the single most valuable routing diagnostic: it reports the exact decision the kernel will make for a destination, resolving all the overlapping routes for you. Trace several destinations and the rule becomes concrete:
 
 ```text
-10.8.0.50   -> via .99   (matched the /32, most specific)
-10.8.0.77   -> via .254  (matched the /24)
-10.9.0.5    -> via .200  (matched the /8)
-8.8.8.8     -> via .1    (matched only the default)
+10.10.20.50   -> via .99   (matched the /32, most specific)
+10.10.20.77   -> via .254  (matched the /24)
+10.10.99.5    -> via .200  (matched the /16)
+8.8.8.8       -> via .1    (matched only the default)
 ```
 
 ```mermaid

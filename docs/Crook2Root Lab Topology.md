@@ -22,6 +22,7 @@ ever collide with a real host, a real domain, or a real organisation.
 | Domain | `meridian.test` | RFC 6761 — `.test` is permanently reserved and can never be registered |
 | Public IPv4 | `203.0.113.0/24` | RFC 5737 TEST-NET-3 |
 | Second public range | `198.51.100.0/24` | RFC 5737 TEST-NET-2 (attacker infrastructure) |
+| Third public range | `192.0.2.0/24` | RFC 5737 TEST-NET-1 (upstream providers and BGP peers — inter-AS links are public by nature) |
 | Private IPv4 | `10.10.0.0/16`, `10.20.0.0/24` | RFC 1918 |
 | MAC addresses | `00:00:5E:00:53:00`–`FF` | RFC 7042 §2.1.2, reserved for documentation |
 | Cloud metadata | `169.254.169.254` | link-local, the real metadata address |
