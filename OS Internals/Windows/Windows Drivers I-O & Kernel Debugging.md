@@ -55,6 +55,14 @@ sequenceDiagram
     IO-->>App: Win32 result & bytes returned
 ```
 
+**The deliberate break:** a driver sounds like a program for a device — a translator that sits between Windows and your printer, with about as much reach as a printer deserves.
+
+A driver runs in **kernel mode**, in the same address space as the kernel, with no memory protection separating it from anything else. There is no such thing as a driver bug confined to its device. A flaw in a graphics or peripheral driver is arbitrary code execution at ring 0, which is the top of the machine — above the kernel's own defences, above EDR, above every user-mode boundary you were relying on.
+
+Worse, being **signed does not mean being safe**. A legitimately signed driver with a legitimate vulnerability is a fully trusted way into the kernel, which is the entire basis of BYOVD — bring your own vulnerable driver — where an attacker installs a signed, known-buggy driver precisely because Windows will load it.
+
+**How you'd spot it:** a signed driver from a real vendor, loaded on a machine that has none of that vendor's hardware, is the shape of a BYOVD attack.
+
 ## I/O Manager & IRPs
 
 The I/O Manager converts Win32 operations into I/O Request Packets. An IRP has a major function such as create, read, write, device control, cleanup, or close; an I/O status block; one stack location per participating driver; and buffer metadata. Layered drivers each inspect their stack location, optionally install a completion routine, and pass the request downward.

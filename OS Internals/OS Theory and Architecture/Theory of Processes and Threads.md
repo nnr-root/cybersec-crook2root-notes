@@ -42,6 +42,14 @@ Read the note in three passes. At **A beginner** level, follow ownership and lif
 > [!tip] The analogy, and where it breaks
 > A restaurant kitchen: the recipe is the program, a chef actually cooking it is the process, and several chefs sharing one worktop are threads. The analogy breaks on the sharing — two chefs reaching for the same knife merely wait their turn, whereas two threads touching the same memory without coordination can leave it half-written and corrupt, which is why locks and memory ordering exist at all.
 
+**The deliberate break:** "process" and "program" get used interchangeably, so it is natural to think of a running program as the program itself, in motion.
+
+A **program is a file** — bytes on disk, inert, identical every time you look at it. A **process is a program plus everything the kernel had to invent to run it**: an address space, a PID, open file descriptors, a credential set, a scheduling state, a parent. Open the same binary twice and you have two processes that share the file and nothing else — separate memory, separate descriptors, and no ability to see each other's data.
+
+That distinction is the whole basis of process isolation, and it is why "the malware is `svchost.exe`" is never a finding. The file may be Microsoft's, signed and unmodified; what matters is the process built around it — its parent, its command line, and what it opened.
+
+**How you'd spot it:** compare the binary and the process separately. A legitimate path with an illegitimate **parent** (`winword.exe` spawning `powershell.exe`) is the signal, and no amount of hashing the file will show it.
+
 ## 1. From Program to Process
 
 Launching a program causes the kernel to construct an execution environment. It maps executable segments and libraries, creates a virtual address space, initializes credentials and resource limits, opens inherited handles, builds an initial stack, and creates at least one thread. The process is therefore more than code: it is a **container of resources and authority**.
@@ -59,6 +67,7 @@ The kernel records that container in a **Process Control Block (PCB)**. Implemen
 | Accounting | limits, cgroup/job membership, audit identity | containment, billing, and investigation |
 
 The executable's entry point is not necessarily the first user instruction. A dynamic loader may map libraries, apply relocations, initialize thread-local storage, and invoke constructors first. For defenders, this explains why execution provenance includes loaders and shared objects. For authorized security research, it explains why writable loader state, inherited handles, or unsafe library search paths can alter behavior before `main()` executes.
+
 
 ## 2. Process States & Lifecycle
 

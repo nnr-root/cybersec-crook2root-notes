@@ -64,6 +64,12 @@ Optimizing one metric can damage another. Large batches maximize throughput but 
 
 A **non-preemptive** policy lets a running task continue until it exits or blocks. A **preemptive** policy can interrupt it, usually after a timer event or when higher-priority work becomes runnable. Preemption improves responsiveness and fault containment but creates synchronization requirements inside kernels and applications.
 
+**The deliberate break:** the obviously best scheduler is the one that runs the shortest job first — it provably minimises average waiting time, and the proof is not in dispute.
+
+You cannot build it. Shortest-Job-First requires knowing how long each job will run *before* running it, and the operating system has no way to know that. Every real scheduler is therefore an approximation of an optimum it can never reach, guessing future burst length from past behaviour. Once you see that, the entire progression in this note stops being a list of algorithms and becomes a sequence of increasingly good guesses about a fundamentally unknowable quantity.
+
+**How you'd spot the failure:** starvation and priority inversion look alike from outside — a task that never runs. Starvation means higher-priority work keeps arriving; inversion means a *lower*-priority task holds a lock the high-priority one needs. The fix for one makes the other worse, so identify which you have before touching priorities.
+
 ## 2. FCFS, SJF & SRTF
 
 **First-Come, First-Served (FCFS)** is a FIFO queue. It is simple and avoids starvation if jobs eventually finish, but a long CPU-bound task at the head creates the **convoy effect**: short I/O-bound tasks wait, devices become idle, then all wake together.

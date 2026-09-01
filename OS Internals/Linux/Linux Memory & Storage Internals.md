@@ -66,6 +66,12 @@ Minor (reclaiming a frame) page faults: 211
 Major (requiring I/O) page faults: 0
 ```
 
+**The deliberate break:** run `free -h` on a healthy Linux server and it will report almost no free memory. The reasonable conclusion — the box needs more RAM — is wrong often enough that it has its own website.
+
+Most of what looks consumed is **page cache**: copies of file data the kernel is holding because the memory was otherwise idle, and which it will hand back the instant anything asks. Unused RAM is wasted RAM, so Linux deliberately fills it. The number that answers "am I short of memory" is the **`available`** column, which already accounts for what is reclaimable — not `free`.
+
+**How you'd spot real pressure:** `available` approaching zero, swap actively being written, or `pgscan`/`pgsteal` climbing in `/proc/vmstat`. A full `free` column with healthy `available` is a working system, not a sick one.
+
 ## Physical allocation: buddy, SLUB & huge pages
 
 The page allocator organizes free physical pages by order using the **buddy allocator**. Adjacent free buddies combine into larger power-of-two blocks; allocations split larger blocks as needed. Fragmentation can prevent high-order allocations even when total free memory appears sufficient. Zones represent addressing and device constraints, while NUMA nodes represent locality to CPU and memory controllers.

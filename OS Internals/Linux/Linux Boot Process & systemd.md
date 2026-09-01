@@ -60,6 +60,7 @@ sequenceDiagram
     S->>U: Start targets, sockets, mounts & services
 ```
 
+
 ## Firmware, boot entries & kernel command line
 
 UEFI boot variables identify loader paths and order. `efibootmgr -v` displays them. The EFI System Partition is normally FAT and mounted at `/boot/efi`; access should be restricted because modifying a trusted loader path can persist below userspace. Measured boot extends hashes into TPM Platform Configuration Registers, enabling remote attestation or secrets bound to expected measurements. It complements Secure Boot by recording what executed.
@@ -95,6 +96,12 @@ $ systemd-analyze time
 Startup finished in 8.421s (firmware) + 2.318s (loader) + 3.774s (kernel) + 6.902s (userspace) = 21.416s
 graphical.target reached after 6.201s in userspace.
 ```
+
+**The deliberate break:** systemd is often described as "init with more features," which implies it does the same thing in the same order, only bigger.
+
+It does not run things in an order at all. systemd is a **dependency engine**: it starts everything whose dependencies are satisfied, in parallel, as soon as they are satisfied. There is no script executing top to bottom. That is why boot got faster, and it is also why a service that "worked yesterday" can fail today with no configuration change — the race it had been winning, it lost. If you are looking for the line that starts your service, there isn't one; there is a declared relationship, and it may not say what you assume.
+
+**How you'd spot it:** `systemd-analyze critical-chain` shows what actually gated the boot, and `systemctl list-dependencies` shows the relationships. A service failing intermittently at boot is almost always a missing `After=` or `Requires=`, not a broken service.
 
 ## systemd: dependency engine & supervisor
 

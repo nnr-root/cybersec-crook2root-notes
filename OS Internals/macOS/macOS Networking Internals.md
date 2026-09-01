@@ -88,6 +88,12 @@ IPv6 is enabled by default and often preferred. Link-local addresses use an inte
 > [!tip] The analogy, and where it breaks
 > A building where each department may have its own preferred courier and address book, rather than one central mailroom. The analogy breaks in the confusion it creates: name resolution can legitimately return *different answers* depending on which interface or VPN the request is scoped to, so 'DNS is broken' often means 'a different resolver answered than you assumed'.
 
+**The deliberate break:** macOS is Unix, the shell is familiar, and `ifconfig` and `netstat` are right there — so it is reasonable to assume Linux networking knowledge transfers directly.
+
+The userland is BSD-derived, but the parts that decide what actually happens are Apple's and have no Linux equivalent. Filtering is `pf`, not iptables or nftables. Network Extensions and content filters can intercept traffic above the packet layer entirely, so a rule set that looks permissive may still be blocked by a system extension. And several familiar tools report a *stale or partial* view: `netstat -rn` on macOS does not show you everything routing decisions consult.
+
+**How you'd spot it:** if the firewall rules say allow and the traffic does not flow, look for a Network Extension or the Application Firewall before you re-read the `pf` rules — they are enforced somewhere the packet filter cannot see.
+
 ## DNS, Sockets, Routes & Packet Evidence
 
 ### Scoped DNS & Proxies

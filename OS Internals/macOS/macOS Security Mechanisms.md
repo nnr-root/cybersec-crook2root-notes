@@ -61,6 +61,12 @@ No single layer guarantees benign behavior. A validly signed and notarized appli
 > [!tip] The analogy, and where it breaks
 > Layered checks on a new arrival: a reference check before entry, an identity check at the door, a supervisor watching behaviour inside, and locked rooms even staff cannot enter. The analogy breaks because one of those locks binds the *owner* too — System Integrity Protection restricts even the administrator, which no ordinary building would impose on its landlord.
 
+**The deliberate break:** "macOS checks apps before they run, so a signed app has been vetted." Signing and notarisation prove **provenance**, not safety — they establish who shipped the code and that it has not been altered since, which is a different claim from whether it is benign.
+
+And the check is conditional. Gatekeeper evaluates a file because it carries the `com.apple.quarantine` attribute, which the *downloading application* attaches. A file that arrives by a route that does not set it — a `curl` in a terminal, an archive extracted by a tool that drops attributes, a mounted share — is not quarantined, and Gatekeeper never looks at it. The gate is real; it just is not on every door.
+
+**How you'd spot it:** `xattr -p com.apple.quarantine <file>` tells you whether the file will be evaluated at all. No attribute, no Gatekeeper.
+
 ## Mechanisms & Validation
 
 ### Quarantine, Gatekeeper & Notarization
