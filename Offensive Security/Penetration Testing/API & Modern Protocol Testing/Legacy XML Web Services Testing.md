@@ -43,6 +43,14 @@ curl -s "http://127.0.0.1:8099/service?wsdl" | grep -oE '<operation name="[^"]*"
 
 The WSDL just revealed a `TransferFunds` operation with `accountId` and `amount` parameters — the entire sensitive surface, enumerated in one request. An exposed WSDL is a reconnaissance gift, and restricting it to internal networks is a standard hardening.
 
+**The deliberate break:** SOAP is legacy, everything moved to REST and JSON years ago, so an XML service is a low-priority curiosity.
+
+Legacy is precisely where the severe findings live. These services are old, which means the XML parsers behind them are old, and older parsers **resolve external entities by default** — that is the entire condition for XXE, a flaw that reads files off the server and reaches internal hosts it should never reach. They are also, by virtue of being enterprise middleware, usually the systems holding the data worth reading: payments, HR, order processing, the integrations nobody dares touch. And because they are unfashionable, they attract the least review.
+
+There is one more asymmetry in the tester's favour, and it is unusual. Where a REST API makes you guess at endpoints, a **WSDL hands over the complete contract** — every operation, every parameter, every type — as a published document. The enumeration phase that dominates modern API testing is simply given to you.
+
+**How you'd spot the surface:** ask for the WSDL first (commonly `?wsdl` on the endpoint). If it answers, you have the full operation list before sending a single test — and any operation taking an XML document is an XXE candidate worth a benign, out-of-band canary.
+
 ## SOAP Testing: Structure and Auth
 
 SOAP messages are XML envelopes. Testing exercises the operations the WSDL revealed, probing:

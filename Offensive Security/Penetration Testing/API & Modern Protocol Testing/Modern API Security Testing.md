@@ -37,6 +37,14 @@ The same security questions apply to all three, but *where and how you test* dif
 
 The key insight: **a control that works for one style may not exist for another.** A per-endpoint REST rate limit is meaningless for GraphQL's single endpoint, where one crafted deeply-nested query can demand enormous work. A WAF reading JSON cannot inspect gRPC's binary frames. Choosing an API style is partly choosing a security posture, and testing must match the style.
 
+**The deliberate break:** the web application was tested and the API sits behind the same authentication, so the API is covered. The front end calls it, after all — testing one tested the other.
+
+The UI is a **client**, and it enforces things the API does not. It shows you only your own orders, offers only the actions your role permits, and submits only fields the form contains — none of which the server necessarily re-checks. Every one of those UI-side constraints is a control an attacker simply does not use, which is why **BOLA** (object-level authorisation failure) is consistently the top API risk while being nearly invisible from the front end.
+
+The surface is also larger than the interface suggests. Old versions stay routed after new ones ship, `/v1/` still answering months after `/v2/` became the only documented path. Endpoints exist for mobile clients, for partners, for internal tooling, and appear in no documentation the client will hand you.
+
+**How you'd spot it:** take an object identifier from your own account and request it with another account's token. Then take a documented path and try the previous version number. Both are single requests, and both routinely succeed.
+
 ## REST: Path and Method Testing
 
 REST maps to HTTP methods, so testing exercises them: does `DELETE /orders/42` work without authorization? Does an old `/v1/` endpoint with weaker checks still exist? The signature REST finding is **broken object-level authorization (BOLA/IDOR)** — accessing `/orders/42` with a valid token that belongs to a *different* user:

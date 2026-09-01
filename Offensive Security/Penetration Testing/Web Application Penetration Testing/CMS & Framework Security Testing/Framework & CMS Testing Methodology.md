@@ -38,6 +38,14 @@ Every framework/CMS assessment is this loop, applied to whatever product is in f
 
 The highest-value findings usually come from steps 2 and 4: an **outdated version** with a known-exploited CVE, or a **misconfiguration** like debug mode left on. Neither requires framework-specific exploitation skill — just the disciplined loop.
 
+**The deliberate break:** identify the CMS, look up the version, search for CVEs against it. That is the obvious procedure, and on a maintained site it will return almost nothing — which is usually read as "this site is secure."
+
+The core is the part that gets patched. It has a vendor, an update mechanism, and an audience that notices. The attack surface is nearly always somewhere else: a **third-party plugin or theme** written by one person and abandoned, a **misconfiguration** that exposes an admin path or a debug endpoint, or **credentials** on a login page the CMS helpfully standardises the location of. A WordPress install running a current core alongside a plugin last updated in 2019 is the normal shape of a real finding.
+
+Treat the core version as a prerequisite check, not as the test. The question is not "which CMS is this" but "**what did somebody bolt onto it, and who maintains that**".
+
+**How you'd spot the real surface:** enumerate plugins and themes with versions, then rank them by *whether anyone still maintains them* before ranking by CVE. An unmaintained plugin with no CVE is a better lead than a patched core with three.
+
 ## Step 1-2: Fingerprinting and Versioning
 
 Frameworks leak their identity constantly. The tells:

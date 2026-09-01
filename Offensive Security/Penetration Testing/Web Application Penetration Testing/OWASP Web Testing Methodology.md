@@ -42,6 +42,14 @@ GET  /admin/export           administrator exports records
 
 For each route capture method, parameters, content type, authentication, role, object ownership, state change, data classification, and expected invariants.
 
+**The deliberate break:** the OWASP Top 10 is the list everyone knows, so "we tested the Top 10" sounds like a complete web assessment. It is not a test plan and was never meant to be one.
+
+The Top 10 is an **awareness document**: ten broad *risk categories*, ranked by prevalence and impact across the industry, published to tell organisations where attention generally belongs. It contains no procedures. The **Web Security Testing Guide** is the document with the procedures — hundreds of individual tests with identifiers — and the two are often confused because they carry the same logo.
+
+The difference shows up in coverage. A category like "Broken Access Control" tells you a class exists; it does not tell you to test horizontal *and* vertical authorisation, on every object, for every role, on every endpoint. And an assessment scoped to ten categories has no place at all for the flaws that belong to no category — the business-logic findings from the previous note, which are frequently the most valuable thing in the report.
+
+**How you'd spot a Top-10-shaped assessment:** the report's contents page is ten headings long and matches the Top 10 in order. Real coverage is tracked against WSTG test identifiers and states what was *not* tested, which is the half that tells a client what they still do not know.
+
 ## OWASP-aligned coverage
 
 | Area | Questions |
