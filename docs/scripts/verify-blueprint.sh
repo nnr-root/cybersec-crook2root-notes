@@ -18,7 +18,7 @@ echo
 echo "=== 3. YAML VALIDITY ==="
 python3 - <<'PY'
 import yaml
-for p in ["docs/templates/media-sidecar.example.yaml","docs/templates/higgsfield-style-tokens.yaml"]:
+for p in []:
     try: yaml.safe_load(open(p)); print("OK  ",p)
     except Exception as e: print("FAIL",p,e)
 PY

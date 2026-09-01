@@ -34,7 +34,7 @@ flowchart LR
         W4["CTFs & flag submission"]
         W5["Accounts & progress"]
     end
-    PUB -->|"content + images<br/>consumed as source"| PRIV
+    PUB -->|"content + diagrams<br/>consumed as source"| PRIV
     style PUB fill:#0f1420,stroke:#3CB44B,color:#fff
     style PRIV fill:#0f1420,stroke:#E6194B,color:#fff
 ```
@@ -42,9 +42,9 @@ flowchart LR
 | | **Public docs repo** (this one) | **Private website repo** |
 |:--|:--|:--|
 | Job | **Teaching** | **Assessment** |
-| Contains | Explanation, worked examples, images | Labs, questions, quizzes, CTFs, flags, progress |
+| Contains | Explanation, worked examples, Mermaid diagrams | Labs, questions, quizzes, CTFs, flags, progress |
 | Reader | Reads and learns | Does and is assessed |
-| Source of truth for | All lesson content and every image | User state, questions, lab definitions |
+| Source of truth for | All lesson content and every diagram | User state, questions, lab definitions |
 
 **The rule that keeps both simple:** if it asks the reader to *do* something and then checks whether they did it, it belongs in the private repo. If it explains a mechanism, it belongs here.
 
@@ -325,40 +325,46 @@ Roughly two thirds of a worked example is already written in the archive. **The 
 
 ---
 
-## 4. Pillar Three — Content & Media Production Pipeline
+## 4. Pillar Three — The Visual Standard
 
-Unchanged by the migration, and still the right model. AI generation is the **last** resort.
+**Superseded.** This pillar originally specified a five-tier media pipeline ending
+in AI-generated imagery, with authored SVGs for spatial subjects and terminal GIFs
+for command sequences. That model was abandoned: the AI-generated visuals read as
+AI-generated, all 227 image files were removed, and the repo became **Mermaid-only**.
+
+The decision procedure now has three outcomes, not five:
 
 ```mermaid
 flowchart TD
-    Q["Need a visual"] --> A{"Authoritative diagram<br/>already exists?"}
-    A -->|Yes| A1["✅ Tier 0 — REUSE<br/>RFC figures · Wikimedia CC · vendor docs<br/>Record source + licence"]
-    A -->|No| B{"Flow, sequence,<br/>state or architecture?"}
-    B -->|Yes| B1["✅ Tier 1 — MERMAID<br/>Free · diffable · theme-aware"]
-    B -->|No| C{"Spatial?<br/>byte / memory / register / disk"}
-    C -->|Yes| C1["✅ Tier 2 — AUTHORED SVG<br/>Mandatory per Standard §4<br/>dark #0f1420 · domain prefix<br/>⚠️ render & eyeball before commit"]
-    C -->|No| D{"Command sequence<br/>over time?"}
-    D -->|Yes| D1["✅ Tier 3 — TERMINAL GIF<br/>asciinema → agg → gifsicle<br/>capture script committed"]
-    D -->|No| E{"Concept with no<br/>true depiction?"}
-    E -->|Yes| E1["✅ Tier 4 — HIGGSFIELD AI<br/>Conceptual only. Never for accuracy.<br/>Requires written justification."]
-    E -->|No| F["❌ No visual."]
-    style A1 fill:#1a3a1a,stroke:#3CB44B,color:#fff
+    Q["Need a visual"] --> B{"Flow, sequence,<br/>state or architecture?"}
+    B -->|Yes| B1["✅ MERMAID<br/>free · diffable · theme-aware<br/>the default and usually the answer"]
+    B -->|No| C{"Spatial?<br/>byte / frame / memory / register"}
+    C -->|Yes| C1["✅ FIELD TABLE,<br/>FENCED ASCII LAYOUT,<br/>or ANNOTATED HEX DUMP<br/>Mermaid cannot express these"]
+    C -->|No| F["❌ No visual.<br/>Prose and a worked example."]
     style B1 fill:#1a3050,stroke:#4363D8,color:#fff
     style C1 fill:#3a3000,stroke:#FFE119,color:#fff
-    style D1 fill:#3a1a00,stroke:#FFA500,color:#fff
-    style E1 fill:#3a0f1a,stroke:#F032E6,color:#fff
     style F fill:#2a2a2a,stroke:#888,color:#aaa
 ```
 
-**Current state:** 50 authored SVGs, 176 PNGs, **0 GIFs**. Tier 3 does not exist yet and is now even more valuable — with labs gone, an animated terminal sequence is the closest a reader gets to watching the thing run.
+**Current state:** 235 Mermaid diagrams and field maps, **0 image files**. The CI
+gate errors on any image file or `![[...]]` embed anywhere in the repo, so this is
+enforced rather than agreed.
 
-Production scaffolding lives in sidecars at `media/<note-slug>.yaml`, never in the note. Schema: `docs/templates/media-sidecar.example.yaml`. House style and the banned-imagery list: `docs/templates/higgsfield-style-tokens.yaml`.
+### What survived from the original pillar
 
-### Three rules that save weeks
+The two rules that motivated the tiering turned out to be right, and outlast it:
 
-1. **Never ask an AI video model for text.** It cannot spell technical labels reliably — `ETHRENET`, `0x080O`, invented glyphs — and it fails silently at the exact moment a learner trusts it. Every prompt carries *no text, no letters, no numbers* in both positive and negative. Labels are composited afterward as SVG, which also makes them editable and translatable without a re-render.
-2. **AI video is for concepts, never accuracy.** If a reader could be misled by an inaccurate depiction — a packet structure, a memory layout, a protocol exchange — it is Tier 2 or Tier 1.
-3. **Every terminal GIF has a committed capture script.** When `nmap` 7.95 becomes 8.x, CI re-runs the scripts instead of someone re-recording by hand. Media that regenerates itself does not rot — and both incumbents are criticised for exactly that rot.
+1. **A visual that could mislead is worse than no visual.** Packet structures,
+   memory layouts and protocol exchanges must be *exact*, which is why they are
+   field tables and hex dumps rather than pictures — the same reason the original
+   pillar forbade AI depiction of anything a reader could be misled by.
+2. **Media that regenerates itself does not rot.** Mermaid is text: it diffs, it
+   reviews, it survives a rename, and it never needs re-recording. Both incumbents
+   are criticised for stale content, and a visual standard made of committed text
+   is a structural answer rather than a promise.
+
+The `verified:` date on notes containing shell commands (Teaching Standard §7) is
+the other half of the same idea, applied to output rather than diagrams.
 
 ---
 
@@ -375,7 +381,6 @@ Production scaffolding lives in sidecars at `media/<note-slug>.yaml`, never in t
 | A3 | **Worked-example restoration** | 68 leaves, mined from `.archive/labs/` — **largest workstream** | 4–5 weeks |
 | A4 | **Cryptography rebuild** | 5 branches, 20 rewrites, ~8 SVGs — **critical path** | 3–4 weeks |
 | A5 | Tooling depth pass | 62 thin leaves toward the 1,500-word floor | 4–5 weeks |
-| A6 | Media Tier 3 | asciinema/agg toolchain, `c2r-dark` theme, first 20 GIFs | 1 week |
 | A7 | CI validators | `content-audit.py` wired to fail on any standard violation | 2 days |
 
 **Do A1, A2 and A7 first.** They are days of work, they make the vault self-policing, and a validator that does not exist cannot catch a mistake you are about to make 60 times.
@@ -388,7 +393,7 @@ Production scaffolding lives in sidecars at `media/<note-slug>.yaml`, never in t
 
 ```mermaid
 flowchart TD
-    V["📖 Public repo<br/>Markdown + images"] -->|"submodule / sync"| CI["⚙️ Build: parse → compile"]
+    V["📖 Public repo<br/>Markdown + Mermaid"] -->|"submodule / sync"| CI["⚙️ Build: parse → compile"]
     CI --> PUB["📦 content.json<br/>rooms, sections, media"]
     CI --> MAN["📋 rooms.yaml<br/>paths, order, prereqs, difficulty"]
     PUB --> APP["🖥️ Next.js · SSG per room"]
@@ -447,7 +452,6 @@ No mobile app · no video-first courses (the medium is text plus terminal, and t
 | 1 | A1 + A2 + A7 | Every leaf tagged and summarised; CI fails on any violation |
 | 2–6 | **A3 worked-example restoration** | 68 leaves repaired from the archive, Networking and OS Internals first |
 | 3–6 | **A4 Cryptography rebuild** (parallel) | 5 branches, 20 rooms at full depth, ~8 SVGs |
-| 7 | A6 media Tier 3 | asciinema toolchain, first 20 terminal GIFs |
 | 8–12 | A5 Tooling depth pass | 62 leaves toward the 1,500-word floor |
 | 10–13 | Private repo scaffold | `rooms.yaml`, content sync, Next.js shell rendering public notes |
 

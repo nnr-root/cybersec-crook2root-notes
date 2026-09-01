@@ -28,7 +28,7 @@ sections = re.findall(r'^## (?!Summary\b|Parent Learning Order\b)(.+)$', t, re.M
 print("   sections:", len(sections), "| numbered (must be 0):", len(numbered))
 print("   has Summary:", bool(re.search(r'^## Summary', t, re.M)))
 print("   banned constructs present:", bool(re.search(r'c2r-check|\[!question\]|Authorized Lab|Checkpoint', t)))
-for f in ["docs/templates/media-sidecar.example.yaml","docs/templates/higgsfield-style-tokens.yaml"]:
+for f in []:
     try: yaml.safe_load(open(f)); print("   OK  ", f)
     except Exception as e: print("   FAIL", f, e)
 PY

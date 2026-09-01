@@ -13,3 +13,7 @@
 
 # Staging area for files awaiting manual deletion
 _to_delete/
+
+# Python bytecode
+__pycache__/
+*.pyc
