@@ -47,7 +47,7 @@ where the reader is already stressed.
 
 | Pattern | The move | Gate |
 |:--|:--|:--|
-| **The Cold Open** | Open on the artifact — a capture, a dump, a command that fails — not the definition. Abstraction lands *after* the reader has seen the thing it abstracts. | warning at >15% |
+| **The Cold Open** | Open on the artifact — a capture, a dump, a diagram, a field table — not the definition. Abstraction lands *after* the reader has seen the thing it abstracts. | warning at >400w |
 | **The Break** | State the model a reasonable person would arrive at, then violate it. Phrase it in the reader's voice and state it confidently: "you'd assume", never "some people think". | review |
 | **The Autopsy** | Every error output gets a paragraph naming **which component rejected it**, **at which stage**, and **what it was checking for**. "It failed because the value was wrong" does not satisfy this. The corpus was already close to this; see §6a. | warning |
 | **The Twin** | Two surface-different, structurally identical examples, with the comparison spelled out in prose. Juxtaposition alone does not work — only 16% of readers compare unprompted. | review |
@@ -129,6 +129,35 @@ The lesson is not that the pattern is unimportant. It is that a
 badly-calibrated check produces a confidently wrong number, and a number is what
 a plan gets built on. Treat any figure this gate reports as a claim about the
 gate until it has been read against the source.
+
+## 6b. A second correction: the Cold Open backlog was 280, and is 25
+
+The audit reported the first command arriving 41% into the median note and put
+**280 notes** in the Cold Open backlog. A 20-note sample, read rather than
+counted, showed the metric was wrong in two ways.
+
+**It penalised short notes.** BloodHound reaches a command 109 words after its
+first heading and scored 41%, because the note is only 535 words long. Nine of
+the twenty sampled were in this class — Volatility, Gobuster, feroxbuster, Bash,
+enum4linux and others, all reaching evidence inside ~200 words. A ratio measures
+note length as much as it measures burial.
+
+**It ignored the visual standard.** "Distance to the first shell command" is the
+wrong question to ask of a corpus whose own standard makes Mermaid the primary
+visual. A note opening on a sequence diagram or a register table *has* given the
+reader something concrete.
+
+Re-measured as **words of lesson prose before the first command, diagram or
+table**, excluding the abstract and Parent Learning Order:
+
+| | ratio metric | corrected |
+|:--|--:|--:|
+| Median prose before an anchor | — | **173 words** |
+| Notes over 400 words | — | **25** |
+| Notes flagged | **280** | **25** |
+
+Those 25 are theory-heavy openings, not defects. The pass is optional quality
+work, not a blocker.
 
 ## 6. What the gate cannot check
 

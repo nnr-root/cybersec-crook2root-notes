@@ -17,7 +17,7 @@ decide whether a correct note actually gets learned.
       "Internals & Edge Cases"). A heading must name the move, not the slot.
 
   WARNINGS (reported, never block) — the authoring backlog
-    * first command buried past 15% of the body  ......... The Cold Open
+    * over 400 words of prose before the first command, diagram or table
     * an error output with no mechanism paragraph ........ The Autopsy
     * no question asked anywhere in the body ............. One Pre-Question
     * an analogy with no stated breaking point
@@ -42,11 +42,15 @@ import json
 
 SKIP_DIRS = {".git", ".obsidian", "graphify-out", ".claude", ".archive", "_to_delete"}
 GOV_FILES = {"AGENTS.md", "README.md", "CONTRIBUTION.md"}
-COLD_OPEN_RATIO = 0.15
+COLD_OPEN_WORDS = 400   # lesson prose allowed before the first concrete anchor
 STALE_MONTHS = 12
 
 FM = re.compile(r"^---\n(.*?)\n---", re.S)
 EXAMPLE_FENCE = re.compile(r"^```(shell-session|console|bash|shell|powershell|text|sql|http)", re.M)
+# A diagram or a field table is a concrete anchor too — the visual standard makes
+# Mermaid the primary visual, so "distance to the first shell command" is the
+# wrong question to ask of a note that opens on one.
+VISUAL_ANCHOR = re.compile(r"^```mermaid|^\|.*\|\s*$", re.M)
 
 # ── errors ────────────────────────────────────────────────────────────────────
 # Target the construction that does the damage, not the word.
@@ -316,14 +320,22 @@ def check(root="."):
             continue
 
         # ── WARNING: The Cold Open ────────────────────────────────────────────
-        total_words = max(len(body.split()), 1)
-        m = EXAMPLE_FENCE.search(body)
-        if m:
-            ratio = len(body[:m.start()].split()) / total_words
-            if ratio > COLD_OPEN_RATIO:
-                warnings.append(f"{rel}: first command at {ratio*100:.0f}% of the body "
-                                f"(target <{COLD_OPEN_RATIO*100:.0f}%) — open on the artifact")
-        else:
+        # Measured as WORDS OF LESSON PROSE before the first concrete anchor, not
+        # as a fraction of the note. The fraction penalised short notes (a tool
+        # note reaching a command in 110 words scored 41%) and ignored that a
+        # Mermaid diagram or a field table is a concrete anchor under the visual
+        # standard. See Teaching Standard 6b.
+        h = re.search(r"^## (?!Parent Learning Order|Summary)(.+)$", body, re.M)
+        if h:
+            lesson = body[h.end():]
+            cands = [x.start() for x in (EXAMPLE_FENCE.search(lesson),
+                                         VISUAL_ANCHOR.search(lesson)) if x]
+            before = len(lesson[:min(cands)].split()) if cands else len(lesson.split())
+            if before > COLD_OPEN_WORDS:
+                warnings.append(f"{rel}: {before} words of prose before the first command, "
+                                f"diagram or table (over {COLD_OPEN_WORDS}) — consider "
+                                f"opening on the artifact")
+        if not EXAMPLE_FENCE.search(body):
             warnings.append(f"{rel}: no command, dump or capture anywhere — "
                             f"a claim about behaviour needs the observation that confirms it")
 
