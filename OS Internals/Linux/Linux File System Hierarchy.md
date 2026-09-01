@@ -193,6 +193,12 @@ TARGET SOURCE    FSTYPE OPTIONS
 
 This output describes two separate blockers: parent traversal and a read-only mount. Repair only the control that conflicts with the documented requirement.
 
+**The deliberate break:** a path reads as a name that identifies a file, the way a variable names a value — stable, and referring to the same thing each time you use it.
+
+A path is a **resolution procedure**, evaluated one component at a time, and every component can change between one step and the next. A symlink can be swapped, a filesystem mounted over a directory, a namespace can present a different tree entirely, and another process can act between your check and your open. That is why path traversal, symlink races and time-of-check-to-time-of-use are one family rather than three bugs: the file you inspected and the file you opened were never guaranteed to be the same file.
+
+**How you'd spot it:** any code that checks a path and then acts on it by name again has the race, and the fix has a recognisable shape — `openat` and the other directory-relative calls operate on a handle instead of re-resolving the name. In an investigation the same property bites differently: the host's `/` is not the process's `/`, so establish which mount namespace a path was resolved in before concluding what a process actually opened.
+
 ## Security implications
 
 Path traversal, symlink races, unsafe temporary files, writable service paths, exposed pseudo-filesystems, and permissive mount options all arise from misunderstanding pathname resolution. Secure code uses directory-relative operations such as `openat`, rejects unexpected symlinks, creates temporary files atomically, and applies least privilege. Investigators distinguish namespace views and preserve metadata rather than assuming the host's `/` is the process's `/`.

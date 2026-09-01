@@ -168,6 +168,12 @@ PROCESS ffff9b0c`6a85a080  SessionId: 0  Cid: 02f8
 
 `vertarget` establishes build and symbol context. `!process` converts a familiar image name into an `EPROCESS` address; `dt` then interprets bytes using the matching type definition. A field offset copied from another build is not architecture knowledge—it is an unsupported assumption. Expert analysis records the exact build, symbol provenance, processor context, and whether an address is virtual, physical, user, or kernel before drawing conclusions.
 
+**The deliberate break:** the user-mode / kernel-mode ring boundary reads as *the* security boundary, so security reasoning becomes a question of which side of it code is running on.
+
+The boundary that decides most real outcomes is the **handle**. Access rights are evaluated once, when an object is opened, and the handle that results carries those rights until it is closed — so a low-privileged process holding a handle to a privileged object has already crossed a boundary without any ring transition at all. Handles can be inherited and duplicated between processes, which is an entire technique family, and a later ACL change does not revoke a handle already open.
+
+**How you'd spot it:** look at what a process *holds* rather than what ring it runs in. Process Explorer's handle view against a low-privilege process is the check — handles to privileged processes, to tokens, or to objects the process has no business touching are the finding. Keep the timing in mind too: because rights were decided at open time, tightening an ACL does not close access that is already established, which is why revocation means terminating the holder.
+
 ## Cybersecurity Implications
 
 Privilege escalation requires crossing a precise boundary: obtaining a stronger token, abusing a privileged handle, corrupting kernel state, or persuading a privileged service to perform an unauthorized operation. Data structures such as EPROCESS are not vulnerabilities; unsafe exposure or corruption of their security-relevant fields is. Kernel protections such as PatchGuard, HVCI, CFG, protected processes, signing, and callbacks raise the cost of tampering, but sound authorization and memory safety remain primary.

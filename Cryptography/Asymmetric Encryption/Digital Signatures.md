@@ -66,6 +66,12 @@ Signature schemes do not sign the whole document — they sign its **hash**. The
 
 That link is why hash collisions are so dangerous. If an attacker can find two messages with the same hash (a collision), a signature over one is *also* a valid signature over the other — the signer signed a benign contract, and the attacker attaches the signature to a malicious one with the same digest. This is precisely how forged certificates were created against MD5, and why signatures must use a collision-resistant hash (SHA-256, not MD5 or SHA-1). The signature scheme and the hash are a unit; weaken either and the whole guarantee falls.
 
+**The deliberate break:** a valid signature reads as proof that the content is trustworthy — it verified, so the thing is genuine.
+
+What it proves is narrower and worth stating exactly: **the holder of one particular private key signed these exact bytes**. It says nothing about whether that key belongs to the party you have in mind, nothing about whether the content is true, and nothing about whether the key was stolen last week. Verification does not answer the trust question; it *relocates* it, from "is this content genuine" to "whose key is this, and why do I believe that" — which is the entire reason PKI exists and the reason a signature alone is never the end of the argument.
+
+**How you'd spot it:** after any successful verification, ask which key verified it and what binds that key to a name. A signature that checks out against a public key you downloaded from the same page as the file proves internal consistency and nothing else — an attacker who replaced the file replaced the key beside it. The chain is what carries the weight: code signing verifies against a vendor certificate rooted in a store you already trust, and it is the store rather than the signature doing the real work.
+
 ## Where Signatures Live, and Keeping the Key
 
 Signatures are the trust primitive underneath much of security infrastructure:

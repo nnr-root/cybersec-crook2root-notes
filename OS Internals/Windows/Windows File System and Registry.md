@@ -164,6 +164,12 @@ Contents of shadow copy set ID: {7b...}
 
 Registry recovery is similarly transactional. Hive primary files are supported by transaction logs such as `SYSTEM.LOG1` and `SYSTEM.LOG2`; recovery can replay committed changes after interruption. The historical `RegBack` location exists on many systems but modern Windows does not guarantee periodic full hive backups there by default. An empty `RegBack` directory is therefore not evidence of tampering. Forensic or recovery work should preserve the primary hive, transaction logs, acquisition time, volume state, and any snapshot source together. Loading a copied hive for inspection is safer than repairing the only original.
 
+**The deliberate break:** the registry reads as a settings database — a place configuration values are stored, distinct in kind from the filesystem where the real objects live.
+
+It is a **hierarchical object store with ACLs, transaction logs and its own recovery semantics**, and write access to a key is as consequential as write access to a file. A large share of Windows persistence is not a dropped binary but a registry value naming a program that Windows already intended to run — which means the security-relevant question about a key is exactly the one you would ask about a directory: who can write here, and what runs as a result.
+
+**How you'd spot it:** audit key ACLs the way you audit file ACLs. A writable `Run` key, service key or COM registration under `HKLM` is a persistence grant that requires no exploit to use. On the filesystem side, treat timestamps as claims rather than facts: `$STANDARD_INFORMATION` is writable from user space while `$FILE_NAME` is not, so a disagreement between the two is timestomping, and agreement is the baseline you compare against.
+
 ## Cybersecurity Implications
 
 Filesystem and Registry findings need provenance. A suspicious executable in a startup path becomes stronger evidence when MFT, USN, Zone.Identifier, signer, task/service configuration, and process telemetry converge. Conversely, an ADS, unsigned file, or Run value can be legitimate. Root-cause reporting separates observation, interpretation, confidence, and missing evidence.

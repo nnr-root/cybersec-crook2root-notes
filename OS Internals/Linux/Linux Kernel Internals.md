@@ -211,6 +211,12 @@ $ sudo cat /proc/7124/stack
 
 This establishes a storage-backed wait but not its root cause. Correlate block latency, device errors, filesystem state, and the specific mapping before attributing a kernel defect.
 
+**The deliberate break:** namespaces and cgroups are described as isolation, so a container reads as a boundary of roughly the same kind as a virtual machine.
+
+They are **views and limits over a single shared kernel**. Each namespace hides one class of resource and each is opt-in, so the boundary is exactly the set of namespaces that were actually applied — anything not namespaced is shared, a retained file descriptor crosses the view it was opened outside of, and an excess capability reaches straight past the abstraction. And because the kernel is shared, one kernel vulnerability is reachable from inside every container on the host simultaneously. The boundary is real and it is per-resource, which is a different guarantee from a wall.
+
+**How you'd spot it:** enumerate what was *not* isolated rather than admiring what was. The retained capability set from `capsh --print` inside the container, and the cgroup limits applied from outside it, describe the actual boundary far better than the fact that something is containerised. Treat eBPF programs and loadable modules as the same observation from the other direction — anything with that much observability power has exactly that much persistence power, so inventory them and require signing.
+
 ## Security implications
 
 Kernel privilege makes small mistakes systemic. Namespace isolation can be pierced by retained handles or excess capabilities; resource control fails when cgroup limits are absent; eBPF and modules create powerful observability and equally powerful persistence surfaces; asynchronous I/O multiplies lifetime complexity. Keep kernels current, minimize enabled attack surface, restrict privileged APIs, enforce signed modules, inventory eBPF objects, and preserve crash evidence.

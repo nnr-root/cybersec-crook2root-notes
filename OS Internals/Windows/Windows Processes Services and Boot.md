@@ -157,6 +157,12 @@ Get-ScheduledTask | ForEach-Object {
 } | Select-Object -First 10
 ```
 
+**The deliberate break:** persistence reads as something an attacker *adds* — a binary dropped on disk, a new service installed, an entry appearing where none was before.
+
+Most of it is an **existing extension point pointed somewhere new**. Services, scheduled tasks, `Run` keys, startup folders and the DLL search order all exist precisely to run code automatically, and abusing them means configuring a mechanism rather than compromising one. Nothing is broken, nothing is unusual, and in the DLL search-order case nothing is registered anywhere at all — the attacker simply places a file where Windows was already going to look.
+
+**How you'd spot it:** hunt configuration rather than files. Autoruns enumerates the extension points; the question to ask of every entry is whether its *target* is signed, expected, and living in a directory that only the entry's owner can write. Search-order hijacking leaves no registration to find, so it is caught from the other end — by checking whether an application's own directory is writable by a non-administrator, which is a property you can audit without knowing an attack occurred.
+
 ## Cybersecurity Implications
 
 Persistence and privilege escalation exploit transitions where privileged components resolve mutable configuration or code. The durable fix is least-writable paths, restricted service and task ACLs, service SIDs, minimal privileges, signed code policy, protected boot configuration, safe DLL loading, and auditable administrative workflows. Merely deleting one suspicious service without correcting the authorization path invites recurrence.

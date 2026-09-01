@@ -53,6 +53,12 @@ The security rests on the **discrete logarithm problem**. Computing `A = gᵃ mo
 
 One practical refinement matters enormously: because the private values `a` and `b` can be generated fresh for every session and thrown away afterwards, DH provides **forward secrecy**. Even if an attacker later steals the long-term keys, they cannot decrypt past sessions, because the per-session secrets no longer exist anywhere. This is why modern TLS insists on *ephemeral* DH (ECDHE).
 
+**The deliberate break:** Diffie-Hellman is a key exchange, so completing one reads as having established a secure channel with the other party.
+
+It establishes a shared secret **with someone**, and says nothing whatever about who. An attacker in the path runs two separate exchanges — one with each side — and relays between them; both exchanges are cryptographically perfect, both parties compute a genuine shared secret, and both secrets are known to the attacker. Nothing failed and no key size would have helped, because secrecy and identity are different properties and DH provides only the first. Every real deployment supplies the second from somewhere else, and the exchange is only as trustworthy as whatever that is.
+
+**How you'd spot it:** ask what authenticated the exchange, and expect a specific answer. In TLS it is the server's signature over the handshake, chaining to a certificate you already trust; elsewhere it may be a pre-shared identity or a pinned key. A protocol description that discusses key sizes and curve choices at length while never mentioning a certificate, a signature or a pre-shared value is describing an unauthenticated exchange, however modern the primitives are.
+
 ## Unauthenticated DH Falls to the Middle
 
 DH guarantees that you share a secret with *someone*. It says nothing about *who*. An attacker positioned between Alice and Bob can run DH with each of them separately — agreeing one secret with Alice and a different secret with Bob — and sit in the middle, decrypting and re-encrypting everything. Neither party can tell, because every message they see is validly encrypted under a secret they correctly derived.

@@ -179,6 +179,12 @@ In a report, match every image UUID to the exact binary used for symbolication. 
 
 Load failures also appear through dyld diagnostics such as `Library not loaded`, `image not found`, or code-signature rejection. Preserve the entire report and environment context before relaunching the application, because an updater or cache refresh can alter the evidence.
 
+**The deliberate break:** a signed binary reads as a trusted binary — the signature verified, so the thing is safe to run.
+
+The signature proves **who built it and that it has not been modified**, and stops there. What the binary is permitted to *do* is decided by its **entitlements**, which the signature carries rather than constrains — so a legitimately signed application can hold entitlements that disable runtime protections, and it is more useful to an attacker than an unsigned binary precisely because the platform admits it without complaint.
+
+**How you'd spot it:** read the entitlements, not just the verification result — `codesign -d --entitlements :-` names what the binary may do. The combinations worth stopping on are the ones that weaken the runtime: `get-task-allow`, disabled library validation, and anything granting debugging rights over other processes. A correctly signed binary carrying those is an injection target that Gatekeeper will happily let through, which is the shape of most living-off-the-land tradecraft on this platform.
+
 ## Cybersecurity Implications
 
 - Load commands are executable policy: they define mappings, dependencies, entry, fixups, and signature location.

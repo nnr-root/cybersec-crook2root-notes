@@ -177,6 +177,12 @@ Continuously test the telemetry path. Generate an approved canary event, verify 
 
 Record the expected negative space as well: container logs may bypass host files, encrypted traffic hides payloads, statically linked programs alter library visibility, kernel compromise can falsify host telemetry, and high-rate activity can force sampling or loss. Independent network, identity, hypervisor, and remote log sources reduce reliance on one potentially compromised observer.
 
+**The deliberate break:** more telemetry reads as strictly better. Collect everything, retain it, and work out later which parts mattered.
+
+Collection has cost and consequence running in both directions. Audit floods **drop records**, so collecting more can mean holding less evidence about the moment that mattered; profiling perturbs the timing it is measuring; live response alters the state it is examining; and logs and traces routinely capture credentials and personal data into systems with weaker protection than the things they describe. Meanwhile the opposite failure is just as real — records that live only on the host that produced them are available to whoever compromised it.
+
+**How you'd spot it:** test the collection rather than assuming it. Generate the exact event you expect to detect and confirm it arrives at the collector, because the common failure is a pipeline that has been silently dropping under load for weeks and reports nothing about it. Then ask where each record physically lives: anything held only on the machine that generated it is evidence an intruder can edit, which is the argument for centralising the high-value sources first.
+
 ## Security implications
 
 Visibility has cost and power. Logs can contain credentials and personal data; tracing can expose application secrets; audit floods can drop records; profiling can perturb timing; live response changes state. Conversely, insufficient retention or local-only records let compromise erase context. Apply least privilege to collectors, encrypt transport/storage, monitor collection health, define retention, synchronize time, centralize high-value evidence, and test that detections and crash capture actually work.

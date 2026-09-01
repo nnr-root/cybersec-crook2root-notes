@@ -337,6 +337,12 @@ exit=78
 
 Read the program's own diagnostics and exit status first, then consult `--help`, the relevant manual page, service logs, and `strace` only when the failing boundary remains unclear. Preserve the original command, quoting, environment, and working directory; changing several simultaneously destroys causality.
 
+**The deliberate break:** command-line fluency reads as knowing more commands — the expert is the one who reaches for `awk` without thinking.
+
+The skill that separates operators is **restraint**, and it operates on ordinary commands rather than obscure ones. `rm`, `chown`, `dd` and a firewall reload are all everyday tools, and each crosses an irreversible boundary when handed the wrong argument. An unquoted variable in a recursive delete is not a knowledge gap; it is fluency producing an outage at speed. Knowing which commands cannot be undone, and what a pair of quotes prevents, matters more than the size of your vocabulary.
+
+**How you'd spot it:** run the expansion before you run the command. Put `echo` or `ls` in front of any recursive or destructive operation and read what it prints — that is exactly the argument list the real command would act on, and if it is not what you meant, you have just avoided the incident. The second habit is checking whether a secret is being passed as an argument, since process listings and shell history are readable by people who were never meant to see it.
+
 ## Security implications
 
 Command fluency includes restraint. Quote variables, inspect paths before recursive operations, prefer package signatures, avoid secrets in arguments or history, validate downloads by hash/signature, and understand the privilege of every command. `sudo`, raw disk tools, firewall changes, ownership recursion, and force deletion can cross irreversible boundaries. Test destructive syntax against disposable paths and capture evidence before altering a system.

@@ -79,6 +79,12 @@ A **key-derivation function** (also called a password-hashing function) is a has
 
 The common thread is a *tunable cost* baked into the stored hash, so the whole database can be upgraded to a higher cost over time without knowing anyone's password. Plain SHA-256, SHA-1 or MD5 — however many times iterated by hand — are not substitutes, because they are not memory-hard and their raw speed is the problem.
 
+**The deliberate break:** salt reads as the thing that makes a stored password safe — add a salt and the hash is protected.
+
+Salt does exactly one job: it makes every hash unique, so precomputed tables are useless and each hash must be attacked on its own. It does nothing about **speed**, and speed is where the attack lives. A salted SHA-256 still falls at billions of guesses per second — the salt only means the attacker works through the database one row at a time instead of all rows at once, which is a real improvement and not remotely sufficient. Uniqueness and cost are separate properties provided by different mechanisms, and collapsing them into "we salt our passwords" is how a database ends up looking defended and cracking in an afternoon.
+
+**How you'd spot it:** check the stored value for both properties, because they leave different traces. A self-describing string naming a function and its cost parameters — `$argon2id$v=19$m=65536,t=3,p=4$…` — carries uniqueness and deliberate slowness together. A hex digest with a salt column beside it carries uniqueness and no cost whatsoever, and it is by far the more common shape in a real database.
+
 ## Doing Password Storage Correctly
 
 The complete recipe, and the reasoning behind each part:

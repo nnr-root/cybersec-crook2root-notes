@@ -133,6 +133,12 @@ ls -lt /Library/Logs/DiagnosticReports/*panic* 2>/dev/null | head
 
 Do not disable SIP or load an unsigned extension merely to make a lab easier. A safe lab uses built-in observability and a disposable test account.
 
+**The deliberate break:** XNU is commonly introduced as a BSD kernel, so the mental model imported with it is Unix — processes, uids, signals, file descriptors.
+
+It is a **hybrid**, and the Mach layer beneath the BSD one supplies tasks, threads, virtual memory and inter-process communication through **ports**. Mach ports are capabilities rather than names: holding a send right to another task's port is authority over that task, with no Unix analogue and no uid check involved. A great deal of the platform's real privilege model lives there, which is why reasoning purely in Unix terms runs out exactly where the interesting questions begin.
+
+**How you'd spot it:** when Unix reasoning stops explaining the behaviour, look one layer down at task ports, port rights and XPC connections rather than at uids and signals. The concrete exposure to trace is anything that hands out a task port — `task_for_pid` against another process is equivalent to debugging it and reading its memory, which is precisely why it is gated behind entitlements and SIP, and why a binary that legitimately holds that right is worth knowing about.
+
 ## Cybersecurity Implications
 
 - **Memory acquisition:** task-port policy determines whether one process may inspect another; root alone is not always sufficient.

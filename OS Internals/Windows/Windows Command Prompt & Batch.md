@@ -238,6 +238,12 @@ SERVICE_NAME: EventLog
 - **Garbled non-ASCII output** → console code page mismatch. `chcp` reports it, but it cannot force every program's encoding; redirected output may differ from console output.
 - **`if errorlevel 1` behaves oddly** → remember it means "≥ 1"; compare `%ERRORLEVEL%` explicitly when you need equality.
 
+**The deliberate break:** quoting in CMD reads the way quoting reads in a Unix shell — wrap the value, and it is treated as one inert string.
+
+CMD **re-expands and re-parses across several distinct passes**, and quoting protects a value at one pass while leaving it interpreted at another. Delayed expansion moves when substitution happens; `for` and `call` introduce further passes of their own. Injection here is therefore a question of parse *stages* rather than of dangerous characters, which is why advice built on escaping a character list keeps failing and why the same script behaves differently depending on how it was invoked.
+
+**How you'd spot it:** test with a value containing `&`, `|`, `%` and `^` rather than reasoning about the quoting, because the number of passes is what decides the outcome and it is easier to observe than to derive. Defensively, the signature in process-creation telemetry is `cmd.exe` carrying encoded arguments or chained utilities — but string matching alone is weak, so it earns its keep only when correlated with process ancestry, the user token and what was written to disk.
+
 ## Security Implications
 
 **Command lines encode intent, and that makes them both evidence and attack surface.** Defensive analysts watch process creation for suspicious `cmd.exe` invocations — encoded arguments, chained utilities, output redirected to unusual paths — but string matching alone is weak, so it is correlated with process ancestry, user token, and file writes.

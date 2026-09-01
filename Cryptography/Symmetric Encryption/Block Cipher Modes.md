@@ -63,6 +63,12 @@ one flipped ciphertext bit in block 1 ->
 
 One flipped ciphertext bit turned block 1 into garbage but changed exactly one character of block 2 — the `-` became `,`, a single-bit difference. An attacker who knows the plaintext structure can therefore make *targeted, predictable* edits to later blocks (change an `amount=10` to `amount=90`) by sacrificing an earlier block they do not care about. CBC gives confidentiality and nothing else: it does not detect that the ciphertext was altered. This is why encryption without a separate integrity check is considered broken, and why the final mode fixes exactly this.
 
+**The deliberate break:** a correctly encrypted message reads as a safe message — the attacker cannot read it, so it cannot have been interfered with in any useful way.
+
+Confidentiality is not integrity, and CBC demonstrates the gap concretely: an attacker who cannot read a single byte of the plaintext can still make **predictable, targeted changes** to it by modifying the ciphertext, and the recipient decrypts something the sender never wrote with no indication that anything happened. Encryption alone answers "can they read it" and leaves "did anyone change it" entirely open — which is why authenticated modes are the default in modern protocols rather than a hardening option to consider later.
+
+**How you'd spot it:** look for the tag. A mode whose output is exactly the ciphertext and nothing else has no integrity protection at all; an AEAD mode emits an authentication tag alongside it and refuses to return plaintext when that tag does not verify. In code the tell is decryption that always succeeds — if there is no branch where the function could have failed with a tag mismatch, then nothing was ever checked and the plaintext is being trusted on faith.
+
 ## CTR and GCM: The Modern Answers
 
 **Counter (CTR)** mode encrypts a counter value for each block and XORs the result into the plaintext — turning the block cipher into a keystream generator, i.e. a stream cipher (the next note). CTR needs no padding, can be parallelised, and allows random access, but like all keystream schemes it is catastrophic if the counter/nonce is ever reused with the same key.

@@ -287,6 +287,12 @@ For reproducibility, record `$PSVersionTable`, edition, language mode, module ve
 - **Native command arguments mangled** → argument passing differs between 5.1 and 7 (`$PSNativeCommandArgumentPassing`); use the call operator with an argument array and test the actual consumer.
 - **Garbled file output** → encoding defaults differ between editions and cmdlets; specify `-Encoding utf8` explicitly at file boundaries.
 
+**The deliberate break:** execution policy reads as a security control — set it to `Restricted` and scripts cannot run.
+
+It is a **safety catch against accidentally running a script**, and it has never been a boundary: it is bypassed by a documented parameter, by piping to the interpreter, by encoding, and by half a dozen other supported routes. Microsoft says so plainly, and treating it as a control produces a system that feels defended and is not. The actual posture is different in kind — PowerShell cannot be removed because administration depends on it, so the answer is to constrain and observe rather than to block.
+
+**How you'd spot it:** the general rule is that a control bypassed by a documented parameter is a preference, not a boundary. Check what is genuinely enforced instead: application control policy (WDAC or AppLocker), the session's language mode via `$ExecutionContext.SessionState.LanguageMode`, whether JEA constrains remote endpoints, and whether script-block logging and transcription are actually writing. Constrained language mode with logging on is a posture; `Set-ExecutionPolicy` is a preference.
+
 ## Security Implications
 
 **PowerShell is dual-use in the sharpest possible way.** It is the premier Windows administration tool and, for the same reasons — trusted, signed, present everywhere, capable of in-memory execution and remote operation — a favourite of intrusion tradecraft. It cannot be removed, so the posture is to **constrain and observe**: application control, constrained language mode, JEA endpoints, and full logging, rather than blocking a binary that legitimate administration depends on.

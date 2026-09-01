@@ -155,6 +155,12 @@ When software behaves differently from its documentation, identify the platform 
 
 For missing hardware, compare `lspci -nnk`, `lsusb`, `dmesg`, and `ip link`. In a VM, confirm that the hypervisor presented or passed through the device before searching for drivers. For package failures, inspect repository origin, release compatibility, signature status, and system clock before bypassing verification. Never “fix” a trust error with unauthenticated downloads. The diagnostic outcome should name the incompatible layer—CPU, kernel feature, libc, package source, device exposure, or release policy—not merely state that the distribution is unsupported.
 
+**The deliberate break:** choosing a security distribution reads as choosing a security posture. Install the one with the tools and the capability arrives with it.
+
+Preinstalled tools are **convenience, not posture**, and they change the risk in the wrong direction when the distribution becomes a daily driver: a larger installed surface, more software you did not choose, and working habits built around elevated privilege. The distribution that actually matters is the one you can patch, audit and rebuild — properties that have nothing to do with which tools shipped in the image, and everything to do with whether you can recover from the machine being compromised.
+
+**How you'd spot it:** ask what you would do if this machine were compromised tomorrow. A system you can rebuild from a documented process in an hour is a fundamentally different risk from one carrying three years of undocumented manual changes, whatever either has installed. Then check provenance on the tools themselves — preinstalled does not mean signed, maintained, or currently patched, and a tool image that is six months stale is six months of unpatched software you did not choose to run.
+
 ## Security implications
 
 The strongest distribution choice is the one that can be patched, audited, rebuilt, and operated correctly. Preinstalled tools do not replace repository hygiene, disk encryption, least privilege, or isolation. Native hardware expands capability and blast radius simultaneously; virtualization reduces blast radius but can hide hardware behavior. The professional decision is explicit, documented, and matched to the workload.

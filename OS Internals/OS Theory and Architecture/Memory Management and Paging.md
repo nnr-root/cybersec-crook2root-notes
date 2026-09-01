@@ -192,6 +192,12 @@ slabtop -o
 
 Expected fields include active objects, total objects, object size, and slabs. A steadily increasing object count tied to one cache during an authorized stress test suggests a missing release path.
 
+**The deliberate break:** a process's memory usage reads as the resident figure a tool reports — that is what it is using, and summing those figures gives what the machine is using.
+
+Pages are **shared, copy-on-write, file-backed and cached**, so resident size counts every shared page against every process mapping it. Add the column up on a busy machine and the total comfortably exceeds the RAM installed, which is the arithmetic proving the number does not mean what it appears to. It also says nothing about the question people are usually asking — how much would be reclaimed if this process exited — because most of a large process's residency may be shared libraries or page cache that would stay exactly where it is.
+
+**How you'd spot it:** sum resident size across processes and compare it to physical memory; a total larger than the installed RAM is the double-counting stating itself plainly. For "what would I get back", the measures that answer are proportional set size and the anonymous-versus-file-backed split. And read slowness with plenty of free memory as thrashing rather than shortage — the major fault rate names that directly, where the free-memory figure never will.
+
 ## 11. Troubleshooting & Evidence Interpretation
 
 Memory incidents require classification before remediation. “Out of memory” may mean process address-space exhaustion, cgroup limit enforcement, system-wide commit exhaustion, physical-memory pressure, kernel allocation failure, or fragmentation of a required contiguous order. “Segmentation fault” may mean an unmapped address, a write to read-only memory, execution from an NX page, stack exhaustion, or a lifetime bug.

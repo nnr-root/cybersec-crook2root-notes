@@ -162,6 +162,12 @@ C2R1 Nonp      84210       2100       82110    336322560
 
 For reproducible command-line performance capture, Windows Performance Recorder and the older `xperf` interface can start selected ETW profiles, stop into ETL, and preserve stack data when symbols and stack walking are configured. Capture the shortest interval that contains the problem, record the profile and build, and inspect CPU usage by stack, disk service time, ready-thread delay, hard faults, and DPC/ISR activity in WPA. A large ETL without a hypothesis is expensive noise.
 
+**The deliberate break:** a crash dump reads as the answer. Open it, read the faulting module at the top of the stack, and the culprit has named itself.
+
+The top of a stack names where execution **stopped**, which is frequently a victim rather than a cause — and without matching symbols the call chain above it may be fiction assembled from stale offsets. Stack fidelity is a precondition for interpreting a dump at all, not a refinement to apply afterwards. Choosing the evidence badly compounds it: a crash, a hang and a slowdown are three different failures, and a dump answers only the first.
+
+**How you'd spot it:** verify symbol resolution before drawing anything from a stack — frames rendered as raw offsets, or a module version that does not match the binary on the machine, mean the call chain is unreliable and any conclusion from it is guesswork. Then match evidence to question: a dump for a crash, a wait chain for a hang, counters and an ETW trace for slowness. Collecting the wrong artefact usually costs you the only reproduction you had.
+
 ## Cybersecurity Implications
 
 Diagnostics artifacts are security-sensitive. Dumps may hold tokens, secrets, decrypted content, and private keys. ETW traces can contain command lines, paths, hostnames, URLs, and user identifiers. Collection procedures need authorization, encryption, retention limits, chain of custody, and controlled deletion.

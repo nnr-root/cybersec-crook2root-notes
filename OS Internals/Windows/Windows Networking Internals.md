@@ -159,6 +159,12 @@ pktmon start --etw -m real-time
 
 The operational lesson is not that UDP/443 is suspicious; it is that name policy, route policy, filtering layer, and application protocol must be tested as one path.
 
+**The deliberate break:** the Windows firewall reads as a single filter sitting at the host's edge — one rule set, one place to look when traffic is allowed or blocked.
+
+The firewall is one **consumer of the Windows Filtering Platform**, not the platform itself. WFP exposes multiple layers, and security products, VPN clients and other software install their own filters at them, so effective behaviour is the composition of everything registered rather than what the firewall UI displays. A rule that reads as permissive can be overridden by a filter nobody added through that interface, which is why the console and the observed behaviour disagree.
+
+**How you'd spot it:** enumerate WFP filters directly whenever behaviour and policy disagree, rather than re-reading the rule that appears to permit the traffic. The same layering caution applies to name resolution: NRPT policy can route a name to a different resolver before ordinary DNS is consulted, so a name resolving differently on two otherwise identical hosts is a policy question rather than a DNS one, and chasing it in the resolver wastes the afternoon.
+
 ## Cybersecurity Implications
 
 Attack surface is the combination of listener, reachable interface, routing, filtering, protocol configuration, authentication, and authorization. A service bound globally but blocked by a host firewall is not externally reachable today, yet a later policy change can expose it. A firewall permit does not imply the application safely parses input. A secure assessment records every layer so remediation targets the actual boundary.

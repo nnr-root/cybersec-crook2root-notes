@@ -59,6 +59,12 @@ A subtler version attacks tokens signed with an asymmetric algorithm. With **RS2
 
 The root cause is the same as `alg:none`: the server let the token dictate the verification method, so a value meant to be verified *with* a public key was instead verified *as if* the public key were a shared secret. Both attacks vanish under one rule.
 
+**The deliberate break:** the `alg` header reads as metadata — the token helpfully telling the server which algorithm to verify it with, so the server knows what to do.
+
+It is **attacker-controlled input**, and a server that obeys it is being told how to be fooled. Set `alg` to `none` and a server that reads the header verifies nothing at all. Set it to `HS256` against a service that issues `RS256`, and a server that reads the header will verify an HMAC using the public key as the shared secret — a key the attacker already has, because it is public. Both attacks work by the server treating the token as an instruction rather than as a claim, and both close the moment the server decides the algorithm itself.
+
+**How you'd spot it:** look at the verification call. A library API that takes a token and a key with no algorithm parameter is deriving the algorithm from the token, and that is the bug regardless of how the rest of the code reads. In traffic, decode the header of anything suspicious: `"alg":"none"`, or `HS256` arriving at a service that issues `RS256`, is not a malformed token but an active forgery attempt.
+
 ## Using JWTs Safely
 
 The pitfalls all reduce to a few disciplines:

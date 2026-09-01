@@ -246,6 +246,12 @@ diskutil info /System/Volumes/Data | egrep 'Volume Free|Allocation Block|File Sy
 
 When an APFS symptom is ambiguous, identify the physical store, container, volume role, mount point, encryption state, and snapshot state before changing anything. Compare `diskutil apfs list`, `mount`, `df -h`, `tmutil listlocalsnapshots /`, and a read-only `fsck_apfs -n` result from an appropriate recovery context. A path that appears missing may be hidden behind a firmlink, another Data/System volume relationship, or an unmounted encrypted volume rather than deleted. Preserve timestamps and snapshot identifiers before repair, and never run destructive filesystem repair against the only evidence copy.
 
+**The deliberate break:** a snapshot reads as a backup — a copy of the volume you could restore from if something went wrong.
+
+APFS snapshots are **copy-on-write references inside the same container**. They share that container's free space and its fate, so they protect against deletion, modification and a bad upgrade, and not at all against the loss of the device, the corruption of the container, or an attacker with the authority to delete them. Treating a snapshot as a backup is how an estate discovers it had no off-device copy at the moment it needed one.
+
+**How you'd spot it:** check where the snapshot physically lives: same container means rollback mechanism, separate device means backup, and only one of the two survives the disk. In an investigation the same property is an opportunity rather than a warning — enumerate snapshots before anything writes to the volume, because one taken before the incident may hold pre-incident state that nothing else on the machine still has.
+
 ## Cybersecurity Implications
 
 - CoW clones and snapshots complicate secure deletion and storage accounting.

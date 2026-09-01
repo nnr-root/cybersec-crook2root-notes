@@ -284,6 +284,12 @@ Shell history is useful but incomplete evidence: users can disable it, Zsh may s
 
 Start with context rather than repeating commands: record architecture, macOS build, shell, effective identity, current directory, `PATH`, active Homebrew prefix, and whether the process runs locally, through SSH, or under launchd. Use `type -a`, `command -v`, `file`, and `codesign -dv` to identify what will actually execute. Compare exit status, stdout, and stderr separately. When a command behaves differently in a script, inspect quoting, glob expansion, locale, permissions, environment inheritance, and Apple Silicon versus Rosetta execution before modifying the system.
 
+**The deliberate break:** macOS is BSD underneath, so Unix habits read as transferring directly — the same commands, the same flags, the same results.
+
+The userland differs in ways that change outcomes **quietly rather than loudly**. BSD tool flags diverge from their GNU equivalents, the default shell is zsh with different globbing and word-splitting rules, Homebrew installs to different prefixes per architecture and may shadow system tools for some users and not others, and System Integrity Protection places directories beyond the reach of root itself. A command copied from a Linux runbook does not error — it succeeds, differently.
+
+**How you'd spot it:** when a familiar command behaves oddly, establish which implementation you actually invoked before debugging the behaviour: `which` and `--version` settle whether you are holding the BSD tool or a Homebrew GNU one, and that single check explains most of these surprises. And read a permission denial while running as root as SIP rather than as permissions — no amount of `chmod` or `sudo` resolves it, and continuing to try obscures the real answer.
+
 ## Cybersecurity Implications
 
 - BSD/GNU differences can invalidate collection scripts and quietly omit evidence.

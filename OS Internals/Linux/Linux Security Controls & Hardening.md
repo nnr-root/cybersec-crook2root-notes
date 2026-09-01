@@ -205,6 +205,12 @@ Configuration assurance asks whether intended state persists. Monitor privileged
 
 Recovery is a security control. Test bare-metal or VM restoration, LUKS key recovery, boot rollback, configuration redeployment, and secret rotation. A hardened host that cannot be safely recovered will eventually be bypassed under operational pressure.
 
+**The deliberate break:** hardening reads as a set of switches, and progress reads as the number of them turned on.
+
+A control that gets switched off at its first denial provided nothing at all, and that is the ordinary failure rather than an unusual one — enforcement blocks something legitimate, the change is reverted under pressure, and the benchmark still records it as enabled. A system running SELinux in permissive mode has a hardening score and no mandatory access control. The measure that means something is what the system still prevents *and* still does, together, because a control that broke the workload will not survive the week no matter how correct it was.
+
+**How you'd spot it:** check enforcement state directly rather than reading configuration — `getenforce` and `aa-status` answer in one word what a config file only implies. Then note the ambiguity in the logs: a control with no denials recorded is either working perfectly or not enforcing at all, and those are indistinguishable from a dashboard, so the absence of denials is a question rather than a result. Treat the first denial as a policy problem to be answered, since that moment is where hardening is usually lost.
+
 ## Security implications
 
 Hardening fails when controls are broad but untested, when administrators disable enforcement after the first denial, or when recovery is ignored. Effective defense combines minimal software, strong identity, safe delegation, reduced capabilities/syscalls, mandatory policy, exploit mitigations, verified boot, patching, encrypted backups, and observable change management. Measure both prevented behavior and retained business function.

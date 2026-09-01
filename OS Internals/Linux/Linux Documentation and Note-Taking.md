@@ -190,6 +190,12 @@ Use a simple quality gate:
 
 This discipline turns personal memory into institutional capability while preventing stale snippets from becoming unsafe operational folklore.
 
+**The deliberate break:** notes read as a memory aid — something you keep for yourself, valuable in proportion to how much it helps you personally remember.
+
+They are **evidence**, and they are read by other people under pressure. Notes establish that you stayed inside scope, allow a destructive action to be reconstructed afterwards, and let a finding be reproduced by someone who was not there. Weak notes are therefore a legal and operational exposure rather than a personal inconvenience: scope cannot be demonstrated, actions cannot be accounted for, and findings quietly become unverifiable claims.
+
+**How you'd spot it:** hand a note to someone else and see whether they reach the same result without asking you a question — that is the whole test, and most notes fail it. The specific defect is a recorded conclusion with no command, no output and no timestamp beneath it. The specific hazard is credentials pasted into a notebook that has none of the access controls, encryption or retention limits of the systems they unlock.
+
 ## Security implications
 
 Weak notes create legal, operational, and technical risk: scope cannot be demonstrated, destructive actions cannot be reconstructed, findings become irreproducible, and secrets leak into unmanaged notebooks. Strong documentation is evidence engineering. It preserves provenance, minimizes sensitive collection, supports peer review, and turns one operator's observation into a repeatable organizational control.

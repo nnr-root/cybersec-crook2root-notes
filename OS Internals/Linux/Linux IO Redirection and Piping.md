@@ -226,6 +226,12 @@ pipeline=65 stages=0 65 0
 
 The correct repair belongs to the failing contract: data format, descriptor routing, quoting, termination, buffering, or status propagation—not an extra `2>/dev/null` that hides evidence.
 
+**The deliberate break:** a pipeline reads as a sequence of steps, so its success reads as the success of the command at the end of it.
+
+The stages run **concurrently**, and by default only the last stage's exit status survives. `cmd | grep pattern` returning zero says grep ran successfully; it says nothing whatever about whether `cmd` worked, and a first stage that failed produces an empty stream that grep processes without complaint. Automation built on that assumption proceeds confidently on no data — which is why `set -o pipefail` exists and why a script that "works" while producing empty output is the classic shape of this bug.
+
+**How you'd spot it:** check `${PIPESTATUS[@]}` or turn on `pipefail` before trusting a pipeline's status, particularly in anything unattended. The runtime symptom to recognise is a job that completes cleanly and produces a suspiciously empty result — success and no output together usually means the failure happened upstream of whatever reported the status.
+
 ## Security implications
 
 Shell composition can preserve evidence or destroy it. Unquoted variables, glob expansion, unsafe `eval`, ambiguous redirection, and unchecked pipeline status are common causes of command injection and automation failure. Defensively, use fixed commands, strict mode, least-privileged output paths, explicit delimiters, and immutable source evidence. Operationally, remember that command lines may appear in shell history, audit records, and process listings.

@@ -76,6 +76,12 @@ Real cracking (with `hashcat` on a GPU, or `john`) uses escalating strategies, c
 
 The workflow is: identify the hash type (the **hash-identifier** and **name-that-hash** tools), pick the wordlist and rules, and let the GPU run — cheapest strategy first, because a dictionary hit in seconds saves a brute-force that would take years.
 
+**The deliberate break:** how hard a password is to crack reads as a property of the password. Strong password, hard to crack; weak password, easy.
+
+The dominant variable is the **storage decision**, made long before the breach and by someone other than the user. `password123` stored under Argon2id at a sensible cost survives longer than a genuinely decent password stored as raw MD5, because the guess rate differs by six orders of magnitude and the wordlist position differs by a few thousand. The user's choice matters and the developer's choice matters far more — which is why "users must choose stronger passwords" is the weakest lever available and the one most often pulled.
+
+**How you'd spot it:** before drawing any conclusion about password quality from a cracking run, look at what you were cracking. Recovering most of a database in an hour is a statement about the hash function, not about the users — the same people behind bcrypt would look disciplined and the same run would return almost nothing. Read the prefix, report the storage finding first, and let the password observations follow it rather than lead.
+
 ## What Actually Stops Cracking
 
 Everything in this note is decided by choices made *before* the breach:

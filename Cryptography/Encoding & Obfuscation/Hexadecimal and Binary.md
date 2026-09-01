@@ -82,6 +82,12 @@ analyst@lab:~$ head -c4 /bin/ls | xxd
 
 `50 4b` is `PK` — the initials of Phil Katz, who wrote the ZIP format — so any file beginning `50 4b 03 04` is a ZIP archive (and therefore also a `.docx`, `.jar` or `.apk`, all of which are ZIP underneath). `7f 45 4c 46` is `\x7f` followed by `ELF`, the signature of a Linux executable. Recognising these on sight is a core triage skill: it tells you what a suspicious file really is before you open it, and `file` uses exactly this table of signatures to name a type regardless of extension.
 
+**The deliberate break:** a hex dump reads left to right, so the bytes appear in the order they belong and the value can simply be read off.
+
+On little-endian hardware — which is almost everything you will touch — a **multi-byte integer is stored with its least significant byte first**, so the bytes appear in memory reversed relative to how the number is written. The address `0x08048ab0` sits in a dump as `b0 8a 04 08`. Reading it in order gives a plausible-looking value that is simply wrong, and the error is invisible because nothing about the dump announces which fields are integers and which are bytes. Single-byte data is unaffected, which is exactly why magic bytes and ASCII read correctly and reinforce the wrong habit.
+
+**How you'd spot it:** when a value read from a dump is close to what you expected but not equal, reverse the byte order before concluding anything else — a plausible number with its bytes in the wrong sequence is the signature. The rule that makes it predictable: anything the machine treats as a number is subject to byte order, and anything it treats as a sequence of bytes is not, so addresses and lengths flip while strings and magic numbers do not.
+
 ## Endianness: The Byte-Order Trap
 
 A single byte has no ordering question. A multi-byte value does: when the four bytes of `0x41424344` are written to memory or a file, which byte comes first? Two conventions disagree, and the disagreement has cost more debugging hours than almost anything else in low-level work.

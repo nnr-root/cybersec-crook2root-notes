@@ -227,6 +227,12 @@ Record collector, authority, host identifier, commands, tool versions, start/end
 
 If evidence sources disagree, normalize time zone and clock offset, preserve the original query, and determine each source’s retention and collection boundary. Unified Log absence can mean expiration, privacy redaction, disabled persistence, or an incorrect predicate—not proof that an action never occurred. Corroborate process, file, quarantine, FSEvents, TCC, launchd, network, and APFS evidence by stable identifiers and time windows. Re-run collection on a known benign event to validate the method before drawing an incident conclusion.
 
+**The deliberate break:** the unified log reads as the log — comprehensive by design, so if an event is not in it, the event did not happen.
+
+Much of it is **memory-backed and ephemeral**, retention is short and varies with pressure, and a large share of the interesting fields are `<private>` by default. Absence is therefore very weak evidence on this platform: the event may have occurred, been recorded, and rolled off within hours, or be present with the field you needed withheld. Reasoning from silence here produces confident conclusions that the data never supported.
+
+**How you'd spot it:** establish what you can actually see before concluding anything — `log show` with an explicit time bound, and note every `<private>` redaction, which means the field exists and is being withheld rather than that nothing was captured. Collect volatile state first for the same reason: retention on a busy machine can be hours, so a triage collection or a snapshot taken now outlives the log you were planning to read tomorrow.
+
 ## Cybersecurity Implications
 
 - No macOS source is complete; independent evidence must be correlated.

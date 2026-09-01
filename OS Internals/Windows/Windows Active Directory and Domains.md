@@ -179,6 +179,12 @@ DC02                00h:04m:01s    0 / 10       0
 
 **Transfer** is the normal administrative handoff while both controllers are healthy. **Seizure** is a disaster-recovery operation performed only when the former holder will not return; reintroducing a controller after its role was seized risks conflicting authority. Replication troubleshooting begins with topology, DNS, time, RPC reachability, update sequence numbers, and directory-service events—not with indiscriminate metadata cleanup.
 
+**The deliberate break:** Active Directory reads as a user directory — the place accounts and groups live, so auditing it means auditing who is in which group.
+
+It is a distributed database in which **every object carries an ACL**, and the rights principals hold *over other objects* are the attack surface. Group membership is the visible layer and the least interesting one; the paths that reach Domain Admin are usually delegated rights nobody remembers granting — a help-desk group with write access to a user object, a service account that can reset passwords in an OU. None of that appears in a membership report, and all of it survives every password reset in the domain.
+
+**How you'd spot it:** enumerate rights over objects rather than memberships. `GenericAll`, `GenericWrite`, `WriteDacl` and `WriteOwner` held by non-privileged principals are the findings, and they are permanent in a way stolen credentials are not. The diagnostic question for any domain is simply whether anyone can say who holds rights over the Domain Admins group — an environment that cannot answer has never looked, and that is where the graph tooling earns its place.
+
 ## Cybersecurity Implications
 
 AD security is graph security. A low-privilege principal can become consequential through nested groups, delegated object rights, writable GPOs, service-account relationships, local administration, sessions, trusts, certificates, or replication privileges. Assessments should state the complete path and which edge is unintended. Removing the final privileged membership while leaving the first writable edge intact is not remediation.

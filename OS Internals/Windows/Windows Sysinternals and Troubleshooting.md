@@ -187,6 +187,12 @@ Dump written: C:\Evidence\C2RDemo.exe_260731_143201.dmp
 
 The first command waits for the process and captures an unhandled exception; the second captures on a hung-window condition; the third requires CPU above the threshold for the specified duration. In an enterprise workflow, write dumps to an access-controlled evidence directory, hash them, record command line and ProcDump version, protect them as sensitive data, and analyze copies. A dump is a memory disclosure by design, so collection authority and retention policy matter as much as syntax.
 
+**The deliberate break:** the instinct on encountering a problem is to fix it — restart the service, kill the process, clear the queue, and see whether the symptom goes away.
+
+Every one of those **destroys the state that explains the incident**. Process lineage, open handles, established connections, loaded modules and the process's memory exist only while the process does, and none of them survive the restart that made the symptom disappear. If the cause was an intrusion, the intervention has removed the evidence and left the access; if it was a defect, the reproduction may not return for weeks.
+
+**How you'd spot it:** before acting, ask what the action destroys. If the answer includes a running process, capture first — lineage and handles from Process Explorer, network state, and a dump where it is warranted — because the reproduction in front of you may be the only one you get. Record which tools you ran and when, too, since live-response tooling alters the state it observes and an undocumented change is indistinguishable later from an attacker's.
+
 ## Cybersecurity Implications
 
 Live-response tools are dual-use because operating-system introspection is dual-use. Defenders use process access and remote-service telemetry to identify abuse; authorized operators use the same telemetry to prove their activity stayed in scope. The goal is not to “avoid logs” but to understand evidence, minimize unnecessary footprint, and preserve an accountable timeline.

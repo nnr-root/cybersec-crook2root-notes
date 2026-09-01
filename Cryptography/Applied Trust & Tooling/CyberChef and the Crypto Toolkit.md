@@ -74,6 +74,12 @@ aGVsbG8=
 
 The same `openssl` produced the AES ciphertext in **AES & Block Ciphers**, the Ed25519 signatures in **Digital Signatures**, and the certificate authority in **TLS & PKI**. It is worth investing in `openssl` fluency precisely because it recurs across every branch — one tool for hashing, symmetric and asymmetric encryption, signatures and PKI.
 
+**The deliberate break:** the choice between a GUI and the command line reads as taste — some people like clicking, some like typing, and either will get there in the end.
+
+The decision is made by the problem, not the person, and the two failure modes are exact mirrors of each other. When the transformation is **unknown**, the command line makes you guess blind: every attempt is a fresh command and you never see the intermediate states that would tell you what the next layer is. When the transformation is **known**, a GUI makes you repeat manual steps that should have been a script, unreproducibly, usually by pasting the data into a browser. Exploration wants visible intermediates; procedure wants repeatability, and neither tool provides both.
+
+**How you'd spot it:** count your repetitions. Retyping the same `openssl` or `base64` command more than twice with small variations means you are exploring and should be somewhere that shows you each step. Pasting the same recipe into a browser more than twice means you are running a known procedure that should be a script — and, more pressingly, that you have pasted the same data into a web page three times, which is the question worth asking before the tooling one.
+
 ## Choosing the Right Tool
 
 The toolkit, mapped to the job and to where each is covered in depth:

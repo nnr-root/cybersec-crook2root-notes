@@ -228,6 +228,12 @@ artifact.bin: HTML document, UTF-8 Unicode text
 
 The network worked; application authentication or redirect handling did not. Preserve verbose traces without exposing credentials, and fix the failing layer rather than disabling TLS verification.
 
+**The deliberate break:** when the network is not working, the natural move is to start changing controls until it does — open the firewall, add `-k`, point the resolver somewhere else.
+
+Each of those is a **permanent security change made to answer a temporary question**, and each reliably outlives the incident that produced it. The disabled certificate check stays disabled, the temporary firewall rule is still there two years later, and neither ever appears in a review because nobody remembers adding them. Following the actual packet path answers the same question without changing anything, which is why the discipline is diagnostic rather than merely tidy.
+
+**How you'd spot it:** the tell is a fix shaped like a disabled control: `-k` on a `curl` command, a permissive rule added "just to test", a resolver overridden in a config file. Work the path in order instead — link, address, route, namespace, resolver, transport, certificate — and the failure identifies itself at the layer that breaks. And treat raw-socket and network-administration capabilities as privilege rather than convenience, since they permit capture, spoofing, route changes and firewall manipulation to anyone holding them.
+
 ## Security implications
 
 An exposed listener, permissive route, poisoned resolver, disabled certificate validation, or unsafe firewall update can defeat application security. Troubleshooting should follow the actual packet path and namespace rather than randomly changing controls. Transfers must preserve integrity and client boundaries; captures can contain credentials and require evidence handling. Restrict raw-socket and network-administration capabilities because they permit packet capture, spoofing, route changes, and firewall manipulation.

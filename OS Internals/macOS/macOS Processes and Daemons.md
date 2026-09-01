@@ -217,6 +217,12 @@ log show --last 30m --predicate 'process == "launchd" AND eventMessage CONTAINS[
 
 XPC transactions can keep a demand-launched process alive while work is outstanding, after which it may exit normally. This is not necessarily instability. Analysts should distinguish on-demand idle exit, clean completion, signal termination, jetsam/resource pressure, and crash. A service's expected lifecycle is part of its baseline.
 
+**The deliberate break:** a launchd job's property list reads as the job itself — the file is present and correctly written, so the daemon is running.
+
+The plist is **configuration, and launchd's loaded state is the truth**. A job can be present on disk and disabled, present and never loaded, or loaded from a definition that no longer matches the file you are reading, because launchd holds what it was given rather than re-reading the filesystem. Auditing daemons by listing plists therefore produces an inventory of intentions rather than of what is actually executing.
+
+**How you'd spot it:** ask launchd rather than the filesystem — `launchctl print` for the relevant domain names what is genuinely loaded, its state, and why it last exited. For persistence, the entries that matter are LaunchAgents and LaunchDaemons whose program lives somewhere a non-administrator can write, together with privileged helpers installed over XPC: both are legitimate mechanisms doing exactly what they were designed to do, which is why they are attractive and why nothing about them looks anomalous.
+
 ## Cybersecurity Implications
 
 - Job definitions are durable configuration; bootstrap namespaces are runtime authority; processes are evidence of execution.

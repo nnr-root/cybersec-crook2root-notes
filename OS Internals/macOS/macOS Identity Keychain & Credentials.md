@@ -213,6 +213,12 @@ The application should use an access-control object appropriate to data sensitiv
 
 Separate identity, authorization, and credential-storage failures. First confirm the effective UID, groups, directory-service record, SecureToken/FileVault status, and active console user. Then inspect the target keychain’s search list, lock state, item access-control policy, code-signing requirement, and TCC context without exporting secrets. A successful Unix login does not prove Keychain access, and `sudo` does not automatically satisfy an application-bound access-control list. Record the exact process identity and error code before changing Keychain or authorization settings.
 
+**The deliberate break:** the keychain reads as a password store — a vault with one lock, so the meaningful state is whether it is unlocked.
+
+Access is decided **per item, by ACL, against the identity of the application asking**, verified through its code signature. "Unlocked" is therefore not one state: a keychain can be open while an individual item still refuses a caller whose signature has changed since the item was created. And the credential that gates FileVault operations is not the account password at all but **SecureToken**, which an account can lack while logging in perfectly well.
+
+**How you'd spot it:** a keychain prompt appearing after an application update is the signature check working correctly, not a fault — the caller's identity genuinely changed. For enterprise problems, check SecureToken status separately from account state: an account that authenticates normally and cannot enable FileVault or add another user to it is the classic split, and nothing in the user record shows it.
+
 ## Cybersecurity Implications
 
 - UID 0, administrator membership, Keychain access, Secure Enclave authority, TCC grants, and entitlements are distinct powers.

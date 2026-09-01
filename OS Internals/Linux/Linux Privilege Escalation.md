@@ -207,6 +207,12 @@ $ sudo -l
 
 The wildcard, called binary, and input parser require analysis, but no write edge is yet proven. Validate with a benign canary under the Rules of Engagement, capture effective identity and logs, remove the canary, apply the narrow remediation, and demonstrate that the same precondition no longer crosses the boundary.
 
+**The deliberate break:** escalation reads as finding a vulnerability — something broken, ideally with a CVE attached.
+
+Most local escalation is **legitimate functionality crossing an unintended trust boundary**. A scheduler that runs a script someone else can write; a `sudo` rule that delegates a general-purpose interpreter; a binary that preserves more identity than the task needs; a capability granted to a service that only wanted one small piece of it. Nothing is malfunctioning in any of these, which is why they survive patch cycles indefinitely and why the remediation is removing the transition rather than fixing a defect.
+
+**How you'd spot it:** for any candidate, name the consumer and the credential transition out loud — which privileged component reads something you control, and at exactly which moment the identity changes. If you cannot state both halves, you have a lead and not yet a finding. Then verify the fix with the original minimal proof, because remediation that constrains the symptom instead of the transition leaves the same boundary crossable by a slightly different route.
+
 ## Security implications
 
 Most local escalation is legitimate functionality crossing an unintended trust boundary: a scheduler trusts writable content, policy delegates a general interpreter, a binary preserves excess identity, or a capability grants more kernel authority than the service needs. Reliable assessment identifies the exact consumer and credential transition. Reliable remediation removes that transition, constrains environment and arguments, applies `nosuid`/`noexec` where appropriate, narrows capabilities, and verifies the fix with the original minimal proof.

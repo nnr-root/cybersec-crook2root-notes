@@ -180,6 +180,12 @@ Collectors need capacity planning, TLS/authentication policy, access control, mo
 
 A normalized event should retain original provider, channel, record ID, computer, UTC timestamp, event XML, collection time, and collector identity. SIEM pipelines that flatten away logon ID, process GUID, access mask, ticket options, or source port can make expert investigation impossible.
 
+**The deliberate break:** turning on auditing reads as recording what happens — the policy is enabled, therefore the events are being kept.
+
+Audit policy decides only what providers are **asked** to emit, and nothing recovers an event that was never enabled. Retention then bounds the rest: default log sizes on a busy host hold hours rather than weeks, and the log wraps silently without announcing that it did. The common failure is not a missing policy but an enabled policy whose evidence had already rolled off before anyone thought to look, which is indistinguishable from nothing having happened.
+
+**How you'd spot it:** read retention and event volume next to the policy, not separately — a Security log at its default size on a domain controller is a window measured in hours. Prove forwarding end to end by generating a known event and finding it centrally, because a collector that silently stopped looks exactly like a quiet estate. And treat Event IDs as version- and provider-dependent: the same number does not always mean the same thing, so interpretation needs the provider context alongside it.
+
 ## Cybersecurity Implications
 
 Telemetry design begins with a question: what event proves the security-relevant transition? Process start, token assignment, object access, service creation, ticket issuance, policy change, network connection, file creation, and code-signing decision are different transitions. High-confidence analytics chain several rather than overfit one string.

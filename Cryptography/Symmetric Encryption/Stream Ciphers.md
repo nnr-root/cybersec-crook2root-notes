@@ -64,6 +64,12 @@ The mathematics is unforgiving. `c1 = m1 ⊕ KS` and `c2 = m2 ⊕ KS`, so `c1 �
 
 The lesson set the modern direction. Today's stream cipher is **ChaCha20**, almost always paired with the **Poly1305** authenticator as **ChaCha20-Poly1305** — an AEAD construction, the stream-cipher counterpart to AES-GCM. The pairing is not optional decoration: like all keystream encryption, ChaCha20 alone is malleable (flipping a ciphertext bit flips exactly that plaintext bit, since it is a direct XOR), so authentication is required to detect tampering.
 
+**The deliberate break:** the key is the secret, so protecting the key reads as the whole of the job — guard it well and the cipher does the rest.
+
+With a stream cipher the unit that must never repeat is the **(key, nonce) pair**, not the key alone. Reuse a nonce under the same key and you regenerate the same keystream; XOR two messages encrypted with that keystream and it cancels out completely, leaving the two plaintexts combined with each other and no key involved anywhere in the recovery. The key was never compromised, was never weak, and never leaked — and the confidentiality is gone regardless. A nonce is not a secret and it is not an optional parameter; it is the other half of what must be unique.
+
+**How you'd spot it:** find out where the nonce comes from, because that is where this fails. A fixed value in a configuration file, a counter that resets when the process restarts, and a random draw from a space small enough for birthday collisions are all the same bug wearing different clothes. The observable signature needs no key at all: XOR two captured ciphertexts together, and if anything resembling structure or readable text appears, the keystream was reused.
+
 ## Security: It All Reduces to Nonce Discipline
 
 A stream cipher's security in practice is almost entirely about never reusing a keystream:

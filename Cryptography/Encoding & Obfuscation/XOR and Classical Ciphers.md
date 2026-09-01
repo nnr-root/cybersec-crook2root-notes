@@ -105,6 +105,12 @@ KHOOR
 
 Every one of these is enumerate-the-small-keyspace, score-for-language. The lesson is not the individual cipher; it is that a small or repeating key is the vulnerability, whatever alphabet it dresses in.
 
+**The deliberate break:** the attacks in this note read as a verdict on the operation — XOR is weak, so XOR is not real cryptography.
+
+XOR with a key that is **truly random, at least as long as the message, and never reused** is the one-time pad, and it is provably unbreakable: every plaintext of that length is an equally valid decryption and nothing in the ciphertext prefers one. Every attack above exploited a violation of that rule rather than a flaw in the operation — a one-byte key far shorter than the message, or a short key repeated so that positions share keystream. The weakness lives entirely in key discipline, which is precisely why the modern answer is not to abandon XOR but to generate a long non-repeating keystream and XOR against that.
+
+**How you'd spot it:** attack the key length rather than the operation. Repetition in the ciphertext at a fixed stride gives the period away, and once you know the period the problem collapses into that many independent single-byte problems, each trivially solvable by frequency analysis. A ciphertext showing no repetition at any stride, with a key you cannot bound, is either a genuine stream cipher or a pad — and in both cases the way in is nonce or key reuse, not the XOR itself.
+
 ## The One Property That Would Make XOR Unbreakable
 
 XOR is not inherently weak. If the key is **truly random, at least as long as the message, and never reused**, XOR *is* the one-time pad — provably unbreakable, because every possible plaintext of that length is an equally valid decryption and the ciphertext gives no way to prefer one. Every attack in this note exploited a violation of that rule: a one-byte key (far shorter than the message), or a short key repeated (reused key positions).

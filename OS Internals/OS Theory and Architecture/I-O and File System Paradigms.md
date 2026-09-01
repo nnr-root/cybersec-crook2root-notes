@@ -210,6 +210,12 @@ File carving from unallocated space can recover recognizable content without ori
 
 Authorized anti-forensic testing should validate defensive resilience with harmless canary files and approved scope. The goal is to determine whether remote evidence and snapshots survive local manipulation—not to erase operational logs.
 
+**The deliberate break:** a `write()` that returns successfully reads as data on disk — the call succeeded, the file has been written.
+
+It means the data reached the **page cache**. Durability is a separate property requiring an explicit flush, and the journal guarantees consistency of metadata rather than the presence of your bytes. "The write succeeded" and "the file survives a power cut" are different claims, and the gap between them is where corrupted databases and truncated logs come from. The same indirection runs the other way forensically: deletion unlinks a name and leaves the extents, so what is on the medium and what the namespace shows have never been the same thing.
+
+**How you'd spot it:** treat any durability claim made without an explicit flush as a cache claim. In code, look for `fsync` or `fdatasync` on the file *and* on the directory that names it, since a flushed file with an unflushed directory entry can vanish entirely. In forensics, apply the mirror image: the absence of a filename is not the absence of the data, which is why carving works and why secure deletion has to address extents rather than names.
+
 ## 11. Troubleshooting & Evidence Interpretation
 
 I/O troubleshooting must identify the layer at which progress or correctness fails. An application timeout may originate in userspace buffering, a lock, VFS path resolution, filesystem writeback, a block queue, a driver reset, controller firmware, the physical medium, or a remote server. Start at the application and move downward only when evidence justifies it.

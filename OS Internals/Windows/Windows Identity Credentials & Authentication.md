@@ -160,6 +160,12 @@ AzureAdPrt    : YES
 
 Experts correlate these outputs with device identity, TPM health, Conditional Access, sign-in records, and local logon events rather than treating “PRT present” as proof of either compromise or health.
 
+**The deliberate break:** authentication reads as the decisive moment — prove identity at logon, and everything that follows inherits that proof.
+
+Authentication produces a **token and a logon session**, and it is the token that every subsequent access check consults. That indirection is where the interesting behaviour lives: resetting a password does not invalidate tokens and tickets that already exist, and stealing or impersonating a token requires no credential at all. Meanwhile the secrets themselves sit at rest — in SAM, in LSA, in DPAPI-protected blobs — where they can be taken without any authentication event ever occurring.
+
+**How you'd spot it:** ask what still exists after the logon, because that is what an attacker actually holds. In an incident, revoking access means terminating sessions and invalidating tickets, not only resetting passwords — an account reset with live sessions untouched is not revoked. And confirm whether Credential Guard is genuinely running rather than configured, since without it LSA secrets are readable by anything that acquires the necessary privilege.
+
 ## Cybersecurity Implications
 
 Credential exposure is a lifecycle problem. Secrets can appear during collection, authentication, delegation, caching, application storage, backup, recovery, and administrative troubleshooting. Hardening prioritizes phishing-resistant authentication, unique managed service secrets, minimal interactive logons on sensitive systems, restricted delegation, NTLM reduction, LSASS protection, VBS, careful DPAPI recovery governance, and tiered administration.

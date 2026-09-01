@@ -163,6 +163,12 @@ C:\ProgramData\C2R-Lab BUILTIN\Users:(RX)
 
 Expert troubleshooting asks which token was effective on the thread, which access mask was requested, which object type interpreted it, and which policy layer denied it. “The user is an administrator” is not an access analysis.
 
+**The deliberate break:** membership of the Administrators group reads as having administrative power — the account is an admin, therefore its processes are.
+
+Authority lives in the **token**, which carries a specific privilege set and an integrity level fixed at logon. An Administrators member running under UAC holds a *filtered* token at medium integrity and cannot do most of what the group name implies until elevation produces a different token. The inverse matters more offensively: individual `SeXxxPrivilege` values are what enable the escalation techniques, so a service account holding one outranks a nominal administrator running filtered.
+
+**How you'd spot it:** read the token rather than the group list — `whoami /priv` together with the process integrity level states what this process can do right now, which is the only question that matters. `SeImpersonatePrivilege`, `SeBackupPrivilege`, `SeDebugPrivilege` and `SeTakeOwnershipPrivilege` are each a route to SYSTEM in their own right, independent of any group membership, and each is routinely granted to service accounts that were never thought of as privileged.
+
 ## Cybersecurity Implications
 
 Privilege escalation usually exploits one of four conditions: an overpowered token, a permissive object descriptor, confused impersonation, or mutable privileged configuration. The corrective control belongs at that exact condition. Removing a payload without correcting a writable service ACL, named-pipe authorization flaw, or delegated group right does not remediate the vulnerability.

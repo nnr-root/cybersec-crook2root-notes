@@ -224,6 +224,12 @@ $ cat /proc/4812/cgroup; systemctl status 4812 --no-pager
 
 Do not escalate from `TERM` to `KILL` automatically. First determine whether systemd will restart the process, whether data is being committed, and whether a blocked dependency—not the process itself—is the actual fault.
 
+**The deliberate break:** a permission denial reads as a permission problem — the mode bits are wrong, so `chmod` is the fix.
+
+The decision is **layered**, and any one layer can be the refusal: the process credentials, then execute permission on every directory in the path, then the mode, then any ACL, then mount options such as `nosuid` or `noexec`, then capabilities, then the LSM policy. Only the third of those responds to `chmod`. This is why `chmod 777` is the reflex that so often changes nothing except the security posture — it addresses one layer out of seven and leaves a world-writable object behind as a permanent finding.
+
+**How you'd spot it:** reason down the layers before changing anything, because the layer that refused announces itself differently at each level. A denial that survives a permissive mode was never about the mode — check the mount options, then the effective capability set, then `dmesg` for an AVC or AppArmor message, which names the policy that refused and why. The specific configuration worth hunting for while you are there is a world-writable directory without the sticky bit.
+
 ## Security implications
 
 Permission failures are layered decisions, not an invitation to disable controls. World-writable directories without sticky bit, privileged services with writable units, inherited ACL mistakes, secrets in process arguments, and excessive service capabilities create real compromise paths. Defenders should reason from credentials through path traversal, mode/ACL, mount, capability, and LSM checks. Operators should preserve process lineage and use scoped service sandboxing instead of blanket privilege.
