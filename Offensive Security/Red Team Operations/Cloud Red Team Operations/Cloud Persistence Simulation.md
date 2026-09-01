@@ -44,6 +44,12 @@ flowchart LR
     X --> P["Attacker AssumeRole cross-account,<br/>survives key rotation & rebuilds"]
 ```
 
+**The deliberate break:** persistence reads as something planted on a machine, so cloud persistence reads as requiring a foothold on an instance.
+
+It is a **change to identity configuration**, made through legitimate API calls: an extra trusted principal in a role's trust policy, a second access key, a federated identity provider nobody remembers adding. There is no host to clean, so rebuilding every instance removes nothing, and rotating every credential removes nothing either — the backdoor is not a credential, it is a statement about who is allowed to obtain one.
+
+**How you'd spot it:** the diagnostic property is exactly that rotation does not clear it. Enumerate what each identity *trusts* rather than what each identity *is*: trust policies naming unexpected principals, access keys the owner cannot account for, and identity providers absent from any change record. In logs the tell is a perfectly legitimate administrative API call made by an identity that has no administrative role in its day job.
+
 ## Worked Example: A Backdoor That Survives Every Rotation
 
 Cloud persistence is not a process or a cron job — it is a quiet, legitimate

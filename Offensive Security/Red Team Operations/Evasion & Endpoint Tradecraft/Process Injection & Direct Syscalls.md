@@ -132,6 +132,12 @@ Windows, ETW Threat Intelligence observe the transition the userland hook missed
 - **Target-process stability.** Injecting into a critical process can crash it (and the machine); choose targets carefully in a lab.
 - **ptrace/permissions.** On Linux, `ptrace_scope` may block attaching to non-child processes; injection needs the right privileges.
 
+**The deliberate break:** direct syscalls read as invisibility — step around the userland hooks and the endpoint product has nothing left to see.
+
+They bypass **one telemetry source**. Kernel callbacks still fire, ETW still emits, and the anomaly itself remains: a process issuing system calls with no corresponding module loaded is more unusual than one calling the documented API, not less. The evasion can therefore become the signal, which is the recurring shape of mature detection — once the obvious path is instrumented, the interesting question stops being what you called and becomes what your process looks like while calling it.
+
+**How you'd spot it:** the tells here are structural rather than signature-based, which is why they survive new tooling: a thread whose start address sits in unbacked private memory, a syscall stub outside `ntdll`, and a process whose behaviour does not match its image. Injection leaves the same shape from the other direction — executable private memory with no file behind it is exactly what `malfind` and its equivalents are looking for.
+
 ## Security Implications — the Defender's View
 
 - **Watch the injection primitives:** cross-process memory writes, remote thread creation, `ptrace` attaches, and suspended-process image swaps are high-fidelity signals — detecting the *act of injecting* beats trying to spot the injected code.

@@ -44,6 +44,12 @@ flowchart LR
     E -- no --> Priv["Restricted to a named<br/>principal / condition"]
 ```
 
+**The deliberate break:** cloud data exposure reads as something an attacker breaks into — a system compromised, a control defeated.
+
+The overwhelming majority is a **policy that grants the access**, evaluated correctly by a service doing precisely its job. There is nothing to exploit, nothing malformed in the request, and nothing anomalous in any log, because the read was authorised. That is what makes this class both the most common cloud breach and the hardest to detect by watching traffic: the traffic is legitimate, and the defect is a document nobody read carefully.
+
+**How you'd spot it:** the finding is in the policy rather than in the traffic. Look for a principal of `*` with no condition attached, and for the interaction between a resource policy and the account-level public-access setting, which can each look reasonable and combine badly. Because the access is authorised, detection has to come from the policy side too — change monitoring on bucket and IAM policies, rather than anomaly detection on reads that are indistinguishable from ordinary ones.
+
 ## Worked Example: A Bucket That Answers to Anyone
 
 The most common cloud data breach is not an exploit — it is a storage policy that

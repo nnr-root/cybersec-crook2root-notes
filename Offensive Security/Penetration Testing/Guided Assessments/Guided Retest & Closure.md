@@ -91,6 +91,12 @@ Ensure authorized users retain required access, error handling remains stable, p
 
 Attach timestamps, asset/build identity, sanitized requests and responses, telemetry references, screenshots where necessary, variant matrix, and cleanup confirmation. Remove synthetic accounts, records, tokens, files, and infrastructure.
 
+**The deliberate break:** closure reads as an administrative act — the finding is fixed, so someone updates the record and the item leaves the list.
+
+It is an **evidentiary decision that has to hold up later**, potentially to an auditor, and potentially after an incident that exploited the thing you closed. That standard requires the rebuilt baseline, the repeated original proof, the meaningful variants and the negative control, all recorded — not because process demands it, but because "we closed that in March" is a sentence somebody will one day have to defend with something.
+
+**How you'd spot it:** a closed finding whose record holds a date and a name but no reproduced test is a claim rather than a closure. Two questions separate the two: what evidence exists that the original proof no longer works, and did anyone test the variants. If neither has an answer, the finding was administratively closed and remains technically open.
+
 ## 7. Feed lessons back
 
 Convert systemic root causes into secure design standards, reusable tests, CI checks, detection content, developer education, and asset-wide review. A successful retest should reduce the probability of the entire vulnerability class, not merely one recurrence.

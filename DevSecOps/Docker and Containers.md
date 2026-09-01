@@ -368,6 +368,12 @@ flowchart LR
 
 ---
 
+**The deliberate break:** a container reads as a security boundary — work is isolated inside it, so a compromise inside stays inside.
+
+It is a packaging and isolation convenience assembled from namespaces and cgroups over a **shared kernel**, and the boundary is exactly the set of namespaces actually applied plus the capabilities not retained. That set is decided at run time by configuration, not by the fact of containerisation: `--privileged`, the Docker socket mounted inside, a host path mount, or the host PID namespace each removes the boundary completely. None of those is an exploit, none produces an error, and all of them are ordinary lines in a compose file.
+
+**How you'd spot it:** read the run configuration before the image, because that is where the boundary is decided. `--privileged`, `/var/run/docker.sock` mounted in, host PID or network namespace, added capabilities and host path mounts each collapse it by configuration alone — which is why most container escapes require no vulnerability at all. The audit that finds them is of the compose file and the orchestrator manifest, not of the CVE list for the base image.
+
 ## Summary
 
 You should now be able to:

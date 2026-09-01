@@ -136,6 +136,12 @@ one: the client has stopped worrying about it.
 - **Silent downgrade on partial fixes.** Closing a finding when only some paths are fixed hides residual risk; preserve it and scope the remainder.
 - **No negative control.** A fix that also breaks legitimate use creates pressure for an unsafe rollback — confirm authorized workflows still work.
 
+**The deliberate break:** a retest reads as re-running the original proof — the payload that worked before now fails, so the finding is fixed.
+
+That establishes the **specific instance** is gone, which is a narrower claim than the one being recorded. A fix that blocks your exact payload while leaving the underlying flaw reachable by a variant passes a naive retest cleanly, and the finding is closed against evidence that was never about the cause. This is why the method includes variants and a negative control rather than just the original reproduction.
+
+**How you'd spot it:** test a variant alongside the original, and check the negative control — that the legitimate use of the feature still works, because a fix that broke the feature will be quietly reverted and the finding will reopen without anyone telling you. Where the root cause was systemic, ask whether the same defect exists elsewhere: closing one instance of a pattern that appears in twelve places is a partial result being reported as a complete one.
+
 ## Security Implications — the Defender's View
 
 - **Lessons learned is where risk actually drops:** converting a finding's root cause into a CI check, a secure-design standard, and a detection means the *class* stops recurring — far more valuable than closing one ticket.

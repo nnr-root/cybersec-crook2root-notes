@@ -129,6 +129,12 @@ with the blind spot rather than the one already covered.
 - **One channel tested.** Different channels have different detection profiles; testing only HTTPS misses DNS/cloud gaps.
 - **No teardown of exfil infra.** The collector/redirector must be torn down (OpSec & Teardown leaf) — a live exfil endpoint is residual exposure.
 
+**The deliberate break:** an exfiltration simulation reads as needing to move the real data — anything else feels like a demonstration rather than a proof.
+
+The control under test is whether **DLP and egress monitoring notice**, and a canary with the right characteristics tests that precisely as well as genuine data while creating no breach at all. Moving real client data out of the client's network is the event the engagement exists to prevent, performed by the people hired to prevent it, and it converts a controlled exercise into a reportable incident with the tester holding the data.
+
+**How you'd spot it:** build the canary to match what the control keys on — the same file type, the same size band, the same destination class as the real thing — because a control tuned for spreadsheets will not react to a text file however large. Then measure both directions: what actually left, and what the client saw. An exercise that proves data can leave but cannot say whether anything alerted has answered only half of the question it was commissioned for.
+
 ## Security Implications — the Defender's View
 
 - **DLP + egress control are the direct defenses:** classify and watch crown-jewel data, allow-list egress destinations, and inspect DNS/HTTPS — the Networking egress-control and DNS-security leaves are the how.

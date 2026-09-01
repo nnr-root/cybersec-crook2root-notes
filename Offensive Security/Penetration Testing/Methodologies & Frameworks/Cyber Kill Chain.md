@@ -82,6 +82,12 @@ flowchart TD
 
 The defender's advantage is structural: the attacker must complete **all seven** stages, so a control at *any* link — a scan alert, a blocked macro, an EDR catch on installation, an egress filter on C2 — collapses the chain. This is why layered defense works, and why mapping an engagement's findings onto the chain tells the client exactly *which links they can already break*.
 
+**The deliberate break:** the kill chain reads as a description of how attacks proceed — a sequence an adversary moves through, stage by stage, in order.
+
+It is a **defensive model**, and its value is the claim that breaking any single link prevents the outcome. Real intrusions skip stages entirely, revisit earlier ones, and run several in parallel; an attacker with valid credentials from a previous breach begins somewhere in the middle. Read as a literal timeline it teaches defenders to expect an order that attackers do not follow, and to look for a next stage that may already have happened.
+
+**How you'd spot it:** use it to ask where you could intervene rather than to predict what comes next. The productive question at each stage is which control would break it and whether you actually have that control — and a stage with neither a control nor any telemetry is the gap, regardless of where a real intrusion happens to enter the model or in what order it moves.
+
 ## Worked Mapping: An Engagement Across the Chain
 
 The kill chain earns its keep as a reporting language: it places every action of an

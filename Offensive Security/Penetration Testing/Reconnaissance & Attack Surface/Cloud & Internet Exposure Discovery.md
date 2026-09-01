@@ -100,6 +100,12 @@ flowchart TD
 - **Buckets: existence vs. access.** A `403` (exists, private) is not a finding; only a `200` listing or readable objects is. Reporting the mere existence of a bucket as a vulnerability is a false positive.
 - **The surface changes hourly.** Cloud assets are ephemeral, so a one-time discovery is stale immediately. This is why ASM must be *continuous*, not a single scan.
 
+**The deliberate break:** an asset appearing in an internet-wide index reads as an asset that exists now and belongs to whoever the record says it does.
+
+Those records are **historical**, and cloud addresses are recycled between tenants continuously. A result showing an exposed service may describe a host that was decommissioned months ago, or — far worse — an address that now belongs to an entirely different organisation who will experience your scoped, authorised testing as an unsolicited attack. The index answers what was true when the scanner passed, and says nothing about today or about ownership.
+
+**How you'd spot it:** re-resolve and re-confirm before touching anything: `whois` and the ASN for current ownership, and a scoped live check for current state. The specific hazard worth naming is a hostname harvested from an old certificate that has not resolved in a year, whose historical address now serves somebody else's application.
+
 ## Security Implications — Detection & Defense
 
 - **You cannot detect the Shodan query**, because the target was scanned by a third party, not you — the same undetectable-collection problem as passive recon. The defense is again *reducing exposure*, not detecting the search.

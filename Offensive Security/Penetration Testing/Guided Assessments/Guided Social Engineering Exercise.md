@@ -82,6 +82,12 @@ Evaluate preventive control rate, median report time, report quality, analyst tr
 
 Provide immediate reassurance, explain the observable cues, and give one clear reporting action. Share aggregate results. Convert findings into technical and procedural work: stronger sender controls, safer recovery flows, improved reporting buttons, help-desk scripts, and SOC playbooks.
 
+**The deliberate break:** repeating an exercise reads as measuring improvement — same test, later date, better number.
+
+Repeating the *same scenario* measures **memory of that scenario**. A cohort that recognises last quarter's wording produces a better result with no change whatever in the process being assessed, and the improvement is indistinguishable in the metrics from genuine resilience. This is the specific gaming that human-risk measurement is most prone to, and it is usually introduced with good intentions in the name of comparability.
+
+**How you'd spot it:** a retest has to vary the scenario while holding the control under test constant — the same decision point, reached through a different pretext, channel and time of day. When the wording is reused, the improvement is recall. The cross-check is whether the process metrics moved alongside the outcome metric: verification use and time-to-report rising together with a falling click rate is real, and a falling click rate on its own is not.
+
 ## 7. Retest
 
 Repeat the same threat hypothesis after remediation with changed wording and timing. Improvement means faster detection and safer process execution, not merely recognition of a familiar template.

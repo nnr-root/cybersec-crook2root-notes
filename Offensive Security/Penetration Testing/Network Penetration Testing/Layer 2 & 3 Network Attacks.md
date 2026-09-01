@@ -139,6 +139,12 @@ is how you evidence that the control works.
 - **Modern mitigations.** Many enterprises have DAI, DHCP snooping, and BPDU Guard deployed; a failed attempt is a *pass* for that control and should be reported as verified, not omitted.
 - **Segment-local only.** All of these are confined to one broadcast domain — they cannot cross a router. That containment is both their limit and the reason segmentation matters.
 
+**The deliberate break:** these read as attacks on the network, and therefore as the infrastructure team's problem rather than anyone else's.
+
+What they produce is an **on-path position**, and what an attacker does from there is take credentials and data belonging to applications and identities. The vulnerability is in the fabric and the consequence lands somewhere else entirely, which is why the remediation is split across two owners: link-layer controls on the switching side, and end-to-end encryption on the application side, neither of which is sufficient alone.
+
+**How you'd spot it:** the position is silent by construction — the attacker relays, everything keeps working, and no user reports anything — so detection is consistency checking rather than complaint handling: one MAC answering for two addresses, an unexpected gateway, a root bridge that is not yours. Then test whether the position would matter here: a segment where an on-path attacker sees only validated TLS is a materially different finding from one carrying cleartext LDAP or unsigned SMB.
+
 ## Security Implications — Detection & Defense
 
 - **The controls are the Networking domain's Link Layer Security Controls**: DAI, DHCP snooping, port security, BPDU Guard, and 802.1X, plus authenticated routing/FHRP at Layer 3. A pentest of the fabric is really an audit of whether these are deployed.

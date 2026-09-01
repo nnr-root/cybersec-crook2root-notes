@@ -76,6 +76,12 @@ flowchart TD
 - **The gateway CVE trumps everything.** If the appliance is unpatched with a known-exploited CVE, that is the finding — authentication strength is moot when the gateway itself is the way in.
 - **Legitimate-looking access.** A successful credential attack produces a *valid* login, indistinguishable from a real user without behavioral analysis — which is why detection must look at context (impossible travel, new device), not just success/failure.
 
+**The deliberate break:** an exposed remote-access service reads as an accepted risk that has already been signed off — it is supposed to be internet-facing, so its exposure is by design.
+
+Being intentional is precisely what makes it the strictest case rather than an excused one. It is authenticated by design, so **one valid credential is network access** with nothing else standing in the way; and because every organisation runs one, VPN and remote-access appliances have been among the most exploited initial-access points in real breaches. Intentional exposure raises the standard the control has to meet; it does not lower the scrutiny it deserves.
+
+**How you'd spot it:** check three things, in order. Whether MFA is enforced on *every* authentication path including the legacy ones nobody uses; whether the appliance is current against known-exploited vulnerabilities, since those are public and mass-scanned within days; and whether a successful login lands the user on the network or on a specific application. The third decides how much one phished credential is actually worth.
+
 ## Security Implications — Detection & Defense
 
 - **MFA on every remote-access portal is the single highest-value control** — it neutralizes credential stuffing and spraying, the two commonest remote-access attacks, by making a stolen password insufficient.

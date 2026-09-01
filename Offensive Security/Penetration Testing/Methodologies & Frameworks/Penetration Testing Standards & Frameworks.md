@@ -56,6 +56,8 @@ The differences between frameworks are mostly *emphasis, granularity, and audien
 
 **The deliberate break:** the five frameworks are laid out as numbered phases, so the obvious reading is that a methodology is a checklist — start at intelligence gathering, finish at reporting, tick each box on the way.
 
+**How you'd spot it:** look at the time allocation in a plan and in the delivered engagement. A schedule that assigns a fixed block to each phase and never revisits one has encoded the checklist reading before any testing began — and its most visible symptom afterwards is a report whose reconnaissance section describes only what was known on day one. The healthy signature is the opposite: a finding late in the engagement that sent the tester back to enumeration, and a scope note explaining why.
+
 Real engagements loop, and the loops are where the findings are. A confirmed identity flaw changes the threat model, sending you back to modelling. A newly discovered subnet sends you back to intelligence gathering with three days already spent. A stop condition in the RoE can halt exploitation entirely and turn the remaining time into deeper enumeration. An engagement that ran cleanly forward through five phases and never revisited one is not a disciplined engagement — it is usually one where nobody found anything that mattered.
 
 Read the phases as **a set of activities with dependencies**, not as a sequence. Which is the same distinction the OS Internals branch draws about systemd: a dependency graph, not a script.

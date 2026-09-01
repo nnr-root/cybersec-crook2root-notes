@@ -78,6 +78,12 @@ flowchart TD
 - **Message flooding = DoS.** Rate-limit testing over a socket can genuinely overwhelm a server (each connection is cheap for the client, expensive for the server). Throttle.
 - **Framing quirks.** WebSocket messages can be fragmented and use text or binary frames; a validation bypass may hide in an unusual framing — test the variants.
 
+**The deliberate break:** SameSite and CORS read as covering cross-origin requests generally, so a WebSocket handshake reads as inheriting that protection.
+
+The handshake is an HTTP request that **carries cookies and is not constrained the way an XHR is**. The browser attaches the session cookie and does not apply the same-origin restrictions that would block an equivalent fetch, so a server that authenticates a socket from the ambient cookie and never checks `Origin` can be opened by any page the victim visits — authenticated, in their context, for as long as the connection lives.
+
+**How you'd spot it:** check two things on the handshake specifically: whether `Origin` is validated server-side, and whether authentication uses a token the attacking page cannot read rather than the cookie the browser supplies for free. The confirming test is to open a connection from an unrelated origin in a victim's browser and see whether it authenticates — if it does, every page the victim visits is a client of your service.
+
 ## Security Implications — Detection & Defense
 
 - **Security must move into the message handler.** Per-message authorization and validation are the core controls, because the per-request controls upstream (WAF, request-level authz) do not see individual frames.

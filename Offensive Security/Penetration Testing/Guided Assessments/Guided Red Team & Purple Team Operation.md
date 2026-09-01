@@ -117,6 +117,12 @@ Case     : 13:01:10Z analyst acknowledged
 - **Tuning detections on unstable strings.** Excluding by filename or an easily changed token creates brittle rules and false confidence; anchor on stable behavior.
 - **"It alerted once" ≠ operational.** Without ownership, health monitoring, negative controls, and recurring validation, a detection silently rots.
 
+**The deliberate break:** an operation that reached its objective undetected reads as a success.
+
+The deliverable is **information about the defence**, not the objective. An operation that walks to the crown jewels while telling the client nothing about where their detection failed has produced a story: compelling, unactionable, and impossible to turn into engineering work. Success is measured in what the defenders can now fix, which means the interesting output is the map of what fired, what was collected but never alerted, and what was never collected at all.
+
+**How you'd spot it:** check whether the operation recorded, per action, what should have detected it and whether it did. An after-action report listing red team achievements with no corresponding detection map cannot be converted into work by anyone, and that gap is visible at a glance — the achievements have timestamps and the defensive column is empty.
+
 ## Security Implications — the Defender's View
 
 - **The red op measures the *response*, not just the perimeter:** prevention rate, time-to-first-telemetry, time-to-triage, time-to-contain, and recovery for each emulated behavior — the metrics that actually predict breach outcomes.

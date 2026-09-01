@@ -129,6 +129,12 @@ of framing offensive results in ATT&CK rather than in an ad-hoc list.
 - **Confusing tactic and technique.** "We did Credential Access" (a tactic) is not a finding; "we dumped LSASS (`T1003.001`)" (a technique/procedure) is. Report at technique granularity.
 - **Ignoring the client's controls in the plan.** A good emulation deliberately includes techniques you *expect* to be caught, to validate detection — not only the ones you expect to succeed.
 
+**The deliberate break:** ATT&CK coverage reads as a score — techniques covered out of techniques total, tracked as a percentage that ought to go up.
+
+It is a **catalogue of observed behaviour, not a checklist with a meaningful denominator**. Techniques differ enormously in how relevant they are to a given organisation and in how many distinct ways each can be performed, so "we cover 60%" describes neither what an adversary would do to you nor whether you would notice. A percentage built on a mapping exercise measures the mapping.
+
+**How you'd spot it:** coverage claims are themselves the tell — the follow-up questions are which techniques matter for the threat model you actually chose, and whether each claimed detection has ever been exercised. A detection mapped to a technique and never fired in anger is a hypothesis; running the behaviour and watching what happens is what converts it into a measurement, which is exactly the work purple teaming exists to do.
+
 ## Security Implications — the Defender's View
 
 - **ATT&CK is a defensive coverage framework first.** Blue teams map their detections onto the matrix (via the **ATT&CK Navigator** heatmap) to see *which techniques they can and cannot see* — the red team's job is to validate that heatmap against reality.

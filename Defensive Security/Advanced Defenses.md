@@ -133,6 +133,12 @@ index=wineventlog (EventCode=1102 OR EventCode=104)         // Security/System l
 
 ---
 
+**The deliberate break:** detection reads as recognising malicious tools — know the bad software, spot it when it appears.
+
+Living-off-the-land removes the thing being recognised. The binaries are already installed, already signed, and already used legitimately every day, so there is no malicious artefact anywhere in the sequence. Detection therefore has to be about **context and combination** — this binary, doing this, with that parent, at this hour — rather than about identity. Anti-forensics inverts the problem the same way: the signal becomes an absence, a log source that stopped, which nothing will alert on unless somebody is watching for silence.
+
+**How you'd spot it:** the tells are pairings and gaps rather than names: a signed system binary doing something outside its purpose, and a telemetry source that went quiet without an explanation. Both are only visible against a known baseline, which makes baselining the prerequisite rather than a maturity step — without it, "unusual" has no referent and every one of these detections is unimplementable.
+
 ## Summary
 
 You should now be able to:

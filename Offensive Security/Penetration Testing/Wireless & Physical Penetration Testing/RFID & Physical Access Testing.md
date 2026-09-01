@@ -129,6 +129,12 @@ Expected result: access granted once, anti-passback on replay
 Observed: two grants; replay protection absent at controller workflow
 ```
 
+**The deliberate break:** upgrading the badge technology reads as fixing the cloning problem — move to a credential with real cryptography and the exposure is closed.
+
+The credential is one component in a chain of five: badge, reader, controller, access server, and the identity lifecycle behind them. Most real findings live in the last of those and in the boundaries between them — a badge never revoked after someone left, a revocation that takes days to reach the readers, a door controller reachable from the ordinary office network, a mechanical bypass on the door itself. **Better cryptography on the card touches none of those**, which is why a technology upgrade so often changes the finding's wording and not its severity.
+
+**How you'd spot it:** test the lifecycle rather than the card. Whether a revoked badge actually stops opening doors, how long revocation takes to propagate, whether contractor credentials expire with the contract, and whether the controller's management interface answers from a user segment are each directly testable — and each is more likely to be the finding than the credential technology anybody is arguing about.
+
 ## Defense-in-depth
 
 Use cryptographic credentials, diversified keys, secure enrollment, rapid revocation, anti-passback where appropriate, PIN/biometric for high-risk zones, reader tamper monitoring, encrypted panel communication, segmented management, camera/alarm correlation, and physical-key governance. Reader replacement alone does not fix weak controller rules or identity lifecycle.

@@ -82,6 +82,12 @@ After authorized association, test expected reachability from each role. Guest c
 
 With written approval, operate a low-power controlled access point using a clearly documented test identifier. Measure whether wireless monitoring, NAC, physical security, and SOC workflows identify the event. Stop if unintended clients attempt association; never solicit production credentials.
 
+**The deliberate break:** a wireless assessment reads as testing the corporate SSID — that is the network that matters, so that is the scope.
+
+The scope that produces findings is **every network the organisation operates**: guest, IoT, warehouse handheld, building control, and whatever was stood up for a project and never removed. And the interesting result is usually not how each authenticates but what each one *reaches* — a guest network with a path to a management VLAN, or a building-control SSID on a shared key that has not changed since installation, outranks anything you will find on the well-configured corporate network.
+
+**How you'd spot it:** enumerate the SSIDs, then test what each one reaches rather than only how each one lets you on. The ranking that follows is often counter-intuitive and correct: a weakly authenticated network that reaches nothing is a lower finding than a well-authenticated one that lands you on a flat internal network.
+
 ## Closure
 
 Power down test radios, remove profiles and certificates, revoke temporary identities, restore access-point settings, and verify no rogue configuration remains. Report coverage gaps, weak identity validation, segmentation failures, and monitoring outcomes with RF location and timestamp evidence.

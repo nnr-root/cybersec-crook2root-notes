@@ -87,6 +87,12 @@ flowchart TD
 - **"It alerted once" = done.** Without ownership, health monitoring, and recurring re-execution, a detection silently rots as data sources change.
 - **Tool-first design.** Naming Atomic Red Team / Caldera in the card conflates *methodology* (here) with *tooling* (Tooling domain); design the behavior first, pick the executor second.
 
+**The deliberate break:** a purple team exercise reads as a red team operation with the blue team allowed to watch.
+
+The unit of work is **a single behaviour with a stated expected detection**, executed so that a failure can be localised. Run a whole operation and observe that it went undetected, and you have learned one bit of information; run one behaviour against a named data source and a named rule, and a failure resolves to a specific link — telemetry never collected, rule absent, rule present but not matching, or alert fired and never triaged. Those four call for four different fixes.
+
+**How you'd spot it:** the test card is what makes the difference, and its absence is the tell: one behaviour, the data source that should record it, the rule that should fire, and the expected outcome, written before execution. An exercise that cannot say which of those four failed has produced an impression rather than a finding, and impressions do not turn into engineering work.
+
 ## Security Implications — the Defender's View
 
 - **Purple teaming is the detection-engineering engine:** each validated card becomes a versioned analytic with a data-dependency list, an owner, investigation guidance, and a recurring test — turning ad-hoc alerting into measurable, maintained coverage.

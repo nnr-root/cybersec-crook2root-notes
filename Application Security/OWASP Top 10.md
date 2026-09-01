@@ -187,6 +187,12 @@ SSRF escalates far beyond a leaked key: **enumerate internal networks/ports**, h
 
 ---
 
+**The deliberate break:** the Top 10 reads as a checklist of vulnerabilities to test for — work down the list, tick each item, and the application has been assessed.
+
+It is a **risk awareness document built from aggregated incident and scan data**, and its entries are broad classes rather than tests. "Broken Access Control" is not something anyone can scan for; it is a category into which thousands of specific, application-shaped defects fall. Used as a coverage checklist it produces an assessment that reports categories instead of defects, which reads as thorough and tells a developer nothing about what to change.
+
+**How you'd spot it:** a report whose findings are named after Top 10 categories rather than after what is actually wrong has been driven by the list rather than by the application. Work the other direction — find the specific defect, then map it to a category for the client's reporting. And read the ordering correctly while you are there: the positions reflect prevalence in the underlying data, not severity, so A01 is not more dangerous than A07 in your application.
+
 ## Summary
 
 You should now be able to:

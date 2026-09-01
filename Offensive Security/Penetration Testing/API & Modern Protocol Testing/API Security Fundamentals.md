@@ -106,6 +106,12 @@ flowchart TD
 - **429 as the only signal.** A rate limit that returns 429 but still *processes* the request (or leaks timing) is ineffective. Confirm the request was actually rejected.
 - **Over-testing logic abuse.** Proving a negative-amount transfer with a canary account is a finding; actually moving real money is exploitation and out of bounds.
 
+**The deliberate break:** an API reads as a web application without the pages, so web security knowledge is assumed to transfer intact.
+
+The consumer is **code**, and that changes which controls still carry weight. There is no interface hiding anything, no human pace to rate-limit against, no browser enforcing origin rules on the caller's behalf, and identifiers can be walked at machine speed. Every control that quietly depended on the client being a browser driven by a person — a hidden button, a disabled field, a limit set to what someone could plausibly click — has no force at all once the caller is a script.
+
+**How you'd spot it:** ask of each control whether it depends on the client being a browser or a human, because those are the ones that evaporate. Anything hidden rather than denied is exposed; anything limited to human speed is exceeded in a second. The finding that recurs above all others is object-level authorisation, and it is tested in one request — change the identifier, keep your own valid token, and see what comes back.
+
 ## Security Implications — Detection & Defense
 
 - **Server-side authorization on every request** is the non-negotiable control — object-level and function-level, checked in application logic, never assumed from the token's validity or the UI's constraints.

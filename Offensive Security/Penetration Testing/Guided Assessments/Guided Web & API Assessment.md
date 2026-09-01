@@ -151,6 +151,12 @@ If the server accepts an illegal `Draft -> Fulfilled` transition, capture **one*
 - **Payload theatre.** Chasing exotic payloads over business-logic and access-control flaws inflates noise and misses the high-impact findings.
 - **Over-collection.** Prove access with a single canary record; enumerating adjacent IDs or exporting data turns a finding into a breach you caused.
 
+**The deliberate break:** the web application and the API read as two surfaces, so testing them reads as two pieces of work that can be scoped separately.
+
+They share **one security model, and the API is where authorisation actually lives**. The interface hides buttons, greys out fields and omits menu items; none of that is enforcement, and all of it is reproduced by anyone who calls the endpoint directly. Scoping an assessment to the browser therefore tests the decoration and leaves the enforcement point unexamined, which is how an application passes a web assessment and fails on its first day of API traffic.
+
+**How you'd spot it:** for every action the interface hides or disables, call the underlying endpoint directly with a lower-privileged token. That single test separates a UI restriction from an authorisation check, and it is the finding most reliably missed by an assessment that stayed in the browser.
+
 ## Security Implications — the Defender's View
 
 - **Centralized, server-side authorization** (an ownership predicate enforced in one place for every route, verb, and version) is the durable fix for the dominant findings (BOLA/IDOR/BFLA) — hiding IDs is not.

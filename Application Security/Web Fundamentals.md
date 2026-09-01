@@ -241,6 +241,12 @@ token = jwt.encode({"username":"user","admin":1}, public_key, algorithm="HS256")
 
 ---
 
+**The deliberate break:** the attack surface reads as the application you were pointed at — the site named in the scope document.
+
+It is **every name that resolves into the organisation's space**, and the productive one is rarely the main site. A forgotten subdomain, a staging host left reachable, an old marketing site on a shared platform: each is in scope by ownership and none is in the brief. This is why subdomain enumeration sits in a fundamentals note rather than an advanced one — it is not a specialist technique, it is how you find out what you are actually assessing.
+
+**How you'd spot it:** enumerate first and pay particular attention to cookie scope, because that is what turns a peripheral host into a critical finding: a cookie set on `.example.com` is readable from every subdomain, so a scripting flaw on a forgotten marketing site reaches the main application's session directly. Certificate transparency logs are the highest-yield source, since they name hosts that were issued certificates and never intended to be found.
+
 ## Summary
 
 You should now be able to:

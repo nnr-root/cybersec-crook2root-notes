@@ -133,6 +133,12 @@ runs.
 - **No guardrails = real malware.** A payload without scope checks/expiry/kill switch/attribution is indistinguishable from malicious code and is unsafe/unethical.
 - **AMSI defeats disk obfuscation.** For scripts, on-disk encoding is scanned again *after decoding at runtime* — so disk obfuscation alone doesn't beat AMSI.
 
+**The deliberate break:** obfuscation reads as the objective — make the payload unrecognisable, defeat the scanner, and the endpoint is beaten.
+
+Static evasion buys **entry and nothing further**. Modern endpoint detection is behavioural, so a flawlessly obfuscated payload that then allocates executable memory, injects into another process or spawns a shell is caught at the moment it acts, exactly as an unobfuscated one would be. Obfuscation relocates the detection point from the file to the behaviour; it does not remove it, and effort spent past the scanner returns nothing against the part that matters.
+
+**How you'd spot it:** measure the two independently, because they answer different questions: what got past static inspection, and what the endpoint recorded once it ran. A payload with a clean static verdict and a loud behavioural trace is the ordinary outcome and a genuinely useful finding — reporting only the first overstates the bypass and leaves the client believing their detection failed when it worked.
+
 ## Security Implications — the Defender's View
 
 - **Behavioral detection is obfuscation-proof:** rules keyed on actions (decode-then-execute, RWX allocation, unusual child processes, staged fetches) catch payloads regardless of encoding — the strategic investment.

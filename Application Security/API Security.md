@@ -186,6 +186,12 @@ Discovery: enumerate versions (`/v1`, `/v2`, `/v3`, `/beta`, `/internal`), diff 
 
 ---
 
+**The deliberate break:** the API's attack surface reads as the endpoints in its current documentation — that is what exists, so that is what gets tested.
+
+The surface is **every version ever deployed and never decommissioned**. `v1` is usually still answering beside `v2`, a staging host usually shares the production data store, and the deprecated endpoint reliably retains the flaw that was fixed in its replacement — because nobody backports a fix to a version they have stopped thinking about. Securing the documented API leaves the undocumented one running, and the undocumented one is where the authorisation logic is a release behind.
+
+**How you'd spot it:** enumerate by version and environment rather than by documentation: request `/v1` where the docs describe `/v2`, and look for staging or internal hostnames answering with production data. Then check logging as a separate question — an API without per-caller logging cannot detect the sequential walk through object identifiers that its single most common vulnerability consists of, so the absence of that telemetry is itself the finding.
+
 ## Summary
 
 You should now be able to:

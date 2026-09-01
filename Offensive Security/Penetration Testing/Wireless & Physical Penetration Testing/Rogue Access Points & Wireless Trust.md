@@ -122,6 +122,12 @@ Credential policy: generated, single-use
 Stop condition: unexpected client association
 ```
 
+**The deliberate break:** the answer to rogue access points reads as detection — deploy wireless intrusion detection and you will know when one appears.
+
+For the Enterprise case specifically there is a **preventive fix that outranks detection entirely**: clients that validate the RADIUS server's certificate cannot be lured onto an impostor, so there is no incident to detect. Detection earns its place covering what prevention cannot — rogue APs on open or PSK networks, novel attacks, physical placement — but buying monitoring while leaving certificate validation unenforced deploys the two controls in the wrong order and pays for the weaker one.
+
+**How you'd spot it:** audit the client-side setting before evaluating any monitoring product: server-certificate validation enforced by policy across the fleet is the control, and it is most often unenforced on exactly the roaming devices that need it. Then validate the detection you do have rather than assuming it — stand up an authorised rogue and confirm an alert actually arrives, because an untested WIDS is an assumption with a dashboard.
+
 ## Detection validation
 
 Compare wireless-controller rogue detection, wired switch MAC/port data, DHCP, RADIUS, DNS, endpoint WLAN events, and physical inventory. Test unknown AP, known SSID from wrong BSSID, unauthorized bridge, and canary client association. Validate response ownership and containment procedure.

@@ -87,6 +87,12 @@ Assess metadata-service protections, pod or task identities, service-account bin
 
 Correlate controlled policy denials, role assumptions, public-policy changes on a test resource, secret access, and unusual API calls with centralized audit telemetry. Confirm logs are organization-controlled, immutable, region-complete, and monitored.
 
+**The deliberate break:** a cloud assessment reads as a network assessment aimed at cloud-hosted systems — the same work, someone else's data centre.
+
+The target is the **control plane**, and it answers to an API key from anywhere on the internet. Network position, the organising idea of a traditional assessment, is largely irrelevant to it: identity and policy are the perimeter, and the question is what a principal is permitted to do rather than what is reachable from where you are standing. An assessment that ports the network methodology across scans hosts and never examines the layer that actually grants access.
+
+**How you'd spot it:** enumerate what each principal can do rather than what answers on a port. The three questions that carry most of the value: which identities can escalate into which roles, which resource policies name broad or wildcard principals, and what a compromised workload's metadata credentials would grant if someone reached them. None of those are visible to a port scan.
+
 ## 8. Cleanup and retest
 
 Remove test resources, policies, keys, snapshots, public rules, federated sessions, and automation artifacts. Compare inventory before and after. Retest the repaired policy and adjacent identities so closure demonstrates least privilege without breaking legitimate deployment flows.

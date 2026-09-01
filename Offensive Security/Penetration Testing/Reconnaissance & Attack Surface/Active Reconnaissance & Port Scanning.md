@@ -112,6 +112,12 @@ There is no universally correct setting — an internal authorized scan wants sp
 - **Version banners lie.** A hardened server may present a false or blank banner. Corroborate with behavior, and never report a CVE as confirmed on banner alone.
 - **You are loud.** Every scan is logged at the target. A default `nmap` scan is unmistakable in IDS logs — there is no such thing as a stealthy full scan.
 
+**The deliberate break:** reconnaissance reads as preparation — the harmless part that happens before the real testing starts.
+
+The first packet is the line. From that moment the activity is **interaction rather than observation**: it is logged, it is attributable, and outside an authorised scope it is potentially an offence regardless of how benign the payload was. The stealth-for-certainty trade is the actual decision being made at that point, not a refinement to consider afterwards, and treating recon as a warm-up is how testers end up scanning addresses that turned out not to belong to the client.
+
+**How you'd spot it:** know what your scan looks like from the receiving end — a default `nmap` run is a recognisable burst from a single source, and timing and packet-count options are the only knobs that change that. Settle scope before the first packet rather than after: an address that resolved from a harvested hostname may have been reassigned, and the log entry will name you either way.
+
 ## Security Implications — Detection & Defense
 
 Active recon is the most detectable phase, which makes it a defender's opportunity.

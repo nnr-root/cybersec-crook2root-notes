@@ -138,6 +138,12 @@ is the deliverable.
 - **OpSec confused with evading the client.** Red team OpSec protects the *exercise and client data*, not concealment from defenders beyond the scenario — that would defeat the measurement purpose.
 - **No teardown-under-outage plan.** If only one operator can tear down, an outage leaves infrastructure live — the inventory must make teardown reproducible by anyone.
 
+**The deliberate break:** operational security reads as staying undetected — the discipline of not being caught.
+
+It is equally about **protecting what the operation touches** and staying inside the authorised boundary: client data collected during the engagement, operator identities, and the infrastructure you stood up to run it. An operation that evades every detection perfectly while leaving client data on a rented host has failed at OpSec in the direction that carries legal and contractual consequences rather than reputational ones, and no amount of tradecraft compensates.
+
+**How you'd spot it:** the teardown inventory is the measure of it — domains, certificates, hosts, accounts, agents, listeners and every copy of client data, each with an owner and a removal date. Infrastructure left standing after an engagement becomes somebody else's command-and-control the moment the lease lapses and the domain is re-registered, which is a finding against you rather than the client.
+
 ## Security Implications — the Defender's View
 
 - **Forward logs off-host in real time:** the single most important anti-forensics defense — once an event is shipped to an immutable store, on-host tampering cannot erase it.

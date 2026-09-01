@@ -408,6 +408,12 @@ See **2. Broken User Authentication (BUA)** and **Phishing Tools**.
 
 ---
 
+**The deliberate break:** defence reads as a stack of products — buy the endpoint agent, the SIEM and the scanner, deploy them, and coverage follows.
+
+Almost every control here depends on something unglamorous underneath it: an inventory of what you own, clocks that agree, a baseline of what normal looks like, and logs that are genuinely being collected rather than configured. A product installed above missing foundations does not fail loudly — it produces confident output nobody can act on, which is indistinguishable from working right up until the incident that tests it.
+
+**How you'd spot it:** ask what each control assumes, because the assumption is where it breaks. Detection assumes a baseline; correlation assumes synchronised time; response assumes an inventory that can turn a hostname into a person and a location. A tool whose prerequisites are absent still reports, still shows green, and still cannot support a decision — so the diagnostic question is not whether the product is deployed but whether anyone could act on its output tomorrow morning.
+
 ## Summary
 
 You should now be able to:
