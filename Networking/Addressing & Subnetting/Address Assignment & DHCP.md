@@ -58,8 +58,8 @@ sequenceDiagram
     participant S2 as Second server (:67)
     C->>S1: DHCPDISCOVER (broadcast 255.255.255.255, includes client identifier)
     C->>S2: DHCPDISCOVER (same broadcast reaches every listener)
-    S1-->>C: DHCPOFFER 192.168.10.24, gw .1, dns .53, lease 86400
-    S2-->>C: DHCPOFFER 192.168.10.99, gw .99, dns .99, lease 86400
+    S1-->>C: DHCPOFFER 10.10.10.14, gw .1, dns .53, lease 86400
+    S2-->>C: DHCPOFFER 10.10.10.99, gw .99, dns .99, lease 86400
     Note over C: Client accepts an offer — normally the first to arrive
     C->>S1: DHCPREQUEST (broadcast, naming the chosen server)
     S1-->>C: DHCPACK — lease committed
@@ -89,15 +89,15 @@ sudo dhclient -v eth0
 Expected excerpt:
 
 ```text
-Listening on LPF/eth0/00:0c:29:4a:9b:31
+Listening on LPF/eth0/00:00:5e:00:53:0e
 DHCPDISCOVER on eth0 to 255.255.255.255 port 67 interval 3
-DHCPOFFER of 192.168.10.24 from 192.168.10.1
-DHCPREQUEST for 192.168.10.24 on eth0 to 255.255.255.255 port 67
-DHCPACK of 192.168.10.24 from 192.168.10.1
-bound to 192.168.10.24 -- renewal in 41508 seconds.
+DHCPOFFER of 10.10.10.14 from 10.10.10.1
+DHCPREQUEST for 10.10.10.14 on eth0 to 255.255.255.255 port 67
+DHCPACK of 10.10.10.14 from 10.10.10.1
+bound to 10.10.10.14 -- renewal in 41508 seconds.
 ```
 
-The line to inspect is `DHCPOFFER ... from 192.168.10.1`. That source address is the only identification the client has of who configured it. If it ever shows an unexpected address, the client has been configured by an unknown party — and everything downstream of that, including its gateway and resolvers, is suspect.
+The line to inspect is `DHCPOFFER ... from 10.10.10.1`. That source address is the only identification the client has of who configured it. If it ever shows an unexpected address, the client has been configured by an unknown party — and everything downstream of that, including its gateway and resolvers, is suspect.
 
 On systemd-managed hosts:
 
@@ -109,30 +109,30 @@ Expected excerpt:
 
 ```text
 ● 2: eth0
-    Address: 192.168.10.24 (DHCP4 via 192.168.10.1)
-    Gateway: 192.168.10.1
-        DNS: 192.168.10.53
+    Address: 10.10.10.14 (DHCP4 via 10.10.10.1)
+    Gateway: 10.10.10.1
+        DNS: 10.10.10.30
   DHCP4 Client: Lease: 86400s, T1: 43200s, T2: 75600s
 ```
 
 On the server, the lease database is the authoritative record:
 
 ```bash
-sudo grep -A5 "lease 192.168.10.24" /var/lib/dhcp/dhcpd.leases
+sudo grep -A5 "lease 10.10.10.14" /var/lib/dhcp/dhcpd.leases
 ```
 
 Expected excerpt:
 
 ```text
-lease 192.168.10.24 {
+lease 10.10.10.14 {
   starts 4 2026/07/30 08:14:22;
   ends 5 2026/07/31 08:14:22;
-  hardware ethernet 00:0c:29:4a:9b:31;
+  hardware ethernet 00:00:5e:00:53:0e;
   client-hostname "workstation-14";
 }
 ```
 
-This record is the backbone of attribution. An investigation that finds activity from `192.168.10.24` at a given time can only name the responsible host by consulting the lease that was active then. Once that lease expires and the address is reissued, the mapping is gone unless the log was retained. **Lease log retention is therefore an investigative capability decision, not a housekeeping one.**
+This record is the backbone of attribution. An investigation that finds activity from `10.10.10.14` at a given time can only name the responsible host by consulting the lease that was active then. Once that lease expires and the address is reissued, the mapping is gone unless the log was retained. **Lease log retention is therefore an investigative capability decision, not a housekeeping one.**
 
 ### Failure modes and how they present
 

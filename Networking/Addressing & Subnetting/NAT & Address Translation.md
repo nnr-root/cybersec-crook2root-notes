@@ -8,6 +8,8 @@ tags:
   - difficulty/medium
 Domain:
   - "[[Addressing & Subnetting]]"
+thread-exempt:
+  - "100.64.0.0: the RFC 6598 carrier-grade NAT block — the note explains what that range means"
 Color: "#42D4F4"
 ---
 
@@ -27,15 +29,15 @@ The device performing translation must solve one problem. If ten internal hosts 
 
 ```mermaid
 sequenceDiagram
-    participant L as Laptop 192.168.0.129:15401
+    participant L as Laptop 10.10.10.129:15401
     participant R as NAT router (public 203.0.113.5)
     participant S as Server 198.51.100.20:443
-    L->>R: src 192.168.0.129:15401 dst 198.51.100.20:443
-    Note over R: Create entry — 192.168.0.129:15401 <-> 203.0.113.5:19273
+    L->>R: src 10.10.10.129:15401 dst 198.51.100.20:443
+    Note over R: Create entry — 10.10.10.129:15401 <-> 203.0.113.5:19273
     R->>S: src 203.0.113.5:19273 dst 198.51.100.20:443
     S-->>R: src 198.51.100.20:443 dst 203.0.113.5:19273
     Note over R: Table lookup reverses the rewrite
-    R-->>L: src 198.51.100.20:443 dst 192.168.0.129:15401
+    R-->>L: src 198.51.100.20:443 dst 10.10.10.129:15401
 ```
 
 The server never learns the internal address. It sees only `203.0.113.5:19273`, which is why translation destroys attribution unless the translating device logs the mapping — a point returned to below.
@@ -71,7 +73,7 @@ sudo conntrack -L -j 2>/dev/null | head -5
 Expected excerpt:
 
 ```text
-tcp 6 431990 ESTABLISHED src=192.168.0.129 dst=198.51.100.20 sport=15401 dport=443
+tcp 6 431990 ESTABLISHED src=10.10.10.129 dst=198.51.100.20 sport=15401 dport=443
     src=198.51.100.20 dst=203.0.113.5 sport=443 dport=19273 [ASSURED] mark=0 use=1
 ```
 
@@ -93,7 +95,7 @@ table ip nat {
   }
   chain prerouting {
     type nat hook prerouting priority dstnat; policy accept;
-    iifname "eth0" tcp dport 8443 dnat to 192.168.0.50:443
+    iifname "eth0" tcp dport 8443 dnat to 10.10.10.50:443
   }
 }
 ```

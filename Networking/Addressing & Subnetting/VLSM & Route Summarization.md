@@ -21,7 +21,7 @@ IPv4 Addressing -> Subnetting & CIDR -> VLSM & Route Summarization -> IPv6 Addre
 
 ## One Size Does Not Fit
 
-Suppose you are given `172.16.8.0/22` and must serve four networks:
+Meridian is opening a depot, and you are given `10.10.40.0/22` — the block §5c of the lab topology reserves for exactly this — to serve four networks:
 
 | Segment | Hosts needed |
 | --- | --- |
@@ -43,49 +43,49 @@ The method has one rule that must not be broken: **allocate largest first**. Tak
 
 ## Worked Allocation
 
-Start with `172.16.8.0/22`, which spans `172.16.8.0` through `172.16.11.255` — 1,024 addresses.
+Start with `10.10.40.0/22`, which spans `10.10.40.0` through `10.10.43.255` — 1,024 addresses.
 
 **Step 1 — Staff, 500 hosts.** Need 512 addresses → 9 host bits → `/23`.
 
 ```text
-172.16.8.0/23    usable 172.16.8.1 - 172.16.9.254    broadcast 172.16.9.255
+10.10.40.0/23    usable 10.10.40.1 - 10.10.41.254    broadcast 10.10.41.255
 ```
 
-Remaining space begins at `172.16.10.0`.
+Remaining space begins at `10.10.42.0`.
 
 **Step 2 — Servers, 100 hosts.** Need 128 → 7 host bits → `/25`.
 
 ```text
-172.16.10.0/25   usable 172.16.10.1 - 172.16.10.126  broadcast 172.16.10.127
+10.10.42.0/25   usable 10.10.42.1 - 10.10.42.126  broadcast 10.10.42.127
 ```
 
-Remaining space begins at `172.16.10.128`.
+Remaining space begins at `10.10.42.128`.
 
 **Step 3 — Management, 25 hosts.** Need 32 → 5 host bits → `/27`.
 
 ```text
-172.16.10.128/27 usable 172.16.10.129 - 172.16.10.158 broadcast 172.16.10.159
+10.10.42.128/27 usable 10.10.42.129 - 10.10.42.158 broadcast 10.10.42.159
 ```
 
-Remaining space begins at `172.16.10.160`.
+Remaining space begins at `10.10.42.160`.
 
 **Step 4 — Point-to-point link, 2 hosts.** A `/30` gives exactly two usable addresses.
 
 ```text
-172.16.10.160/30 usable 172.16.10.161 - 172.16.10.162 broadcast 172.16.10.163
+10.10.42.160/30 usable 10.10.42.161 - 10.10.42.162 broadcast 10.10.42.163
 ```
 
-`172.16.10.164` through `172.16.11.255` remains free for growth — roughly 380 addresses held in reserve, contiguous and therefore still summarizable.
+`10.10.42.164` through `10.10.43.255` remains free for growth — 348 addresses held in reserve, contiguous and therefore still summarizable.
 
 ```mermaid
 flowchart TB
-    P["172.16.8.0/22 — 1024 addresses"]
+    P["10.10.40.0/22 — 1024 addresses"]
     P --> S["Staff /23 — 512"]
-    P --> R["172.16.10.0/24 remainder"]
+    P --> R["10.10.42.0/24 remainder"]
     R --> SV["Servers /25 — 128"]
-    R --> R2["172.16.10.128/25 remainder"]
+    R --> R2["10.10.42.128/25 remainder"]
     R2 --> M["Management /27 — 32"]
-    R2 --> R3["172.16.10.160/27 remainder"]
+    R2 --> R3["10.10.42.160/27 remainder"]
     R3 --> L["P2P link /30 — 4"]
     R3 --> F["Free space, contiguous, reserved for growth"]
 ```
@@ -95,16 +95,16 @@ Read the diagram as repeated halving. Each allocation consumes an aligned block 
 Verify each block:
 
 ```bash
-ipcalc 172.16.8.0/23
+ipcalc 10.10.40.0/23
 ```
 
 Expected excerpt:
 
 ```text
-Network:   172.16.8.0/23
-HostMin:   172.16.8.1
-HostMax:   172.16.9.254
-Broadcast: 172.16.9.255
+Network:   10.10.40.0/23
+HostMin:   10.10.40.1
+HostMax:   10.10.41.254
+Broadcast: 10.10.41.255
 Hosts/Net: 510
 ```
 
@@ -119,16 +119,16 @@ To summarize, find the longest run of leading bits common to every constituent p
 Given four networks:
 
 ```text
-192.168.4.0/24   11000000.10101000.000001 00.00000000
-192.168.5.0/24   11000000.10101000.000001 01.00000000
-192.168.6.0/24   11000000.10101000.000001 10.00000000
-192.168.7.0/24   11000000.10101000.000001 11.00000000
-                 └──── 22 identical bits ──┘
+10.10.40.0/24   00001010.00001010.001010 00.00000000
+10.10.41.0/24   00001010.00001010.001010 01.00000000
+10.10.42.0/24   00001010.00001010.001010 10.00000000
+10.10.43.0/24   00001010.00001010.001010 11.00000000
+                └───── 22 identical bits ──┘
 ```
 
-The first 22 bits match, so the summary is `192.168.4.0/22` — one advertisement replacing four.
+The first 22 bits match, so the summary is `10.10.40.0/22` — one advertisement replacing four.
 
-Two conditions must hold, and violating either causes real outages. The blocks must be **contiguous**, and the summary must be **aligned** on a boundary that is a multiple of its own size. `192.168.4.0/22` is valid because 4 is a multiple of 4. Summarizing `192.168.5.0/24` through `192.168.8.0/24` as a `/22` would be wrong: the range is not aligned, and the resulting advertisement would cover `192.168.4.0` — an address block you may not own — while excluding `192.168.8.0`.
+Two conditions must hold, and violating either causes real outages. The blocks must be **contiguous**, and the summary must be **aligned** on a boundary that is a multiple of its own size. `10.10.40.0/22` is valid because 4 is a multiple of 4. Summarizing `10.10.41.0/24` through `10.10.44.0/24` as a `/22` would be wrong: the range is not aligned, and the resulting advertisement would cover `10.10.40.0` — an address block you may not own — while excluding `10.10.44.0`.
 
 That failure mode has a name in operations: advertising address space you do not control. On an internal network it causes traffic blackholing; on the public Internet it is the mechanism behind route hijacking, whether accidental or deliberate.
 
@@ -139,16 +139,16 @@ ip route
 Expected excerpt after summarization:
 
 ```text
-192.168.4.0/22 via 10.255.0.2 dev eth1 proto ospf metric 20
+10.10.40.0/22 via 10.10.250.2 dev eth1 proto ospf metric 20
 ```
 
 versus before:
 
 ```text
-192.168.4.0/24 via 10.255.0.2 dev eth1 proto ospf metric 20
-192.168.5.0/24 via 10.255.0.2 dev eth1 proto ospf metric 20
-192.168.6.0/24 via 10.255.0.2 dev eth1 proto ospf metric 20
-192.168.7.0/24 via 10.255.0.2 dev eth1 proto ospf metric 20
+10.10.40.0/24 via 10.10.250.2 dev eth1 proto ospf metric 20
+10.10.41.0/24 via 10.10.250.2 dev eth1 proto ospf metric 20
+10.10.42.0/24 via 10.10.250.2 dev eth1 proto ospf metric 20
+10.10.43.0/24 via 10.10.250.2 dev eth1 proto ospf metric 20
 ```
 
 The benefit is not only table size. Fewer entries mean faster lookups, less memory on constrained hardware, and — most importantly — **fault isolation**: if one of the four subnets flaps, the summary does not change, so the instability is not propagated to the rest of the network.
@@ -162,29 +162,29 @@ Both techniques rely on one forwarding rule: when several routes match a destina
 Consider a table containing:
 
 ```text
-0.0.0.0/0          via 10.255.0.1
-192.168.0.0/16     via 10.255.0.2
-192.168.4.0/22     via 10.255.0.3
-192.168.5.0/24     via 10.255.0.4
-192.168.5.77/32    via 10.255.0.5
+0.0.0.0/0          via 10.10.250.1
+10.10.0.0/16     via 10.10.250.2
+10.10.40.0/22     via 10.10.250.3
+10.10.41.0/24     via 10.10.250.4
+10.10.41.77/32    via 10.10.250.5
 ```
 
 Trace destinations:
 
 ```bash
-ip route get 192.168.5.77
-ip route get 192.168.5.20
-ip route get 192.168.6.20
-ip route get 192.168.30.1
+ip route get 10.10.41.77
+ip route get 10.10.41.20
+ip route get 10.10.42.20
+ip route get 10.10.30.1
 ```
 
 Expected excerpt:
 
 ```text
-192.168.5.77 via 10.255.0.5 dev eth1     # /32 — most specific wins
-192.168.5.20 via 10.255.0.4 dev eth1     # /24
-192.168.6.20 via 10.255.0.3 dev eth1     # /22
-192.168.30.1 via 10.255.0.2 dev eth1     # /16
+10.10.41.77 via 10.10.250.5 dev eth1     # /32 — most specific wins
+10.10.41.20 via 10.10.250.4 dev eth1     # /24
+10.10.42.20 via 10.10.250.3 dev eth1     # /22
+10.10.30.1 via 10.10.250.2 dev eth1     # /16
 ```
 
 This is the property that lets a specific exception coexist with a broad summary. It is also the property that makes an accidental specific route so dangerous: a single injected `/32` overrides every broader route for that destination, and it will not appear anomalous in a table dominated by aggregates.

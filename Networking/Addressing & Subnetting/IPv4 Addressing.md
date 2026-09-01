@@ -8,6 +8,11 @@ tags:
   - difficulty/easy
 Domain:
   - "[[Addressing & Subnetting]]"
+thread-exempt:
+  - "10.0.0.0: the RFC 1918 range itself — this note defines the private ranges, so the block is the lesson"
+  - "172.16.0.0: same, the second RFC 1918 range"
+  - "192.168.0.0: same, the third RFC 1918 range"
+  - "100.64.0.0: the RFC 6598 carrier-grade NAT block, named as such"
 Color: "#42D4F4"
 ---
 
@@ -32,7 +37,7 @@ For human convenience the 32 bits are split into four 8-bit groups called **octe
 
 The dotted notation is a display convention, nothing more. Every meaningful operation — determining which network an address belongs to, calculating a range, deciding whether two hosts are neighbours — happens on the binary form. Learners who never look at the bits end up memorizing tables they cannot generalize; learners who do can derive every table on demand.
 
-An address alone is incomplete. It must be paired with a **subnet mask**, which declares how many leading bits identify the *network* and how many trailing bits identify the *host within it*. `192.168.10.24` tells you almost nothing; `192.168.10.24/24` tells you the host lives on the network `192.168.10.0` alongside up to 253 neighbours.
+An address alone is incomplete. It must be paired with a **subnet mask**, which declares how many leading bits identify the *network* and how many trailing bits identify the *host within it*. `10.10.10.24` tells you almost nothing; `10.10.10.24/24` tells you the host lives on the network `10.10.10.0` alongside up to 253 neighbours.
 
 This pairing is the foundation of every forwarding decision a host makes. When your host wants to send to a destination, it applies its own mask to both its address and the destination's. If the network portions match, the destination is a neighbour and is reached directly at the link layer. If they differ, the packet goes to the default gateway. That single comparison is why a wrong mask produces the classic symptom of "some things work and some do not" — the host is misclassifying which destinations are local.
 
@@ -104,19 +109,19 @@ Expected excerpt:
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536
     inet 127.0.0.1/8 scope host lo
 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500
-    inet 192.168.10.24/24 brd 192.168.10.255 scope global dynamic eth0
+    inet 10.10.10.24/24 brd 10.10.10.255 scope global dynamic eth0
        valid_lft 84213sec preferred_lft 84213sec
 
-default via 192.168.10.1 dev eth0 proto dhcp metric 100
-192.168.10.0/24 dev eth0 proto kernel scope link src 192.168.10.24
+default via 10.10.10.1 dev eth0 proto dhcp metric 100
+10.10.10.0/24 dev eth0 proto kernel scope link src 10.10.10.14
 ```
 
 Every field here is a claim you can verify:
 
-- `192.168.10.24/24` — the address and prefix. Network is `192.168.10.0`, broadcast `192.168.10.255`, usable hosts `.1` through `.254`.
+- `10.10.10.24/24` — the address and prefix. Network is `10.10.10.0`, broadcast `10.10.10.255`, usable hosts `.1` through `.254`.
 - `scope global` — routable beyond this host, unlike `scope host` on loopback.
 - `dynamic` with `valid_lft` — this address came from DHCP and expires. A lease that is about to expire and cannot be renewed is a future outage you can see coming.
-- `proto kernel scope link` on the second route — the kernel added this automatically when the address was configured. It is what tells the host that `192.168.10.0/24` is directly reachable without the gateway.
+- `proto kernel scope link` on the second route — the kernel added this automatically when the address was configured. It is what tells the host that `10.10.10.0/24` is directly reachable without the gateway.
 
 ### The failure this output diagnoses
 
@@ -124,27 +129,27 @@ Compare with a broken host:
 
 ```text
 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500
-    inet 192.168.10.24/16 brd 192.168.255.255 scope global eth0
+    inet 10.10.10.14/16 brd 10.10.255.255 scope global eth0
 
-default via 192.168.10.1 dev eth0
-192.168.0.0/16 dev eth0 proto kernel scope link src 192.168.10.24
+default via 10.10.10.1 dev eth0
+192.168.0.0/16 dev eth0 proto kernel scope link src 10.10.10.14
 ```
 
-The mask is `/16` where the network is genuinely `/24`. Communication with `192.168.10.x` works perfectly, because those are neighbours under either mask. Communication with `192.168.50.x` fails silently — the host believes those addresses are local, so it attempts address resolution on the segment instead of sending to the gateway, and nothing answers. The symptom is partial connectivity with no error message, and the cause is invisible unless you compare the mask against the actual network design.
+The mask is `/16` where the network is genuinely `/24`. Communication with `10.10.10.x` works perfectly, because those are neighbours under either mask. Communication with `192.168.50.x` fails silently — the host believes those addresses are local, so it attempts address resolution on the segment instead of sending to the gateway, and nothing answers. The symptom is partial connectivity with no error message, and the cause is invisible unless you compare the mask against the actual network design.
 
 The troubleshooting step is to compare your mask with the gateway's view:
 
 ```bash
-ip route get 192.168.50.10
+ip route get 203.0.113.20
 ```
 
 Expected excerpt on the broken host:
 
 ```text
-192.168.50.10 dev eth0 src 192.168.10.24 uid 1000
+203.0.113.20 dev eth0 src 10.10.10.14 uid 1000
 ```
 
-The absence of `via 192.168.10.1` is the finding. The host intends to deliver directly rather than route, which for an off-segment destination is always wrong.
+The absence of `via 10.10.10.1` is the finding. The host intends to deliver directly rather than route, which for an off-segment destination is always wrong.
 
 ## Security Implications
 

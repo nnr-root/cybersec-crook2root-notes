@@ -79,7 +79,7 @@ sequenceDiagram
     H->>L: Neighbor Solicitation for own address (duplicate detection)
     Note over H: No reply — address is unique and usable
     H->>L: Router Solicitation to ff02::2
-    R-->>H: Router Advertisement: prefix 2001:db8:acad:1::/64, flags, lifetimes
+    R-->>H: Router Advertisement: prefix 2001:db8:acad:10::/64, flags, lifetimes
     Note over H: Build global address from prefix + interface identifier
     H->>L: Neighbor Solicitation for the new global address
     Note over H: No reply — address usable; default route set to the advertising router
@@ -109,9 +109,9 @@ Expected excerpt:
        valid_lft forever preferred_lft forever
 
 default via fe80::1 dev eth0 proto ra metric 100 expires 1621sec
-2001:db8:acad:1::/64 dev eth0 proto ra metric 100 expires 2591821sec
+2001:db8:acad:10::/64 dev eth0 proto ra metric 100 expires 2591821sec
 
-fe80::1 dev eth0 lladdr 00:1a:2b:3c:4d:5e router REACHABLE
+fe80::1 dev eth0 lladdr 00:00:5e:00:53:01 router REACHABLE
 ```
 
 Every line carries a finding:
@@ -125,14 +125,14 @@ Test reachability, noting that link-local addresses require a zone index because
 
 ```bash
 ping6 -c 2 fe80::1%eth0
-ping6 -c 2 2001:db8:acad:1::10
+ping6 -c 2 2001:db8:acad:10::10
 ```
 
 Expected excerpt:
 
 ```text
 64 bytes from fe80::1%eth0: icmp_seq=1 ttl=64 time=0.48 ms
-64 bytes from 2001:db8:acad:1::10: icmp_seq=1 ttl=64 time=1.21 ms
+64 bytes from 2001:db8:acad:10::10: icmp_seq=1 ttl=64 time=1.21 ms
 ```
 
 The `%eth0` suffix is mandatory for link-local and omitting it produces `Invalid argument` — a small detail that consumes a surprising amount of troubleshooting time.

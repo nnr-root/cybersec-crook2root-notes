@@ -195,17 +195,26 @@ Meridian is allocated a supernet with deliberate room:
 ├── 10.10.10.0/24     VLAN 10  workstations      (254 hosts)
 ├── 10.10.20.0/24     VLAN 20  servers           (254 hosts)
 ├── 10.10.30.0/24     VLAN 30  operations        (254 hosts)
-├── 10.10.40.0/22     VLAN 40  reserved — the VLSM exercise space
-│   ├── 10.10.40.0/25    depot-north   (126 hosts)
-│   ├── 10.10.40.128/26  depot-south   (62 hosts)
-│   ├── 10.10.40.192/27  scanners      (30 hosts)
-│   └── 10.10.40.224/30  the depot link (2 hosts)
+├── 10.10.40.0/22     the depot block — the VLSM worked example allocates it:
+│   ├── 10.10.40.0/23     depot staff       (510 usable, need 500)
+│   ├── 10.10.42.0/25     depot servers     (126 usable, need 100)
+│   ├── 10.10.42.128/27   depot management  (30 usable, need 25)
+│   ├── 10.10.42.160/30   depot router link (2 usable)
+│   └── 10.10.42.164 — 10.10.43.255 free (348 addresses, still summarizable)
+├── 10.10.192.0/20    the /20 worked example in Subnetting & CIDR
+├── 10.10.250.0/24    router interconnects / next-hops
 └── 10.20.0.0/24      DMZ
 ```
 
-`10.10.40.0/22` exists purely so VLSM, summarisation and subnetting examples have
-a Thread-native range to work in. A summarisation exercise over the four depot
-subnets summarises to `10.10.40.0/22` — real arithmetic, on Meridian.
+`10.10.40.0/22` exists so VLSM, summarisation and subnetting examples have a
+Thread-native range to work in. Every boundary above was verified with Python's
+`ipaddress` module, not derived by hand: the four constituent `/24`s
+(`10.10.40-43.0`) share 22 leading bits and 40 is a multiple of 4, so they
+summarise to `10.10.40.0/22` — real arithmetic, on Meridian.
+
+The migration also corrected a pre-existing error: the free-space figure in
+VLSM & Route Summarization read "roughly 380 addresses"; `.164` to `.255` across
+one octet boundary is **348**.
 
 ## 6. Adoption rules
 
