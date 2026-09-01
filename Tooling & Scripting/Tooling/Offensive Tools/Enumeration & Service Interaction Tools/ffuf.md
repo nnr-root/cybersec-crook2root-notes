@@ -58,6 +58,8 @@ at 20 req/s  →  ~5.8 days
 
 **The deliberate break:** `clusterbomb` (every combination) against two medium wordlists is ten million requests — days of traffic that will get you blocked or noticed. `pitchfork` (pair line 1 with line 1) is thousands. Picking the wrong mode isn't a syntax error; it's a self-DoS. Always compute `A × B` before launching, and prefer `pitchfork` unless you truly need every pairing.
 
+**How you'd spot it:** do the arithmetic before pressing enter — multiply the wordlist line counts and look at the number. ffuf's own progress line says the same thing seconds in: a total request count in the millions with an ETA in days means the mode is wrong, not the wordlists.
+
 The other classic failure is filters: an over-broad `-fs` silently drops the *real* result (zero hits), while missing calibration returns millions of soft-404 "hits." When results look wrong, compare a single request with **curl** before changing five flags at once, and keep a response sample for every retained cluster rather than treating each matched line as a finding.
 
 ## Summary

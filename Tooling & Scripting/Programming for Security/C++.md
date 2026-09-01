@@ -58,6 +58,8 @@ $ clang++ -fsanitize=address parser.cpp -o parser && ./parser sample.bin
 
 **The deliberate break:** the plain build prints "parsed OK" — the use-after-free reads freed heap memory but happens not to crash *this time*, so testing passes and the bug ships. That is the entire danger of C++: memory errors are **undefined behaviour** that may work by luck until an attacker supplies the input that turns them into a crash or code execution (the exact primitive the Heap-Exploitation note attacks). **AddressSanitizer** makes the invisible bug loud and pinpoints it (`parser.cpp:88`), and **fuzzing** (libFuzzer/AFL) feeds malformed input until it finds the crash you didn't. This is the discipline that separates a security tool from a liability: in a language with no safety net, the net is your tooling — RAII to prevent leaks/UAF by construction, `std::span`/bounds checks to prevent overflows, sanitizers to catch what slips through, and fuzzing to find it before the adversary does. Use C++ only when the performance/control is truly required, and never without that harness.
 
+**How you'd spot it:** a passing test suite is not evidence here, because the bug is silent by construction. Build with `-fsanitize=address,undefined` and the input that printed "parsed OK" aborts instead, naming the allocation and the free. A crash that reproduces on one compiler, one optimisation level, or one machine and nowhere else is the shape of undefined behaviour rather than a logic error.
+
 ## Summary
 
 You should now be able to:

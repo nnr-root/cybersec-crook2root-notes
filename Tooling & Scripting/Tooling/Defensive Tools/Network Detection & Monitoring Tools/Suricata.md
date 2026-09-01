@@ -81,6 +81,8 @@ alert → drop   → legitimate connections to a partner API now BLOCKED for eve
 
 **The deliberate break:** a slightly over-broad rule is a minor annoyance in IDS mode (one noisy alert to tune) but a **self-inflicted denial of service** in IPS mode, because inline Suricata *acts* on every match by dropping the packet. The same rule set, two deployment modes, wildly different blast radius. The discipline: develop and tune rules in **IDS mode** against real traffic, measure the false-positive rate, and only promote to inline **IPS** rules you trust — and even then keep a bypass. The other Root reality (shared with Snort): **content signatures can't see inside TLS**, so a growing share of Suricata's value is its *metadata* logging (JA3 fingerprints, SNI, cert anomalies) rather than payload rules — which is exactly the ground Zeek was built for.
 
+**How you'd spot it:** establish which mode produced the output before you read a line of it: `drop` actions in the rule set and an NFQUEUE argument in the service definition mean inline. In IPS mode an over-broad rule does not announce itself as a noisy alert — it appears as an application that stopped working for some users at the exact moment the rule set was deployed.
+
 ## Summary
 
 You should now be able to:

@@ -56,6 +56,8 @@ index=windows sourcetype=Sysmon EventCode=1 process_name=mimikatz.exe earliest=-
 
 **The deliberate break:** a bare search like `* mimikatz` (no `index=`, no time bound) tells Splunk to scan *every event ever indexed* — minutes of runtime, huge resource cost, and on a busy cluster it can degrade the whole SIEM. The discipline is: lead with `index=` and `sourcetype=`, add a time range, and only then transform. The deeper Root point ties to the next note: SPL is **powerful but Splunk-specific** — a detection you carefully craft here does *not* run on Elastic or Sentinel, so a shop that changes SIEM rewrites its whole rule library. That vendor lock-in is precisely the problem **Sigma** exists to solve: express the *logic* in a portable format and compile it to SPL (or any backend) rather than hand-writing SPL you can never take with you.
 
+**How you'd spot it:** the Job Inspector states it plainly — a scan count in the hundreds of millions against an event count in the dozens means the search read everything and threw nearly all of it away. In the search bar the tell is simpler: no `index=` before the first pipe, and the time picker left on All time.
+
 ## Summary
 
 You should now be able to:

@@ -55,6 +55,8 @@ DISPLAY filter (set AFTER capturing):         ip.addr == 198.51.100.9
 
 **The deliberate break:** an analyst sets a *capture* filter of `host 198.51.100.9` to "focus," runs the capture, and later realises the attacker pivoted to `10.10.10.9` — but those packets were **never saved** and are unrecoverable. The safe habit is: capture *broad* (little or no capture filter), then narrow with *display* filters, which are non-destructive and reversible. The two even use **different syntax** (BPF `host 198.51.100.9` for capture; Wireshark `ip.addr == 198.51.100.9` for display), which is the tell that they're different mechanisms. One more Root reality: Wireshark shows TLS as opaque ciphertext unless you supply the session keys (via `SSLKEYLOGFILE`) — you can see *that* two hosts did TLS and to which SNI, but not the plaintext, without the keys.
 
+**How you'd spot it:** the syntax gives it away, which is exactly why the two differ. `host 198.51.100.9` is BPF and filters at capture time; `ip.addr == 198.51.100.9` is a display filter and is reversible. An expression with no `==` in the capture box is discarding everything else permanently. In a saved file, the give-away is a conversation list containing a single host.
+
 ## Summary
 
 You should now be able to:

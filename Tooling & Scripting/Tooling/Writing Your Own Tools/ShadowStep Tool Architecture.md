@@ -54,6 +54,8 @@ fixture_restored=true        ← and it was reversed
 
 **The deliberate break:** a naive anti-forensics tool assumes deleting a log *removes the evidence*. ShadowStep's architecture demonstrates the opposite: because real logs are shipped to an **immutable remote store** the instant they're written, a local deletion leaves the remote copy intact — and worse (for the attacker), the *gap itself* is a signal a SIEM alerts on (a log source going silent is an incident). Every ShadowStep action is deliberately **paired with the detection it triggers** (log manipulation → immutable/remote logging + gap detection; shredding → recovery/backup + secure-delete telemetry; identity masking → attribution controls). That pairing is why it's a *defensive training* tool built like an offensive one: the scope gate and remote-audit layers of the architecture aren't safety theatre, they are the mechanism that turns "run anti-forensics" into "prove the blue team can catch anti-forensics." A tool this dangerous is only legitimate because its design makes every action scoped, planned, externally logged, reversible — and, above all, observable to the defenders it exists to train.
 
+**How you'd spot it:** absence is the signal. A log source that goes quiet is an alert in any competently run SIEM, so the gap a deletion leaves is louder than the entries it removed. The same logic serves a defender directly — reconcile local logs against the remote store, and a local file shorter than its shipped copy names both the host and the window.
+
 ## Summary
 
 You should now be able to:

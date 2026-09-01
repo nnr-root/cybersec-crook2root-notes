@@ -66,6 +66,8 @@ ParentImage="*\\winword.exe" ...
 
 **The deliberate break:** the Sigma rule compiles to perfectly valid SPL, yet it **never fires** — because your SIEM stored the parent-process field as `parent_process_path`, not `ParentImage`. Sigma translates the *query syntax* across vendors, but it cannot know how *your* logs are named or normalized; if the field names don't line up, the rule is silent. This is why real Sigma deployment hinges on a **pipeline/field-mapping** (pySigma "processing pipelines") that maps the rule's canonical field names onto your actual log schema — and why log normalization is the unglamorous foundation of detection engineering. The portability is real and valuable, but it moves the hard problem from "rewrite the query" to "normalize the data" — solve that once and a whole library of community detections lights up at once.
 
+**How you'd spot it:** a rule that compiles cleanly and returns zero results *forever* is the signature — genuinely rare behaviour returns zero sometimes, a broken field mapping returns zero always. Test by stripping the condition down: if `index` and `sourcetype` alone return events but adding one field predicate returns none, that field name does not exist in your schema.
+
 ## Summary
 
 You should now be able to:

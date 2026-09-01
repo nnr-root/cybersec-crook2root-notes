@@ -71,6 +71,8 @@ def main():
 
 **The deliberate break:** the god script *works* — until you need to test the detection logic, reuse it in another tool, add a second output format, or hand it to a teammate. Every one of those requires a live network and a specific CLI, because the logic is inseparable from the edges. Extract `is_vulnerable(banner) -> bool` into a pure function and it becomes trivially testable with string inputs, reusable anywhere, and stable to refactor. That is the whole lesson: **the value isn't in any one pattern, it's in keeping the core logic free of I/O.** Everything downstream (plugins, concurrency, JSON evidence, scope guards) is easy to add *around* a clean engine and painful to retrofit into a tangled one — which is why architecture is a day-one decision, not a cleanup task.
 
+**How you'd spot it:** the test is whether you can exercise the logic with no network at all. If checking a detection rule requires standing up a live target and driving one specific CLI, the engine and the edges are fused. A pure function taking a banner and returning a boolean is testable with strings, which is why that extraction is the refactor that pays for itself first.
+
 ## Summary
 
 You should now be able to:

@@ -67,6 +67,8 @@ CertUtil: -URLCache command completed successfully.
 
 **The deliberate break:** allow-listing stops `evil.exe` but *not* `certutil`, because signature/path-based control trusts the binary, not its behaviour. That is the whole point of living-off-the-land — and also the key to defeating it: since you can't block `certutil`, you must detect the **anomalous behaviour** (why is a certificate utility making an outbound HTTP request and writing an executable?). LOLBAS is therefore a detection-engineering goldmine as much as an offensive one — every entry names the parent-process/command-line pattern a EDR rule should flag. Blocking the binary is usually impossible; catching the misuse is the achievable defense.
 
+**How you'd spot it:** detection here is about the pairing, not the process. `certutil` alone is unremarkable; `certutil` making an outbound HTTP request and writing an executable is not. The same holds for `mshta` and `regsvr32` — look for a signed system binary with a network connection and a child process it has no business spawning, which is exactly the join Sysmon Event IDs 1 and 3 make possible.
+
 ## Summary
 
 You should now be able to:

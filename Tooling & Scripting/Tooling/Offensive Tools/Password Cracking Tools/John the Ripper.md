@@ -58,6 +58,8 @@ Winter2025!       (?)
 
 **The deliberate break:** `Winter2025!` is nowhere in rockyou.txt, so the first run fails — and a naive tester concludes "strong password." But the rule engine mutates `winter2025` → `Winter2025!` in one pass, and it falls. Enterprise "complexity" passwords (a word + a capital + a number + a symbol) are *exactly* what rules generate, so they crack about as fast as the base word. The lesson cuts two ways: offensively, always run `--rules` before believing a password is strong; defensively (the diagram's Truth #2), complexity rules just push users toward predictable mutations the rule engine anticipates — the real defense is a **slow hash** (bcrypt/argon2), which starves the loop regardless of the password. And the flip side still holds: a genuinely high-entropy passphrase never appears in any wordlist or rule expansion, so it survives — the finding you report is the *pattern* (`bob` used a seasonal password), never the plaintext.
 
+**How you'd spot it:** a wordlist-only run that fails proves very little, so check whether `--rules` was on before writing "strong password" anywhere. In recovered output the pattern gives the game away: a dictionary word wearing a capital, a year and a symbol. If most of your cracked passwords look like that, the complexity policy is generating precisely what the rule engine expects.
+
 ## Summary
 
 You should now be able to:

@@ -57,6 +57,8 @@ OrgName: SomeOtherCloudTenant, Inc.        ← NOT Acme Corp anymore
 
 **The deliberate break:** two problems at once. First, the RDP that Shodan shows "open with NLA disabled" was scanned 10 weeks ago and is **closed now** — Shodan reports history, not live state. Second, and far more dangerous: that IP has been **reassigned to a different cloud tenant**, so it isn't your client's asset at all. Acting on a Shodan result — scanning or, worse, connecting to it — without re-confirming *current* ownership (`whois`/ASN) and *current* state (a scoped live check) risks attacking a stranger's system, which is both out of scope and potentially a crime. Shodan is a phenomenal lead generator precisely because it's pre-computed and passive; that same pre-computation is why every result needs a freshness-and-ownership check before it crosses from "intel" to "target."
 
+**How you'd spot it:** every result carries a timestamp; read it before anything else, and treat anything older than the asset's likely lifetime as a lead rather than a fact. Then confirm ownership separately with `whois` and the ASN, because a cloud address that has changed tenant still carries the previous tenant's banner in the index.
+
 ## Summary
 
 You should now be able to:

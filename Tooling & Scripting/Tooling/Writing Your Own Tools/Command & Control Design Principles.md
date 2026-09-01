@@ -65,6 +65,8 @@ cat conn.log | zeek-cut id.resp_h ts | (detect constant interval) → BEACON at 
 
 **The deliberate break:** a fixed-interval beacon produces a *metronomic* connection pattern that stands out in `conn.log` like a heartbeat — no payload signature needed, just the regularity gives it away (this is precisely the Zeek beacon-hunt from the defensive side). Adding **jitter** breaks the rhythm, a **malleable profile** makes each request look like ordinary web traffic, and a **redirector** means even a detected beacon leads to a throwaway host, not your infrastructure. This is the whole design tension: a C2 is a normal distributed system (the architecture note's separation-of-concerns applies — beacon, listener, redirector, console are clean components), but its *design goal* is to have its traffic and topology resist the detections in the Defensive branch. Building one for an authorized exercise is the best way to understand both sides: every C2 design choice (jitter, profile, redirector, channel) maps to a specific blue-team detection it's trying to survive — and documenting that mapping is what makes the exercise valuable to the defenders.
 
+**How you'd spot it:** from the defender's side it is arithmetic on `conn.log` — group by destination, take the intervals between connections, and look at their standard deviation. Near zero is a heartbeat, whatever the payload encryption. From the operator's side that same statistic is the self-check: if your jitter does not widen the distribution measurably, it is decorative.
+
 ## Summary
 
 You should now be able to:

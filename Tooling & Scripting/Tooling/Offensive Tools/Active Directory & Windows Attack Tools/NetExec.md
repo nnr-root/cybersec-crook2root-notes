@@ -58,6 +58,8 @@ SMB  DC01  [+] corp.local\jsmith:Spring2026!
 
 **The deliberate break:** the first command is *brute-forcing* — many guesses at one account — and trips the lockout threshold almost immediately, alerting the SOC and denying service. The second is *spraying* — one plausible password (often seasonal, from `--pass-pol`) tried once against every user — which stays under the per-account lockout counter because each account sees only a single failure. Same tool, opposite blast radius. Always read the lockout policy first, cap attempts per account with margin, and pace between rounds. NetExec makes both trivial to run, which is exactly why the discipline is on you.
 
+**How you'd spot it:** the difference lives in the failure counter, not in the tool. Read `--pass-pol` first: attempts per account approaching the lockout threshold means you are brute-forcing whatever you called it. From the defender's chair the shapes are opposite — one failure across many accounts in a short window is a spray; many failures against one account is a brute-force.
+
 ## Summary
 
 You should now be able to:

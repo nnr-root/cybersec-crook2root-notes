@@ -53,6 +53,8 @@ operator@kali:~$ sudo hcxdumptool -i wlan0mon -o cap.pcapng --enable_status=1
 
 **The deliberate break:** `MERIDIAN-CORP` leaked a PMKID on association, but `MERIDIAN-GUEST` did **not** — because the PMKID is only present when the AP caches it (a roaming/802.11r-related feature), and plenty of APs simply don't include one. A beginner assumes PMKID always works and gives up when an AP is silent; the right move is to **fall back to method A** (capture a real 4-way handshake from a connecting client) — which is why the `-m 22000` format existing for *both* matters so much. And the wall from the whole category still stands: whether it's a PMKID or a handshake, the offline crack only beats a **weak** passphrase — `Summer2024!` falls, a 20-character random PSK does not. hcxtools made *capture* clientless and quiet; it did nothing to make a strong passphrase crackable, so the reportable finding remains passphrase strength, not the tool's cleverness.
 
+**How you'd spot it:** silence from one AP while another yields a PMKID is a configuration difference, not a tool failure. If nothing appears after several association attempts, that AP does not cache one — switch to capturing a real 4-way handshake rather than repeating the same request. Both paths converge on the same `-m 22000` format, so the cracking step is unchanged.
+
 ## Summary
 
 You should now be able to:

@@ -73,6 +73,8 @@ operator@ci:~$ newman run api-tests.postman_collection.json -e staging.postman_e
 
 **The deliberate break:** the "Cross-tenant read" test *expected a 404* — proof that customer A cannot see customer B's order — but got **200**. Newman fails the run (non-zero exit), so the broken-access-control regression blocks the pipeline. This is the payoff of Postman over curl: the authorization test is codified as an assertion, run every build, not a one-off manual check that rots.
 
+**How you'd spot it:** a suite worth keeping asserts on status codes that should be *refusals*. A collection where every test expects `200` is checking that the API works, not that it is safe. In CI the signal is Newman's exit code — a cross-tenant test that starts passing after a deploy has caught a real access-control regression.
+
 Internals worth knowing: Postman variables have a **scope chain** (global → collection → environment → local), and a subtle bug is a stale global shadowing an environment value — check the variable's resolved value in the console. Pre-request scripts run *before* the request (used for HMAC signing or timestamp nonces). And beware secret hygiene: tokens saved in environments are stored locally and can sync to the cloud — use "secret" variable type and never commit exported environments containing live credentials.
 
 ## Summary

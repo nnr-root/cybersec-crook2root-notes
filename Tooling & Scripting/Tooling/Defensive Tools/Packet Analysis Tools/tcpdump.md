@@ -59,6 +59,8 @@ operator@server:~$ sudo tcpdump -i eth0 -nn host 198.51.100.9
 
 **The deliberate break:** without `-n` (IPs) and `-nn` (also ports), tcpdump does a **reverse-DNS lookup for every address it sees** — which is slow, and worse, those lookups are *new packets your capture host sends*, so on a busy link they appear in your own capture and can even feed back (an observer effect). Always capture with `-nn`. Two more Root essentials: on old versions the default **snaplen** truncated packets (use `-s0` for full payload), and `-w` writes **binary pcap** — piping it to `grep` fails, so write to a file and read it back with `-r` or open it in Wireshark. The division of labour is the whole point: tcpdump captures cheaply and precisely at the edge; Wireshark does the deep dissection afterward.
 
+**How you'd spot it:** your own capture shows it — reverse lookups to `in-addr.arpa`, sourced from the capture host, appearing in step with the traffic you are watching. If names are printing rather than addresses, `-nn` was missing. Payloads that stop dead at 68 or 96 bytes are the other one, and that is snaplen rather than a truncated conversation.
+
 ## Summary
 
 You should now be able to:

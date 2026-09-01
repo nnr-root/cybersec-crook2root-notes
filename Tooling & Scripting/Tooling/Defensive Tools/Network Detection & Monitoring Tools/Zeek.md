@@ -56,6 +56,8 @@ analyst@sensor:~$ cat conn.log | zeek-cut id.resp_h ts | sort | \
 
 **The deliberate break:** Zeek produces **no alerts**, and a beginner concludes it's "not working." It's working perfectly — Zeek's model is *record now, detect later*. A Cobalt Strike beacon calling home every 60 seconds matches no Snort signature (the payload is encrypted, the domain rotates), but in `conn.log` it's glaringly obvious: the same destination at a metronomic interval. That's the class of threat behavioural monitoring exists to catch and signatures never will. The tradeoff the diagram states plainly: Zeek shifts the work from the *rule author* (signatures) to the *analyst* (hunting) — more effort, but it's the only side of the house that sees the novel and the encrypted. In practice you run Zeek *and* Suricata: signatures for the known, Zeek logs for everything else, both feeding the SIEM.
 
+**How you'd spot it:** the absence of alerts is normal; the absence of *logs* is not, so confirm `conn.log` is growing. Then look for the thing rather than wait for it: group connections by destination and examine the interval between them — a low standard deviation around a repeating interval is a beacon, whatever the payload encryption.
+
 ## Summary
 
 You should now be able to:

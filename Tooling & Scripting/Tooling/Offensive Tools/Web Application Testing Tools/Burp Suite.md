@@ -26,6 +26,12 @@ Every web tool operates at a *point* in the request path. Burp's point is the mo
 
 Positioned as the proxy between client and server, Burp sees the *real* traffic your browser generates — then lets you grab any request and change it before it reaches the server. That is the whole superpower: the browser enforces client-side rules (hidden fields, JS validation, disabled buttons); Burp lets you ignore all of them and send exactly the bytes you want. The application's *server-side* behaviour is what you're really testing, and the proxy is how you reach it.
 
+**The deliberate break:** a form that validates its inputs — rejecting a negative quantity, refusing a malformed email, greying out the submit button — looks like a field that has been secured.
+
+That validation ran in the browser, which is to say it ran *before the request existed*. Burp sits after it. Every client-side check is advisory: it improves the experience for cooperative users and constrains nobody else, because the attacker is not using your form. Hidden fields, disabled buttons, maxlength attributes and JavaScript validators are all in the same category — they shape what the UI can produce, not what the server will accept. The only check that counts is the one running on the far side of the request.
+
+**How you'd spot it:** test it directly rather than reasoning about it. Submit a value the form accepts, catch the request in Proxy, change the field to something the form would have refused, and forward it — if the server takes it, the validation was decorative. In a codebase the tell is a check that exists in the client with no counterpart in the handler; in traffic it is a request carrying a value the interface has no way to generate.
+
 ## Proxy, scope, and the core loop
 
 **Set up:** proxy listener on `127.0.0.1:8080`, point the browser at it, import Burp's CA into a dedicated test profile, and define scope so you only touch the target:

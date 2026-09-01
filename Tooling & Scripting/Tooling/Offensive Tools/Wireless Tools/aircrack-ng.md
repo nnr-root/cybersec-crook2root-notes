@@ -60,6 +60,8 @@ Passphrase not in dictionary          (exhausted 14 million candidates)
 
 **The deliberate break:** both handshakes were captured identically and in seconds — but the corporate WLAN's `Summer2024!` falls to rockyou instantly while the guest network's 20-character random PSK never appears in any wordlist. "I captured the handshake" is **not** "I cracked the network" — beginners celebrate the `WPA handshake` line and forget that the offline crack still has to *find* the passphrase, and a strong one is computationally out of reach. The finding a report should carry is therefore **passphrase policy**, not "WPA2 is broken." Two operational cautions the map flags: the `--deauth` that forces a fast handshake is a real **DoS** against those clients (owned/authorized APs only), and you can also just *wait* passively for a natural join to avoid disrupting anyone.
 
+**How you'd spot it:** the `WPA handshake:` line means capture succeeded and says nothing whatever about the passphrase. The number that matters comes afterwards — keyspace against your rate. A long random passphrase exhausts the wordlist and reports nothing, and the honest finding is "handshake captured, passphrase not recovered within the engagement window", never a pass.
+
 ## Summary
 
 You should now be able to:

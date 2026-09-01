@@ -58,6 +58,8 @@ zzz-b 200 127
 
 **The deliberate break:** two paths that *cannot* exist both return `200` with a 127-byte body — the server has no real 404, so every guess will look like a hit. Gobuster cannot infer truth from a lying status code. The fix is `--exclude-length 127` (drop the constant soft-404 size) — mapping exactly to the diagram's soft-404 warning. Without calibration, a "successful" scan of hundreds of 200s is pure noise; with it, the real routes surface.
 
+**How you'd spot it:** calibrate before trusting anything — request two paths that cannot possibly exist and compare. Identical status *and* identical length means the server has no real 404, and every result in the run is noise until that length is filtered out. After the fact, the same finding looks like a results list where nearly every hit shares one byte count.
+
 Defensively, a Gobuster run is a recognizable burst of `404`s (or `403`s) from one source in seconds — trivial to detect, and a reason to prefer proper 404 semantics (soft-404s break the *defender's* log analysis too).
 
 ## Summary

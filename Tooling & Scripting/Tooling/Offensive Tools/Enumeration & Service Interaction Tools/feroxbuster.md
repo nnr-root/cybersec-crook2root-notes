@@ -59,6 +59,8 @@ operator@lab:~$ feroxbuster -u http://app.example.test -w list.txt --filter-size
 
 **The deliberate break:** the server returns `200` with a fixed 1520-byte "not found" page for *every* path — and because feroxbuster **recurses on 200s**, a soft-404 doesn't just add noise, it makes the tool recurse into non-existent directories, exploding the run. Filtering the constant size (`--filter-size`) both recovers the real file (`db.php.bak`) and stops the runaway recursion. The lesson from Gobuster/ffuf is amplified here: with recursion, calibrating against soft-404s isn't optional, it's what keeps the scan finite.
 
+**How you'd spot it:** recursion makes this loud rather than subtle. Watch queue depth and request rate: a run that keeps discovering fresh directories several levels down, every one returning the same byte count, is recursing into paths that do not exist. Stop it and read the size column before restarting with a filter.
+
 Cap depth with `-d` on large sites (unbounded recursion brute-forces every discovered directory forever), and emit a report rather than scraping the console so status, size, and redirect target survive for the finding.
 
 ## Summary

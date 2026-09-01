@@ -61,6 +61,8 @@ MD5("password"+"a1B9") = 7c2e51f3...   → unique per salt → NOT in any table 
 
 **The deliberate break:** the *identical password* `password` is instantly recovered when hashed bare, but **unrecoverable** the moment a per-user salt is added — because the salt makes each hash unique, so no precomputed table can ever contain it. That is precisely why salting exists: it doesn't make one password stronger, it makes *precomputation useless*, forcing an attacker back to slow per-hash guessing (Hashcat/John). CrackStation is therefore the clearest possible demonstration of *why every stored password must be salted* — and why bcrypt/argon2 (salted **and** slow) defeat it twice over.
 
+**How you'd spot it:** look at the structure of the stored value. A bare digest and nothing else is a lookup candidate; anything carrying a per-user component — a `$`-delimited field, a separate salt column, a `$2b$` prefix — cannot be in any precomputed table, and time on lookup sites is wasted. The check takes a second and saves the entire detour.
+
 ## Summary
 
 You should now be able to:

@@ -70,6 +70,8 @@ attacker$ (connection closed)
 
 **The deliberate break:** a raw reverse shell has **no PTY**, so anything needing a terminal — `sudo` password prompts, `ssh`, `vim`, job control — fails, and a stray `Ctrl-C` kills the entire session instead of the running command. The fix is the **TTY upgrade** revshells.com provides:
 
+**How you'd spot it:** the symptoms are consistent and immediate: no prompt, `sudo` refusing with "no tty present", tab completion dead, and `Ctrl-C` killing the whole session instead of the running command. Any one of those means you are on a raw shell and the upgrade has not happened yet.
+
 ```shell-session
 victim$ python3 -c 'import pty;pty.spawn("/bin/bash")'
 # then on attacker: Ctrl-Z; stty raw -echo; fg; export TERM=xterm

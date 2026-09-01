@@ -52,6 +52,8 @@ Interpretation: strong differential — but still verify manually
 
 **The deliberate break:** a single delayed response is *not* proof. Congestion, a slow query, a GC pause, or a queue can all mimic a `SLEEP(5)`, and — worse — `--risk 3` enables **stacked queries** that can *change state* (a `; UPDATE` or `; DROP` your payload didn't intend on a fragile app). The safe method is many samples with a conservative threshold, the lowest risk that works, and a canary DB. And the cardinal rule: a **negative** SQLmap run is *not* proof of safety — second-order injection, unusual encodings, and business-logic context all evade automated detection. SQLmap tells you "yes, here's how"; it never authoritatively tells you "no." Treat `--tamper` (WAF evasion) as a separate, explicitly-approved exercise, not a default.
 
+**How you'd spot it:** one slow response is noise. What you need is clean separation across repeated samples — the true condition consistently slow, the false condition consistently fast, over many trials; if the timings overlap at all, the oracle is not reliable yet. Check `--risk` before running, too: risk 3 against an application you cannot restore is a state-change hazard, not a detection setting.
+
 ## Summary
 
 You should now be able to:

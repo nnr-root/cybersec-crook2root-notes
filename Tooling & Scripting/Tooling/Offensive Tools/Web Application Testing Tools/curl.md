@@ -94,6 +94,8 @@ HTTP/2 200
 
 **The deliberate break:** the first request *fails* because the certificate's SubjectAltName doesn't match the IP — curl is doing its job, refusing to trust an unverified endpoint. Adding `-k` "fixes" it by disabling verification — and that is the trap. `-k` is fine for a lab against your own self-signed box, but reaching for it reflexively is how MITM attacks succeed. curl makes the security decision *visible*; a browser hides it behind a warning page.
 
+**How you'd spot it:** the tell is `-k` or `--insecure` in a command touching anything you do not own. In the error itself, read *which* check failed: a SubjectAltName mismatch, an expired certificate and an unknown issuer are three different findings, and only the first is plausibly a naming problem rather than a trust problem.
+
 Other internals worth mastering: curl does **not** follow redirects unless you pass `-L` (so a `301` shows you the redirect, not the destination — useful for testing open redirects); `-d` URL-encodes form data but `--data-raw` does not (matters for injection payloads); and `--resolve` / `-H 'Host:'` let you test **virtual-host routing** and reach a specific backend behind a load balancer. For untrusted input, remember curl is a *shell* command — never build a curl line by concatenating unescaped user data (a lesson from **Bash**).
 
 ## Summary

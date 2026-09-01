@@ -72,6 +72,8 @@ Reply bandwidth is tiny — but firewall STATE tables and IDS event volume are n
 
 **The deliberate break:** run at an aggressive `--rate` and results can *drop* — not because ports closed, but because a NAT/firewall state table filled, a router's ARP cache thrashed, or the sensor's ingestion dropped packets. Silence from Masscan is the diagram's `filtered` ambiguity multiplied by loss: a missed port may mean "closed" or "I flooded the path." The fix is to lower the rate, re-sample a small slice, and compare a known-open **canary** service — if the canary disappears at high rate, your optimisation invalidated the whole scan.
 
+**How you'd spot it:** plant a canary — a port you already know is open — and carry it in every sweep. Present at a low rate and absent at a high one means the missing results are your loss, not the target's state. Two runs at the same rate returning materially different port sets say the same thing.
+
 ## Summary
 
 You should now be able to:

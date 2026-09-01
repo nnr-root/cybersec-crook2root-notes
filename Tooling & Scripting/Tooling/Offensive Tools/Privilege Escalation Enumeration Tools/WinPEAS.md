@@ -26,6 +26,12 @@ Escalating on Windows means finding a **service, task, or privilege that will ex
 
 The **right** column of the diagram is WinPEAS's checklist. The two that pay off most often: **`SeImpersonatePrivilege`** on a service account (the "Potato" family escalates it to SYSTEM), and **unquoted service paths** (Windows may execute an attacker-planted `C:\Program.exe`). WinPEAS finds them; you recognise which to pursue.
 
+**The deliberate break:** the famous Windows escalation routes are the exploit-shaped ones — a kernel CVE, an unquoted service path — so that is where attention goes when the output arrives.
+
+The highest-yield WinPEAS output is usually credentials, and credentials need no exploit, no reboot and no race. Saved RDP and PuTTY sessions, `cmdkey` entries, an `unattend.xml` left behind by imaging, `Groups.xml` in SYSVOL, AutoLogon values sitting in the registry: each is a password or a hash in a file that a low-privileged user can read, and each turns escalation into a login. Unquoted service paths, by contrast, require a writable directory in the right place and usually a service restart, which is a great deal of conditions to meet.
+
+**How you'd spot it:** search the captured output for the credential sections before the exploit sections — `cmdkey`, `AutoLogon`, `unattend`, `Groups.xml`, and any `password` string in the registry dumps. Then read the token section: `SeImpersonatePrivilege` enabled on a service account is a direct, well-supported route to SYSTEM and outranks every version-derived "possible exploit" line above it.
+
 ## The .exe and the .bat fallback
 
 WinPEAS ships as a native `.exe` (fast, full checks) and a `.bat` (fallback where the exe is blocked). Run and capture:

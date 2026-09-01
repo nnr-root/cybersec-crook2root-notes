@@ -73,6 +73,8 @@ uid=1000(low) euid=0(root)
 
 **The deliberate break:** the SUID binary runs with `euid=0`, but modern shells **drop privileges on startup** unless told not to — `bash`/`sh` reset the effective UID to the real UID for safety. The `-p` flag tells the shell to *preserve* the elevated euid; without it, you spawn a shell as root's child that immediately demotes itself back to you. GTFOBins gives the correct command, but understanding *why* `-p` matters (SUID sets euid, the shell drops it) is the difference between "the recipe didn't work" and root. The deeper lesson: GTFOBins is a map of *why least privilege and removing SUID bits matter* — every entry is a binary a hardened host shouldn't leave exploitable.
 
+**How you'd spot it:** run `id` the instant the shell opens. `euid=0` means you kept the privilege; `uid=1000 … euid=1000` means the shell demoted itself and `-p` was missing. One command separates a working escalation from a shell that merely looks like one.
+
 ## Summary
 
 You should now be able to:

@@ -51,6 +51,8 @@ operator@lab:~$ curl -s http://vuln.example.test/backup/ | head -n 2
 
 **The deliberate break:** Nikto *flagged* `/backup/` as "might be interesting" — a guess from its database, not a verified fact. Only the manual **curl** confirms it's a real, browsable directory leaking a database dump. Report the Nikto line without confirming and you produce false positives; confirm it and a guess becomes a finding. Same with version banners — Apache `2.4.29` "appears outdated," but a distro may have **back-ported** security fixes to that version string, so the CVE claim needs verification against the actual patch level, not the banner. Nikto's speed comes from guessing; your value comes from confirming.
 
+**How you'd spot it:** Nikto's own wording marks it. "Appears", "might be interesting" and "this might be" are hedges, and they are honest ones — anything phrased that way needs a manual request before it enters a report. A findings list lifted straight from Nikto is recognisable precisely because those hedges survive into the client-facing document.
+
 ## Summary
 
 You should now be able to:

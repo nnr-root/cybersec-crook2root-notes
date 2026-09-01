@@ -61,6 +61,8 @@ Sysmon's power and its blind spot are the same thing — the **config**:
 
 **The deliberate break:** install Sysmon with no config and it records essentially nothing actionable; install it logging *everything* and it floods the SIEM (and the endpoint) into uselessness. The entire value of Sysmon lives in a tuned configuration that captures attacker-relevant events (ID 1/3/7/8/22) while *excluding* the mountain of benign activity — which is why "deploy Sysmon" really means "deploy and maintain a good Sysmon config." Two more Root truths: attackers who know Sysmon is present avoid the watched Event IDs (living off un-logged techniques) or try to unload the driver — so detection engineers monitor for **Sysmon itself stopping** (a gap in the stream is a signal). And Sysmon is telemetry, not prevention: it tells you the injection happened; blocking it is the EDR's job on top of this data.
 
+**How you'd spot it:** count events per host per hour. Near zero means the config excludes everything that matters; hundreds of thousands means it excludes nothing and the storage bill is about to say so. Then check which IDs actually arrive — a deployment producing only Event ID 1 is not giving you the network, image-load or injection visibility the rest of this note assumes.
+
 ## Summary
 
 You should now be able to:

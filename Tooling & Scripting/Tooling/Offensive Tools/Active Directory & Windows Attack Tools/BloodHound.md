@@ -48,6 +48,8 @@ Path found:  jdoe →(MemberOf)→ Helpdesk →(HasSession on WS30)→ admin_bob
 
 **The deliberate break:** that path depends on the edge `HasSession on WS30` — meaning admin_bob had a session on WS30 *when SharpHound collected*. Sessions are a **point-in-time snapshot**; by the time you act, bob may have logged off and the path evaporates. Likewise a `CanRDP` edge is only useful if you *also* have bob's credential and network reachability to the box. BloodHound ranks by graph distance, not by feasibility — the "shortest" path may need a vanished session while a "longer" `GenericAll` ACL path (which is permanent and needs no session) is actually the easy win. The skill is reading edges by *durability*: ACL edges (GenericAll, WriteDacl, GenericWrite) are stable and preferred; session/RDP edges are opportunistic and perishable. Re-collect for fresh sessions, and always verify feasibility before committing to a path.
 
+**How you'd spot it:** check the edge type before planning around a path. `HasSession` and `CanRDP` depend on a state that may already be gone; `MemberOf`, `GenericAll` and `GenericWrite` are ACL facts that persist until someone changes them. Read the collection timestamp alongside — a session-dependent path in week-old data is a lead, not a route.
+
 ## Summary
 
 You should now be able to:

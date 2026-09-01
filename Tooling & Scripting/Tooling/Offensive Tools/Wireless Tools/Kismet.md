@@ -53,6 +53,8 @@ The most surprising Kismet capability isn't about networks — it's about **peop
 
 **The deliberate break:** those are **probe requests** — a phone shouting the names of Wi-Fi networks it has connected to before, looking for them. Kismet harvests them without transmitting anything, and the *list itself* is a fingerprint: it reveals where this device (person) lives, works, and has travelled — enough to identify and track an individual across locations. Beginners think Kismet "just finds Wi-Fi"; its deeper power (and privacy hazard) is that clients leak their history for free, which is why modern phones randomize MACs and stop broadcasting saved SSIDs. This also flips Kismet into a defensive tool: the same passive visibility detects an attacker's deauth flood or an evil-twin AP the instant it appears. Kismet doesn't attack — it *sees*, and seeing is both reconnaissance and defense.
 
+**How you'd spot it:** the hazard is visible in the data itself — a device's probe list naming home, workplace and hotel networks identifies a person, so treat a Kismet capture as personal data and scope its retention accordingly. Devices emitting no probe list at all are using MAC and probe randomisation, which is the defence working as intended.
+
 ## Summary
 
 You should now be able to:

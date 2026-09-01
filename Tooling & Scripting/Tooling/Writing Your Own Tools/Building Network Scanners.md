@@ -64,6 +64,8 @@ await asyncio.open_connection(host, 445)   # ...hangs indefinitely, scan never f
 
 **The deliberate break:** unbounded concurrency exhausts the OS file-descriptor limit (`ulimit -n`) *and* floods the target — a self-inflicted DoS on both ends — while a missing timeout makes the scan hang forever on the first filtered port (silence is a valid result you must handle, not wait on). Both are the concurrency/rate layer of the architecture doing its job: a semaphore bounds in-flight sockets to something the OS and the target can bear, and a per-probe timeout turns "no reply" into a decision instead of a hang. This is *exactly* the lesson RustScan's batch-size tuning teaches from the user side — building the scanner yourself is how you learn why those knobs exist. The engine (probe one port) is ten lines; the craft is entirely in bounding and timing the parallelism.
 
+**How you'd spot it:** two distinct symptoms, two different causes. `too many open files`, or progress stalling at a fixed number of in-flight sockets, is the descriptor limit meeting unbounded concurrency. A scan that stops advancing and never finishes is the missing timeout — silence is a legitimate result, and code that waits on it forever has confused "no answer" with "not answered yet".
+
 ## Summary
 
 You should now be able to:

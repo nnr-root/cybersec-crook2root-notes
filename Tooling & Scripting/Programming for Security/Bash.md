@@ -59,6 +59,8 @@ eval "echo Hello $name"                     # name='; rm -rf ~' → command inje
 
 **The deliberate break:** `for f in $(ls *.log)` looks fine and works in testing — until a filename contains a space and Bash **word-splits** it into two arguments, and now `rm` deletes the wrong things. The same mechanism is a *security* hole: an unquoted variable (or `eval`) lets attacker-controlled input become executable shell syntax — the exact OS-command-injection bug from the Web-Injection branch, in your own script. The fixes are structural: always `"$quote"` expansions, iterate with `while IFS= read -r line`, use arrays for argument lists, and *never* `eval` untrusted text. And the meta-lesson from the language map: Bash is a great orchestrator but a poor programming language — the instant you need real data structures, robust parsing of untrusted input, or non-trivial state, that word-splitting fragility becomes a liability and you should move up to Python. Bash should *compose* strong tools, not reimplement them.
 
+**How you'd spot it:** in someone else's script it is a bare `$var` used as a command argument, or a `for` loop reading `$(ls)`. In your own, `shellcheck` names them directly — SC2086 for the unquoted expansion, SC2045 for iterating `ls`. At runtime the symptom is a script that behaves perfectly until a path contains a space, which is why a filename with a space belongs in your test set permanently.
+
 ## Summary
 
 You should now be able to:

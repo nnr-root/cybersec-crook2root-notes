@@ -62,6 +62,8 @@ operator@lab:~$ enum4linux-ng -U 10.10.20.99       # hardened host
 
 **The deliberate break:** the same command yields a full user directory on one host and `STATUS_ACCESS_DENIED` on another. The only difference is a single setting — `RestrictAnonymous` / `RestrictNullSessAccess`. That contrast *is* the finding: a `STATUS_ACCESS_DENIED` here is evidence of **good** hygiene, not tool failure. A tester who reports "enum4linux failed" instead of "null sessions are correctly restricted" has misread the result.
 
+**How you'd spot it:** read the denial as data. `STATUS_ACCESS_DENIED` on the user query while other queries still answer means `RestrictAnonymous` is set, and that belongs in the report as a control working on that host. The finding worth raising is the opposite result — a full user list, share list and password policy returned to an empty username.
+
 Internals: `enum4linux-ng` speaks more protocols and outputs JSON (better than the legacy Perl script); RID cycling is slow over wide ranges, so bound it around known RIDs (500–1500); and an empty share list with a populated user list means anonymous can enumerate accounts but not shares — note the *exact* anonymous exposure, not a blanket "SMB is open."
 
 ## Summary

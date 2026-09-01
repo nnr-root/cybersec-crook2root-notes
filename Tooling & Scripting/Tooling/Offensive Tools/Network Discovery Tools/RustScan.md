@@ -63,6 +63,8 @@ operator@lab:~$ rustscan -a 192.0.2.10 -p 1-65535 -b 5000
 
 **The deliberate break:** `-b 5000` against a 1024 descriptor limit **fails** — and worse, a slightly-too-high batch that *doesn't* error can silently drop probes, turning open ports into false negatives. The right method is a tuning sweep:
 
+**How you'd spot it:** compare `ulimit -n` against your `-b` value before running. A batch above the descriptor limit is the loud failure; a batch just under it is the quiet one, and it shows up as a rerun that finds a port the previous run missed. Two scans of the same host disagreeing is the signal that the batch size exceeds what this machine sustains.
+
 ```shell-session
 operator@range:~$ for b in 10 50 200; do /usr/bin/time -f "batch=$b elapsed=%e" rustscan -a 192.0.2.10 -p 1-1024 -b "$b" --scripts none; done
 batch=10 elapsed=4.72

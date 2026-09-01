@@ -59,6 +59,8 @@ operator@kali:~$ host 198.51.100.4
 
 **The deliberate break:** `dev-old.acme-corp.com` came from a *certificate* issued years ago and cached in crt.sh — but it no longer resolves, and that IP has been recycled to a **different cloud tenant**. Treat the harvested list as ground truth and you might scan or phish an asset your client no longer owns — out of scope and potentially illegal. theHarvester tells you what *was* public, not what is *live and yours*. Every harvested host must be re-resolved and ownership-confirmed (WHOIS/ASN) before it enters the active phase, and every harvested email verified before it feeds a phishing sim (distribution lists and ex-employees are common noise). Breadth is the strength; verification is the discipline that makes it usable.
 
+**How you'd spot it:** re-resolve everything before acting on it. A harvested name that does not resolve today is history; one that resolves into an ASN your client does not own belongs to somebody else. Both are common enough that re-resolution is a workflow step rather than a caveat in the report.
+
 ## Summary
 
 You should now be able to:

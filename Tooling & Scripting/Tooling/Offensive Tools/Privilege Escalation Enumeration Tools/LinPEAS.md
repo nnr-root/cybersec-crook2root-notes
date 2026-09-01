@@ -26,6 +26,12 @@ Escalating from a normal user to root means finding **one thing that is misconfi
 
 The left column of the diagram is LinPEAS's entire checklist. You do not memorise commands for each — LinPEAS runs them all — but you must recognise the categories so you can *read the output*: a writable SUID binary means "check GTFOBins," a `NOPASSWD` sudo rule means "run that command as root," an old kernel means "look up a CVE."
 
+**The deliberate break:** LinPEAS colours its output red and yellow, and the reflex is to read the highlights as a findings list — work down the red lines and you have your escalation.
+
+The colouring is a heuristic ranking, not a verdict, and its least reliable output is the one that looks most exciting. A red kernel line is a *version match*, and enterprise distributions back-port security fixes without changing the version string, so the same banner appears on exploitable and patched hosts alike. Meanwhile the finding that actually works is frequently uncoloured, because LinPEAS has no signature for it — a custom SUID binary nobody has catalogued, a cron entry referencing a directory you happen to own, a backup script running as root that reads a file you can write. The tool enumerates; the decision is still yours.
+
+**How you'd spot it:** rank by specificity rather than by colour. A named misconfiguration you can point at — this file, this path, this sudo rule — is worth more than any "possible exploit" line derived from a version number. Verify a kernel candidate against the distribution's changelog before pursuing it, and read the uncoloured sections in full, particularly writable paths, cron, and anything in root's `PATH` that you can reach.
+
 ## Running it, and keeping the output as evidence
 
 Get the script onto the host (it is a single self-contained shell script) and run it, teeing the output for evidence:

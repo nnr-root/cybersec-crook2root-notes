@@ -63,6 +63,8 @@ Most Likely
 
 **The deliberate break:** this is `MD5("password")` — but `nth` *also* offers NTLM, because a 32-hex string is genuinely ambiguous by structure. If you blindly run `hashcat -m 1000` (NTLM) against an MD5, it will churn and **never crack it**, looking like a "strong password" when the real problem is the wrong mode. The lesson: `nth` narrows the field, but the **source** of the hash (web DB vs. AD dump) is the context that makes the final call. Always record where a hash came from.
 
+**How you'd spot it:** a crack that runs a long time at a steady rate and recovers nothing has the shape of a wrong mode, not a strong password. Cross-check by hashing a known value in the candidate algorithm and comparing the format — and record each hash's source at the moment you collect it, because that is the fact that resolves the ambiguity later.
+
 Edge cases worth knowing: salted formats (`$id$salt$hash`) are self-describing and unambiguous; raw hashes are not. Truncated or encoded hashes (base64 vs hex) change the length signal — decode first. And `nth` reports *format*, never *strength*: it will happily identify a bcrypt hash it could never help you crack.
 
 ## Summary

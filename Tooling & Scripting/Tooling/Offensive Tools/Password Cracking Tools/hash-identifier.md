@@ -65,6 +65,8 @@ operator@lab:~$ hashid '5f4dcc3b5aa765d61d8327deb882cf99'
 
 **The deliberate break:** for a bare 32-hex string, hash-identifier lists MD5, DCC, **and** NTLM with no ranking — technically correct, practically unhelpful, because it can't tell you *which*. This is exactly why **name-that-hash** was written: it adds likelihood ordering and cleaner output. The professional workflow uses both — if they *agree*, confidence is high; if hash-identifier lists an option name-that-hash ranks low, the source context (web DB → MD5, AD dump → NTLM) breaks the tie. A tool that "identifies" a hash is really *narrowing a field*, never deciding — running the wrong Hashcat `-m` on a misidentified hash burns hours for nothing.
 
+**How you'd spot it:** ambiguity is the expected output here, not a fault. When it lists MD5, DCC and NTLM for one value, provenance breaks the tie rather than the tool — a web application database points to MD5, a domain controller dump points to NTLM. If you cannot say where the hash came from, that is the thing to go and fix first.
+
 Note `hashid` reads from files/stdin (scriptable) while `hash-identifier` is interactive only — for automation, `hashid` or name-that-hash; for a quick manual check, either.
 
 ## Summary

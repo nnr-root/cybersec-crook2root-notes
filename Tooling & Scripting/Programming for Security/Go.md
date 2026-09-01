@@ -68,6 +68,8 @@ for _, p := range allPorts {         // 65,535 goroutines
 
 **The deliberate break:** because a goroutine costs almost nothing, it's tempting to spawn one per unit of work — and with 65,535 ports you've just opened tens of thousands of concurrent connections, exhausting file descriptors on your side and flooding the target on theirs (the same self-DoS as the hand-built scanner, one language up). Cheap concurrency doesn't remove the need to *bound* it — a fixed **worker pool** (N goroutines draining a channel) keeps in-flight work at a level the OS and target can bear. The `-race` detector is the other Go essential: it catches data races (two goroutines touching shared state) that are invisible until they corrupt output in production. Go's whole value proposition for security work is "concurrent, fast, and a single portable binary" — but the concurrency is a tool you aim, not a firehose you open. When you need *lower* than Go can go (byte-exact layout, no GC pauses, exploit dev), that's the signal to drop to C++.
 
+**How you'd spot it:** watch descriptors and connection state while the tool runs. `ss -s` climbing into the tens of thousands, or `too many open files` in your own output, means the concurrency is unbounded. The subtler tell is a scan that gets *slower and less accurate* as you raise the worker count — that is the target shedding load and your own stack thrashing, not throughput.
+
 ## Summary
 
 You should now be able to:

@@ -52,6 +52,8 @@ operator@lab:~$ wpscan --url https://blog.example.test --enumerate vp --api-toke
 
 **The deliberate break:** WPScan *inferred* the plugin version from fingerprints — the `readme.txt` **curl** confirms `5.4.1` is really installed before you assert CVE-2020-35489 applies (fingerprints can lie; a partial install or a hidden version means guessing). After the update, the CVE count drops to `0` — an objective before/after remediation metric. The professional flow is the same everywhere in this category: the scanner *narrows*, a manual check *confirms*, and the fix is measured by re-running the scanner.
 
+**How you'd spot it:** the output says which it is — a version derived from a fingerprint is an inference, and WPScan marks its confidence next to it. Confirm against `readme.txt` or the plugin's own assets before asserting that a CVE applies. A report mapping every detected plugin straight onto CVEs with no confirmation step is the signature of skipping this.
+
 ## Summary
 
 You should now be able to:

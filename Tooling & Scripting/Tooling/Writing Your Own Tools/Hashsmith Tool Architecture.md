@@ -56,6 +56,8 @@ Hash **identification** is where a naive tool over-claims — Hashsmith is desig
 
 **The deliberate break:** a 32-character hex string *could* be MD5, NTLM, an app identifier, or random bytes — length and alphabet produce **candidates, not certainty** (exactly the name-that-hash/hash-identifier lesson, built into the tool's output contract). A lesser tool prints "MD5" confidently and sends the user down a wrong `hashcat -m`; Hashsmith emits confidence and reasons. This ties straight back to the architecture note: because the core is a set of pure `Operation` objects that *return typed results* (never print or exit), the identifier can express uncertainty as data, the audit engine can be bounded and tested with canary hashes, and adding a new codec or digest is a plugin — not an engine rewrite that risks the constant-time or streaming guarantees. The design *is* the safety: separating reversible from one-way, returning results instead of side effects, and capping every resource is what makes a cryptographic utility trustworthy rather than merely functional.
 
+**How you'd spot it:** a tool printing one algorithm name for a 32-hex string, with no confidence attached, is over-claiming — and downstream that becomes a wrong `hashcat -m` and hours of wasted GPU time. The output contract worth looking for is a ranked candidate list with stated reasons, and in your own tools, the ability to test that ranking with string inputs rather than a live target.
+
 ## Summary
 
 You should now be able to:

@@ -171,6 +171,8 @@ operator@range:~$ sudo nmap -sU -p53,123,161 192.0.2.10
 
 **The deliberate break:** `443/tcp` is `filtered` with reason `no-response`, and `123/udp` is `open|filtered` — both are the *ambiguous* states from the diagram. A novice reports "443 closed" and "123 open"; the truth is "a firewall is dropping probes to 443" and "123 might be open, I can't tell from silence." `--reason` exposes *why* Nmap decided each state, which is the difference between a guess and evidence. Validate surprising states with a packet capture or a second technique — load balancers, proxies, tarpits, and host firewalls all distort fingerprints.
 
+**How you'd spot it:** run with `--reason` and read the reason rather than the state. `no-response` is silence; `reset` is an answer; they support completely different sentences in a report. `filtered` and `open|filtered` are the two states never to paraphrase — the moment either becomes "closed" or "open" in your notes, evidence has quietly turned into a guess.
+
 **Defensive visibility:** discovery produces recognizable fan-out — many destination ports from one source, incomplete handshakes, unusual flag combinations, and NSE application requests. During purple-team work, correlate scanner source, firewall flow logs, and target service logs; success means the assessment evidence and the defensive evidence describe the same activity.
 
 ## Summary

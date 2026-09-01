@@ -97,6 +97,8 @@ Connection to 192.0.2.10 53 port [udp/*] succeeded!
 
 **The deliberate break:** that UDP "succeeded" is a **lie**. UDP is connectionless — `nc -z` reports success simply because *no ICMP error came back*, which also happens when a firewall silently drops the probe or the packet is lost. Unlike the TCP handshake (which proves the port is open), UDP silence is ambiguous exactly like Nmap's `open|filtered`. To actually confirm a UDP service you must send an application-layer payload it will answer and capture the reply — `nc -z` alone produces false positives. Netcat's honesty about *bytes* is also its honesty about *uncertainty*.
 
+**How you'd spot it:** a UDP scan reporting every port open is reporting silence, not services. Confirm by sending something the service must answer — a DNS query to 53, an SNMP get to 161 — and requiring a reply. The TCP sanity check is the mirror image: a port you know is closed should come back closed, and if it does not, something in the path is answering on the host's behalf.
+
 Defensively, raw listeners, odd outbound destinations, and plaintext probes show up cleanly in endpoint socket telemetry and firewall flows — Netcat is loud, which is why real operators reach for TLS-aware Ncat or SSH when confidentiality matters.
 
 ## Summary

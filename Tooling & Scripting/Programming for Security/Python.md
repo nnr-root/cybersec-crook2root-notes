@@ -64,6 +64,8 @@ from multiprocessing import Pool          # THIS parallelises CPU work (separate
 
 **The deliberate break:** a beginner speeds up a CPU-heavy task (say, a pure-Python hasher) by spawning threads — and gets **no speedup**, because the GIL permits only one thread to execute Python bytecode at once. Threads only help when the work is **I/O-bound** (a scanner spends its time *waiting* on sockets, and the GIL is released during those waits, so `asyncio`/threads give real concurrency). For **CPU-bound** work you need `multiprocessing` (separate interpreters, separate GILs) — or you drop the hot loop into Go/C++ (the next rungs of the ladder). Knowing which regime you're in is the whole game: match `asyncio`/threads to I/O-bound tools (most of them) and `multiprocessing` to CPU-bound ones, and Python's "slowness" mostly stops mattering. When even that isn't enough, that's your signal to graduate to Go.
 
+**How you'd spot it:** measure rather than reason. Run the same work with one worker and with eight and compare wall-clock: flat means you are CPU-bound and the GIL is serialising you, near-linear means the work was I/O-bound all along. Seen from the other side, it is one core pinned at 100% while the rest idle.
+
 ## Summary
 
 You should now be able to:

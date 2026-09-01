@@ -55,6 +55,8 @@ operator@kali:~$ impacket-secretsdump -hashes :A1B2C3... corp/jsmith@10.10.20.30
 
 **The deliberate break:** you *cannot* pass-the-hash a Responder capture. A **NetNTLMv2** hash is a one-time challenge-response — the client hashed a server-supplied *challenge* with its NT hash, so the value is useless for direct authentication (it's not the stored secret, and it's bound to that specific challenge). Your only two moves are: **crack it** offline to recover the plaintext (Hashcat `-m 5600`), or **relay it** live to another host with `ntlmrelayx` before the challenge expires. Contrast with **Impacket** pass-the-hash, which needs the *NT hash* — the stored secret you dump from SAM/NTDS. Beginners capture a NetNTLMv2 with Responder, try to pass it, fail, and conclude the tool is broken. It isn't: NetNTLMv2 = crack or relay; NT hash = pass. And the defense writes itself: **disable LLMNR/NBT-NS** (there's nothing to poison), enforce SMB signing (relay fails), and use strong passwords (cracking fails).
 
+**How you'd spot it:** read the shape of what you captured. A NetNTLMv2 value is long and colon-separated, carrying the account, the domain and the challenge; an NT hash is a bare 32 hex characters. If your value has colons and a username in it, `-hashes` will not accept it, and the only two moves left are Hashcat `-m 5600` or `ntlmrelayx`.
+
 ## Summary
 
 You should now be able to:

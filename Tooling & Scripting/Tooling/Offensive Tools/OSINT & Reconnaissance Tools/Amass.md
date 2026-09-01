@@ -64,6 +64,8 @@ operator@kali:~$ amass enum -brute -d acme-corp.com -w big-wordlist.txt
 
 **The deliberate break:** a beginner runs `amass enum -brute` on a "passive recon" engagement, assuming Amass is always passive, and dumps tens of thousands of DNS lookups onto the target's authoritative servers — noisy, potentially disruptive, and outside a passive scope. Same tool, two utterly different footprints, separated by one flag. Always run `-passive` first (it's quiet, free, and often finds the "internal-dev" names leaked in certificates), and only cross into `-active`/`-brute` when the RoE authorizes touching the target. The corollary discovery from the passive run above — an `internal-*` hostname exposed in a public TLS certificate — is exactly the kind of finding cert transparency hands you for free, no active probing required.
 
+**How you'd spot it:** the flag is the finding, so read the command before the output. `-passive` touches third-party sources only; `-brute` and `-active` send queries to the target's own authoritative servers. From the target's side it is unmistakable — tens of thousands of NXDOMAIN responses from one resolver inside a short window.
+
 ## Summary
 
 You should now be able to:

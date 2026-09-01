@@ -57,6 +57,8 @@ Evades:  GET /cgi?cmd=/bin/${x}sh      ✗   (shell var — same effect, differe
 
 **The deliberate break:** a content rule for `/bin/sh` catches the naive payload but is trivially evaded by encoding, padding, or a shell variable that produces the *same effect* with *different bytes* — and it is blind entirely once the traffic is encrypted. This is the fundamental limit of signatures: they detect **known patterns**, so commodity malware and un-adapted attacks get caught, while a motivated attacker who varies their bytes (or wraps them in TLS) sails past. That's not a Snort bug — it's *why* behavioural monitoring (Zeek) exists as a complement: you can change your bytes, but it's much harder to hide that a host is beaconing to a rare domain every 60 seconds. Run signatures for cheap coverage of the known; never mistake "no Snort alert" for "no attack."
 
+**How you'd spot it:** look at what the rule is pinned to. A literal string match is defeated by any encoding producing the same effect, so the test is to send that same effect with different bytes and see whether the alert still fires. Across a fleet, the tell is an alert volume that quietly collapses as TLS adoption rises — the traffic did not get safer, it got opaque.
+
 ## Summary
 
 You should now be able to:

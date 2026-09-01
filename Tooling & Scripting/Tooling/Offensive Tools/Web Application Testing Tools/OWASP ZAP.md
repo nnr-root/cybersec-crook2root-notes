@@ -55,6 +55,8 @@ FAIL-NEW: 1   (High: SQL Injection - /search?q=)
 
 **The deliberate break:** the passive baseline **cannot** find the SQL injection — it only reads traffic, so it flags missing headers and stops. The active scan finds the real bug but sends attack payloads. Pick passive against production (safe, shallow) and active against a staging target you're authorized to attack (intrusive, deep). Choosing the wrong mode either misses vulnerabilities or hits a system you shouldn't — the single most important ZAP decision. And, exactly as with Burp, every High the active scanner reports is a *hypothesis*: confirm SQLi by hand (or chain into **SQLmap**) before it's a finding.
 
+**How you'd spot it:** check which mode produced the report before reading it. A result containing only header and cookie findings is a passive baseline, and its silence about injection means nothing was tested for. The reverse is more serious: injection findings against a production target mean an active scan was pointed at a live system, which is an authorisation question rather than a finding.
+
 ## Summary
 
 You should now be able to:

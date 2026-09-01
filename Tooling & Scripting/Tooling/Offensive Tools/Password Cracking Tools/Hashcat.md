@@ -65,6 +65,8 @@ Progress.........: 47104/14344385 (0.33%)
 
 **The deliberate break:** `password123` as raw MD5 falls in under a second at ~58 **billion** guesses/sec; the *identical password* as bcrypt cost-12 runs at ~9 **thousand** guesses/sec — about **six million times slower** — on the same hardware. Same password, same GPU: the only variable is the hash's **work factor**, and that variable is the entire defense. This is why "no hashcat mode cracked it" can mean either "strong password" *or* "strong hash" — never confuse the two. The reportable numbers: fast unsalted hashes (MD5/NTLM/SHA1) are indefensible at rest and must be migrated to bcrypt/scrypt/argon2 with high cost and unique salts, and the blue team must also detect the *capture* step (LSASS access, DCSync, WPA handshake grabs) that feeds the cracker — because once the hash is out, only its work factor stands between the attacker and the plaintext.
 
+**How you'd spot it:** read the hash prefix before drawing any conclusion from a failed run. `$2b$` or `$argon2` means the work factor is doing its job and "uncracked" says nothing about the password; a bare MD5 or NTLM that survives a real run genuinely suggests a strong one. Hashcat's own reported speed makes the same point — billions per second against thousands is the entire difference.
+
 ## Summary
 
 You should now be able to:

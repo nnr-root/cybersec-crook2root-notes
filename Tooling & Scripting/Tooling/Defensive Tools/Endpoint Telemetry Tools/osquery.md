@@ -57,6 +57,8 @@ osquery> SELECT name FROM processes WHERE name LIKE '%mimikatz%';   -- 0 rows
 
 **The deliberate break:** osquery only sees what exists *at the moment it runs*. A malicious process that started and exited **between** two scheduled queries is completely invisible — the point-in-time model has gaps that a fast attacker slips through. This is exactly why osquery and **Sysmon** are complements, not substitutes: Sysmon's continuous *event stream* would have recorded the `ProcessCreate` for `mimikatz.exe` even though it lived for three minutes, while osquery is unbeatable for "what is the current state across my whole fleet?" (persistence, inventory, live IR). Use osquery for state and hunting sweeps; use Sysmon (or an EDR) for the ordered history — the diagram's "you want both." (osquery *does* have an evented-tables mode that narrows this gap, but the core shell is snapshot-based.)
 
+**How you'd spot it:** the gap shows whenever an event stream disagrees with a snapshot: a `ProcessCreate` in Sysmon with no matching row in any osquery result lived entirely between two scheduled runs. With osquery alone, the tell is the schedule itself — an interval in minutes against tooling that finishes in seconds.
+
 ## Summary
 
 You should now be able to:

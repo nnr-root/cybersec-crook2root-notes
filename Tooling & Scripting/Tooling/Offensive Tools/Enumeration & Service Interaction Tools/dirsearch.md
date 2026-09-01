@@ -79,6 +79,8 @@ operator@lab:~$ dirsearch -u http://app.example.test -e php --exclude-sizes 512B
 
 **The deliberate break:** the app returns `200` with a fixed 512-byte "page not found" body for *every* path (a **soft-404**), so the first run is all false positives. dirsearch can't infer truth from the status code because the server lies — you must filter by the constant response size (`--exclude-sizes`) or content. Recognising soft-404s is the single most important content-discovery skill; the tool's convenience is worthless without it.
 
+**How you'd spot it:** the same calibration every content-discovery tool needs, and it is not optional. Request two paths that cannot exist and compare: matching status *and* matching length means the server lies about 404s. In a finished run the give-away is a results table whose size column holds the same number all the way down.
+
 Deeper internals: dirsearch auto-detects some wildcard/soft-404 behaviour and warns, but not all; it normalises trailing-slash handling; and its `-r` recursion (like feroxbuster's) can explode request counts, so cap depth on large sites. For evidence, always emit a machine-readable report (`--format json`) rather than scraping the console — the JSON preserves status, size, and redirect target for the finding record.
 
 ## Summary

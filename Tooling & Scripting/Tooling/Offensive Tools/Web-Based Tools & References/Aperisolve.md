@@ -66,6 +66,8 @@ JPEG (lossy)     → recompression destroys LSBs → LSB stego does NOT survive
 
 **The deliberate break:** LSB steganography — hiding data in the least-significant bit of each pixel — only works in **lossless** formats (PNG, BMP). Try it in a JPEG and the lossy DCT compression *rewrites* those low bits, destroying the payload. So when Aperisolve's bit-plane view shows clean noise on a JPEG, that's not "no stego" — it's "LSB can't live here; look for DCT-based hiding or appended data instead." Understanding *which* technique a given format permits stops you from concluding "nothing hidden" when you simply used the wrong lens. Aperisolve runs the tools; format literacy tells you which result is meaningful.
 
+**How you'd spot it:** check the container format first, because it constrains which techniques are even possible. Clean bit-planes on a JPEG mean LSB could not have survived, not that nothing is hidden — look instead at data appended past the end-of-image marker, and at the DCT coefficients. On a PNG, clean bit-planes are genuine evidence of absence.
+
 ## Summary
 
 You should now be able to:
