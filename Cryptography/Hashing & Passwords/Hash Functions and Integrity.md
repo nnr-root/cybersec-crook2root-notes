@@ -78,6 +78,19 @@ analyst@lab:~$ sha256sum ubuntu.iso
 
 If your digest matches the published one, the file is bit-for-bit what the publisher released — a corrupted download or a tampered mirror would produce a different digest by the avalanche effect. The same mechanism underlies Git commit IDs (a hash of the commit contents), file-integrity monitoring (a change to a system binary changes its hash), and deduplication (identical files share a digest). For any of these to be *secure* against a deliberate attacker rather than just accidental corruption, the algorithm must be collision-resistant — which is exactly why the integrity world moved off MD5 and SHA-1.
 
+**How you'd spot which hash you are holding:** length and character set, and nothing else is needed.
+
+| What you see | What it is |
+|:--|:--|
+| 32 hex characters | MD5 — or NTLM, which is indistinguishable by shape alone |
+| 40 hex characters | SHA-1 |
+| 64 hex characters | SHA-256 |
+| 128 hex characters | SHA-512 |
+| Begins `$2a$`, `$2b$` or `$2y$` | bcrypt — and the number after it is the **cost**, stated in the hash itself |
+| Begins `$argon2id$` | Argon2id, with its parameters likewise inline |
+
+The 32-hex ambiguity is real and matters: MD5 and NTLM look identical, and only context tells you which — a Windows credential dump means NTLM, a web application's database probably means MD5. Everything downstream depends on getting this right, because the cracking approach for each is different, which is where the **Password Cracking** note picks up.
+
 ## Where Hashing Stops
 
 A hash is not encryption and, on its own, is not password storage. Two limits set up the rest of the branch:

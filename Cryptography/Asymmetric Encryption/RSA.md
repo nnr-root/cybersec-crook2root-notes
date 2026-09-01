@@ -74,6 +74,14 @@ recovered q1 correct ? True
 
 Neither `n1` nor `n2` can be factored alone — that is the assumption RSA relies on. But because they share the prime `p`, the greatest common divisor `gcd(n1, n2)` *is* `p`, computed in microseconds by Euclid's algorithm, and once you have `p` both moduli divide out to reveal `q1` and `q2`. This is not hypothetical: scans of the internet's public RSA keys have found large numbers of real keys sharing primes because of weak entropy on embedded devices at boot. The other classic failures follow the same pattern — the algorithm is fine, the parameters betray it: **Fermat factorisation** when `p` and `q` are too close together, and **Wiener's attack** when `d` is too small.
 
+**How you'd spot RSA in the wild:** keys announce themselves and ciphertext has an exact size.
+
+- **PEM headers name the contents literally.** `-----BEGIN PUBLIC KEY-----` is a public key in generic form, `-----BEGIN RSA PRIVATE KEY-----` is a bare PKCS#1 private key, and `-----BEGIN ENCRYPTED PRIVATE KEY-----` means the private key is itself passphrase-protected. Finding the second of those in a repository is a critical finding on sight.
+- **RSA ciphertext is exactly the modulus size** — 256 bytes for a 2048-bit key, 512 for 4096, every time, regardless of how short the plaintext was. A 256-byte opaque blob in a protocol is very often an RSA-wrapped symmetric key.
+- `openssl rsa -in key.pem -noout -text` prints the modulus size and the parameters, which is how you confirm rather than guess.
+
+The fixed-size property is the useful one operationally: it is what lets you recognise key wrapping in a capture without decrypting anything.
+
 ## RSA in Practice
 
 Using RSA safely is a checklist about parameters, not about the algorithm:

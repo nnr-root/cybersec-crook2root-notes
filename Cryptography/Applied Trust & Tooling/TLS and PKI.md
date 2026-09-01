@@ -73,6 +73,16 @@ An HTTPS connection assembles every primitive in this domain in one exchange:
 
 So the padlock is: asymmetric signatures for identity, DH for key agreement with forward secrecy, and symmetric AEAD for bulk data — hashing underneath all of it. TLS is not one algorithm; it is the correct *composition* of every branch of this tree, which is why it is the domain's natural capstone.
 
+**How you'd spot which trust check failed:** `openssl verify` numbers its errors, and each number points at a different problem with a different fix.
+
+| Error | What it means | Where the fix is |
+|:--|:--|:--|
+| `error 20` — unable to get local issuer certificate | The chain cannot be built to a trusted root | Trust store, or a missing intermediate the server should be sending |
+| `error 18` — self-signed certificate | The leaf signed itself; there is no chain at all | Issue from a CA, or explicitly trust it in a lab |
+| `error 10` — certificate has expired | The chain is fine; the dates are not | Renewal, not trust |
+
+Reading the number first stops the most common misdiagnosis in TLS work. A browser warning is not one condition, and "add it to the trust store" fixes exactly one of the three — for the other two it hides a real problem behind a decision you will forget you made.
+
 ## How PKI Fails in the Real World
 
 The math rarely breaks; the trust system does, and the failures are the findings:

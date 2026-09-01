@@ -70,6 +70,14 @@ AES encrypts exactly 128 bits. Real messages are longer, shorter, or not a multi
 
 So "encrypt with AES" is never a complete instruction. "Encrypt with AES in which mode, with what IV, and is it authenticated?" is the real question, and the block cipher is only the first of those answers.
 
+**How you'd spot it:** AES output has no structure to read, so you identify it by **shape and provenance** instead.
+
+- A blob whose length is an exact **multiple of 16** is a block cipher's output. Not a proof, but a strong prior.
+- A file beginning with the ASCII bytes **`Salted__`** was produced by `openssl enc`, and the next 8 bytes are the salt — so the real ciphertext starts at offset 16.
+- Uniform high entropy with **no repeating structure** is a working cipher. Repeating 16-byte blocks in a long ciphertext is the opposite: that is **ECB**, and it is the single most visible cryptographic misconfiguration there is.
+
+That last one is worth internalising, because it is detectable without any key: identical plaintext blocks produce identical ciphertext blocks only in ECB. If you can see a pattern in ciphertext, the mode is the finding.
+
 ## Security: The Cipher Is Not the Weak Point
 
 AES itself is not where systems break. The failures are around it:

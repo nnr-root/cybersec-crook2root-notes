@@ -65,6 +65,15 @@ ABC  -> QUJD
 
 One input byte leaves two `=`; two input bytes leave one `=`; three input bytes leave none. This is why trailing `=` characters are the single most recognisable sign of Base64 — and why their *absence* does not rule it out, since an input that is a multiple of three needs no padding. The `=` is not part of the data; it is bookkeeping the decoder uses to know how many real bytes the final block held.
 
+**How you'd spot it:** identify an encoding by its **alphabet and its length**, before trying to decode anything.
+
+- **Base64** — mixed case plus digits, `+` and `/`, length a multiple of 4, often ending `=` or `==`. Mixed case is the fastest discriminator.
+- **Base64url** — the same, but `-` and `_` replace `+` and `/`, and padding is frequently stripped. Seeing it means the blob travelled in a URL or a JWT.
+- **Hex** — only `0-9a-f`, always an even length, no case mixing. A string that is *all* lowercase hex is not Base64 no matter how random it looks.
+- **Base32** — uppercase `A-Z` and `2-7` only, padded to a multiple of 8. No lowercase, no `0`, `1` or `8`.
+
+Get in the habit of reading the character set first. It costs a second and it tells you which decode to reach for, which is the whole skill in the layered-blob problems this branch ends with.
+
 ## The Base Family
 
 Base64 has relatives that trade the alphabet for different properties, and telling them apart at sight is the skill:
