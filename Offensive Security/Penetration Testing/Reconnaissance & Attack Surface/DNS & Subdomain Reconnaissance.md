@@ -100,6 +100,12 @@ flowchart TD
     L --> N["Next: which are alive, what do they run? -> active recon"]
 ```
 
+**The deliberate break:** a DNS record pointing at something that no longer exists looks like the most harmless kind of mess — a dead link. Nobody is there, so nothing can happen.
+
+The opposite is true, and it is one of the highest-impact findings in recon. When `shop.example.test` still CNAMEs to a cloud provider hostname whose resource was deleted, that name is **claimable**: anyone who registers the provider resource with the right identifier now serves content at your subdomain. And because it *is* your subdomain, they inherit everything the browser grants it — cookies scoped to the parent domain, your CORS allowances, your SSO redirect allowlist, and often a valid certificate the provider issues automatically. A dangling record is not a dead link, it is an unclaimed key to your origin.
+
+**How you'd spot it:** resolve the name and follow the CNAME. If the final target is a provider hostname returning that provider's "no such application" or "bucket does not exist" page rather than an NXDOMAIN, the record is dangling and the resource is very likely claimable.
+
 ## The Subdomain Takeover: When a Name Outlives Its Target
 
 A **CNAME** pointing at a decommissioned cloud resource is a serious finding. If `blog.example.com` is a CNAME to `example.github.io` and the GitHub Pages site was deleted, an attacker who claims that GitHub name now controls content served at `blog.example.com` — inheriting the domain's trust, cookies scoped to `.example.com`, and reputation. Detect it by resolving each CNAME and checking whether the target still exists:

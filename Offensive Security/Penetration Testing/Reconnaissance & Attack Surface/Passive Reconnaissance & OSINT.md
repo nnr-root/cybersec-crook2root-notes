@@ -25,6 +25,14 @@ Passive Reconnaissance & OSINT -> DNS & Subdomain Reconnaissance -> Active Recon
 
 **Prerequisites:** basic DNS and HTTP, and comfort at a command line.
 
+**The deliberate break:** passive reconnaissance sounds like it gives you a picture of the target. It gives you a picture of the target's **past**.
+
+Every passive source is an archive. Certificate Transparency records a name that was certified once, not one that still resolves. `whois` may describe a registrant who sold the domain. Archived DNS shows a host that was decommissioned two years ago. Breach corpora list credentials that were rotated the week they leaked. None of that is wrong — it is simply *historical*, and the gap between "was true" and "is true" is where an engagement goes wrong, because acting on a stale finding means touching an asset the client no longer owns.
+
+Hold this as the working rule: **passive recon produces hypotheses about the present**, and every one of them needs confirming — in scope, and with authorisation — before it becomes a finding.
+
+**How you'd spot the age of a finding:** CT entries carry an issuance timestamp and the certificate carries a validity window; `whois` carries a last-updated date; an archived record carries the date it was captured. If a source will not tell you *when*, treat what it says as a lead and nothing more.
+
 ## The Four Passive Targets
 
 Passive recon gathers four categories, each answering a different question.
