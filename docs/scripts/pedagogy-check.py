@@ -133,7 +133,22 @@ ANALOGY = re.compile(
 ANALOGY_BREAK = re.compile(
     r"(?i)(analogy (breaks|stops|fails|ends|is)|where (the|this) analogy|breaks down|"
     r"stops being accurate|don't carry that|unlike a|the analogy is imperfect)")
-PROSE_Q = re.compile(r"\?")
+# A pre-question is not "a question mark somewhere". It must sit in prose, early,
+# where it can prime what follows. The previous check asked only whether a `?`
+# existed anywhere and passed 95 notes whose only question was in the Summary's
+# capability list, at a median of 93% through the note. See Teaching Standard 6c.
+PRE_Q_WINDOW = 0.25
+def prose_questions(lines, mask, upto_line):
+    out = []
+    for i, l in enumerate(lines[:upto_line]):
+        if mask[i] or l.lstrip().startswith(("#", "|", ">")):
+            continue
+        for mm in re.finditer(r"[^\s].{0,180}?\?(?=\s|$)", l):
+            seg = mm.group(0)
+            if "http" in seg or "](" in seg:
+                continue
+            out.append((i, seg.strip()))
+    return out
 VERIFIED = re.compile(r"^verified:\s*(\d{4})-(\d{2})-(\d{2})\s*$", re.M)
 
 # ── The Thread ────────────────────────────────────────────────────────────────
@@ -365,11 +380,18 @@ def check(root="."):
                             break
 
         # ── WARNING: One Pre-Question ─────────────────────────────────────────
-        prose = "\n".join(l for i, l in enumerate(lines)
-                          if not mask[i] and not l.lstrip().startswith(("#", ">", "|")))
-        if not PROSE_Q.search(prose):
-            warnings.append(f"{rel}: no question asked anywhere in the body — "
-                            f"add one pre-question on the load-bearing idea, and answer it")
+        # the Summary's capability list is not a pre-question, so stop before it
+        summ = next((i for i, l in enumerate(lines) if l.strip() == "## Summary"), len(lines))
+        h = next((i for i, l in enumerate(lines)
+                  if re.match(r"^## (?!Parent Learning Order|Summary)", l)), 0)
+        window = h + int((summ - h) * PRE_Q_WINDOW)
+        if not prose_questions(lines, mask, window):
+            later = prose_questions(lines, mask, summ)
+            why = ("its only question sits past the opening quarter"
+                   if later else "it asks no question at all")
+            warnings.append(f"{rel}: no pre-question in the opening quarter — {why}. "
+                            f"Ask one question the reader will get wrong, and answer it "
+                            f"within a few sentences")
 
         # ── WARNING: analogy with no breaking point ───────────────────────────
         if ANALOGY.search(body) and not ANALOGY_BREAK.search(body):

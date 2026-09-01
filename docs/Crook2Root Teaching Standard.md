@@ -169,6 +169,38 @@ table**, excluding the abstract and Parent Learning Order:
 Those 25 are theory-heavy openings, not defects. The pass is optional quality
 work, not a blocker.
 
+## 6c. A third correction: the pre-question backlog was 129, and is 285
+
+The gate asked whether a `?` appeared anywhere in a note's prose. That is not the
+pattern. A pre-question must sit **early**, where it can prime what follows —
+and of the 130 notes that had a question, the median one landed **93% of the way
+through**, because it was in the Summary's capability list ("Why is Python the
+default for security tooling?"). Those are checks on the way out, not primes on
+the way in.
+
+Re-measured as *a prose question in the opening quarter, excluding the Summary*:
+
+| | old check | corrected |
+|:--|--:|--:|
+| Notes flagged | **129** | **285** |
+| — asks no question at all | — | 260 |
+| — only question sits past the opening quarter | — | 25 |
+
+This is the first of the four measurement corrections in this document to run in
+the **reassuring** direction: the earlier three made the corpus look worse than it
+was, this one made it look better. The common cause is unchanged — a regex
+standing in for a judgement — and so is the remedy: read a sample before planning
+against a number.
+
+### How to add one economically
+
+The four notes that already passed did so because **their Break was phrased as a
+question**. That is the preferred form: a Break already states the model the
+reader holds and then violates it, so opening it interrogatively does both jobs in
+one sentence and adds nothing to the note's length.
+
+Write a standalone pre-question only where a note has no Break to carry it.
+
 ## 6. What the gate cannot check
 
 **The Break, The Twin, The Tell and The Fade are not mechanisable.** A regex that
