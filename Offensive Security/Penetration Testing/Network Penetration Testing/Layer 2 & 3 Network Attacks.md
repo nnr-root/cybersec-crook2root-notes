@@ -19,6 +19,10 @@ External Network Pentesting -> Service Enumeration -> Layer 2 & 3 Network Attack
 
 ## Attacking the Fabric, Not the Host
 
+> *Most attacks target a service. What do you gain by attacking the network instead?*
+>
+> Hold your answer — the section below is the response.
+
 Most attacks target a *service*. Layer 2 and Layer 3 attacks target the *network itself* — the switching and routing that move packets between hosts. Their power is position: succeed, and you become the path other hosts' traffic flows through, gaining an **on-path** position without ever touching those hosts directly. This is the pentester's route from "I have a foothold on one machine" to "I can read the segment's traffic."
 
 The mechanisms — how ARP, VLANs, and routing actually work and fail — are covered in depth in the **Networking** domain's switching and routing branches. This note is the *offensive testing* view: on an engagement, how you test whether a network's Layer 2/3 controls hold, what a finding looks like, and how to prove it with minimal disruption.

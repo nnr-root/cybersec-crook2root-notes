@@ -16,6 +16,10 @@ Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WA
 
 ## Testing the Filter, Not Just the App
 
+> *A WAF blocks SQL injection patterns all day. What does it understand about your application?*
+>
+> Hold your answer — the section below is the response.
+
 A **Web Application Firewall (WAF)** sits in front of an application and inspects requests, blocking those matching attack signatures — SQL injection patterns, XSS payloads, path traversal. It is a valuable *layer*, but it is a signature-matcher, not an understanding of the application, so it has the same fundamental limitation as any signature system: it catches what it has a rule for and misses what it does not. WAF testing has two goals: verify the WAF *works* (blocks known attacks), and — critically — determine whether it can be *bypassed*, because a WAF that is trivially bypassed provides false assurance.
 
 The essential mindset: **a WAF is defense-in-depth, never a fix.** It buys time and blocks noise, but the vulnerability behind it still exists. Reporting "the WAF blocked my payload" without testing bypasses gives the client a dangerously false sense of security.

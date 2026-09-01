@@ -24,6 +24,10 @@ Red Team Credential Access & Lateral Movement -> Data Collection & Exfiltration 
 
 ## Proving the Crown Jewels Can Leave — Safely
 
+> *You must prove the crown jewels could leave the network. What do you actually send out?*
+>
+> Hold your answer — the section below is the response.
+
 The final objective of many operations is to show that an attacker could **exfiltrate sensitive data**. This note covers the two closing steps: **collection** (finding and staging the target data) and **exfiltration** (moving it out over a channel) — done as a *simulation* with canary data, to measure whether the client's **DLP and egress controls** catch it. It complements the pentest **Data Collection & Post-Exploitation Cleanup** leaf (which proved access *without* exfiltration); here the red-team focus is the **channel and its detectability** — does staged data leaving over DNS, HTTPS, or a cloud service trip the defenses?
 
 The defining discipline: **you exfiltrate a canary dataset, never real data**, and you *measure the channel* — volume, protocol, destination reputation, timing — because that is exactly what DLP and egress monitoring key on.

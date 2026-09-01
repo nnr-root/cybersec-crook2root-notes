@@ -15,6 +15,10 @@ Cloud Identity Operations -> Cloud Control Plane Operations -> Cloud Persistence
 
 ## Persistence Without Malware
 
+> *On a server, persistence is a backdoor process or a cron job. In a cloud account with no server to touch, what is it?*
+>
+> Hold your answer — the section below is the response.
+
 On a server, persistence means a backdoor process or a cron job. In the cloud there is often no server to touch — persistence means a **quiet change to identity configuration** that survives the defender rotating passwords and rebuilding instances. Because these are legitimate API calls, they blend into normal administration; the whole skill is knowing which config change is a backdoor.
 
 The most durable technique targets **role trust policies**. A role's trust policy declares *who is allowed to assume it*. Add an attacker-controlled AWS account as a trusted principal, and that account can assume the role at will — from outside, forever, with no credentials stored anywhere the defender can find.

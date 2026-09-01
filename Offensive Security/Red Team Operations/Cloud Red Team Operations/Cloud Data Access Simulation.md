@@ -15,6 +15,10 @@ Cloud Identity Operations -> Cloud Control Plane Operations -> Cloud Persistence
 
 ## The Data Is the Objective
 
+> *Most cloud data breaches are not clever exploits. What are they?*
+>
+> Hold your answer — the section below is the response.
+
 Recon, identity escalation, and persistence are all in service of one thing: reaching the data. In the cloud, most data lives in **object storage** (S3, GCS, Azure Blob), and the most common breach is not a clever exploit — it is a **bucket exposed by policy**. Storage access is governed by a resource policy plus account-level "block public access" settings, and a single `Principal: "*"` with no condition turns a private store into a public one.
 
 The skill is reading a bucket policy the way the cloud evaluator does: *who* is allowed *what*, and *under which conditions* — because the condition is often the only thing standing between "internal" and "the whole internet."

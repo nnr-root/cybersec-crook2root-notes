@@ -16,6 +16,10 @@ Business Logic Testing -> Race Condition & Concurrency Testing
 
 ## The Bugs No Scanner Can Find
 
+> *The code does exactly what it was written to do and no input is malformed anywhere. Can there still be a vulnerability?*
+>
+> Hold your answer — the section below is the response.
+
 Most vulnerabilities are *implementation* flaws — a missing check, an unescaped input. **Business-logic flaws** are different: the code works exactly as written, but the *workflow itself* can be abused in ways the designer never anticipated. There is no malformed input, no injection, no signature — just a legitimate sequence of legitimate requests that produces an illegitimate outcome. A scanner cannot find these, because a scanner has no concept of what the application is *supposed* to do; only a human who understands the intended workflow can spot its abuse.
 
 This is why business-logic testing is the most intellectually demanding web testing: you must model the application's intent, then ask "what happens if I do this out of order, with an impossible value, or in a way the UI would never allow?"

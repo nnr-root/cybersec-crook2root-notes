@@ -16,6 +16,10 @@ CORS & Clickjacking -> Cross-Site Scripting -> CSRF & SameSite Testing -> Protot
 
 ## Making the Victim's Browser Act for You
 
+> *An attacker's page cannot read your bank's session cookie. Why does that not keep you safe?*
+>
+> Hold your answer — the section below is the response.
+
 **Cross-Site Request Forgery (CSRF)** exploits a simple browser behavior: when your browser makes a request to a site, it *automatically attaches that site's cookies* — including the session cookie — regardless of where the request originated. So if an attacker's page can cause your browser to send a request to `bank.example/transfer`, your browser helpfully includes your bank session cookie, and the bank processes the transfer *as you*. The attacker never sees your session; they simply cause your authenticated browser to act.
 
 The key insight: CSRF works because the browser proves *who you are* (the cookie) automatically, but the vulnerable application does not verify *that you intended this specific request*. The fix is a token that only the legitimate site can supply — something the attacker's page cannot know.

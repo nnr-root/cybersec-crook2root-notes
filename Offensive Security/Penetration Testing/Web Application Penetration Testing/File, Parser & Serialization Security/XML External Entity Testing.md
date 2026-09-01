@@ -16,6 +16,10 @@ File Inclusion & Path Traversal -> File Upload Security Testing -> Insecure Dese
 
 ## When a Parser Fetches What You Tell It
 
+> *You send XML and the server reads a file off its own disk. Which part of your document told it to?*
+>
+> Hold your answer — the section below is the response.
+
 XML is more than a data format — it has a document type definition (DTD) that can declare **entities**, reusable snippets referenced with `&name;`. Most entities are harmless (`&amp;` → `&`), but XML also supports **external entities** that tell the parser to fetch content from a URI: `<!ENTITY xxe SYSTEM "file:///etc/hostname">`. When the parser resolves `&xxe;`, it *reads that file* and inserts the contents. If an application parses attacker-supplied XML with external entities enabled, the attacker declares an entity pointing at a file or URL, and its contents flow into the response — **XML External Entity (XXE) injection**.
 
 The root cause is a powerful parser feature (external entity resolution) left enabled on untrusted input. Unlike deserialization, XXE does not usually give code execution — but it gives **file disclosure** and **server-side request forgery**, both serious, and it appears anywhere XML is parsed (SOAP, SVG uploads, document formats, config imports).

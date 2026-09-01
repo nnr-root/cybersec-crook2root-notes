@@ -16,6 +16,10 @@ Passive Reconnaissance & OSINT -> DNS & Subdomain Reconnaissance -> Active Recon
 
 ## Now You Touch the Target
 
+> *What changes the moment you send your first packet to the target?*
+>
+> Hold your answer — the section below is the response.
+
 Passive recon told you what exists; **active recon** confirms what is *alive* and *listening*. The moment you send a packet to the target, you cross a line: the activity is observable, logged, and — outside an authorized scope — potentially illegal. Everything here trades stealth for certainty.
 
 Active recon answers three questions in order: **which hosts are up** (host discovery), **which ports are open** (port scanning), and **what is running on them** (service and version detection). Each is a probe-and-interpret exercise: send a crafted packet, read the response, infer state.

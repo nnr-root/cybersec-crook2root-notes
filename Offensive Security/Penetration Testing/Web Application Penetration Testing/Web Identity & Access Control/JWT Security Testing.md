@@ -16,6 +16,10 @@ Web Authentication Testing -> Broken Access Control -> JWT Security Testing -> F
 
 ## A Token You Can Read, and Must Not Be Able to Forge
 
+> *A JWT's payload is base64, not encrypted — anyone holding the token can read it. Is that the bug?*
+>
+> Hold your answer — the section below is the response.
+
 A **JSON Web Token (JWT)** is a compact, self-contained token that carries claims about a user (their ID, role, expiry) in a format the server can verify without a database lookup — which is why it is ubiquitous in modern APIs and SSO. A JWT has three parts, separated by dots: `header.payload.signature`. The header and payload are **base64-encoded JSON — not encrypted**, so anyone can read them. The signature is what makes the token trustworthy: the server signs the header+payload with a key, and verifies that signature on every request. If the signature verifies, the claims are trusted.
 
 The entire security rests on the signature being **correctly verified**. Almost every JWT vulnerability is a way to make the server accept a token whose claims the attacker chose — by defeating, skipping, or weakening signature verification.

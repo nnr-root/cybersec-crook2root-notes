@@ -25,6 +25,10 @@ Penetration Testing Fundamentals -> Rules of Engagement & Scoping -> Penetration
 
 ## Deciding Which Attacker to Be
 
+> *A bored script kiddie, a ransomware crew and a nation-state. Can one engagement test against all three?*
+>
+> Hold your answer — the section below is the response.
+
 The kill chain (previous leaf) told you attacks have a *shape*. **Threat modeling** answers a sharper question before an engagement: *which attacker are we simulating, going after what, and how would they actually operate?* You cannot test against "everything" — a bored script kiddie, a ransomware crew, and a nation-state behave completely differently, so a good engagement picks a **realistic adversary profile** and emulates it. **MITRE ATT&CK** is the shared catalogue that makes this concrete: a giant, curated matrix of the real **tactics** (the attacker's goals — the *why*) and **techniques** (the *how*) observed in actual intrusions, each with a stable ID (e.g. `T1566` Phishing). Together they turn "we did some hacking" into "we emulated a ransomware operator's TTPs — here are the exact techniques, mapped to ATT&CK, and which ones your controls caught."
 
 > [!tip] The analogy, and where it breaks

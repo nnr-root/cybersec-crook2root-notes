@@ -15,6 +15,10 @@ SQL Injection -> NoSQL Injection -> ORM Injection -> Operating System Command In
 
 ## Core Vulnerability & Parser Mechanics (Zero)
 
+> *Input can reach an XPath expression by two different routes. Why does only one of them break the expression tree?*
+>
+> Hold your answer — the section below is the response.
+
 XPath injection occurs when untrusted text is concatenated into an XPath expression before an XPath engine parses it. XPath selects nodes from an XML tree through paths, predicates, functions, operators, axes, and type conversions. If input is inserted as source, quote termination and Boolean syntax can change the expression tree. If input is supplied through a proper variable-binding API, it remains a string value and cannot introduce new predicates.
 
 An XML-backed login might evaluate `/users/user[username='alice' and password='hash']`. The engine first tokenizes `/`, names, brackets, operators, strings, and function calls; parses them into location steps and expression nodes; establishes a context node, position, and size; then evaluates predicates. Concatenating a username into the quoted literal lets the input close that literal and append a Boolean branch. This resembles SQL injection at the code/data boundary, but XPath semantics are different and SQL escaping routines do not apply.

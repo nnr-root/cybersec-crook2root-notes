@@ -27,6 +27,10 @@ Guided Network Pentest Walkthrough -> Guided Active Directory Assessment -> Guid
 
 ## Objective
 
+> *Besides the corporate SSID, which networks belong in a wireless assessment scope?*
+>
+> Hold your answer — the section below is the response.
+
 Evaluate whether wireless identity, encryption, segmentation, onboarding, roaming, management frames, and monitoring prevent unauthorized access and lateral movement. Include corporate, guest, IoT, warehouse, and building-control networks where explicitly authorized.
 
 ```mermaid

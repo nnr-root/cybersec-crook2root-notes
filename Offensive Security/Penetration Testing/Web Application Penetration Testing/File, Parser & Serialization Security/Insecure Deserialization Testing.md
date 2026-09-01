@@ -16,6 +16,10 @@ File Inclusion & Path Traversal -> File Upload Security Testing -> Insecure Dese
 
 ## Rebuilding an Object From Untrusted Bytes
 
+> *Deserialising turns bytes back into an object. Why should that be dangerous?*
+>
+> Hold your answer — the section below is the response.
+
 Programs often need to save an object (a user session, a cache entry, a message) as bytes and later reconstruct it. **Serialization** turns an object into a byte stream; **deserialization** turns those bytes back into a live object. The flaw arises when a program deserializes **attacker-controlled bytes** — because in many languages, reconstructing an object *runs code* (constructors, magic methods, property setters). Feed the deserializer a crafted byte stream, and you can make the application instantiate objects and trigger method chains the developer never intended, often reaching remote code execution.
 
 The mental model: deserialization is not "reading data," it is "executing a recipe for building objects." If an attacker writes the recipe, they influence what the program builds and does.

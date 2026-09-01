@@ -15,6 +15,10 @@ SQL Injection -> NoSQL Injection -> ORM Injection -> Operating System Command In
 
 ## Core Vulnerability & Parser Mechanics (Zero)
 
+> *Your input was escaped correctly on the way out. Why can it still execute?*
+>
+> Hold your answer — the section below is the response.
+
 Server-Side Includes (SSI) are directives embedded in text—usually HTML—that a web server or filter evaluates before sending the response. SSI injection occurs when untrusted content is stored or reflected into an SSI-enabled resource and is subsequently interpreted as directive source. The root cause is a second-pass parser crossing: data accepted by the application later enters the SSI directive grammar.
 
 Classic syntax resembles an HTML comment: `<!--#echo var="SERVER_NAME" -->`. Depending on server and configuration, directives can echo environment variables, include virtual or file resources, inspect file metadata, configure formatting, evaluate conditions, or invoke commands. The `exec` capability is especially dangerous and should be disabled; it is not required to prove the vulnerability. Apache commonly processes SSI through `mod_include` for configured content types or extensions such as `.shtml`. Nginx has an SSI filter with a different directive set and execution model. Other gateways and content-management systems may implement compatible-looking but nonidentical grammars.

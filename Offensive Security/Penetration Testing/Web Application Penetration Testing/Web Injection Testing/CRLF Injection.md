@@ -15,6 +15,10 @@ SQL Injection -> NoSQL Injection -> ORM Injection -> Operating System Command In
 
 ## Core Vulnerability & Parser Mechanics (Zero)
 
+> *You place a newline inside a header value. Which component decides that your header has ended?*
+>
+> Hold your answer — the section below is the response.
+
 CRLF injection occurs when attacker-controlled characters reach a line-oriented protocol field without validation. CR is carriage return (`0x0D`), LF is line feed (`0x0A`), and the pair `CRLF` terminates lines in HTTP/1.x. When an application constructs a response header from untrusted data, an injected CRLF can end the intended header and begin another. A second empty line (`CRLF CRLF`) can terminate the header section and make following bytes appear to be a response body—historically called HTTP response splitting.
 
 The root cause is a protocol-framing violation. HTTP/1.1 messages consist of a start line, header fields, an empty line, and an optional body. Header values cannot contain raw CR or LF. Modern server libraries usually reject them, but legacy frameworks, reverse proxies, custom gateways, logging formats, email headers, and text protocols may expose unsafe construction. The finding must identify the exact parser boundary rather than assuming every `%0d%0a` string reaches the wire.

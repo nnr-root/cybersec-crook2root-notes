@@ -16,6 +16,10 @@ Business Logic Testing -> Race Condition & Concurrency Testing
 
 ## The Gap Between Check and Use
 
+> *The balance check passes, then the withdrawal proceeds. Both steps are correct. How do you withdraw the money twice?*
+>
+> Hold your answer — the section below is the response.
+
 A **race condition** exploits the tiny window between when an application *checks* a condition and when it *acts* on it. If two requests arrive in that window, both pass the check before either updates the state — so both act, even though only one should have been allowed. The classic form is **TOCTOU (Time-Of-Check to Time-Of-Use)**: check the balance is sufficient, then deduct — but if two withdrawals check simultaneously, both see the full balance and both proceed, withdrawing more than exists.
 
 This is a business-logic flaw with a timing twist: the workflow is correct *sequentially*, but breaks under *concurrency*. It is invisible to normal testing because a single request always behaves correctly — the flaw only appears when requests overlap, which is why concurrency testing is its own skill.

@@ -24,6 +24,10 @@ Guided Network Pentest Walkthrough -> Guided Active Directory Assessment -> Guid
 
 ## One Application, Two Surfaces
 
+> *The interface hides the delete button from ordinary users. Is delete protected?*
+>
+> Hold your answer — the section below is the response.
+
 A modern application is tested through two surfaces that share one security model: the **browser-facing web app** (pages, sessions, forms, workflows) and the **API** underneath (REST/GraphQL/gRPC/WebSocket endpoints the client and mobile apps call). Assessing them together is correct because *the API is where authorization actually lives* — the UI merely hides buttons, while the API is what an attacker calls directly. This walkthrough converts a URL and a set of test identities into a defensible assessment of **architecture, authorization, session handling, input boundaries, and business workflows** across both surfaces.
 
 The recurring theme, and the single most productive test: **does the server consistently enforce the business model, regardless of what the client sends?**

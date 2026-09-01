@@ -15,6 +15,10 @@ SQL Injection -> NoSQL Injection -> ORM Injection -> Operating System Command In
 
 ## Core Vulnerability & Parser Mechanics (Zero)
 
+> *The root cause of command injection is special characters. True or false?*
+>
+> Hold your answer — the section below is the response.
+
 Operating system command injection occurs when application data becomes part of a command language interpreted by a shell or command processor. The root cause is not simply “special characters.” It is the selection of an execution API that asks an interpreter to parse a combined string, followed by failure to preserve the boundary between the intended executable and untrusted arguments.
 
 There are two materially different execution models. In a direct process API, the application supplies an executable path and an argument vector: conceptually `execve("/usr/bin/dig", ["dig", userValue], env)`. The kernel does not interpret pipes, semicolons, substitutions, redirects, or wildcard characters; they are ordinary bytes in one argument. In a shell model such as `/bin/sh -c "dig " + userValue`, the shell performs lexical analysis, quote removal, parameter expansion, command substitution, field splitting, pathname expansion, redirection, pipeline construction, and command dispatch. An input delimiter can end the intended command and introduce another grammar node.

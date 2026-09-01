@@ -16,6 +16,10 @@ Modern API Security Testing -> Legacy XML Web Services Testing -> API Security F
 
 ## The Channel That Escapes Request-Based Controls
 
+> *Your WAF inspects every HTTP request. How much of a WebSocket conversation does it see?*
+>
+> Hold your answer — the section below is the response.
+
 A **WebSocket** is a persistent, bidirectional connection between browser and server — unlike HTTP's request/response, either side may send at any time (the mechanism is covered in the Networking **WebSockets & Real-Time Protocols** leaf). This changes testing fundamentally: the security controls that guard ordinary web traffic operate on *discrete HTTP requests*, but a WebSocket is *one long connection* carrying many messages that never appear as separate requests. A WAF that inspects the opening handshake sees nothing of the thousands of messages that follow.
 
 So the central WebSocket testing lesson is that **per-request security does not apply per-message**. Authorization, input validation, and rate limiting must move *into* the message handler, and a common finding is that they didn't.

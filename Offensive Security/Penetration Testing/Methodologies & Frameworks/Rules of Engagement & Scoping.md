@@ -30,6 +30,10 @@ Penetration Testing Fundamentals -> Rules of Engagement & Scoping -> Penetration
 
 ## The Contract That Makes It Legal
 
+> *What separates a penetration test from a crime?*
+>
+> Hold your answer — the section below is the response.
+
 Before you touch a single target, a set of documents defines *what you may do, to what, when, and how the evidence is handled*. Getting this wrong is not a technical mistake — it is a legal and ethical one, and it can end careers and companies. This note covers the four things every operator must internalize: the **documents** that authorize an engagement, how to define **scope** precisely, the **rules of engagement** that govern behavior, and **evidence governance** (how you collect, protect, and dispose of the sensitive data you will inevitably see). It absorbs the commercial Statement of Work and evidence-governance material into one place because in practice they are one continuous chain: contract → scope → behavior → evidence → disposal.
 
 > [!tip] The analogy, and where it breaks

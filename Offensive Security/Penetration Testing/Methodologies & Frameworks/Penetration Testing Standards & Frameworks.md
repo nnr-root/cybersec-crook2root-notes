@@ -28,6 +28,10 @@ Penetration Testing Fundamentals -> Rules of Engagement & Scoping -> Penetration
 
 ## Why Not Just "Start Hacking"?
 
+> *You found plenty of bugs. How do you prove to the client what you did *not* miss?*
+>
+> Hold your answer — the section below is the response.
+
 An unstructured test is unrepeatable and incomplete: you find whatever you happen to stumble into, miss whole categories, and cannot prove coverage to the client. **Methodologies** solve this — they are agreed *checklists and lifecycles* that make an assessment repeatable, comprehensive, and defensible. Instead of memorizing five competing standards as separate facts, learn them by their **shared shape** (nearly all follow pre-engagement → intelligence/recon → analysis → exploitation → post-exploitation → reporting) and by *what each one is actually best at*. That comparison — not the individual acronyms — is the operator skill. This note replaces five near-identical framework stubs with one comparison you can actually reason from.
 
 > [!tip] The analogy, and where it breaks

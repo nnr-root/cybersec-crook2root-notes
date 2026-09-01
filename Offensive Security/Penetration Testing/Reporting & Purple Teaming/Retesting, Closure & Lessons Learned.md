@@ -23,6 +23,10 @@ Evidence & Risk Prioritization -> Finding & Report Writing -> Purple Team Exerci
 
 ## Proving a Fix Is Real
 
+> *The report is delivered and the client has accepted it. Is the engagement over?*
+>
+> Hold your answer — the section below is the response.
+
 The engagement ends where remediation begins — but a fix *claimed* is not a fix *verified*. **Retesting** is the discipline of proving that a remediation actually closed the finding, at its root, without breaking legitimate use. **Closure** is the formal decision (with evidence) that the finding is resolved. **Lessons learned** feeds systemic root causes back into the organization so the *whole class* of defect becomes less likely. This note is the closure *craft*; the **Guided Retest & Closure** leaf is the step-by-step walkthrough.
 
 The defining trap this note exists to prevent: the **superficial fix**. Blocking one payload string, or changing an error message, can make a naive retest "pass" while the underlying vulnerability class remains wide open on a variant. Real closure proves the *root cause* is gone.

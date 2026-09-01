@@ -15,6 +15,10 @@ SQL Injection -> NoSQL Injection -> ORM Injection -> Operating System Command In
 
 ## Core Vulnerability & Parser Mechanics (Zero)
 
+> *The ORM binds every value you hand it. Which part of the query is still yours to control?*
+>
+> Hold your answer — the section below is the response.
+
 An object-relational mapper translates language-level models and query objects into SQL or another datastore language. ORM injection occurs when untrusted input controls **query structure**—operators, identifiers, associations, projections, ordering, raw fragments, or nested filters—rather than being confined to bound values. The abstraction can reduce ordinary SQL injection while introducing a second grammar at the application layer.
 
 A typical pipeline is HTTP JSON → framework object → ORM query AST → dialect generator → SQL text plus bind parameters → database parser. Safe values become bind nodes. Structural values often cannot: a database placeholder cannot stand for a column name or `ASC`/`DESC`, so an ORM must either choose from trusted metadata or interpolate generated syntax. Passing a user-supplied sort expression, include graph, or raw condition directly into that structural position crosses the code/data boundary even if every ordinary value is parameterized.

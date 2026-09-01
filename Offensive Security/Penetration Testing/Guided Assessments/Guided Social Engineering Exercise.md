@@ -27,6 +27,10 @@ Guided Network Pentest Walkthrough -> Guided Active Directory Assessment -> Guid
 
 ## Objective
 
+> *This exercise measures how well employees resist manipulation. True or false?*
+>
+> Hold your answer — the section below is the response.
+
 Measure whether people, identity procedures, messaging controls, help desks, physical controls, and incident reporting interrupt realistic influence attempts. The exercise evaluates systems and processes—not employee worth.
 
 ```mermaid

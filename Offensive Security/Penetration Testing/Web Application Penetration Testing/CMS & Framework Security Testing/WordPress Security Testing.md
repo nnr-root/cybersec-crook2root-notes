@@ -16,6 +16,10 @@ Framework & CMS Testing Methodology -> WordPress Security Testing
 
 ## The World's Most-Attacked CMS
 
+> *WordPress core is heavily audited and patched fast. Why is it still the most-attacked platform on the internet?*
+>
+> Hold your answer — the section below is the response.
+
 WordPress runs a huge fraction of all websites, which makes it the single most-attacked application platform on the internet. It is the concrete worked example of the **Framework & CMS Testing Methodology** — the same fingerprint → version → CVE → config loop, applied to the CMS you will meet most often. Its defining characteristic, and its defining weakness, is the **plugin ecosystem**: the WordPress core is relatively well-maintained, but the tens of thousands of third-party plugins are wildly variable in quality, and an abandoned plugin with a known vulnerability is the classic WordPress breach.
 
 So WordPress testing is overwhelmingly *plugin and version enumeration*: what plugins are installed, what versions, and which of those versions have known-exploited flaws.

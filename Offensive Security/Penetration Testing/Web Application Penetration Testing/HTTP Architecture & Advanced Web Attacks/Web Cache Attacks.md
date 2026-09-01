@@ -16,6 +16,10 @@ Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WA
 
 ## Attacking the Thing That Serves Many Users One Copy
 
+> *A cache stores one copy of a response and serves it to many users. What happens if your response is the one it stores?*
+>
+> Hold your answer — the section below is the response.
+
 A **web cache** (CDN edge, reverse proxy) stores a copy of a response and serves it to many users, to cut latency and load (the mechanism is in the Networking Application Delivery leaf). That "one copy for many users" property is exactly what makes it an attack target: if an attacker can get a *malicious* copy into the cache, it is served to every subsequent user; and if the cache stores a *private* response under a key others can request, it leaks that user's data.
 
 Two attacks exploit this from opposite directions:

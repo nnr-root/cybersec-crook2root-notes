@@ -16,6 +16,10 @@ SQL Injection -> NoSQL Injection -> ORM Injection -> Operating System Command In
 
 ## Core Vulnerability & Parser Mechanics (Zero)
 
+> *Your input is rendered by a template engine. At what moment does it stop being data?*
+>
+> Hold your answer — the section below is the response.
+
 Server-side template injection (SSTI) occurs when untrusted text is treated as **template source** rather than as a data value rendered by a trusted template. A template engine is a language implementation: it tokenizes delimiters and text, parses expressions or directives into an AST, compiles or interprets nodes, resolves variables against a context, applies filters or methods, and writes output. If user input reaches the source-compilation phase, the user controls expression nodes. If it reaches only a context variable, delimiter characters remain ordinary data.
 
 The difference can be shown with two designs. Safe code loads a fixed template such as `Hello {{ display_name }}` and supplies `{display_name: userInput}`. The engine parses only developer-controlled source; autoescaping can encode the resulting value for HTML. Vulnerable code builds `Hello ` + userInput and passes the combined string to `renderTemplateString`. The untrusted bytes are now present when the lexer recognizes `{{`, `${`, `<%=`, or engine-specific directive syntax.

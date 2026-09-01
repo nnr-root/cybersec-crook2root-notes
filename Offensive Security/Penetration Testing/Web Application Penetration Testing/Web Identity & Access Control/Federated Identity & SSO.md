@@ -16,6 +16,10 @@ Web Authentication Testing -> Broken Access Control -> JWT Security Testing -> F
 
 ## Logging In With Someone Else's Identity Provider
 
+> *You log in to an application you have never given a password to. Who vouched for you?*
+>
+> Hold your answer — the section below is the response.
+
 **Single Sign-On (SSO)** lets a user authenticate once with a trusted **identity provider (IdP)** — Google, an enterprise directory, Okta — and then access many applications (the **relying parties**) without logging in again. Two protocols dominate: **SAML** (XML-based, common in enterprise) and **OAuth 2.0 / OpenID Connect** (JSON/token-based, common on the web). Both work by the IdP issuing a signed **assertion** or **token** that says "this is user X," which the application trusts.
 
 The security model rests entirely on that trust being *verified*: the application must confirm the assertion genuinely came from the IdP, is intended for *this* application, and has not been tampered with or replayed. Federated-identity flaws are almost always a failure of one of those checks — a signature not validated, an audience not verified, a token accepted from the wrong source. Get it wrong, and an attacker forges an identity.

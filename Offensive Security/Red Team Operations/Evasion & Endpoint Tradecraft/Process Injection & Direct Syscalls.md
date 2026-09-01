@@ -25,6 +25,10 @@ AV, EDR & Telemetry Evasion Testing -> Payload Engineering & Obfuscation -> Proc
 
 ## Running Code Inside Another Process, Quietly
 
+> *Your code is running and the EDR is watching process lineage. How do you stop looking like yourself?*
+>
+> Hold your answer — the section below is the response.
+
 Two tradecraft techniques let attackers *act while evading behavioral detection*, and they are tightly linked. **Process injection** runs your code inside *another, trusted process* (explorer.exe, a browser) so the malicious activity appears to come from a legitimate program — evading process-lineage detection and blending in. **Direct syscalls** call the kernel *directly*, skipping the userland library functions that EDR **hooks** — so the EDR's inline instrumentation never sees the call. Together they are the heart of modern evasion tradecraft, and testing them measures whether the client's EDR sees past the disguise.
 
 The unifying idea: **EDR mostly watches userland — the API calls and process relationships.** Injection changes *whose* process does the action; direct syscalls change *whether the watched API layer is involved at all*. Both aim to make malicious behavior invisible to a defense that's looking in the wrong place.

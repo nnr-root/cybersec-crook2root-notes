@@ -27,6 +27,10 @@ Guided Network Pentest Walkthrough -> Guided Active Directory Assessment -> Guid
 
 ## Retest workflow
 
+> *The client says the finding is fixed. What do you rebuild before you test anything?*
+>
+> Hold your answer — the section below is the response.
+
 ```mermaid
 flowchart TD
     R["Remediation claim"] --> S["Scope & evidence review"]

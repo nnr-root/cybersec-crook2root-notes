@@ -20,6 +20,10 @@ WPA2 Security Testing -> WPA3 Security Testing -> Rogue Access Points & Wireless
 
 ## Trust paths
 
+> *Your laptop trusts this wireless network. On what evidence?*
+>
+> Hold your answer — the section below is the response.
+
 ```mermaid
 flowchart TD
     U["User/device"] --> S{"Why trust this WLAN?"}

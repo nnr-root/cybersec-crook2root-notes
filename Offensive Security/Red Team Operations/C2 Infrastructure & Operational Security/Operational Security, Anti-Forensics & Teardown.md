@@ -25,6 +25,10 @@ C2 Infrastructure & Redirectors -> Operational Security, Anti-Forensics & Teardo
 
 ## Protecting the Exercise, and Leaving No Trace but the Report
 
+> *The operation is finished and the report is written. What should still exist?*
+>
+> Hold your answer — the section below is the response.
+
 Two responsibilities close out every red team operation. **Operational security (OpSec)** protects what the exercise touches — client data, operator identities, and the infrastructure you built — and keeps the operation inside its authorized boundary. **Teardown** removes every artifact the operation created (domains, certs, hosts, accounts, agents, listeners) so the client is left exactly as before. This note pairs them with **anti-forensics** — deliberately, because anti-forensics is studied here *as a blue-team training tool*: by testing whether log manipulation and artifact removal defeat the client's detection and IR, you reveal gaps in their forensic readiness. Every anti-forensic technique is presented with the detection/preservation that beats it.
 
 The professional framing throughout: **you cannot clean up (or safely test anti-forensics) what you did not track.** A complete, immutable artifact inventory is the foundation of both teardown and honest anti-forensics testing.

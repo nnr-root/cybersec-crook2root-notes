@@ -16,6 +16,10 @@ External Network Pentesting -> Service Enumeration -> Layer 2 & 3 Network Attack
 
 ## The Doors Meant to Let People In
 
+> *An exposed database is a misconfiguration. What is an exposed VPN gateway?*
+>
+> Hold your answer — the section below is the response.
+
 Every organization needs to let remote employees in, so it deliberately exposes **remote-access services** — VPN gateways, RDP, SSH, Citrix, and remote-management portals. These are unique on the perimeter: unlike an accidentally-exposed database, they are *supposed* to be internet-facing, which means they must be extraordinarily well-authenticated, because a single credential that works here is a direct route from the internet into the internal network.
 
 That makes remote access the highest-value external target: it bypasses the whole "find a vulnerability" game. If you can authenticate to the VPN, you are *inside* — no exploit needed. So remote-access testing is overwhelmingly about **authentication strength**: is there MFA, are credentials guessable, is the gateway itself patched?

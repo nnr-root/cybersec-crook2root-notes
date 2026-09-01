@@ -27,6 +27,10 @@ Guided Network Pentest Walkthrough -> Guided Active Directory Assessment -> Guid
 
 ## Objective
 
+> *An attacker holds one low-privilege principal in a cloud account. What is supposed to stop them reaching protected data?*
+>
+> Hold your answer — the section below is the response.
+
 Assess whether cloud identities, control-plane policy, network exposure, workload identity, data services, automation, and logging prevent an initial low-privilege principal from reaching protected resources.
 
 ```mermaid

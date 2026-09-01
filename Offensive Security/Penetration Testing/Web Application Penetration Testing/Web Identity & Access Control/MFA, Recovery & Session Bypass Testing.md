@@ -16,6 +16,10 @@ Web Authentication Testing -> Broken Access Control -> JWT Security Testing -> F
 
 ## The Second Factor and Its Escape Hatches
 
+> *MFA is enforced on every account. Name a way in that never touches the second factor.*
+>
+> Hold your answer — the section below is the response.
+
 **Multi-Factor Authentication (MFA)** requires a second proof beyond the password — a code from an app, an SMS, a hardware key — so that a stolen password alone is not enough. It is the single most effective control against credential attacks. But MFA is only as strong as its *implementation and its bypasses*: the account-recovery flow that resets it, the session handling around it, and the ways it can be skipped. Attackers who cannot beat the password-plus-MFA front door look for the *side doors* — and there are usually several.
 
 This note covers the three ways MFA-protected accounts fall: **bypassing MFA directly**, **abusing account recovery** (the "forgot password" flow that often has *weaker* protection than the login it resets), and **session flaws** that make MFA moot after the fact.

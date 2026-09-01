@@ -16,6 +16,10 @@ File Inclusion & Path Traversal -> File Upload Security Testing -> Insecure Dese
 
 ## Letting Strangers Put Files on Your Server
 
+> *You accept only images and you check the extension. What is the security question you have not asked?*
+>
+> Hold your answer — the section below is the response.
+
 Any feature that accepts an uploaded file — a profile picture, a document, a CSV import — lets an untrusted party place bytes on the server's filesystem. The security question is: *what happens to those bytes?* If the server stores them somewhere they can later be **executed** (a `.php` in a web-accessible directory), a file upload becomes remote code execution — the highest-severity web flaw. The whole discipline is about breaking the chain between "attacker uploads a file" and "that file runs."
 
 The flaw is rarely "uploads are allowed" — it is that the server trusts the client's claims about the file (its name, its extension, its declared type) instead of controlling what it actually is and where it lands.

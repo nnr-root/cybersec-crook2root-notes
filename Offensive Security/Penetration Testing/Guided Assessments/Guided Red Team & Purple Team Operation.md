@@ -24,6 +24,10 @@ Guided Network Pentest Walkthrough -> Guided Active Directory Assessment -> Guid
 
 ## Emulate an Adversary, Then Fix What It Beat
 
+> *The red team finished and nothing was detected. What does a purple team session add that the report does not?*
+>
+> Hold your answer — the section below is the response.
+
 A **red team operation** answers a business question by *emulating a specific, realistic adversary* end to end: initial access → identity/lateral operations → objective proof, while measuring whether the defenders detect and respond in time. A **purple team validation** is the natural follow-on: red and blue sit *together* and, behavior by behavior, confirm whether each attack technique is prevented, observed, alerted, investigated, and contained — then engineer the missing detections and re-run. This capstone pairs them because they are two halves of one loop: the red op *finds the gaps under realistic conditions*, and the purple phase *closes them measurably*. It is the highest-maturity engagement, and it sits at the top of this domain because it assumes every prior technique and methodology.
 
 Unlike a pentest (find as many issues as possible), a red team op is **objective-led and stealth-aware**: success is measured against a defined goal *and* against the defenders' timeline.

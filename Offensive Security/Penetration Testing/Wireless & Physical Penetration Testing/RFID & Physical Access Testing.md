@@ -24,6 +24,10 @@ WPA2 Security Testing -> WPA3 Security Testing -> Rogue Access Points & Wireless
 
 ## Access-control architecture
 
+> *A badge is presented and a door opens. How many components had to agree?*
+>
+> Hold your answer — the section below is the response.
+
 ```mermaid
 flowchart LR
     B["Badge / mobile credential"] --> R["Reader"]

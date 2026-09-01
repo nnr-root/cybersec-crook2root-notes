@@ -16,6 +16,10 @@ CORS & Clickjacking -> Cross-Site Scripting -> CSRF & SameSite Testing -> Protot
 
 ## Poisoning the Blueprint Every Object Shares
 
+> *You set one property on one object. How many objects changed?*
+>
+> Hold your answer — the section below is the response.
+
 In JavaScript, almost every object inherits from a shared blueprint: `Object.prototype`. Properties on that blueprint are visible to *every* object in the program. **Prototype pollution** is a flaw where attacker input can *write* to that shared blueprint — typically via a specially-crafted key like `__proto__` — so a property the attacker sets appears on *all* objects at once. This is uniquely dangerous because it corrupts the application globally: a single polluted property can change how unrelated code behaves, and combined with a "gadget" (code that reads that property), it escalates to XSS or even server-side code execution in Node.js.
 
 The root cause is a **recursive merge or property-set that trusts attacker-controlled keys** — copying user JSON into an object without rejecting `__proto__`, `constructor`, and `prototype` keys.

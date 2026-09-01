@@ -23,6 +23,10 @@ Evidence & Risk Prioritization -> Finding & Report Writing -> Purple Team Exerci
 
 ## Designing a Test That Improves Detection
 
+> *You execute a known attacker behaviour and no alert fires. Which part of the detection pipeline failed?*
+>
+> Hold your answer — the section below is the response.
+
 The **Guided Red Team & Purple Team Operation** leaf showed *running* a purple loop end-to-end. This note is the design *craft* underneath it: how to build a repeatable **test card** for a single attacker behavior so that a failure can be localized and fixed. Purple teaming is collaborative behavior validation — execute a known behavior, observe whether it is prevented / collected / alerted / triaged / contained, close the gap, and re-run. Its output is not a report of "we evaded you," it is **durable, owned, monitored detections**.
 
 The defining design principle: **one behavior per test card.** If a card bundles several behaviors, a failure can't be pinned to a layer, and you end up tuning the wrong thing.

@@ -16,6 +16,10 @@ Modern API Security Testing -> Legacy XML Web Services Testing -> API Security F
 
 ## The Three Concerns Every API Shares
 
+> *REST, GraphQL, gRPC and SOAP look nothing alike on the wire. What do their security concerns have in common?*
+>
+> Hold your answer — the section below is the response.
+
 Whatever the transport — REST, GraphQL, gRPC, SOAP — every API faces the same three security concerns, and they map directly to the most-exploited API weaknesses. This note is the cross-cutting layer beneath the style-specific testing:
 
 | Concern | The question | The classic flaw |

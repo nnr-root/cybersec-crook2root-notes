@@ -16,6 +16,10 @@ Passive Reconnaissance & OSINT -> DNS & Subdomain Reconnaissance -> Active Recon
 
 ## Someone Already Scanned the Internet
 
+> *You want a target's exposed assets without sending them a single packet. Possible?*
+>
+> Hold your answer — the section below is the response.
+
 You do not need to scan the whole Internet to find a target's exposed assets — **someone already did**. Services like **Shodan** and **Censys** continuously scan every routable address, fingerprint what they find, and make it searchable. Querying them is *passive* with respect to your target: the packets came from the scanner, not you. This is the cloud-era evolution of recon, because the modern attack surface is not a tidy perimeter — it is a sprawl of cloud instances, storage buckets, forgotten VMs, and SaaS integrations that no firewall fully contains.
 
 The discipline of finding all of it — continuously — is **Attack Surface Management (ASM)**. Offensively it finds the way in; defensively it is how an organization discovers the asset it forgot it owned.

@@ -24,6 +24,10 @@ AV, EDR & Telemetry Evasion Testing -> Payload Engineering & Obfuscation -> Proc
 
 ## Building the Thing That Runs
 
+> *A red team payload and criminal malware perform the same actions. What makes one of them acceptable?*
+>
+> Hold your answer — the section below is the response.
+
 The previous leaf measured what the endpoint *detects*; this one is the attacker's side — **engineering the payload** that carries the operation's action, and **obfuscating** it to test static detection. A red team payload is not "malware" in the criminal sense: it is minimal, attributable, guard-railed, reversible, and instrumented, because its purpose is to *measure a control*, not to cause harm. Obfuscation (encoding, encryption, packing, string transformation, staging) is the craft of changing how a payload *looks* so static signatures miss it — and its single most important lesson is a limitation: **obfuscation changes appearance, not behavior**, so it defeats signatures but not behavioral detection.
 
 The professional discipline: an authorized payload carries **guardrails** (scope checks, expiry, kill switch), emits **telemetry**, and cleans up — the opposite of untraceable malware.

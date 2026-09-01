@@ -15,6 +15,10 @@ SQL Injection -> NoSQL Injection -> ORM Injection -> Operating System Command In
 
 ## Core Vulnerability & Parser Mechanics (Zero)
 
+> *Is an LDAP filter a string?*
+>
+> Hold your answer — the section below is the response.
+
 LDAP injection occurs when untrusted data is concatenated into an LDAP search filter or distinguished name (DN) and is therefore parsed as directory grammar. LDAP is a protocol, not merely a string format. A client encodes operations such as Bind and Search using ASN.1 Basic Encoding Rules (BER). Search includes a structured filter whose protocol representation can express `and`, `or`, `not`, equality, substring, presence, approximate, ordering, and extensible matches. Many application libraries accept RFC 4515 string filters and compile them into that BER structure.
 
 An intended filter such as `(&(objectClass=person)(uid=alice))` has an AND node with two equality children. If an application builds `(&(objectClass=person)(uid=` + input + `))`, a value containing closure characters and another filter can terminate the equality item and add nodes. The precise result depends on parenthesis balance and the library parser. Unlike SQL, the important metacharacters in a filter value are `*`, `(`, `)`, backslash, and NUL; RFC 4515 defines hexadecimal escaping for their octets.
