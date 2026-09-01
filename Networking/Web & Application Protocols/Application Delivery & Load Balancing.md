@@ -94,6 +94,12 @@ A **CDN (Content Delivery Network)** extends delivery geographically. It is a gl
 
 The CDN is also a security boundary. It is where TLS is often terminated, where a WAF frequently runs, and where DDoS mitigation lives. This concentrates protection at the edge, and it concentrates trust: the CDN sees plaintext, holds certificates, and is the effective front door. A compromise or misconfiguration at the CDN affects everything behind it, and an origin whose real address leaks can be attacked directly, bypassing all the edge protection — which is why origin-address concealment is part of CDN security.
 
+**The deliberate break:** the delivery tier reads as performance infrastructure — it exists to spread load and shave latency, and it belongs to the operations conversation.
+
+It is where **availability is engineered**, and availability is a security property: a service with no delivery tier has no answer to a volumetric attack beyond hoping the origin holds. It is also the largest concentration of trust in the architecture, because it holds the certificates, sees traffic decrypted, and decides routing for everything behind it. Compromising one box yields visibility and control over every backend at once — which makes it the highest-value target in the design and, routinely, the one with the weakest management interface.
+
+**How you'd spot it:** test whether the origin answers anyone directly, because every edge control is decorative if it can be walked around. Resolve the origin address independently of the CDN or balancer and try to connect: if it responds, the delivery tier is an optional detour rather than a boundary. Then look at the management interfaces on that infrastructure specifically — it is the recurring weak point, and it sits on the one device whose compromise reaches everything else.
+
 ## Security Implications
 
 **The delivery tier is the primary availability defense.** Load balancing, health checking, CDN absorption, and rate limiting at the edge are what keep a service up under both load spikes and deliberate floods. Availability is a security property, and this tier is where it is engineered. A service without a delivery tier has no answer to a volumetric attack beyond hoping the origin holds.

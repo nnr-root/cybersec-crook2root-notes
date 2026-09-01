@@ -119,6 +119,12 @@ Expected excerpt:
 
 `p=reject` instructs receivers to reject failing mail; `p=none` only monitors. The three build on each other: SPF and DKIM authenticate, DMARC enforces alignment and policy. A domain with all three at enforcement is hard to spoof; a domain with none can be impersonated by anyone.
 
+**The deliberate break:** SPF, DKIM and DMARC read as "the anti-phishing controls" — publish the records, reach `p=reject`, and spoofed mail stops arriving.
+
+They authenticate **the domain in the `From` header and nothing else**. A lookalike domain, a display name reading "CEO" attached to an unrelated address, and a genuinely compromised mailbox all pass DMARC cleanly — each is authentic mail from a domain that authorised the sender. The stack closes exactly one gap, impersonation of your own exact domain, and it is a gap worth closing; every phishing message that never claimed your domain in the first place is entirely unaffected by it.
+
+**How you'd spot it:** read the headers and check *which* domain passed. A DMARC pass on `example-support.com` is a genuine pass — it proves the sender controls that domain, not that they are who the message says they are. During a rollout the diagnostic combination is a report showing near-total pass rates alongside users still reporting impersonation: that pairing is not a misconfiguration, it means the attacks were never using your domain and the control was never going to see them.
+
 ## Security Implications
 
 **Spoofing is trivial without the authentication stack, and these records are the defense.** An attacker sends mail claiming `From: ceo@example.com`. If example.com publishes no SPF, DKIM, or DMARC, receiving servers have no basis to reject it, and it lands looking authentic. Publishing DMARC at `p=reject` with aligned SPF and DKIM is what prevents direct domain impersonation. This is a configuration control living entirely in DNS, and its absence is a common, high-impact finding.

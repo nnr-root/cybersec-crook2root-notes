@@ -96,6 +96,12 @@ Flow data is uniquely valuable because it scales and it survives encryption. Rec
 
 This is why flow analysis is central to modern detection: it is the one network-wide visibility that encryption does not blind. Where deep inspection fails against TLS and QUIC, flow records still reveal the communication pattern.
 
+**The deliberate break:** monitoring reads as passive and therefore low-risk — it watches, it changes nothing, and so it sits near the bottom of the hardening list behind the systems that do real work.
+
+It is the most concentrated target on the network. SNMP holds device configuration, syslog holds the record of everything that happened, and flow data maps every conversation that occurred. An attacker who reaches the monitoring plane gains a complete map of the estate *and* the ability to remove their own traces from it — which is why the management network warrants stronger protection than the systems it observes, and why it so reliably receives weaker.
+
+**How you'd spot it:** audit for unchanged defaults on precisely the systems that reveal the most: `public` and `private` community strings, syslog collectors accepting unauthenticated input, management interfaces still on shipped credentials. Then map coverage rather than configuration — write down which segments export flow and which devices forward logs, because the gaps in that list are where an attacker can work unobserved, and no monitoring system will ever alert you to its own blind spot.
+
 ## Security Implications
 
 **The monitoring plane is a high-value target.** Every protocol here concentrates sensitive information: SNMP knows device configuration, syslog holds the record of everything that happened, and flow data maps all communication. Compromising the monitoring infrastructure gives an attacker both a map of the environment and the ability to erase their own traces. The management network deserves stronger protection than the systems it monitors, not weaker — yet it is frequently an afterthought reachable from ordinary segments.

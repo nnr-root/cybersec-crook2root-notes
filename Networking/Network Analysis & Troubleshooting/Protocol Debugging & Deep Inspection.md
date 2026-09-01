@@ -95,6 +95,12 @@ A malformed or ambiguous packet — inconsistent length fields, overlapping frag
 
 Debugging malformed traffic also arises innocently: a buggy implementation emits packets that violate the spec, and a strict peer rejects them while a lenient one accepts them, producing "works with A, fails with B" mysteries. The resolution is the same — read the bytes, compare against the spec, and identify who is wrong.
 
+**The deliberate break:** parser problems arrive as a stream of unrelated advisories — an IP fragment overlap issue one year, an HTTP request smuggling technique the next, a TLS parsing bug after that.
+
+They are one recurring class wearing different clothes. Wherever the same bytes are parsed by **two implementations that may disagree**, the disagreement is exploitable, and that condition recurs at every layer of the stack because every layer has inspectors, proxies and endpoints reading the same input. Seeing it as one structural class rather than a series of surprises is what makes it predictable — you stop waiting for the next advisory and start looking for the seams.
+
+**How you'd spot it:** find the places where two components both parse the same input — an inspection device and the origin server, a proxy and its backend, a normalizer and the application behind it — and ask what each does with the ambiguous cases: a duplicated header, an overlapping fragment, a length that disagrees with the body. And keep the cost of the defence in view: normalization removes the ambiguity by adding another complex parser of untrusted input, so the fix carries the same shape as the flaw and deserves the same scrutiny.
+
 ## Security Implications
 
 **Deep inspection is the analytical endpoint of both troubleshooting and security.** The ability to read a protocol at the byte level, know its rules, and identify a deviation is what solves the hardest operational problems and what detects the most sophisticated attacks. Protocol-manipulation attacks — smuggling, evasion, exploitation of parser differences — are visible only to someone who can inspect the protocol deeply, which is why this skill sits at the top of the domain.

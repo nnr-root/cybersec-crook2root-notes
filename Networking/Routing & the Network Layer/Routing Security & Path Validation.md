@@ -104,6 +104,12 @@ Because routing attacks preserve connectivity, detection must observe path and o
 
 The mindset shift is the deliverable: replace "is the destination up?" with "is the destination reached the way it should be, from the origin it should be, over the path it should be?" A green uptime dashboard is consistent with an active interception.
 
+**The deliberate break:** presented as a list of controls — ingress filtering, peer authentication, origin validation, prefix filtering — the natural question is which one is strongest, and which one to deploy first.
+
+They are not substitutes and there is no strongest. Each covers a gap the others leave open: ingress filtering stops spoofed sources but not injected routes; authentication stops injection but not a peer that has itself been compromised; origin validation catches the common hijack but not a forged AS path; prefix filtering catches implausible announcements but only as well as your intent data describes them. An attacker's task is to find the layer that was skipped, which makes "which one" the wrong question and "what does each of ours not cover" the right one.
+
+**How you'd spot it:** audit by gap rather than by presence — for every control in place, state plainly what it does not address, then check whether anything else covers that. And watch for the one with no local symptom: ingress filtering protects other networks rather than your own, so omitting it produces no visible consequence on your side at all while contributing directly to everyone else's attack volume. Controls whose benefit accrues elsewhere are the ones that quietly never get deployed.
+
 ## Security Implications
 
 **Defense in depth is mandatory because each control has a gap.** Ingress filtering stops spoofing but not route injection; authentication stops injection but not a compromised legitimate peer; origin validation stops the common hijack but not a forged path; filtering catches implausible routes but depends on accurate intent data. No single control is sufficient, and the attacker's job is to find the layer you skipped.

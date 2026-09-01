@@ -84,6 +84,12 @@ Which router is active is decided by a configurable **priority** — highest win
 
 **Interface tracking** addresses a subtle failure. The gateway router can be perfectly healthy on the segment side while its *uplink* — the path to the rest of the network — has failed. Without tracking, it keeps the active role and forwards host traffic into a dead uplink, a black hole. Tracking lets the router lower its own priority when its uplink fails, triggering failover to the standby whose uplink still works. Omitting tracking is a classic design gap: the FHRP protects against the router dying but not against the router becoming useless.
 
+**The deliberate break:** FHRP reads as availability plumbing — it exists so that a failed router does not strand a subnet, and it belongs to the resilience conversation rather than the security one.
+
+It is another **unauthenticated election**, and winning it is cleaner than poisoning caches one host at a time. An attacker who advertises a higher priority becomes the active router and inherits the virtual gateway address, so every host on the segment sends its off-segment traffic through them at once — not because anything was tricked, but because the hosts were built to trust whoever currently holds that address. One protocol message achieves what ARP spoofing needs a poisoned cache per victim to accomplish.
+
+**How you'd spot it:** alarm on mastership changes and know which device should hold the role. An election won by anything that is not one of your designated routers is the entire finding, and it appears in the routers' own logs as a state transition rather than as an error. Repeated failovers with no corresponding hardware or link fault is the denial-of-service form of the same attack, and it looks like flapping until someone asks what is winning the elections.
+
 ## Security Implications
 
 The property that makes FHRP transparent — routers claim the gateway role by announcement — is also its vulnerability. FHRP hello messages are, in default or weak configurations, unauthenticated.

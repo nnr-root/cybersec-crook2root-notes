@@ -100,6 +100,12 @@ Reconnaissance and detection feed a hardening program that applies the earlier l
 
 That last point ties the wireless branch back to the security-architecture branch: wireless is just another access method, and it should be subject to the same identity verification, least privilege, and segmentation as everything else. A guest wireless network with a route into internal systems is the wireless version of a flat network.
 
+**The deliberate break:** securing wireless reads as securing your access points — configure them properly, choose strong authentication, and the wireless problem has been addressed.
+
+Your APs are the part you control and the smaller part of the exposure. The same airspace carries rogue infrastructure, neighbouring networks, and your own clients broadcasting the names of every network they remember, and none of that is visible from an access point's configuration page. The defender's real advantage sits in the part most organisations never use: **an attack has to transmit in order to work**, so continuous listening turns the openness of the medium from a pure liability into a detection channel that the attacker cannot opt out of.
+
+**How you'd spot it:** ask whether anyone is listening at all — most organisations secure their access points and never monitor their airspace, so the honest test is whether you would know today if a second radio began advertising your SSID. Two APs claiming one network under different BSSIDs, unexpected signal characteristics and deauthentication floods are all detectable signatures, but only to something that is watching. A site survey that is never repeated stops being a baseline the moment the airspace changes.
+
 ## Security Implications
 
 **Airspace awareness is the prerequisite for every wireless control.** Without a baseline of what should be transmitting, rogue detection is impossible and anomalies are invisible. The site survey and authorized-AP inventory are not one-time setup; airspace changes, so periodic re-survey is what keeps the baseline valid — exactly as blind-spot mapping is ongoing.

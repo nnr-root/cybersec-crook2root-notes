@@ -136,6 +136,12 @@ attacker who forges a path ending in `65001` while still carrying the traffic
 themselves produces a route that validates cleanly — which is exactly the residual
 gap path validation exists to close.
 
+**The deliberate break:** BGP reads as somebody else's infrastructure. You do not operate an autonomous system, you cannot configure any of it, and so it files itself under trivia rather than under threat model.
+
+Your traffic can be redirected by networks you have no relationship with and no leverage over — which puts BGP firmly inside the threat model while remaining outside your control, an uncomfortable combination that is exactly why it gets skipped. Two things are within reach regardless of whether you run an AS: **monitoring** for your own prefixes being originated by an unexpected network, and **publishing ROAs** for the address space you hold so that a hijack of it is more likely to be rejected globally.
+
+**How you'd spot it:** a hijack presents as an origin change, never as an outage — the hijacker forwards traffic onward, so services stay up and every reachability check passes throughout. Watch public route-monitoring feeds for your prefixes appearing under an AS that is not yours, and for sudden shifts in the AS path to your own services. The absence of a symptom is the defining property here, which is why detection has to be subscribed to rather than waited for.
+
 ## Security Implications
 
 **BGP is critical infrastructure with a trust model from an earlier Internet.** The protocol predates the adversarial environment it now operates in, and its security is being retrofitted while it carries essentially all inter-domain traffic. For a defender, this means BGP-level events are largely outside your control but very much within your threat model: your traffic can be rerouted by networks you have no relationship with.

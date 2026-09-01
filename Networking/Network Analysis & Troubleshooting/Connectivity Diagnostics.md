@@ -123,6 +123,12 @@ flowchart TD
 
 The discipline is to run them in order and read each honestly, stopping at the first genuine break — and to remember that each tool answers exactly one question and no more.
 
+**The deliberate break:** a diagnostic result reads as a fact about the network. The ping failed, so the host is down; the connection timed out, so the port is closed.
+
+Every one of these tools reports **what came back**, and silence has several causes that look identical from where you are standing. A filtered ICMP, a policy drop, a host configured not to answer, and a genuinely absent machine all produce the same empty output. "No answer" is the observation; "no host" is an inference laid on top of it, and the gap between them is where both self-deception and deliberate manipulation live — an attacker who wants to appear absent only has to stop replying.
+
+**How you'd spot it:** listen for the moment your own sentence contains a claim the tool cannot support. "Host is down" from a failed ping, "port closed" from a timeout, "the name does not exist" from a SERVFAIL — each has quietly promoted an observation into a conclusion. The habit that fixes it is cheap: confirm with a second tool operating at a different layer before the finding goes into writing, and state the limit alongside the result.
+
 ## Security Implications
 
 **The same tools are reconnaissance.** ping sweeps find live hosts, traceroute maps network topology, dig enumerates DNS records, and port checks find services — the exact first steps of an attacker's reconnaissance. The tools are neutral; authorization and intent separate diagnosis from an attack. Running them against systems you do not own is reconnaissance regardless of your motive, and it is logged.

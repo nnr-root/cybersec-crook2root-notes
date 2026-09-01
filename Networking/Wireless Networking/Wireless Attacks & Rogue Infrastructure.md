@@ -127,6 +127,12 @@ The decisive detail is what the client compared before choosing: an SSID string
 and a signal strength. It never asked the access point to prove it was the same
 one as yesterday, because on a PSK network there is nothing it could have asked.
 
+**The deliberate break:** an evil twin reads as something the user should have caught — the wrong network chosen, a warning clicked past, a judgement made carelessly.
+
+The device connects **silently and on its own**. Auto-reconnect and probing for remembered networks are working precisely as designed, the association completes without anyone deciding anything, and there is no prompt and no visible difference. The user did nothing wrong because the user did nothing at all — which is why awareness training is a weak control against this specific attack, and why the effective defences are all technical enforcement on the client rather than instruction to the person holding it.
+
+**How you'd spot it:** audit the client configuration, not the user. The highest-value single check is whether Enterprise clients enforce validation of the RADIUS server's certificate — it is the control that actually defeats an Enterprise evil twin, it is disabled or unenforced remarkably often, and its absence converts a strong architecture into a vulnerable one without changing anything visible. Then check auto-join behaviour for open networks, which is the same weakness in its simplest and most exploited form.
+
 ## Security Implications
 
 **The client's automatic behaviour is the root vulnerability.** Auto-reconnect and probing for remembered networks are conveniences that let an attacker impersonate a network the victim trusts. The user does nothing wrong and often nothing visible — the device connects silently. This is why user education alone is a weak defense and why technical controls (certificate validation, disabling auto-join for open networks) matter more.

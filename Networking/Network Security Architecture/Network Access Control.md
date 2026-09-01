@@ -158,6 +158,12 @@ the diagnosis. Note also `port 14` and the client MAC in the server log: the
 switch tells RADIUS exactly which physical port asked, which is what makes the
 decision enforceable at the edge.
 
+**The deliberate break:** NAC reads as a binary gate. Once 802.1X is deployed, an unauthorised device cannot get onto the network, and the port is closed.
+
+Real deployments are **defined by their exceptions**. Printers and cameras that cannot do 802.1X get MAC Authentication Bypass; some ports are never enforced; guest networks exist; equipment gets exempted under deadline and stays exempted. Each of those is a documented, deliberate hole, and an attacker goes straight to them rather than attacking the authentication — the unmanaged printer's port is easier than the protocol will ever be. The control is exactly as strong as its exception list, which is the part of the deployment nobody revisits.
+
+**How you'd spot it:** audit the exceptions, not the policy. Enumerate every port not enforcing 802.1X and every MAB entry, and ask of each what it is for and whether that thing still exists. The concrete test follows directly: unplug a MAB-authorised device and connect through its port presenting its MAC address — if that succeeds, the exception is not an exception, it is the access path.
+
 ## Security Implications
 
 **NAC is the earliest enforcement point, which makes it uniquely valuable and uniquely bypassable.** Enforcing at the port stops an unauthorized device before it does anything, which is the strongest position. But NAC deployments are riddled with exceptions — MAB devices, ports where 802.1X is not enforced, guest networks, exempted equipment — and each exception is a bypass. Attackers specifically look for the unmanaged printer's port or the conference room jack without enforcement, because those are where NAC's strong guarantee has a hole. The control is only as good as its exception handling.

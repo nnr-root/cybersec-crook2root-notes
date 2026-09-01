@@ -89,6 +89,12 @@ SSE is a single long-lived HTTP response that the server keeps writing to, strea
 | **SSE** | Server → client only | One long HTTP response | Server pushes, client only listens |
 | **WebSocket** | Both directions | Upgraded connection, framed | True bidirectional real-time |
 
+**The deliberate break:** the handshake reads as the checkpoint. It is an ordinary HTTP request, the WAF inspects it, authorisation is decided there, and the connection proceeds having been vetted.
+
+It is the **only** HTTP request in the entire conversation. Everything after it — thousands of messages, in both directions, for as long as the connection lives — never appears as a separate request, so every control that operates per request inspected the doorway and nothing that came through it. Security has to move inside the message handler, validating and authorising each frame as it arrives, because the upstream checks are structurally unable to see them.
+
+**How you'd spot it:** ask what inspects message number two. If the answer names the WAF or the API gateway, then nothing does. The second question is when authorisation was last evaluated on a connection that has been open for hours — a permission revoked an hour ago is still in force on a channel opened before it, which is how access outlives its entitlement and why long-lived sessions need periodic re-validation rather than a single check at the door.
+
 ## Security Implications
 
 **WebSocket escapes request-based controls.** The controls guarding ordinary web traffic — WAF rules, per-request authorization checks, request logging — operate on discrete HTTP requests. A WebSocket is one long connection carrying many messages that never appear as separate HTTP requests, so a WAF that inspects the opening handshake may see nothing of the thousands of messages that follow. Security must move *into* the WebSocket message handler: every message must be validated and authorized as it arrives, because the per-request checks upstream no longer apply. Treating the initial handshake as the only checkpoint is a common and serious gap.

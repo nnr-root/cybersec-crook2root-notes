@@ -107,6 +107,12 @@ The security relevance is at the **boundaries between versions**. A chain often 
 
 Both share a lesson: **each component parses and keys requests slightly differently, and every difference is an attack surface.** This is the web-layer version of the fragment-reassembly and tag-stacking ambiguities seen lower in the stack — wherever two implementations may interpret the same bytes differently, that gap is exploitable.
 
+**The deliberate break:** adding components to the chain reads as adding defence — a CDN absorbs floods, a WAF filters, a balancer terminates TLS, and each new layer is another control.
+
+Each is also code parsing untrusted input, and every boundary between two of them is a **seam where they may disagree about the same bytes**. Request smuggling and cache poisoning do not live inside the components; they live in the gaps between them, which is why a longer chain buys more enforcement and more attack surface simultaneously. The count of controls is not the useful number — the count of parser boundaries is.
+
+**How you'd spot it:** test the boundary rather than the component. For each backend, establish whether it is genuinely only reachable through the proxy: resolve it and connect directly, because a backend that *assumes* it sits behind the edge while answering anyone is the bypass that makes the whole chain optional. Header trust is the same question wearing different clothes — `X-Forwarded-For` means something only if a defined edge strips and rewrites it, so send one yourself and see what the application believes.
+
 ## Security Implications
 
 **The chain is both defense in depth and a larger attack surface.** Each proxy can enforce a control — the WAF filters, the CDN absorbs floods, the load balancer terminates TLS — but each is also code parsing untrusted input, and each boundary between them is a potential smuggling or poisoning point. More components mean more enforcement and more seams.

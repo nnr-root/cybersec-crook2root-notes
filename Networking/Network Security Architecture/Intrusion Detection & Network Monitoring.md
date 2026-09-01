@@ -145,6 +145,12 @@ than the content. A JA3 hash that matches no browser in the environment, talking
 to a name registered last week, is a detection built entirely from metadata. That
 is the shift this note describes, visible in one log line.
 
+**The deliberate break:** more alerts read as more detection. A system producing thousands of events looks like a system that is watching carefully.
+
+The scarce resource is **human attention**, and an alert nobody adjudicates provides no security while providing a powerful feeling of it. A quieter, well-tuned system that gets read outperforms a louder one that does not, and the gap is not marginal — it is the difference between detection and decoration. Attackers exploit this directly, flooding a sensor with events to bury the one that mattered, which works precisely because the queue was already beyond what anyone could review.
+
+**How you'd spot it:** measure the review rate rather than the alert count. The numbers that describe a detection capability are what fraction of alerts a human actually adjudicated and how long that took; a queue growing faster than it drains is a system that has stopped detecting, whatever its dashboard reports. Treat a sudden alert flood as an event in its own right rather than as noise to be waited out — burying a real detection is a technique, not an accident.
+
 ## Security Implications
 
 **Detection assumes prevention will fail.** The entire premise is that some attacks get past the firewall, so you watch for them. This aligns with assume-breach: detection is how you find the attacker who is already inside, and its value is measured in how fast you detect and how much you can then contain.

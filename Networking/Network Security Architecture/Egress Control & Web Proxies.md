@@ -96,6 +96,12 @@ This is why egress control layers with the other controls rather than standing a
 
 No single layer is sufficient; together they make exfiltration and C2 meaningfully harder.
 
+**The deliberate break:** egress control gets judged by what it blocks. Deploy it, look at the denial count, and measure the control by how much it stopped.
+
+The **logs are most of the value, and they accrue on the traffic you allowed**. When a compromise surfaces, the question is "what did this host contact, and when" — and the proxy log answers it in seconds, usually naming the command-and-control domain and bounding the incident. That payoff exists whether or not a single connection was ever denied, which inverts the usual deployment calculus: a control running in monitor-only mode with good logging has captured most of the benefit, while one blocking aggressively without logging has captured surprisingly little.
+
+**How you'd spot it:** ask what your egress logs would tell you about a host you learned was compromised an hour ago. A destination list with timestamps means the control is doing its job regardless of its block rate. If the only thing recorded is what was denied, then the allowed traffic — which is where the command-and-control channel actually lived — left no trace at all, and the investigation starts from nothing.
+
 ## Security Implications
 
 **Egress control is the highest-value neglected control.** Because every serious attack has an outbound phase, filtering egress disrupts attacks at a step they cannot skip. It will not prevent initial compromise, but it can prevent that compromise from becoming a breach — the C2 never connects, the data never leaves. For the effort, few controls offer as much containment, which is why it appears repeatedly as a recommendation and rarely as a deployed reality.

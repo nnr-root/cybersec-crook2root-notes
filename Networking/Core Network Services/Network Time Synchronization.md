@@ -93,6 +93,12 @@ MS Name/IP address     Stratum Poll Reach LastRx Last sample
 
 The `^*` marks the currently selected source; `^+` marks acceptable alternates. `Reach 377` is an octal reachability register — all-ones means the last eight polls all succeeded. Multiple sources exist so that one lying or failing server can be outvoted rather than believed.
 
+**The deliberate break:** time synchronisation reads as housekeeping — useful for tidy logs, pleasant for correlation, and clearly not a security control in its own right.
+
+It is a **hard authentication dependency**. Kerberos rejects tickets whose timestamps fall outside a tolerance, so a host with a drifted clock does not authenticate less securely, it does not authenticate at all; certificate validation fails the same way, declaring valid certificates expired or not yet valid. The dependency also runs backwards as an attack: control a target's time source and expired certificates and credentials become valid again, while time-based one-time codes can be replayed inside a window you chose.
+
+**How you'd spot it:** a domain-wide inability to log in with no other explanation is a clock problem far more often than a credential one — compare `chronyc tracking` or `w32tm /query /status` against a known-good source before touching anything else. For manipulation, look for a clock that **stepped rather than slewed**: a single large adjustment in the time daemon's log, or certificates that quietly became valid again, are the shape of a pushed clock rather than of ordinary drift.
+
 ## Security Implications
 
 **Time is a hard authentication dependency, and Kerberos is the sharpest example.** Kerberos tickets carry timestamps and are rejected if the client and server clocks differ by more than a tolerance (commonly five minutes). A host whose clock has drifted past that window cannot authenticate at all — not "less securely," but not at all. In practice, a mysterious inability to log in across a domain is frequently a time problem, and it is one of the most common real-world consequences of NTP failure. Certificate validation is similar: a wrong clock makes valid certificates appear expired or not-yet-valid, breaking TLS.

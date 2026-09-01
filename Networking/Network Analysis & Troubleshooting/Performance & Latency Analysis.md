@@ -116,6 +116,12 @@ flowchart LR
     F --> G["Fix the actual bottleneck, not 'more bandwidth' by reflex"]
 ```
 
+**The deliberate break:** "the network is slow" invites adding bandwidth, because bandwidth is the number everyone in the conversation understands.
+
+Four distinct metrics hide inside that word and only one of them is capacity, so the reflex fixes the problem roughly a quarter of the time. In a security context it does something worse than waste money: a saturated link is equally consistent with a backup job, an exfiltration transfer and a volumetric attack, and "we need more bandwidth" closes the investigation before anyone has established which. The upgrade then arrives, the symptom eases, and the cause is never named.
+
+**How you'd spot it:** refuse to act on "slow" until it has resolved into one of the four numbers — bandwidth, throughput, latency or loss — because each points at a different fix. Then ask the ownership question: a link at capacity with no accountable owner for the traffic is the shape of both exfiltration and a flood, and what separates them is which flow, to which host, in what pattern. None of those questions are answerable from a megabits figure.
+
 ## Security Implications
 
 **Performance problems and attacks look alike.** "Slow" is the symptom of both congestion and a denial-of-service attack; a link "saturated" could be a backup job or exfiltration; latency spikes could be a failing device or an attacker's traffic. Structured performance analysis is what distinguishes a mundane capacity issue from a security event — reaching a clear cause (this flow, this host, this pattern) is what tells you which it is. Jumping to "we need more bandwidth" can mask an ongoing attack.

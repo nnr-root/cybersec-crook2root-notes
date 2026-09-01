@@ -102,6 +102,12 @@ Seeing LLMNR (5355) and NetBIOS (137) queries on an enterprise segment is itself
 
 A particularly dangerous case combines these protocols with proxy autoconfiguration. **WPAD (Web Proxy Auto-Discovery)** has clients look up the name `wpad` to find a proxy configuration file. If that lookup falls through to LLMNR or NetBIOS, an attacker answers, supplies a proxy configuration pointing at themselves, and thereby routes the victim's **web traffic** through an attacker-controlled proxy. A single answered name query becomes an on-path position for HTTP. Disabling WPAD where it is not needed removes this path.
 
+**The deliberate break:** LLMNR, NBT-NS and mDNS present as protocols to switch off — the attack lives in the protocol, so removing the protocol removes the attack.
+
+Every one of these attacks begins with **a name that DNS failed to resolve**. The fallback is the symptom and the failed lookup is the cause, so correct DNS hygiene — complete records, proper search suffixes, no reliance on unqualified names — means the fallback is never invoked and the attack never has a moment to happen in. Disabling the protocols is worth doing and it treats the last step; a network that still generates a steady stream of unresolvable names retains the underlying defect and will surface it through whatever fallback remains.
+
+**How you'd spot it:** watch the failed lookups rather than the protocol. A host emitting LLMNR queries at all is telling you something asked for a name DNS did not answer, and capturing those names hands you the actual defect list — the typos, the decommissioned shares, the missing search suffix. The same misspelled hostname appearing across many workstations is a login script or a mapped drive nobody has corrected, and fixing that one entry removes more exposure than any amount of protocol tuning.
+
 ## Security Implications
 
 **These protocols should be disabled in managed environments.** LLMNR, NBT-NS, and mDNS provide convenience that a correctly configured DNS infrastructure does not need. Disabling them — via group policy on Windows, by ensuring names resolve through DNS so the fallback never triggers — removes the credential-harvesting and traffic-redirection surface entirely. This is a standard hardening recommendation with broad consensus.

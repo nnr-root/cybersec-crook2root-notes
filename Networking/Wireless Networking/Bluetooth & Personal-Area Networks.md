@@ -130,6 +130,12 @@ recognise the same wearable in a shop today and an office tomorrow. The failure
 here is not broken cryptography; it is a device that never enabled the privacy
 feature, which is exactly the cheap-endpoint constraint this note opened with.
 
+**The deliberate break:** short range reads as a security boundary. An attacker has to be physically close, closeness is a small and mostly trustworthy set of people, and so the exposure feels naturally bounded.
+
+"Nearby" includes the shared office, the room on the other side of the wall, the train carriage and the lobby — and a directional antenna stretches the specification's figure considerably. Proximity is not a control. Worse, the devices themselves usually cannot be improved: many Bluetooth and BLE devices lack the interface to pair with authentication, the capability to run strong cryptography, or any update path at all. Their security was fixed at manufacture and will not change, so the posture has to be containment rather than hardening.
+
+**How you'd spot it:** inventory rather than harden, since hardening is frequently not on offer. The exposure worth finding first is a wireless input device — a keyboard or mouse that pairs weakly is an input channel into a workstation, not a peripheral — followed by anything left discoverable or willing to re-enter pairing mode unprompted. And note where the link encryption is the *only* encryption, as with a headset's audio or a sensor's readings: there the pairing strength is the entire protection, with no TLS underneath to fall back on.
+
 ## Security Implications
 
 **The constrained-device problem defines PAN security.** Many Bluetooth and BLE devices cannot run strong cryptography, cannot be updated, and pair without authentication because they lack interfaces. Their security is set at manufacture and does not improve, and they are deployed in enormous numbers close to people and, increasingly, inside organizations (wireless peripherals, medical devices, building sensors). The realistic posture is to treat them as weakly secured, minimize what they can access, and monitor for anomalies — because hardening the devices is often impossible.

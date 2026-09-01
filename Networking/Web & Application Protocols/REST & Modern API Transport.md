@@ -100,6 +100,12 @@ The networking takeaway is that **the transport style determines where and how c
 
 APIs have consumers who cannot be updated in lockstep, so they must evolve without breaking existing clients. Versioning appears in the path (`/v2/orders`), a header, or a media type. The networking-relevant point is that **multiple versions run simultaneously**, and an old version left running is an old attack surface — deprecated API versions with weaker validation or authentication are a recurring finding. Retiring versions is a security activity, not just maintenance.
 
+**The deliberate break:** a valid token reads as authorisation. The request authenticated cleanly, the signature checks out, therefore the call is allowed.
+
+Authentication answers **who is calling**; authorisation answers **whether this caller may touch this object**, and they are separate questions asked at different moments. The most common and most damaging API flaw in practice is asking the first faithfully on every request and never asking the second per object — accepting a valid token and returning record 42 without ever confirming that this caller owns record 42. The transport delivered a credential; it made no claim about entitlement, and no network control can supply that check on the application's behalf.
+
+**How you'd spot it:** change the identifier and keep the token. Request an object belonging to another account using your own entirely valid credentials — if it comes back, object-level authorisation is absent, and that is the finding in one request. In code the tell is just as plain: a handler that validates the token at the top, then fetches by ID with no ownership predicate anywhere in the query.
+
 ## Security Implications
 
 **Authorization must be enforced per request, on the server, for every object.** Because APIs are stateless and each request carries a token, the server must verify on **every** request both that the token is valid (authentication) and that this caller may access *this specific resource* (authorization). The most common and damaging API flaw is checking authentication but not object-level authorization — accepting a valid token and then returning object 42 without confirming the caller owns object 42. The transport delivers the token; the application must still ask "may *this* caller see *this* thing," every time. No network control substitutes for that check.

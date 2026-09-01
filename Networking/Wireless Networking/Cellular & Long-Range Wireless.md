@@ -142,6 +142,12 @@ that an older protocol *without* mutual authentication remains reachable, so the
 defence is refusing to speak it. A device configured to require LTE or better
 simply fails to attach instead of attaching to an impostor.
 
+**The deliberate break:** each generation fixed the previous one's weaknesses, so a modern handset on a modern network reads as protected by those fixes.
+
+Backward compatibility keeps every older generation **available on demand**. An attacker who can force a device down to an earlier one inherits all the weaknesses that generation was replaced for, and the device cooperates because falling back is exactly what it was built to do in poor coverage. This is the same pattern as WPA3 transition mode and TLS downgrade: the security of a protocol with a compatibility path is the security of the weakest option still reachable, not of the newest one deployed.
+
+**How you'd spot it:** ask what the weakest still-permitted option is, in every protocol that has a fallback — that single question generalises across cellular generations, Wi-Fi transition modes and TLS versions alike. On a device, the observable is a connection that has dropped to an older generation with no coverage explanation for it. And keep in view what content encryption does not reach: location by tower and identity metadata survive it entirely, which is exactly what a catcher is built to harvest.
+
 ## Security Implications
 
 **"Impersonate the infrastructure" is universal.** The IMSI catcher is the evil twin at cellular scale, and its defeat — mutual authentication so the client verifies the network — is the same fix as Enterprise Wi-Fi certificate validation. Across Wi-Fi and cellular, the security of a wireless client rests on whether it can cryptographically verify the infrastructure it connects to. Where it cannot (2G, misconfigured Enterprise, open Wi-Fi), impersonation succeeds.

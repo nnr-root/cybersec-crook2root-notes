@@ -105,6 +105,12 @@ flowchart TB
 
 There is no universally correct choice; it depends on whether the priority is visibility and control (full) or performance and scale (split), and on how much the remote device is otherwise hardened and monitored.
 
+**The deliberate break:** a VPN reads as a security control. The tunnel is encrypted and both ends authenticated, so the connection is secure and the matter is settled.
+
+It secures the transport and, in the same motion, **extends the trust boundary to a device the organisation does not control**. A compromised home machine that completes a tunnel is now on the internal network, and the VPN carries the attacker's traffic inward over an encrypted, authenticated, entirely trusted channel — faithfully, exactly as designed. Nothing about the tunnel failed. The question a VPN answers is whether the transport is protected; the question it silently decides is what the far end is now attached to.
+
+**How you'd spot it:** ask what the tunnel granted rather than what it protected. A VPN that drops a connecting device onto a flat internal network has extended the perimeter to that endpoint; one that grants access per application, by identity and device posture, has not. Two concrete checks follow: whether MFA is enforced at the concentrator, since without it the whole path is one phished credential wide, and whether split tunnel was an argued decision or an inherited default.
+
 ## Security Implications
 
 **A VPN extends the trust boundary to the remote device.** This is the central tension. The tunnel authenticates and encrypts the connection, but once established, the remote device is *on the network*. If that device is compromised — malware, a hostile home network, a shared family computer — the VPN faithfully carries the attacker's traffic straight into the corporate network over an encrypted, trusted channel. The VPN secured the transport and, in doing so, extended the perimeter to an endpoint the organization does not fully control. This is precisely the weakness that motivates zero trust: rather than trusting a device because it completed a VPN tunnel, verify each access by identity and device posture regardless of the tunnel.

@@ -119,6 +119,12 @@ Consider what each metadata dimension reveals even when content is opaque:
 
 This is why the management-protocols leaf called flow metadata "the visibility encryption does not remove," and why modern network detection is built on it. Traffic analysis in the encrypted era is behavioural analysis of metadata, and it is remarkably effective.
 
+**The deliberate break:** encryption reads as the end of network visibility. If the content cannot be read, the reasoning goes, there is nothing left to see and detection has to move to the endpoint.
+
+The **metadata survives, and it is enough for most of what matters**. Who spoke to whom, how often, at what interval, in which direction, in what volume and for how long — none of that is encrypted, and beaconing, exfiltration and lateral movement are all visible in it without a byte of payload. An organisation whose detection is built on content inspection is going blind as encryption spreads; one that analyses pattern and relationship keeps its visibility and barely notices.
+
+**How you'd spot it:** check when the baseline was taken before trusting anything derived from it, because every anomaly conclusion rests on it and baselines decay silently. The failure mode worth naming: a baseline built while an intruder was already resident bakes their traffic into "normal", so the intrusion that predates your baseline window is the one your analysis is structurally unable to see. Establish from a period you can argue was clean, and re-establish as the environment changes rather than when someone remembers.
+
 ## Security Implications
 
 **Analysis is where detection actually happens.** Firewalls and IDS generate events, but understanding whether those events are an attack requires analyzing the traffic in context — the flows, the patterns, the deviation from baseline. Traffic analysis is the analytical core of both troubleshooting and threat detection, and the same reassembly and conversation techniques serve both.

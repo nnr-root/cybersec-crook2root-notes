@@ -96,6 +96,12 @@ Link-state protocols form **adjacencies** with neighbours before exchanging maps
 
 This adjacency step is where an operator spends troubleshooting time. Two routers that should be neighbours but are not adjacent — because of mismatched parameters, an interface problem, or an authentication failure — will not exchange routes, and destinations behind the missing neighbour become unreachable while both routers appear healthy in isolation.
 
+**The deliberate break:** an IGP reads as automation for reachability — machinery that keeps traffic flowing when a link fails, and otherwise looks after itself.
+
+It is a **distributed database that every participating router writes into**, and without authentication it accepts writes from anything sitting on a segment where the protocol is enabled. A false advertisement does not break the network: the network reconverges around it, all destinations remain reachable, and traffic simply travels through somewhere it should not. That graceful absorption is what makes injection dangerous, because the protocol's greatest strength — recovering smoothly from a changed map — is exactly what hides a map that was changed deliberately.
+
+**How you'd spot it:** check where the protocol is enabled before examining what it is advertising. An interface facing endpoints that has not been made passive is the injection surface, and that is a configuration question answerable in seconds without waiting for an incident. During an event, monitor adjacencies and neighbour state rather than reachability — reachability is preserved by the attack, so a connectivity check will report a healthy network for the entire duration.
+
 ## Security Implications
 
 Every IGP shares one assumption: **the routers speaking the protocol are trustworthy.** That assumption is the vulnerability.
