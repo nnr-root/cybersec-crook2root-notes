@@ -1,7 +1,7 @@
 # The Thread — the Crook2Root lab topology
 
-**Status: adopted.** Mandatory for every note that names a host, an address or a
-network. Retrofit is in progress branch by branch; see §8.
+**Status: adopted, retrofit complete.** Every note that names a host, an address
+or a MAC is on The Thread or carries a declared exemption. The gate enforces it.
 
 The audit found 0% of notes refer to a shared running example, which means every
 note re-orients the reader in a fresh imaginary environment. The Thread fixes that:
@@ -260,16 +260,43 @@ lab CA in TLS & PKI), and the corpus already uses RFC 5737 ranges in 58 places,
 which is a reasonable sign the topology fits the corpus that exists rather than
 the corpus I would have designed.
 
-## 8. Retrofit status
+## 8. Retrofit status — complete
 
-| Branch | Notes off Thread | Status |
-|:--|--:|:--|
-| Networking | 36 | in progress — `Ethernet & Frame Structure` done |
-| Tooling & Scripting | 18 | not started |
-| Offensive Security | 14 | not started |
-| OS Internals | 2 | not started |
-| Defensive Security | 1 | not started |
-| **Total** | **71** | |
+All 302 leaves. `pedagogy-check.py` reports 0 off-Thread addresses and 0
+off-Thread MACs.
+
+| Branch | Status |
+|:--|:--|
+| Networking (60) | complete — batches 1–7 |
+| OS Internals (40) | complete — batch 8 |
+| Cryptography (15) | no host references |
+| Application Security (4) | no host references |
+| Defensive Security (2) | complete |
+| Offensive Security (116) | complete — batches 11–14 |
+| Tooling & Scripting (64) | complete — batches 15–16 |
+
+### What the retrofit found
+
+Six real routable addresses were in the corpus and are now gone: `93.184.216.34`
+(the old example.com address, since changed), `142.250.180.4` (Google),
+`185.22.11.4` and `81.143.211.90` (both used as C2 destinations in notes teaching
+people to *spot* C2), and `93.0.2.10` (a typo of the documentation address
+`192.0.2.10`). A note about detecting an attacker should not point at a
+stranger's host.
+
+Two arithmetic errors were corrected while verifying: the VLSM free-space figure
+(348, not "roughly 380"), and a longest-prefix example whose destination stopped
+matching its own route once the ladder moved.
+
+### The exemption register
+
+Twelve notes declare an exemption. Every one falls into a §5b class:
+
+| Class | Notes |
+|:--|:--|
+| Identity is the lesson | the RFC 1918 / RFC 6598 range definitions; `10.0.0.0/8` where the 16-million figure depends on it; `01:80:c2:00:00:03`, the 802.1X PAE group address; the real vendor OUIs used for device fingerprinting and rogue-AP detection |
+| Local reproduction | the veth pair and its LA-bit MACs; the ip-netns segments and their spoofed MACs |
+| Not an address at all | two reversed `in-addr.arpa` names the gate reads as IPv4 |
 
 ---
 > Related: **Teaching Standard** §2 (The Thread) · **Authoring Standard** (structure)
