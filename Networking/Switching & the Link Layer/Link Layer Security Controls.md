@@ -82,17 +82,17 @@ Its more important output is the **binding table** it builds by watching legitim
 show ip dhcp snooping binding
 ```
 
-Expected excerpt:
+Expected excerpt — the two workstations on VLAN 10:
 
 ```text
 MacAddress          IpAddress      Lease(sec)  Type          VLAN  Interface
-00:0C:29:4A:9B:31   192.168.10.24  84213       dhcp-snooping 10    Gi0/3
-00:0C:29:7B:2C:14   192.168.10.25  84102       dhcp-snooping 10    Gi0/4
+00:00:5E:00:53:0E   10.10.10.14    84213       dhcp-snooping 10    Gi0/3
+00:00:5E:00:53:1E   10.10.10.30    84102       dhcp-snooping 10    Gi0/4
 ```
 
 ### Dynamic ARP Inspection — Validate Neighbours
 
-**DAI** intercepts every ARP reply on untrusted ports and checks it against the binding table. A reply claiming `192.168.10.1 is at <attacker MAC>` is dropped if the table does not have that IP-to-MAC-to-port binding. This defeats ARP spoofing, and it works only because DHCP snooping supplied the table.
+**DAI** intercepts every ARP reply on untrusted ports and checks it against the binding table. A reply claiming `10.10.10.1 is at 00:00:5E:00:53:DE` is dropped if the table does not have that IP-to-MAC-to-port binding. This defeats ARP spoofing, and it works only because DHCP snooping supplied the table.
 
 ### IP Source Guard — Validate Source Addresses
 

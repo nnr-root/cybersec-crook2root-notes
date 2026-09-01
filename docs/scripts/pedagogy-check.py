@@ -23,6 +23,7 @@ decide whether a correct note actually gets learned.
     * an analogy with no stated breaking point
     * shell commands not re-verified in 12 months (needs `verified:` frontmatter)
     * addresses that are not on The Thread and not exempt under Lab Topology §5b
+      (declare an exemption with a `thread-exempt:` frontmatter list, reason required)
 
 Four patterns are deliberately NOT checked — The Break, The Twin, The Tell and
 The Fade. A regex that "detected" a naive-model beat would only teach us to type
@@ -130,6 +131,53 @@ def _thread_ok(ip):
     if a == 169 and b == 254:                        # link-local
         return True
     return False
+
+
+# A note may declare addresses exempt under Lab Topology §5b by listing them in
+# frontmatter with a reason, e.g.
+#     thread-exempt:
+#       - "10.99.0.: veth pair on the reader's own machine — local reproduction"
+# Each entry must carry a reason; a bare address is rejected so exemptions stay
+# reviewable rather than becoming a silent opt-out.
+MAC = re.compile(r"\b(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}\b")
+MAC_OK_PREFIX = "00:00:5e:00:53:"
+MAC_PROTECTED = {"ff:ff:ff:ff:ff:ff", "00:00:00:00:00:00", "01:00:5e:00:00:01",
+                 "33:33:00:00:00:01", "01:80:c2:00:00:00"}   # broadcast / multicast / STP
+
+
+def _mac_ok(mac):
+    m = mac.lower()
+    return m.startswith(MAC_OK_PREFIX) or m in MAC_PROTECTED
+
+
+EXEMPT_BLOCK = re.compile(r"^thread-exempt:\s*\n((?:\s+-\s+.*\n?)+)", re.M)
+
+
+def declared_exempt(fm_block):
+    m = EXEMPT_BLOCK.search(fm_block)
+    if not m:
+        return [], []
+    good, bad = [], []
+    for line in m.group(1).strip().split("\n"):
+        entry = line.strip().lstrip("-").strip().strip('"\'')
+        if ":" not in entry or not entry.split(":", 1)[1].strip():
+            bad.append(entry)
+            continue
+        # an entry is "<prefix>: <reason>"; a MAC prefix has its own colons, so
+        # split on the last colon that is followed by a space
+        mm = re.match(r"^\s*(\S+?):\s+(.+)$", entry)
+        if not mm:
+            bad.append(entry)
+            continue
+        prefix, reason = mm.group(1).strip(), mm.group(2).strip()
+        if not reason:
+            bad.append(entry)
+        elif re.match(r"^\d{1,3}(\.\d{1,3}){0,3}\.?$", prefix) or \
+             re.match(r"^(?:[0-9a-fA-F]{2}:){1,5}[0-9a-fA-F]{0,2}$", prefix):
+            good.append(prefix.lower())
+        else:
+            bad.append(entry)
+    return good, bad
 
 
 def fence_mask(lines):
@@ -278,7 +326,24 @@ def check(root="."):
                             f"say which part of it does not carry over")
 
         # ── WARNING: off-Thread addresses ─────────────────────────────────────
-        off = sorted({ip for ip in IPV4.findall(body) if not _thread_ok(ip)})
+        exempt, malformed = declared_exempt(fm_block)
+        for e in malformed:
+            errors.append(f"{rel}: malformed thread-exempt entry \"{e[:60]}\" — "
+                          f"each must read '<address prefix>: <reason>'")
+        def _declared(v):
+            v = v.lower()
+            return any(v == e or v.startswith(e.rstrip(".") + ".") or v.startswith(e)
+                       for e in exempt)
+
+        off = sorted({ip for ip in IPV4.findall(body)
+                      if not _thread_ok(ip) and not _declared(ip)})
+        off_mac = sorted({m for m in MAC.findall(body)
+                          if not _mac_ok(m) and not _declared(m)})
+        if off_mac:
+            shown = ", ".join(off_mac[:3]) + (f" (+{len(off_mac)-3} more)" if len(off_mac) > 3 else "")
+            warnings.append(f"{rel}: {len(off_mac)} MAC(s) off The Thread — {shown}. "
+                            f"Move to 00:00:5E:00:53:xx, or declare exempt "
+                            f"(a MAC teaching the OUI or the locally-administered bit cannot move)")
         if off:
             shown = ", ".join(off[:4]) + (f" (+{len(off)-4} more)" if len(off) > 4 else "")
             warnings.append(f"{rel}: {len(off)} address(es) off The Thread — {shown}. "

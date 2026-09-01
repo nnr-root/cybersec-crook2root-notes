@@ -22,24 +22,24 @@ Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbo
 
 ## The Missing Translation
 
-A host that wants to send to `192.168.10.1` knows the destination *IP* address, but a frame needs a destination *hardware* address. Something must bridge Layer 3 to Layer 2. On IPv4 that something is **ARP (Address Resolution Protocol)**.
+A host that wants to send to `10.10.10.1` knows the destination *IP* address, but a frame needs a destination *hardware* address. Something must bridge Layer 3 to Layer 2. On IPv4 that something is **ARP (Address Resolution Protocol)**.
 
 The exchange is two messages:
 
-1. **ARP Request** — broadcast to the whole segment: "Who has `192.168.10.1`? Tell `192.168.10.24`." Every host receives it because it is addressed to `ff:ff:ff:ff:ff:ff`.
-2. **ARP Reply** — a unicast answer from the owner: "`192.168.10.1` is at `00:1a:2b:3c:4d:5e`."
+1. **ARP Request** — broadcast to the whole segment: "Who has `10.10.10.1`? Tell `10.10.10.14`." — that is `WS-014` asking for its gateway. Every host receives it because it is addressed to `ff:ff:ff:ff:ff:ff`.
+2. **ARP Reply** — a unicast answer from the owner: "`10.10.10.1` is at `00:00:5e:00:53:01`."
 
 The asker caches the answer in its **ARP table** so it need not ask again for every frame.
 
 ```mermaid
 sequenceDiagram
-    participant A as Host 192.168.10.24
+    participant A as WS-014 (10.10.10.14)
     participant Seg as Segment (broadcast)
-    participant G as Gateway 192.168.10.1
-    A->>Seg: ARP Request — who has 192.168.10.1?
+    participant G as Gateway (10.10.10.1)
+    A->>Seg: ARP Request — who has 10.10.10.1?
     Note over Seg: Every host on the link receives it
-    G-->>A: ARP Reply — it is at 00:1a:2b:3c:4d:5e
-    Note over A: Cache 192.168.10.1 -> 00:1a:2b:3c:4d:5e
+    G-->>A: ARP Reply — it is at 00:00:5e:00:53:01
+    Note over A: Cache 10.10.10.1 -> 00:00:5e:00:53:01
     A->>G: Now frames can be addressed correctly
 ```
 
@@ -50,8 +50,8 @@ ip neigh show
 Expected excerpt:
 
 ```text
-192.168.10.1 dev eth0 lladdr 00:1a:2b:3c:4d:5e REACHABLE
-192.168.10.53 dev eth0 lladdr 00:0c:29:7b:2c:14 STALE
+10.10.10.1 dev eth0 lladdr 00:00:5e:00:53:01 REACHABLE
+10.10.10.30  dev eth0 lladdr 00:00:5e:00:53:1e STALE
 ```
 
 `REACHABLE` means the mapping was confirmed recently; `STALE` means it is cached but unverified and will be revalidated on next use. The table is the host's belief about who its neighbours are — and belief is exactly what an attacker manipulates.
@@ -89,11 +89,11 @@ ip neigh show | sort -k5
 Expected excerpt during an attack:
 
 ```text
-192.168.10.1  dev eth0 lladdr 00:0c:29:de:ad:00 REACHABLE
-192.168.10.53 dev eth0 lladdr 00:0c:29:de:ad:00 REACHABLE
+10.10.10.1  dev eth0 lladdr 00:00:5e:00:53:de REACHABLE
+10.10.10.30  dev eth0 lladdr 00:00:5e:00:53:de REACHABLE
 ```
 
-Two different IP addresses resolving to the identical MAC (`00:0c:29:de:ad:00`) is the signature. A legitimate configuration essentially never does this, so it is a high-confidence indicator.
+Two different IP addresses resolving to the identical MAC (`00:00:5e:00:53:de`) is the signature. A legitimate configuration essentially never does this, so it is a high-confidence indicator.
 
 ## IPv6: Neighbor Discovery Inherits the Problem
 
@@ -106,8 +106,8 @@ ip -6 neigh show
 Expected excerpt:
 
 ```text
-fe80::1 dev eth0 lladdr 00:1a:2b:3c:4d:5e router REACHABLE
-2001:db8:acad:1::53 dev eth0 lladdr 00:0c:29:7b:2c:14 STALE
+fe80::1 dev eth0 lladdr 00:00:5e:00:53:01 router REACHABLE
+2001:db8:acad:10::30 dev eth0 lladdr 00:00:5e:00:53:1e STALE
 ```
 
 The same detection logic applies: two IPv6 addresses resolving to one MAC is suspicious. IPv6 additionally exposes router advertisement spoofing, a related but distinct attack covered where addressing is discussed. The lesson is that "we use IPv6" does not escape the trust problem — it renames it.
@@ -129,8 +129,8 @@ sudo arpwatch -i eth0
 Expected excerpt (from its log):
 
 ```text
-changed ethernet address for 192.168.10.1
-   from 00:1a:2b:3c:4d:5e to 00:0c:29:de:ad:00
+changed ethernet address for 10.10.10.1
+   from 00:00:5e:00:53:01 to 00:00:5e:00:53:de
 ```
 
 A "changed ethernet address" event for the gateway is the alert that matters most; gateways do not normally change hardware address.

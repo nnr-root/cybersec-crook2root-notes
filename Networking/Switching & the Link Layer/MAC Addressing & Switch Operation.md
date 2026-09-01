@@ -9,6 +9,9 @@ tags:
   - level/apprentice
 Domain:
   - "[[Switching & the Link Layer]]"
+thread-exempt:
+  - "00:0c:29: a real vendor OUI — this note teaches device fingerprinting from the OUI, and 00:00:5E is IANA's, not a virtualization vendor's"
+  - "00:50:56: named as a second real vendor OUI in the same comparison"
 Color: "#42D4F4"
 ---
 
@@ -22,7 +25,7 @@ Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbo
 
 ## What a MAC Address Is
 
-A **MAC (Media Access Control) address** is a 48-bit identifier assigned to a network interface, written as six hex pairs: `00:1a:2b:3c:4d:5e`. It identifies a device on a local segment, and unlike an IP address it is not hierarchical and does not describe location — it is a flat name.
+A **MAC (Media Access Control) address** is a 48-bit identifier assigned to a network interface, written as six hex pairs: `00:00:5e:00:53:0e`. It identifies a device on a local segment, and unlike an IP address it is not hierarchical and does not describe location — it is a flat name.
 
 The 48 bits have structure:
 

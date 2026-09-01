@@ -26,6 +26,7 @@ ever collide with a real host, a real domain, or a real organisation.
 | MAC addresses | `00:00:5E:00:53:00`–`FF` | RFC 7042 §2.1.2, reserved for documentation |
 | Cloud metadata | `169.254.169.254` | link-local, the real metadata address |
 | MAC (locally administered) | any address with bit 1 of byte 0 set (`02:`, `6e:`, `8a:`) | RFC 7042 — used only where the LA bit is itself the lesson |
+| IPv6 | `2001:db8::/32` | RFC 3849, reserved for documentation |
 
 **Meridian Freight** is a fictional mid-size logistics company. Non-tech on purpose:
 its security failures read as ordinary rather than as negligence, and logistics
@@ -139,11 +140,26 @@ real single-vendor fleet would look.
 | `00:00:5E:00:53:30` | `SCAN-07` |
 | `00:00:5E:00:53:40` | `jump` |
 | `00:00:5E:00:53:50` | `edge` |
+| `00:00:5E:00:53:DE` | the attacker — deliberately memorable, used wherever a note shows a spoofed or hostile frame |
+
+IPv6 hosts take `2001:db8:acad:<vlan>::<host>`, matching the IPv4 last octet:
+`WS-030` is `2001:db8:acad:10::30`. Link-local gateways stay `fe80::1`.
 
 ## 5b. What The Thread does NOT govern
 
 This is the part that decides whether the retrofit improves the corpus or damages
 it. Three categories of value are **exempt**, and rewriting them is a defect:
+
+Declare an exemption in the note's frontmatter, with a reason — the gate reads it
+and stops warning, and the reason stays reviewable:
+
+```yaml
+thread-exempt:
+  - "10.99.0.: veth pair built on the reader's own machine — local reproduction"
+```
+
+A bare address with no reason is rejected as an error, so exemptions cannot become
+a silent opt-out.
 
 **1. Values whose identity is the lesson.** `127.0.0.1` teaches loopback semantics.
 `0.0.0.0` teaches wildcard bind. `169.254.169.254` is the real cloud-metadata

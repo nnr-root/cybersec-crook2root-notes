@@ -9,6 +9,11 @@ tags:
 Domain:
   - "[[Switching & the Link Layer]]"
 Color: "#42D4F4"
+thread-exempt:
+  - "10.99.0.: veth pair built on the reader's own machine — local reproduction, not Meridian"
+  - "8a:1f: kernel-generated locally administered MAC — the note teaches the LA bit from this exact hex digit, and 00:00:5E has it clear"
+  - "6e:9a: the veth pair's other end, same LA-bit lesson"
+  - "02:11: the spoofed address in the MAC-spoofing demonstration — 02 carries the LA bit deliberately"
 ---
 
 # 🧬 Ethernet & Frame Structure
