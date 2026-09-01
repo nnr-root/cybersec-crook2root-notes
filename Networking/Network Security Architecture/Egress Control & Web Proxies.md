@@ -74,7 +74,7 @@ grep exfil-domain /var/log/squid/access.log
 Expected excerpt:
 
 ```text
-1690984922.431 512 10.0.5.22 TCP_DENIED/403 3821 CONNECT known-bad.example:443 alice DENIED-CATEGORY-MALWARE
+1690984922.431 512 10.10.10.22 TCP_DENIED/403 3821 CONNECT known-bad.example:443 alice DENIED-CATEGORY-MALWARE
 ```
 
 That single line is egress control working: an internal host's outbound connection to a known-bad destination was denied, logged, and attributed to a user — the exact event that, unlogged and unblocked, would be an exfiltration channel.

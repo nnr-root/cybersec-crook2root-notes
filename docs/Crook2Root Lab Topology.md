@@ -203,6 +203,7 @@ Meridian is allocated a supernet with deliberate room:
 │   ├── 10.10.42.160/30   depot router link (2 usable)
 │   └── 10.10.42.164 — 10.10.43.255 free (348 addresses, still summarizable)
 ├── 10.10.192.0/20    the /20 worked example in Subnetting & CIDR
+├── 10.10.60.0/24     VPN clients
 ├── 10.10.250.0/24    router interconnects / next-hops
 └── 10.20.0.0/24      DMZ
 ```

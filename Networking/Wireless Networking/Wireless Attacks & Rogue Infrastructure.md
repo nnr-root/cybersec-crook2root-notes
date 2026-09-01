@@ -8,6 +8,10 @@ tags:
   - difficulty/medium
 Domain:
   - "[[Wireless Networking]]"
+thread-exempt:
+  - "A4:2B:8C: a real vendor OUI — the note teaches rogue-AP detection by comparing it against a prefix in no registry"
+  - "9c:b6:d0: the legitimate AP's BSSID in the same OUI comparison"
+  - "00:11:22: the rogue BSSID, deliberately a prefix that appears in no vendor registry"
 Color: "#42D4F4"
 ---
 

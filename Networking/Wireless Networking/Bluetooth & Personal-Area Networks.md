@@ -8,6 +8,10 @@ tags:
   - difficulty/medium
 Domain:
   - "[[Wireless Networking]]"
+thread-exempt:
+  - "3B:1F:04: a BLE device address, not an Ethernet MAC — the note discusses address randomisation, which 00:00:5E would misrepresent"
+  - "4C:87:5D: same, a second BLE device address"
+  - "6F:2C:19: same, a third BLE device address"
 Color: "#42D4F4"
 ---
 

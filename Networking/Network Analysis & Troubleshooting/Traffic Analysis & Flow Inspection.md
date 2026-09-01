@@ -47,8 +47,8 @@ Expected excerpt:
 ===================================================================
 Follow: tcp,ascii
 Filter: tcp.stream eq 0
-Node 0: 10.0.5.22:52418
-Node 1: 93.184.216.34:80
+Node 0: 10.10.10.22:52418
+Node 1: 203.0.113.20:80
 ===================================================================
 GET /login HTTP/1.1
 Host: example.com
@@ -72,8 +72,8 @@ Expected excerpt:
 ```text
                            |       <-      | |       ->      | |     Total     |
                            | Frames  Bytes | | Frames  Bytes | | Frames  Bytes |
-10.0.5.22    <-> 93.184... |    412  512340 | |    288   28104 | |    700  540444 |
-10.0.5.99    <-> 185.22... |  88291 14000000| |  44102  3200000| | 132393 17200000|
+10.10.10.22    <-> 93.184... |    412  512340 | |    288   28104 | |    700  540444 |
+10.10.10.99    <-> 185.22... |  88291 14000000| |  44102  3200000| | 132393 17200000|
 ```
 
 The second row jumps out: a host moving 17 MB in a conversation, heavily outbound, to an unfamiliar address. The conversation view surfaces the anomaly that packet-by-packet reading would never reveal — this is analysis at the pattern scope.

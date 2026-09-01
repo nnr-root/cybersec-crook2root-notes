@@ -55,10 +55,10 @@ The practical rule: **use a capture filter to control volume on a busy link** (y
 BPF capture-filter syntax is worth fluency because it appears everywhere — tcpdump, Wireshark, and many security tools share it:
 
 ```bash
-sudo tcpdump -i eth0 'host 10.0.5.22 and tcp port 443'      # one host's HTTPS
+sudo tcpdump -i eth0 'host 10.10.10.22 and tcp port 443'      # one host's HTTPS
 sudo tcpdump -i eth0 'tcp[tcpflags] & tcp-syn != 0'          # SYN packets (find scans/handshakes)
 sudo tcpdump -i eth0 'icmp or arp'                           # low-level troubleshooting
-sudo tcpdump -i eth0 'net 192.168.1.0/24 and not port 22'    # a subnet, excluding SSH noise
+sudo tcpdump -i eth0 'net 10.10.10.0/24 and not port 22'    # a subnet, excluding SSH noise
 ```
 
 ## The Switched-Network Problem

@@ -139,7 +139,10 @@ def _thread_ok(ip):
 #       - "10.99.0.: veth pair on the reader's own machine — local reproduction"
 # Each entry must carry a reason; a bare address is rejected so exemptions stay
 # reviewable rather than becoming a silent opt-out.
-MAC = re.compile(r"\b(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}\b")
+# 802.11 captures label fields as DA:/SA:/BSSID: and "DA" is itself valid hex,
+# so a bare six-group match can start on the label and slide one octet left.
+# The trailing lookahead forces the match onto the real address.
+MAC = re.compile(r"\b(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}(?![:0-9a-fA-F])")
 MAC_OK_PREFIX = "00:00:5e:00:53:"
 MAC_PROTECTED = {"ff:ff:ff:ff:ff:ff", "00:00:00:00:00:00", "01:00:5e:00:00:01",
                  "33:33:00:00:00:01", "01:80:c2:00:00:00"}   # broadcast / multicast / STP

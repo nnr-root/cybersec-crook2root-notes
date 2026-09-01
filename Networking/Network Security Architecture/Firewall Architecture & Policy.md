@@ -60,7 +60,7 @@ table inet filter {
     ct state established,related accept
     ct state invalid drop
     iif "lo" accept
-    tcp dport 22 ip saddr 10.0.0.0/8 accept
+    tcp dport 22 ip saddr 10.10.0.0/16 accept
     tcp dport 443 accept
   }
 }
@@ -71,7 +71,7 @@ Read this top to bottom, because that is how it executes:
 - **`policy drop`** is the foundation — **default deny**. Anything not explicitly permitted is dropped. This is the single most important property of a sound firewall: the rule base states what is *allowed*, and everything else is denied by default. The opposite (default allow, block known-bad) is unwinnable, because you cannot enumerate all bad traffic.
 - **`ct state established,related accept`** is the stateful heart: return traffic for existing connections is permitted because a connection exists, not because an address is trusted. `related` covers helper flows like an FTP data connection tied to a control connection.
 - **`ct state invalid drop`** discards packets that match no known connection and are not a valid new one — a cheap, high-value rule.
-- **`tcp dport 22 ip saddr 10.0.0.0/8 accept`** permits SSH only from internal addresses. Restricting by both port and source is far stronger than by port alone.
+- **`tcp dport 22 ip saddr 10.10.0.0/16 accept`** permits SSH only from internal addresses. Restricting by both port and source is far stronger than by port alone.
 
 Rules are evaluated **in order**, and the first match wins. This makes ordering a correctness property: a broad `accept` placed above a specific `drop` renders the drop dead, silently permitting what you meant to block. Auditing a rule base means reading it as the firewall does — sequentially — not as a set.
 

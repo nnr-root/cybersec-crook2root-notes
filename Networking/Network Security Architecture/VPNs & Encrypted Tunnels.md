@@ -70,7 +70,7 @@ interface: wg0
   listening port: 51820
 peer: <peer key>
   endpoint: 203.0.113.44:51820
-  allowed ips: 10.8.0.0/24
+  allowed ips: 10.10.60.0/24
   latest handshake: 41 seconds ago
   transfer: 1.24 MiB received, 892 KiB sent
 ```

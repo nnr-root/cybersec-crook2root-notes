@@ -70,13 +70,13 @@ Here is the critical security subtlety: **these headers are trivially forged.** 
 The correct handling: a proxy must **overwrite**, not append to, the header for untrusted inbound requests, and the application must only trust the header when the immediate connection came from a known proxy. The real client address is "the last address added by a proxy you trust," counting from the right — never the leftmost value a client supplied. Getting this wrong is a recurring, high-impact configuration error.
 
 ```bash
-curl -H 'X-Forwarded-For: 10.0.0.1' https://<lab app>/whoami
+curl -H 'X-Forwarded-For: 10.10.10.1' https://<lab app>/whoami
 ```
 
 Expected excerpt from a misconfigured app:
 
 ```text
-{"client_ip":"10.0.0.1"}
+{"client_ip":"10.10.10.1"}
 ```
 
 That output is the vulnerability: the app believed a header the client wrote.

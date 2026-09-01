@@ -8,6 +8,8 @@ tags:
   - difficulty/medium
 Domain:
   - "[[Network Security Architecture]]"
+thread-exempt:
+  - "01:80:c2:00:00:03: the IEEE 802.1X PAE group address — a protocol constant the note names, not a host"
 Color: "#42D4F4"
 ---
 
@@ -141,7 +143,7 @@ enp3s0: CTRL-EVENT-DISCONNECTED bssid=01:80:c2:00:00:03 reason=23
 ```shell-session
 admin@radius:~$ sudo journalctl -u freeradius -n 2 --no-pager
 Login incorrect (TLS Alert write:fatal:certificate expired):
-  [host/ws-4471] (from client sw-access-01 port 14 cli 3c:52:82:1a:9b:04)
+  [host/ws-4471] (from client sw-access-01 port 14 cli 00:00:5e:00:53:0e)
 ```
 
 The port never reaches the forwarding state, so the device has link but no

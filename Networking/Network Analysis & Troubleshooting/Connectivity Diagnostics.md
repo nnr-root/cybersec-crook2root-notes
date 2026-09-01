@@ -62,7 +62,7 @@ nc -vz example.com 443
 Expected excerpt:
 
 ```text
-Connection to example.com (93.184.216.34) 443 port [tcp/*] succeeded!
+Connection to example.com (203.0.113.20) 443 port [tcp/*] succeeded!
 ```
 
 An open port is positive proof the host is up *and* the service is listening — a stronger, more useful result than ping, because it tests what you actually care about. When ping fails but the port answers, the host was never down; ICMP was simply filtered. `nc -vz` (or `nmap -Pn`) is the correct tool once you suspect ICMP filtering.
@@ -89,7 +89,7 @@ ip route get 8.8.8.8
 Expected excerpt:
 
 ```text
-8.8.8.8 via 192.168.1.1 dev eth0 src 192.168.1.24 uid 1000
+8.8.8.8 via 10.10.10.1 dev eth0 src 10.10.10.14 uid 1000
 ```
 
 This answers "how will my host actually try to reach this?" — which gateway, which interface, which source address — turning a routing question into a definite answer before any packet leaves. It is the fastest way to catch a wrong mask, a missing route, or a poisoned default.
