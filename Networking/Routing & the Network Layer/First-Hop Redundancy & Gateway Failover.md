@@ -21,6 +21,10 @@ IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interi
 
 ## The Single Point of Failure Hosts Cannot See Past
 
+> *A host knows exactly one default gateway, and that router dies. Three healthy routers sit on the same segment. Can the host use them?*
+>
+> Hold your answer — the section below is the response.
+
 A host learns exactly one default gateway. Every packet it sends off-segment goes to that one address. This creates a problem that all the redundancy in the core cannot solve: if the host's gateway router fails, the host is isolated from everything beyond its own subnet, even though other routers are sitting right there, healthy, on the same segment.
 
 The naive fix — give hosts two gateways — does not work well, because hosts do not fail over gateways quickly or reliably on their own, and reconfiguring thousands of hosts when a router changes is untenable. The problem must be solved by the routers, transparently, so the host keeps using one unchanging gateway address while the routers arrange who actually answers for it.

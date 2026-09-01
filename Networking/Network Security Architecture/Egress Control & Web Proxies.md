@@ -21,6 +21,10 @@ Firewall Architecture & Policy -> Network Segmentation & Zero Trust -> VPNs & En
 
 ## The Neglected Direction
 
+> *Your firewall blocks everything inbound. Which attacks does that stop?*
+>
+> Hold your answer — the section below is the response.
+
 Firewall attention overwhelmingly goes to **ingress** — keeping bad traffic out. Outbound traffic, **egress**, is usually permitted by default: internal hosts may connect anywhere on the Internet. This asymmetry feels natural and is a serious gap.
 
 Consider what depends on outbound connectivity from inside the network:

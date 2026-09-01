@@ -21,6 +21,10 @@ IPv4 Addressing -> Subnetting & CIDR -> VLSM & Route Summarization -> IPv6 Addre
 
 ## 128 Bits and Its Notation
 
+> *Why is `2001:db8::1::5` not a valid address?*
+>
+> Hold your answer — the section below is the response.
+
 An **IPv6 address** is 128 bits, written as eight groups of four hexadecimal digits separated by colons. Each group represents 16 bits.
 
 ```text

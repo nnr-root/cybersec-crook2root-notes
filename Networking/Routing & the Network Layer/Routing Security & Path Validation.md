@@ -21,6 +21,10 @@ IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interi
 
 ## The Shared Weakness
 
+> *What in IP verifies that a packet's source address is real?*
+>
+> Hold your answer — the section below is the response.
+
 The network layer was designed to move packets, not to prove anything about them. Two assumptions baked into IP are the root of routing insecurity:
 
 1. **A packet's source address is whatever the sender wrote.** Nothing in IP verifies it.

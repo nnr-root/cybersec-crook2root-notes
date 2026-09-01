@@ -22,6 +22,10 @@ Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation
 
 ## ICMP Is Not a Ping Tool
 
+> *Which port does `ping` use?*
+>
+> Hold your answer — the section below is the response.
+
 **ICMP (Internet Control Message Protocol)** is the diagnostic and error-reporting protocol of the Internet layer. It rides directly inside IP with protocol number 1 — it is not carried over TCP or UDP and has no ports. Its job is to let routers and hosts report conditions that IP itself cannot express, because IP is a fire-and-forget delivery mechanism with no feedback channel of its own.
 
 Ping is merely the best-known *use* of ICMP. The messages that keep the Internet functioning are the error types.

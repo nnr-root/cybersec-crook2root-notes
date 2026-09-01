@@ -21,6 +21,10 @@ Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Contr
 
 ## Why Replace Something That Works
 
+> *HTTP/2 multiplexes many independent streams over one connection. One packet is lost. How many streams stall?*
+>
+> Hold your answer — the section below is the response.
+
 TCP works. It has carried the Internet for decades. But three specific problems proved unfixable within TCP itself, and understanding them explains everything QUIC does.
 
 **Head-of-line blocking.** TCP delivers a single ordered byte stream. If one segment is lost, everything behind it waits, even data belonging to a completely unrelated request. HTTP/2 introduced multiplexing — many logical streams over one connection — but those streams share one TCP byte stream, so a single lost packet stalls *all* of them. Multiplexing at the application layer cannot escape ordering enforced at the transport layer.

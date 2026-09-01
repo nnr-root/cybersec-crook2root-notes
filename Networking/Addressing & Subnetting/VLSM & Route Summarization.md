@@ -21,6 +21,10 @@ IPv4 Addressing -> Subnetting & CIDR -> VLSM & Route Summarization -> IPv6 Addre
 
 ## One Size Does Not Fit
 
+> *You have `10.10.40.0/22` and four segments needing 500, 100, 25 and 2 hosts. Why not cut it into four equal blocks?*
+>
+> Hold your answer — the section below is the response.
+
 Meridian is opening a depot, and you are given `10.10.40.0/22` — the block §5c of the lab topology reserves for exactly this — to serve four networks:
 
 | Segment | Hosts needed |

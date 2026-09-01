@@ -21,6 +21,10 @@ HTTP Fundamentals -> HTTPS & the TLS Handshake -> Web Architecture & Proxies -> 
 
 ## There Is No Single Server
 
+> *Your browser requests a page. How many servers touch it before one generates the response?*
+>
+> Hold your answer — the section below is the response.
+
 A beginner imagines a browser talking to one web server. Reality is a chain, and each hop has a job:
 
 ```mermaid

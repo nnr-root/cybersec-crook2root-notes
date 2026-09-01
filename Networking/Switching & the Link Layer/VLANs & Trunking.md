@@ -21,6 +21,10 @@ Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbo
 
 ## One Switch, Many Networks
 
+> *Two ports on one switch, one in VLAN 10 and one in VLAN 20. Can they reach each other?*
+>
+> Hold your answer — the section below is the response.
+
 Without VLANs, a switch is one broadcast domain — every port can reach every other port at Layer 2. A **VLAN (Virtual Local Area Network)** partitions that single switch into multiple logical broadcast domains. Ports assigned to VLAN 10 form one network; ports in VLAN 20 form another; and a frame cannot pass between them without a routing decision.
 
 This is the primary segmentation tool in a wired network. Finance, guests, voice phones, and management can share physical switches while remaining logically isolated, and the isolation is enforced in switch hardware rather than by physical separation. The security value is direct: an attacker who compromises a device in the guest VLAN cannot reach the finance VLAN at Layer 2, because the two are different broadcast domains that meet only at a router where policy applies.

@@ -21,6 +21,10 @@ HTTP Fundamentals -> HTTPS & the TLS Handshake -> Web Architecture & Proxies -> 
 
 ## The Problem With Request/Response
 
+> *A chat server has a message for you right now. Using HTTP alone, how does it tell you?*
+>
+> Hold your answer — the section below is the response.
+
 HTTP's model is strict: the client asks, the server answers, done. The server cannot speak first. For a chat message, a stock tick, a live notification, or a multiplayer game, the server needs to send data the moment it has it — but it has no open channel to do so.
 
 The historical workarounds were all compromises. **Polling** has the client ask "anything new?" repeatedly, wasting requests and adding latency. **Long polling** has the server hold a request open until it has data, which ties up a connection and still incurs a full round trip per message. These bend request/response without escaping it, and they scale poorly.

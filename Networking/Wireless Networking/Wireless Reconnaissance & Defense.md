@@ -21,6 +21,10 @@ Wireless Fundamentals & 802.11 -> Wi-Fi Security & WPA -> Wireless Attacks & Rog
 
 ## You Cannot Defend Airspace You Have Not Mapped
 
+> *Wired security starts from a cable map. What does wireless security start from?*
+>
+> Hold your answer — the section below is the response.
+
 Wired security starts from a known topology — you have the cable map. Wireless security starts from ignorance: the airspace contains your APs, your clients, your neighbours' networks, and potentially an attacker's rogue infrastructure, all mixed together on shared channels. **The first act of wireless defense is reconnaissance of your own airspace** — discovering what is actually transmitting, so that "normal" is defined and anomalies stand out.
 
 This is the same principle as sensor placement and blind-spot mapping in the security-architecture branch: you cannot detect what deviates from normal until you know what normal is, and for wireless, normal is a map of transmitters.

@@ -21,6 +21,10 @@ Packet Capture & Analysis -> Structured Network Troubleshooting -> Traffic Analy
 
 ## Four Different Things Called "Slow"
 
+> *A user reports that the network is slow. Which number are they describing?*
+>
+> Hold your answer — the section below is the response.
+
 Users say "slow"; the analyst must translate that into a measurable quantity, because "slow" hides four distinct metrics that call for different fixes.
 
 | Metric | What it measures | Analogy | Fixed by |

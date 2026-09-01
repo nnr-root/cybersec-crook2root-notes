@@ -21,6 +21,10 @@ Packet Capture & Analysis -> Structured Network Troubleshooting -> Traffic Analy
 
 ## When Connectivity Is Fine but Behaviour Is Wrong
 
+> *A TLS handshake fails for one client and works for every other. Which of your connectivity tools finds it?*
+>
+> Hold your answer — the section below is the response.
+
 The diagnostics so far answer whether traffic can flow. But a whole class of problems has perfect connectivity and wrong *behaviour*: a TLS handshake that fails for one client, an application that works for small responses and hangs for large, an authentication that succeeds then immediately breaks, a protocol negotiation that silently degrades. Ping succeeds, the port answers, the name resolves — and it still does not work.
 
 These require **protocol debugging**: reading the actual protocol exchange at the byte level and comparing it against how the protocol is *supposed* to behave. This is the capstone skill of the domain because it demands everything — you cannot debug a protocol you do not understand, so every earlier branch (how TCP establishes state, how TLS handshakes, how DNS delegates, how HTTP frames a message) becomes the reference against which you read the capture.

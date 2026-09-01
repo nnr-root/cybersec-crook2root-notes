@@ -22,6 +22,10 @@ IPv4 Addressing -> Subnetting & CIDR -> VLSM & Route Summarization -> IPv6 Addre
 
 ## Three Ways to Get an Address
 
+> *A printer and a visitor's laptop both need an address. Should they get one the same way?*
+>
+> Hold your answer — the section below is the response.
+
 | Method | Who decides | Where used | Failure mode |
 | --- | --- | --- | --- |
 | **Static** | An administrator, on the host | Servers, network devices, printers | Silent conflicts; drift from documentation |

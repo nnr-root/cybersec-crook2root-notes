@@ -25,6 +25,10 @@ Wireless Fundamentals & 802.11 -> Wi-Fi Security & WPA -> Wireless Attacks & Rog
 
 ## The Network Around a Person
 
+> *Your headphones and your fitness tracker both say Bluetooth. Are they speaking the same protocol?*
+>
+> Hold your answer — the section below is the response.
+
 A **PAN (Personal-Area Network)** connects devices within a few metres of a person. **Bluetooth** is its dominant technology, and it comes in two quite different forms:
 
 - **Bluetooth Classic** — higher throughput for continuous streams like audio, using more power.

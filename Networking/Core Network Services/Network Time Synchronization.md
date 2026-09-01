@@ -21,6 +21,10 @@ DNS Resolution & Records -> DNS Security & Encrypted Transports -> Local Name Re
 
 ## Why Clocks Drift and Why It Matters
 
+> *Two servers disagree about the time by four minutes. Name something that breaks.*
+>
+> Hold your answer — the section below is the response.
+
 Every computer has a clock, and every clock drifts. The oscillators that keep time are imperfect and temperature-sensitive, so an unsynchronized machine gains or loses seconds per day. Independently drifting clocks across a network make it impossible to say which of two events happened first — and a surprising amount of security infrastructure depends on exactly that ability.
 
 **NTP (Network Time Protocol)** keeps clocks synchronized across a network to within milliseconds. It is not merely setting the clock; it continuously *disciplines* it, adjusting the rate to compensate for measured drift so time advances smoothly rather than jumping.

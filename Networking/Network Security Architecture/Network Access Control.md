@@ -23,6 +23,10 @@ Firewall Architecture & Policy -> Network Segmentation & Zero Trust -> VPNs & En
 
 ## Who Gets On the Network?
 
+> *An unmanaged laptop is plugged into a conference-room jack. Which of your firewall rules applies to it?*
+>
+> Hold your answer — the section below is the response.
+
 Firewalls, segmentation, and detection all operate on traffic from devices that are *already connected*. But an unmanaged laptop plugged into a conference-room jack, or an attacker's device connected to an exposed port, is on the network before any of those controls apply. **NAC (Network Access Control)** closes that gap by deciding, at the moment of connection, whether a device may join at all — and if so, with what access.
 
 NAC answers three questions before a device gets meaningful network access:

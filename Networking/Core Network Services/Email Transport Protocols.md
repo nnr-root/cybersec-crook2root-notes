@@ -21,6 +21,10 @@ DNS Resolution & Records -> DNS Security & Encrypted Transports -> Local Name Re
 
 ## Two Directions, Different Protocols
 
+> *You send a message from your laptop and it later appears on your phone. How many protocols carried it?*
+>
+> Hold your answer — the section below is the response.
+
 Email uses different protocols for sending and retrieving, and confusing them is the most common beginner error.
 
 | Protocol | Direction | Port(s) | Role |

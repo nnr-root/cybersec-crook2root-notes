@@ -22,6 +22,10 @@ Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbo
 
 ## The Missing Translation
 
+> *You know the destination's IP address. Why can you not build the frame yet?*
+>
+> Hold your answer — the section below is the response.
+
 A host that wants to send to `10.10.10.1` knows the destination *IP* address, but a frame needs a destination *hardware* address. Something must bridge Layer 3 to Layer 2. On IPv4 that something is **ARP (Address Resolution Protocol)**.
 
 The exchange is two messages:

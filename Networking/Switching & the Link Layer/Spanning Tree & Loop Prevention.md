@@ -21,6 +21,10 @@ Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbo
 
 ## Why a Loop Is Fatal at Layer 2
 
+> *A routing loop eventually resolves itself. Why does a switching loop not?*
+>
+> Hold your answer — the section below is the response.
+
 Redundant links are good engineering — two paths between switches survive a cable failure. But redundancy at Layer 2 creates a **loop**, and a loop is catastrophic, because the Ethernet frame has no field that limits how long it may circulate.
 
 Recall from Layer 3 that an IP packet carries a **TTL** that every router decrements, so a routing loop eventually discards the packet. The Ethernet frame has **no such field**. A frame that enters a loop circulates forever.

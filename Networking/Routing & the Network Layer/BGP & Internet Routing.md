@@ -21,6 +21,10 @@ IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interi
 
 ## A Network of Networks
 
+> *Inside one company, every router trusts every other router. What replaces that trust on the Internet?*
+>
+> Hold your answer — the section below is the response.
+
 Interior protocols route inside one organization, where every router is trusted because one owner controls them all. The Internet has no single owner. It is a mesh of about a hundred thousand **autonomous systems (AS)** — independently operated networks, each identified by an **AS number** — that must exchange reachability information without trusting each other the way routers inside one company do.
 
 **BGP (Border Gateway Protocol)** is the protocol they use. It is the **exterior gateway protocol** that glues the Internet together, and it works on a fundamentally different principle from interior protocols: instead of computing shortest paths over a shared map, BGP is a **path-vector** protocol in which each AS *announces* which blocks of addresses it can reach and *through which sequence of autonomous systems*. Its neighbours accept those announcements, prepend their own AS number, and pass them on.

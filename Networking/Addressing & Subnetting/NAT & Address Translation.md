@@ -23,6 +23,10 @@ IPv4 Addressing -> Subnetting & CIDR -> VLSM & Route Summarization -> IPv6 Addre
 
 ## Why Rewriting Became Necessary
 
+> *Ten hosts behind one public address all happen to send from port 54321. How does the reply find the right one?*
+>
+> Hold your answer — the section below is the response.
+
 IPv4 provides about 4.3 billion addresses, which the Internet exhausted. **NAT (Network Address Translation)** was the pragmatic answer: let many hosts share a small number of public addresses by rewriting the address fields of packets as they cross a boundary, and keeping a table so replies can be translated back.
 
 The device performing translation must solve one problem. If ten internal hosts all send from the same public address, how does a returning packet get to the right one? The answer is to rewrite the **source port** as well, making every outbound flow unique in the table. That is why the common form of NAT is more precisely called **PAT (Port Address Translation)**, or "NAT overload."

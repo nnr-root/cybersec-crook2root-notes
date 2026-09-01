@@ -21,6 +21,10 @@ Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbo
 
 ## The Common Root Cause
 
+> *MAC flooding, ARP spoofing, rogue DHCP and VLAN hopping look like four unrelated attacks. What single weakness do they share?*
+>
+> Hold your answer — the section below is the response.
+
 The link-layer attacks covered in this branch look different but share one weakness:
 
 | Attack | Exploits | The lie it tells |

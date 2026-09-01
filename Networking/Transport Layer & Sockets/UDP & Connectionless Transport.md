@@ -22,6 +22,10 @@ Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Contr
 
 ## Eight Bytes and No Promises
 
+> *What does UDP give you that raw IP does not?*
+>
+> Hold your answer — the section below is the response.
+
 **UDP (User Datagram Protocol)** provides exactly one service beyond raw IP: **demultiplexing to a port**, plus an optional checksum. Its entire header is eight bytes.
 
 | Field | Size | Purpose |

@@ -21,6 +21,10 @@ Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation
 
 ## The Model That Shipped
 
+> *You were taught seven OSI layers. How many does the stack on your machine implement?*
+>
+> Hold your answer — the section below is the response.
+
 OSI was designed by committee as a complete reference architecture. TCP/IP was built by implementers who needed working code, and it won because the code worked. The suite is formally described in RFC 1122 and RFC 1123 as four layers.
 
 | TCP/IP layer | OSI equivalent | Job | Protocols |

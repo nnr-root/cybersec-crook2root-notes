@@ -22,6 +22,10 @@ Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation
 
 ## One Question per Device
 
+> *A switch and a router both forward traffic. State the difference in one sentence.*
+>
+> Hold your answer — the section below is the response.
+
 Every forwarding device answers a single question, and the question determines which header it reads.
 
 | Device | Reads | Question it answers | Domain it defines |

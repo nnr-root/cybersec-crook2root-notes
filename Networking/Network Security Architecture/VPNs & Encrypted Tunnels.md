@@ -21,6 +21,10 @@ Firewall Architecture & Policy -> Network Segmentation & Zero Trust -> VPNs & En
 
 ## A Private Network Over a Public One
 
+> *Your packet carries a private source address that no Internet router can deliver a reply to. How does it cross the Internet?*
+>
+> Hold your answer — the section below is the response.
+
 A **VPN (Virtual Private Network)** makes two endpoints on an untrusted network — usually the Internet — behave as if they were on one private network, by building an encrypted **tunnel** between them. Traffic entering the tunnel is encrypted, carried across the public path unreadable, and decrypted at the far end.
 
 The mechanism is **encapsulation**: the original packet, with its private addresses and payload, is encrypted and then placed *inside* a new packet addressed between the two tunnel endpoints. To the public network, it sees only tunnel-endpoint-to-tunnel-endpoint traffic; the real conversation is hidden inside.

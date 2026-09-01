@@ -21,6 +21,10 @@ Wireless Fundamentals & 802.11 -> Wi-Fi Security & WPA -> Wireless Attacks & Rog
 
 ## A Different Design Goal
 
+> *Wi-Fi covers a building; cellular covers a country. Which design constraint forces the difference?*
+>
+> Hold your answer — the section below is the response.
+
 Wi-Fi serves a building; **cellular** serves a country. The design constraints are different — devices move at speed between towers, the operator is a licensed carrier rather than a local admin, and the network must authenticate millions of subscribers. This produces a very different architecture, but the security ideas rhyme with Wi-Fi.
 
 Cellular networks are labelled by generation, and each generation improved security among other things:

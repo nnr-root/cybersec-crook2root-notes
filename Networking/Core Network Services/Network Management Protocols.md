@@ -21,6 +21,10 @@ DNS Resolution & Records -> DNS Security & Encrypted Transports -> Local Name Re
 
 ## Three Kinds of Visibility
 
+> *You need a switch's current error counters, what happened on it overnight, and who its top talkers were. One protocol, or three?*
+>
+> Hold your answer — the section below is the response.
+
 Managing a network requires three distinct kinds of information, and a different protocol family provides each.
 
 | Question | Mechanism | Protocol |

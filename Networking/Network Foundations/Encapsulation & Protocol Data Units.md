@@ -22,6 +22,10 @@ Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation
 
 ## Headers All the Way Down
 
+> *Your program sends 100 bytes. How many bytes leave the network card?*
+>
+> Hold your answer — the section below is the response.
+
 When a program sends data, each layer beneath it prepends its own **header** — a fixed structure of fields that the peer layer on the receiving side knows how to read. The layer's data plus its header is called a **PDU (Protocol Data Unit)**, and each layer has its own name for it.
 
 | Layer | PDU name | What the header carries |

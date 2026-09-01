@@ -25,6 +25,10 @@ Wireless Fundamentals & 802.11 -> Wi-Fi Security & WPA -> Wireless Attacks & Rog
 
 ## Don't Break In, Be the Door
 
+> *Cracking a WPA3 passphrase is hard. What is the easier route to the same on-path position?*
+>
+> Hold your answer — the section below is the response.
+
 Cracking a strong WPA3 passphrase is hard. Convincing a victim to connect to *your* access point is easy, and yields the same on-path position without touching the encryption. This is the strategic insight of wireless attacks: **impersonate the infrastructure rather than defeat the cryptography.**
 
 The reason it works is a client behaviour that seems helpful and is exploitable. Devices remember networks they have joined and **automatically reconnect** to any network broadcasting a matching SSID. Your laptop, seeing "CoffeeShop_WiFi," connects without asking, because it joined a network by that name before. But an SSID is just a name — nothing stops an attacker from naming *their* access point "CoffeeShop_WiFi." The client cannot tell the difference by name alone, and connects to the attacker.

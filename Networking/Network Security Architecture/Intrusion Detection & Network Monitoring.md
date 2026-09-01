@@ -21,6 +21,10 @@ Firewall Architecture & Policy -> Network Segmentation & Zero Trust -> VPNs & En
 
 ## Detect Versus Prevent
 
+> *The firewall permitted the traffic. Was it therefore safe?*
+>
+> Hold your answer — the section below is the response.
+
 A firewall enforces policy at a boundary. A **detection system** watches traffic to recognize malicious activity that policy alone did not stop — because the traffic was permitted, or because the attack hid inside allowed protocols.
 
 Two roles exist, and the difference is consequential:

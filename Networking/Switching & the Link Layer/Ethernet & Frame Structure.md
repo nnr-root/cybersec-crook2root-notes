@@ -26,7 +26,9 @@ Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbo
 
 ## Why your packet gets a new address every few metres
 
-You send one request. It arrives at a server twelve hops away. **How many times was the destination address rewritten on the way?**
+> *You send one request. It arrives at a server twelve hops away. How many times was the destination address rewritten on the way?*
+>
+> Hold your answer — the section below is the response.
 
 The intuitive answer is zero — you typed one address, and it went to one place. The real answer is twelve. Here is the first rewrite, caught on the wire:
 

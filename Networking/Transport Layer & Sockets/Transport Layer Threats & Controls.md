@@ -21,6 +21,10 @@ Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Contr
 
 ## Two Root Causes
 
+> *An attack fills a firewall's session table and legitimate traffic stops. Which memory-corruption bug was exploited?*
+>
+> Hold your answer — the section below is the response.
+
 Every attack in this note traces to one of two facts.
 
 **State is finite.** Connections, half-open handshakes, translation entries, and firewall sessions all consume memory in a table with a maximum size. An attacker who creates entries faster than they expire fills the table, and the device must then refuse legitimate work. No memory corruption is involved — the system behaves exactly as designed, under conditions it was not sized for.

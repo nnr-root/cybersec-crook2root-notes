@@ -22,6 +22,10 @@ Packet Capture & Analysis -> Structured Network Troubleshooting -> Traffic Analy
 
 ## The Right Tool for the Layer
 
+> *`ping` succeeds. What have you proven?*
+>
+> Hold your answer — the section below is the response.
+
 Connectivity diagnostics is a small toolkit, and each tool answers a question at a specific layer. Knowing the map is most of the skill, because reaching for the wrong tool produces a confident answer to a question you did not ask.
 
 | Question | Tool | Layer |

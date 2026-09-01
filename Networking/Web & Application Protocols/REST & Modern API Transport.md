@@ -21,6 +21,10 @@ HTTP Fundamentals -> HTTPS & the TLS Handshake -> Web Architecture & Proxies -> 
 
 ## An API Is a Contract Between Programs
 
+> *An API and a web page both travel over HTTP. What actually changes?*
+>
+> Hold your answer — the section below is the response.
+
 A web page is for humans; an **API (Application Programming Interface)** is for programs. Instead of returning HTML to render, an API returns structured data — usually JSON — that another program parses and acts on. The transport is still HTTP, so everything from the HTTP branch applies; what differs is that the consumer is code, which changes the design pressures.
 
 **REST (Representational State Transfer)** is the dominant style, and it is a set of conventions layered on HTTP rather than a separate protocol. Its core idea is to model everything as a **resource** identified by a URL, and to use HTTP methods as the verbs acting on those resources.

@@ -21,6 +21,10 @@ Ports & Sockets -> TCP Connections & State -> TCP Reliability & Congestion Contr
 
 ## Building Certainty on an Unreliable Base
 
+> *IP drops, duplicates, delays and reorders packets, and never reports doing any of it. How does TCP hand you a clean byte stream?*
+>
+> Hold your answer — the section below is the response.
+
 IP may drop, duplicate, delay, or reorder packets, and it never reports doing so. TCP delivers a byte stream that suffers none of these problems. The mechanism is conceptually simple and its consequences are subtle.
 
 **Every byte is numbered.** The sequence number gives each byte a position in the stream. The receiver acknowledges the next byte it expects, which implicitly confirms everything before it — a **cumulative acknowledgment**.

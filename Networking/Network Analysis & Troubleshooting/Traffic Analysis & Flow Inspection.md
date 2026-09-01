@@ -21,6 +21,10 @@ Packet Capture & Analysis -> Structured Network Troubleshooting -> Traffic Analy
 
 ## From Packets to Conversations
 
+> *You have one suspicious packet in front of you. How much can it tell you?*
+>
+> Hold your answer — the section below is the response.
+
 Capturing packets is the raw material; **traffic analysis** is making sense of them. A single packet rarely tells a story — the story is in the *conversation* it belongs to and the *pattern* those conversations form. Analysis operates at three widening scopes:
 
 - **The packet** — one message, its headers and payload. Useful for a specific detail.

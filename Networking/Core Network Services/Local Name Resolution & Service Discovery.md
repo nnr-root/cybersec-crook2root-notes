@@ -21,6 +21,10 @@ DNS Resolution & Records -> DNS Security & Encrypted Transports -> Local Name Re
 
 ## Resolution Before DNS
 
+> *A hostname resolved and you got an answer. Did DNS answer it?*
+>
+> Hold your answer — the section below is the response.
+
 Name resolution is not a single lookup to DNS. The operating system consults sources in a configured order, and understanding that order is the key to both diagnosis and the security problems here.
 
 On a typical Linux system the order is set by `nsswitch.conf`:

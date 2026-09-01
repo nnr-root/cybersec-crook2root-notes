@@ -21,6 +21,10 @@ HTTP Fundamentals -> HTTPS & the TLS Handshake -> Web Architecture & Proxies -> 
 
 ## One Name, Many Servers
 
+> *One name, many servers. What decides which of them answers your request?*
+>
+> Hold your answer — the section below is the response.
+
 A popular site receives far more requests than one machine can serve, and one machine is a single point of failure. The solution is to run many identical servers and place a **load balancer** in front that distributes incoming requests across them. Clients connect to one address; the load balancer decides which backend actually handles each request.
 
 This delivers three things at once: **scale** (add servers to handle more load), **availability** (one server failing does not take down the service), and **maintainability** (servers can be updated one at a time behind the balancer). It is the reason a single hostname can serve millions of users.

@@ -21,6 +21,10 @@ IP Forwarding & the Routing Table -> Static Routing & Default Gateways -> Interi
 
 ## Why Routers Must Talk
 
+> *A link fails at 03:00 on a statically routed network. Who notices?*
+>
+> Hold your answer — the section below is the response.
+
 Static routing fails at scale for one reason: it cannot react to change. When a link goes down, someone must notice and reconfigure. **Dynamic routing** removes the human from the loop — routers exchange information about the networks they can reach, and when the topology changes, they recompute paths automatically within seconds.
 
 An **IGP (Interior Gateway Protocol)** is a dynamic routing protocol used *within* a single administrative domain — one company, one campus, one autonomous system. It contrasts with an exterior protocol used *between* organizations, covered separately. "Interior" means all the routers trust each other because they belong to the same owner, and that trust assumption is central to both how IGPs work and how they fail.
