@@ -28,6 +28,14 @@ Both are client-side attacks that exploit the browser's cross-origin model, whic
 
 **Prerequisites:** the Same-Origin Policy, HTTP headers, and cookies.
 
+**The deliberate break:** CORS is described as a security feature, so a CORS policy sounds like something that protects the API. It is the opposite: **CORS exists to relax a protection you already had.**
+
+The Same-Origin Policy is the control. It stops a page on `evil.test` reading a response from `bank.test` — for free, by default, with no configuration. CORS is the mechanism for **switching that off** for specific origins, because sometimes an application legitimately needs it. Every CORS header you add subtracts from the browser's default protection, so "we configured CORS" is not a hardening step, it is a permission grant that needs the same scrutiny as a firewall rule.
+
+There is a second half people rely on wrongly. CORS is enforced **by the browser**, in the browser. It is not server-side access control, and a request from `curl`, a script or a mobile app ignores it entirely. If an endpoint's only protection is its CORS policy, it has no protection at all against a non-browser client.
+
+**How you'd spot the dangerous configuration:** the server **reflects** the request's `Origin` back in `Access-Control-Allow-Origin` *and* sets `Access-Control-Allow-Credentials: true`. That pair means any origin can read authenticated responses. Either alone is usually harmless; together they are the finding.
+
 ## CORS: When "Who May Read Me" Is Too Permissive
 
 When a page makes a cross-origin request, the browser enforces CORS: it only lets the calling origin *read* the response if the server's `Access-Control-Allow-Origin` (ACAO) header permits it. The misconfigurations:

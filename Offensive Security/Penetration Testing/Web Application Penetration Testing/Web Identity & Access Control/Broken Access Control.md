@@ -33,6 +33,14 @@ IDOR (Insecure Direct Object Reference) and BOLA (Broken Object-Level Authorizat
 
 **Prerequisites:** authentication vs. authorization, HTTP requests, and sessions/tokens.
 
+**The deliberate break:** the admin button is not rendered for ordinary users, and the admin page is not linked from anywhere they can see. So ordinary users cannot reach it.
+
+Nothing about a browser obliges it to use your interface. The UI is a **suggestion** the client is free to ignore: an attacker composes the request directly, and the only thing standing between them and the function is whether the *server* checks authorisation when it arrives. Hiding a control changes what is convenient, never what is permitted.
+
+The distinction underneath is the one to internalise. **Authentication** answers *who are you* and applications check it on essentially every request. **Authorisation** answers *what may this particular person do to this particular object* — and that check has to be repeated per request, per object, per function, which is exactly why it gets missed in the one endpoint nobody revisited.
+
+**How you'd spot it:** take a request that works for account A, change only the object identifier to one belonging to account B, and replay it with A's session. If it succeeds, the server never asked whether A owns that object. Two synthetic accounts is the entire setup, and one such request is the whole proof.
+
 ## IDOR/BOLA: The Object-Ownership Failure
 
 The classic test: authenticate as user A, access one of A's objects, note the identifier, then change it to another user's identifier and see if the app returns it:

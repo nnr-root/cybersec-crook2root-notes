@@ -25,6 +25,14 @@ This is why business-logic testing is the most intellectually demanding web test
 
 **Prerequisites:** HTTP requests, authentication/authorization, and the API business-logic concept.
 
+**The deliberate break:** run a good scanner, review its findings, fix them, and the application is tested. That reasoning holds for whole classes of flaw and fails completely here.
+
+A scanner detects **malformed input producing anomalous behaviour**. A business-logic flaw has no malformed input. Every request is well-formed, correctly typed, properly authenticated and individually valid — the flaw is that this *sequence*, or this *value*, was never meant to be possible. A quantity of `-1` is a perfectly valid integer. Applying the discount code twice is two legitimate requests. Skipping from step two to step four is a normal navigation. There is no signature to match and no payload to flag, which is precisely why logic flaws survive years of automated testing and are the highest-value findings a human brings.
+
+You cannot find them by looking for something wrong with a request. You find them by knowing **what the application is supposed to guarantee**, and then testing whether it actually does.
+
+**How you'd spot the candidates:** model the workflow as steps and ask three questions of each — can it be **skipped**, **repeated**, or **reordered**? Then ask of every numeric field whether the code assumed it would be positive. Nearly every logic finding in this note's families answers yes to one of those.
+
 ## The Common Business-Logic Flaw Families
 
 Three families cover most real findings, and this note absorbs the workflow-specific concerns (entitlements, multi-tenancy, payments) as instances of them:

@@ -28,6 +28,14 @@ The two phases:
 
 **Prerequisites:** HTTP, cookies, and the statelessness concept.
 
+**The deliberate break:** testing authentication means testing the login form. That is where the password goes, so that is where the security is.
+
+The login form is usually the **strongest** part of an authentication system, because it is the part everyone remembers to harden — rate limiting, MFA, lockout, monitoring. Authentication is the whole set of paths that can end with the application believing you are someone: registration, password reset, email change, "remember me", account recovery, and any SSO or social login bolted on beside them. Those paths are built later, tested less, and frequently skip the controls the login has.
+
+The consequence is a rule worth carrying: **if recovery is weaker than the front door, an attacker does not attack the front door.** A reset flow that accepts a guessable token, or a help desk that will change an email address on a plausible phone call, is the authentication system — MFA on the login page notwithstanding.
+
+**How you'd spot it:** enumerate every path that ends in an authenticated session, then check each one for the controls the login has. An MFA prompt that appears at login and *not* after a password reset is the finding, and it will not show up in any scan.
+
 ## Login Attacks
 
 The login form is constantly attacked, and testing checks the defenses:

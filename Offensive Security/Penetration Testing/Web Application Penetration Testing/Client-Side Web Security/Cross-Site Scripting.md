@@ -31,6 +31,14 @@ The three types are distinguished by *where the payload lives*:
 
 **Prerequisites:** HTML/JavaScript basics, HTTP parameters, and the Same-Origin Policy.
 
+**The deliberate break:** XSS is about script tags, so filtering `<script>` deals with it. Every WAF ruleset and every naive sanitiser starts here.
+
+XSS is about **context**. The identical string is inert in one position and executes in another, because the browser parses each position with a different grammar. Land inside an HTML body and you need a tag. Land inside an attribute and a quote plus an event handler is enough — no `<` required. Land inside an existing `<script>` block and you are already in JavaScript, so you only need to close a string. Land in a URL context and `javascript:` is the payload. A sanitiser that does not know **where the value will be placed** is guessing, which is why context-aware output encoding is the fix and blocklists are not.
+
+This is the same family as the previous branch's injection notes: one component decided the value was safe, and a **different parser** — the HTML tokeniser, the JS engine, the URL parser — read it as structure. It is the **Parser Differential** pattern wearing a client-side coat.
+
+**How you'd spot it:** put a unique harmless marker in the parameter, find every place it lands in the response, and read the characters *around* it. That surrounding context tells you what would be needed to break out — and often tells you immediately that nothing will, which saves the payload attempts.
+
 ## Context Is Everything
 
 The single most important XSS concept: the *encoding a payload needs depends on where it lands*. The same input is safe in one context and executable in another:
