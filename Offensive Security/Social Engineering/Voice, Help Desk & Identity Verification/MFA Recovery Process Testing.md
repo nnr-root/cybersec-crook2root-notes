@@ -15,6 +15,12 @@ Help Desk Identity Verification -> MFA Recovery Process Testing -> Vishing & Exe
 
 ## Recovery Is the Back Door to MFA
 
+> *Your organisation enforces phishing-resistant MFA on every account. What is the strongest factor an attacker actually has to defeat?*
+>
+> Hold your answer — the section below is the response.
+
+Whatever the recovery path accepts, which is frequently an SMS code or a help-desk knowledge check. The enforced factor determines the front door; the attacker chooses which door to use.
+
 Multi-factor authentication is only as strong as the process that runs when a user says **"I lost my device."** Every MFA deployment needs a recovery path — and that path, by design, must let someone in *without* the second factor. If recovery is weaker than the front door, an attacker simply doesn't attack the front door; they trigger recovery.
 
 This is why account takeover so often ignores the password and the authenticator entirely: the attacker targets **recovery codes, SMS/email reset, help-desk MFA re-enrolment, or a SIM swap.** Each is a legitimate feature; each can bypass the very MFA it supports.
@@ -30,6 +36,12 @@ This is why account takeover so often ignores the password and the authenticator
 | Security questions | OSINT-answerable; a knowledge check, not possession |
 
 The rule mirrors the front door: **recovery must verify possession or control of a pre-registered channel**, and re-enrolment of a *new* factor is itself a sensitive action requiring out-of-band verification. A recovery flow that trusts an inbound claim (a phone call, a "lost device" web form with only KBA) is an MFA bypass with paperwork.
+
+**The deliberate break:** MFA strength is described as a property of the enrolled factor — "we are on FIDO2, so we are phishing-resistant."
+
+The strength of an authentication system is the **minimum** over every path that can produce a session, not the maximum over the paths anyone chose to advertise. Recovery produces a session. A FIDO2 deployment whose recovery path is an SMS code is an SMS deployment with a fast lane for people who still have their key, and the security level of the whole system is the level of that SMS path. Enrolling a stronger factor raises the ceiling and does nothing to the floor, which is where an attacker works.
+
+**How you'd spot it:** ask what happens when a user loses their security key, and follow the answer to its end. If it terminates in help-desk re-enrolment gated by knowledge questions, the deployment's real assurance level is that of the knowledge questions, whatever the enrolment dashboard reports. In an inventory, the tell is a login path documented in detail beside a recovery path documented as a sentence.
 
 ```mermaid
 flowchart LR

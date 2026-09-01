@@ -16,12 +16,18 @@ flowchart LR
     C --> R["Retest"]
 ```
 
-Segment only where privacy and sample size allow. Click rate without delivery, difficulty, cohort, and reporting context is misleading. Mastery lab: build a dashboard that connects each metric to an owner, action, target, and retest date.
+Segment only where privacy and sample size allow. Click rate without delivery, difficulty, cohort, and reporting context is misleading.
 
 ## Parent Learning Order
 Social Engineering Safety & Ethics -> Human-Risk Metrics & Program Improvement
 
-## A defensible measurement model
+## A Defensible Measurement Model
+
+> *Your click rate fell from 12% to 3% over four quarters. What improved?*
+>
+> Hold your answer — the section below is the response.
+
+There is no way to tell from those two numbers, and the honest answer may be nothing. Across four quarters the scenario difficulty changed, the channel changed, the cohort changed, and the proportion of messages the gateway delivered at all changed. Each of those moves the number on its own.
 
 Separate the exercise funnel into attempted, delivered, blocked, opened, interacted, independently verified, reported, triaged, and contained. Denominators matter: interaction among delivered messages is different from interaction among all attempted messages. Report medians and distributions for time metrics; a single average hides delayed response.
 
@@ -31,6 +37,12 @@ Separate the exercise funnel into attempted, delivered, blocked, opened, interac
 | Median report time | Human sensing speed | Ignoring late but useful reports |
 | Verification adherence | Process resilience | Ranking named individuals |
 | Triage and containment time | Operational readiness | Excluding after-hours exercises |
+
+**The deliberate break:** a trend line pointing downward is read as evidence of improvement, because that is what trend lines are for.
+
+A time series requires that the thing being measured stays the same between points, and in this programme the measurer chooses the difficulty. A quarter-on-quarter decline is consistent with better controls, and equally consistent with easier lures, a gentler cohort, a higher block rate upstream, or a workforce that has memorised last quarter's wording. Without difficulty, channel, cohort and delivery rate recorded beside each number, the chart documents the exercise designer's choices rather than the organisation's resilience — and it documents them in a form that senior stakeholders will read as progress.
+
+**How you'd spot it:** ask to see what is stored alongside each data point. A programme that can produce scenario difficulty, channel, cohort definition and delivery rate for every campaign has a comparable series; one that stores the percentage and the date does not, and the correct response to its trend line is to stop drawing it. The second tell is a metric with no owner attached — a number nobody is accountable for acting on is a number nobody has interrogated.
 
 Use minimum cohort sizes, role-based aggregation, fixed retention, and access controls. Track scenario difficulty, channel, exposure duration, and control changes so trends are comparable. Every metric must connect to an owner and intervention—technical control, process redesign, training, or playbook update. Retest the threat hypothesis rather than repeating an identical lure. Improvement means fewer unsafe process outcomes and faster collective response, not simply a lower click percentage.
 

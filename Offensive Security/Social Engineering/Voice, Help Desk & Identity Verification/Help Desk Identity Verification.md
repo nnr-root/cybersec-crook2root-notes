@@ -36,6 +36,12 @@ The weak link is **knowledge-based verification (KBA)** — "what's your employe
 
 The principle: verification must test **possession or control of something pre-registered**, not recall of a fact. A directory callback flips the trust direction — instead of trusting an inbound claim, the help desk reaches out to a channel it already trusts.
 
+**The deliberate break:** a verification script with several steps feels strong because it has several steps. Employee ID, then date of birth, then the manager's name — three questions answered correctly reads as a thorough check.
+
+Stacking knowledge questions does not move the check out of the knowledge category, and the three answers are very often available from the *same* source. A breach dump or a well-read public profile supplies all three together, which makes them one compromised factor presented three times rather than three independent checks. Factors are additive across categories — something known, something held, something inherent — and inside a single category they are correlated to the point of redundancy. A ten-question KBA script is still a KBA script.
+
+**How you'd spot it:** listen to what an agent does when they are unsure. Adding a fourth question escalates inside the category that has already failed, and it is the reflex a well-prepared caller is counting on, because a caller who has done the reading answers the fourth question too. The competent response to doubt is to change channel — end the call and dial the directory number — not to ask more.
+
 ```mermaid
 flowchart LR
     C["Inbound reset request"] --> S{"Sensitive action?"}
