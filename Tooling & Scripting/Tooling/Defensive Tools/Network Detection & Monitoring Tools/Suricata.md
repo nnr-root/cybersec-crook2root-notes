@@ -20,7 +20,29 @@ Suricata -> Snort -> Zeek
 
 There are two ways to watch a network; Suricata is unusual in doing *both*.
 
-On the left of the diagram it is a **signature engine** — matching traffic against known-bad rules and alerting. But it also emits the right-hand side's structured **protocol logs** (`dns.json`, `http`, `tls`, `flow`). And it can flip from **IDS** (out-of-band, detect-only) to **IPS** (inline, block). Understanding which of those three hats it's wearing in a given deployment is the key to Suricata.
+Suricata wears three hats at once, and knowing which one a given deployment is
+using is the key to reading its output:
+
+```mermaid
+flowchart LR
+    T["Traffic"] --> S["Suricata"]
+    S --> A["🚨 Signature engine<br/><i>rules matched → alerts</i>"]
+    S --> L["📋 Protocol logger<br/><i>dns / http / tls / flow → eve.json</i>"]
+    S -.->|"deployment choice"| M{"IDS or IPS?"}
+    M -->|"IDS: out of band"| D["Detect only — a copy of the traffic"]
+    M -->|"IPS: inline"| B["Block — traffic passes through it"]
+    style A fill:#3a0f1a,stroke:#E6194B,color:#fff
+    style L fill:#14351a,stroke:#51cf66,color:#d3f9d8
+    style B fill:#3a2f0a,stroke:#FFE119,color:#fff8d6
+```
+
+On the left it is a **signature engine** — matching traffic against known-bad
+rules and alerting, exactly as Snort does. But it simultaneously emits structured
+**protocol logs** (`dns`, `http`, `tls`, `flow`) into `eve.json`, which is Zeek's
+job rather than Snort's. And the dotted branch is a deployment decision, not a
+feature: **IDS** sees a copy of the traffic and can only report, while **IPS**
+sits in the path and can drop — which is also why an over-broad rule is a noisy
+alert in one mode and an outage in the other.
 
 ## Snort grammar in, eve.json out
 
