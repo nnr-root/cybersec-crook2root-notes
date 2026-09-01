@@ -35,6 +35,10 @@ flowchart LR
     style T fill:#14351a,stroke:#51cf66,color:#d3f9d8
 ```
 
+**The deliberate break:** Base64 output *looks* like ciphertext — mixed case, digits, trailing `=` — so the reasonable assumption is that it hides something. It hides nothing. There is no key, no secret, and no decision: the same input always produces the same output, and anyone can reverse it without knowing anything you know.
+
+There is a second surprise in the other direction. An encoding sounds like it should compress, and this one *expands*: every 3 bytes become 4 characters, so a Base64 blob is always about **33% larger** than what it encodes. If you ever see Base64 described as saving space, that is the tell that whoever wrote it does not know what it does.
+
 ## The Encoding, Worked
 
 Encoding and decoding are one shell command each:

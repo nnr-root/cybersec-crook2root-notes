@@ -48,7 +48,7 @@ where the reader is already stressed.
 | Pattern | The move | Gate |
 |:--|:--|:--|
 | **The Cold Open** | Open on the artifact — a capture, a dump, a diagram, a field table — not the definition. Abstraction lands *after* the reader has seen the thing it abstracts. | warning at >400w |
-| **The Break** | State the model a reasonable person would arrive at, then violate it. Phrase it in the reader's voice and state it confidently: "you'd assume", never "some people think". | review |
+| **The Break** | State the model a reasonable person would arrive at, then violate it. Phrase it in the reader's voice and state it confidently: "you'd assume", never "some people think". Marked with the house form **`**The deliberate break:**`** — see §2a. | review |
 | **The Autopsy** | Every error output gets a paragraph naming **which component rejected it**, **at which stage**, and **what it was checking for**. "It failed because the value was wrong" does not satisfy this. The corpus was already close to this; see §6a. | warning |
 | **The Twin** | Two surface-different, structurally identical examples, with the comparison spelled out in prose. Juxtaposition alone does not work — only 16% of readers compare unprompted. | review |
 | **The Name** | Give the deep structure a label and reuse it everywhere it recurs. "Parser differential." Named patterns are chunks, and chunking is what expertise physically is. | glossary |
@@ -57,6 +57,16 @@ where the reader is already stressed.
 | **One Pre-Question** | Exactly one per note, on the load-bearing idea, always answered within a few sentences. Never leave one hanging. | warning |
 | **The Fade** | Annotation density drops across a branch. Scaffolding goes in visually distinct, skippable containers. Never repeat an explanation "for safety". | review |
 | **The Honest Note** | When something is hard, say so before the hard part, in the reader's voice. Never "don't worry, this is easy". | error (hedges) |
+
+### 2a. The Break has a house form already — use it
+
+The Tooling branch independently evolved a marker for this pattern and uses it in
+**63 notes**: a paragraph opening `**The deliberate break:**`. It works, readers
+of that branch already meet it every few pages, and it is exactly the two-beat
+gap this standard asks for.
+
+It appears in **zero** notes outside Tooling. Adopt it corpus-wide rather than
+inventing a second form — a pattern with two names is two patterns.
 
 ### The Thread
 

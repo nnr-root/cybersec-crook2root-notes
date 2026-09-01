@@ -23,6 +23,10 @@ TLS and PKI -> JWT Security -> CyberChef and the Crypto Toolkit
 
 The **Diffie-Hellman** note ended on a gap: key exchange agrees a secret with *someone*, but not with a *verified* someone, so an unauthenticated exchange falls to a machine-in-the-middle. Encryption without identity is a padlock with no idea whose door it is on. PKI — Public Key Infrastructure — fills the gap by binding a public key to an identity in a way anyone can verify, so that when your browser agrees a key with `bank.example`, it *knows* the public key it used really belongs to the bank and not to an attacker in the path.
 
+**The deliberate break:** the padlock is read, almost universally, as "this site is safe." It does not say that, and the worked example below shows precisely what it does say.
+
+A padlock means the connection is encrypted to *whoever presented a certificate your machine's trust store accepts for that name*. It makes no claim that the operator is honest, that the site is not a phishing page, or that the certificate was issued to the party you meant. Note which half of that sentence is doing the work: **your machine's trust store**. Change what is in it — install one rogue root CA — and every certificate that CA signs verifies as `OK`, padlock and all. That is not a hypothetical; it is how corporate TLS interception works, and how TLS-inspecting malware works.
+
 ## Certificates and the Chain of Trust
 
 A **certificate** is a signed statement: "this public key belongs to this identity," signed by a **Certificate Authority (CA)** using the digital-signature mechanism from the previous branch. Your browser ships with a list of trusted **root CAs**. A website's certificate is signed by a CA, which may be signed by another CA, forming a **chain** that must terminate at one of those trusted roots. Verification walks the chain: each certificate's signature is checked with the next CA's public key, up to a root the browser already trusts.

@@ -29,6 +29,10 @@ A cryptographic hash function takes an input of any size and produces a fixed-si
 
 The critical distinction from the encoding branch: **hashing is not reversible and has no key**. Base64 can be decoded by anyone; a hash cannot be "decoded" at all, because the function throws information away. This is not a weakness — it is the entire point. A fingerprint that could be reversed to the original would not be a fingerprint.
 
+**The deliberate break:** a fingerprint sounds proportional. Change a little of the input, change a little of the digest — that is how a checksum of a document feels like it should behave, and it is how most people first picture a hash.
+
+It is wrong, and the demonstration below is unambiguous: flip a single bit of input and roughly **half of the output bits change**, with no relationship between the two digests that anyone can compute. That property has a name and a consequence. The name is the avalanche effect. The consequence is that you can never look at two hashes and say "these inputs were similar" — which is exactly why a hash can prove a file is unchanged, and exactly why it cannot tell you *how* it changed.
+
 ## Determinism and the Avalanche Effect
 
 Two properties are visible in a single pair of commands. The same input always hashes the same, and a one-character change produces a completely unrelated digest:

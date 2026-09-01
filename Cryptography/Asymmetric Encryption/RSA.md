@@ -25,6 +25,10 @@ Symmetric encryption has one key that both sides must already share. RSA breaks 
 
 The trapdoor is factoring. The modulus `n` is the product of two large secret primes `p` and `q`. Multiplying `p × q` to get `n` is instant; recovering `p` and `q` from `n` alone — factoring — is infeasible for a large enough `n`. Everything RSA offers rests on that asymmetry of effort: easy to multiply, ruinous to factor.
 
+**The deliberate break:** everyone learns RSA as "encrypt with the public key, decrypt with the private key," so the reasonable conclusion is that RSA is what encrypts your data on the internet.
+
+It almost never is. RSA is orders of magnitude slower than AES, and it can only encrypt a message shorter than its modulus: a 2048-bit key is 256 bytes wide, and once modern OAEP padding takes its share you are left with **190 bytes** (OAEP-SHA-256) — not enough for a paragraph, let alone a file. So in practice RSA never encrypts your data at all: it encrypts a *symmetric key*, or it signs a *hash*, and AES does the actual work. Holding that correction now is what makes **TLS and PKI** legible later, because the handshake you will read there is exactly this division of labour.
+
 ## Worked Example: RSA End to End
 
 RSA is five steps, and on small primes every one is visible. This is real RSA arithmetic, just with tiny numbers so the values fit on a line:

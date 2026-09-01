@@ -30,6 +30,10 @@ Two design goals, named by Claude Shannon, make that permutation secure:
 
 A cipher that achieves both looks, to anyone without the key, like a random mapping — and that is exactly what "secure" means for a block cipher.
 
+**The deliberate break:** the natural expectation is that encrypting *n* bytes produces *n* bytes — encryption scrambles data, it does not invent it. Watch the worked example below: a **27-byte** message comes back as **32 bytes** of ciphertext, inside a file that is larger still.
+
+That is not overhead to shrug at, it is the whole nature of a block cipher. AES transforms exactly 16 bytes at a time and can do nothing with a partial block, so 27 bytes is padded up to the next multiple of 16 — and on top of that openssl prepends a `Salted__` header plus 8 bytes of salt. Every question in this branch that follows — padding, modes, IVs, nonces — exists because a real message is never a neat multiple of 16.
+
 ## AES: The Standard
 
 **AES** (Advanced Encryption Standard, originally Rijndael) operates on **128-bit (16-byte) blocks** with a key of 128, 192 or 256 bits. It is a *substitution-permutation network*: each round substitutes bytes through a fixed lookup table (the S-box, providing confusion), then shifts and mixes them across the block (providing diffusion), then XORs in a round key derived from the main key. More rounds mean more mixing, and the key size sets the count:
