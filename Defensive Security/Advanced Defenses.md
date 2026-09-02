@@ -1,5 +1,5 @@
 ---
-title: "3.5 Advanced Defenses Masterclass"
+title: "Advanced Defenses"
 aliases: ["Advanced Defenses", "Blue Team", "Detection Engineering", "EDR", "SIEM", "Threat Hunting"]
 tags:
   - tree/defensive
@@ -11,19 +11,21 @@ Domain:
 Color: "#4363D8"
 ---
 
-# 🛡️ 3.5 Advanced Defenses Masterclass
+# 🛡️ Advanced Defenses
 
-> [!abstract] The Masterclass
-> This is the payoff chapter — where every offensive technique in Phase 3 becomes a **detection**. A master defender masters offense first (the whole point of Modules **3.1**, **3.3**, **3.4**) so they can build the telemetry, alerts, and hunts that catch it. This closes the Beginner → Expert loop: you now understand both sides of the fight. **`#difficulty/hard`**
+> [!abstract] Note of [[Defensive Security]]
+> Every offensive technique in this corpus leaves something behind. This note turns them into detections — the telemetry that records them, the queries that surface them, and the reason the hardest attacks to catch are the ones that use no malicious software at all.
 
-> [!tip] Chapter Map
-> **** · **** · **** · **** · **** · ****
-
----
+## Parent Learning Order
+Defensive Groundwork -> Advanced Defenses
 
 ## The Detection Mindset
 
-Modern defense assumes the perimeter *will* be breached and focuses on **detecting the attacker inside**. Three principles:
+> *An attacker uses only signed Microsoft binaries that ship with the operating system. What is left for your antivirus to match on?*
+>
+> Hold your answer — the section below is the response.
+
+Nothing, which is why modern defense stopped asking that question. Antivirus matches artefacts; an attacker using `certutil` and `rundll32` brings no artefact to match. Modern defense assumes the perimeter *will* be breached and focuses on **detecting the attacker inside**. Three principles:
 
 - **Assume breach** — hunt for post-exploitation behaviour, not just perimeter blocks.
 - **Behaviour over signatures** — **LOTL** uses *trusted* binaries, so you can't block by hash; you detect by **what they do** (a `certutil` that downloads an `.exe`, `rundll32` running from `C:\Users\Public`).
@@ -38,8 +40,6 @@ flowchart LR
     R -.feedback.-> D
 ```
 
----
-
 ## The Defensive Stack (EDR · SIEM · Threat Hunting)
 
 | Layer | Role |
@@ -53,11 +53,9 @@ flowchart LR
 
 > The **non-negotiable foundation** is off-host, real-time log forwarding — it neutralises most of **anti-forensics** before it starts.
 
----
-
 ## Detecting Privilege Escalation
 
-The escalations in **Module 3.1** all leave telemetry:
+The escalations in [[Local Privilege Escalation]] and [[Linux Privilege Escalation]] all leave telemetry:
 
 | Technique | Detection |
 | --- | --- |
@@ -73,11 +71,9 @@ ParentImage IN ("*\\w3wp.exe","*\\sqlservr.exe","*\\services.exe") User="NT AUTH
 | stats count by Host, ParentImage, Image, User      // service account → SYSTEM shell
 ```
 
----
-
 ## Detecting Exploitation & Shellcode
 
-Memory-corruption exploitation (**Module 3.3**) is noisy at the endpoint:
+Memory-corruption exploitation ([[Binary Exploitation Fundamentals]]) is noisy at the endpoint:
 - **Repeated service crashes** — fuzzing/offset-finding shows up as recurring `SIGSEGV` / Windows WER crash events on the same process.
 - **Anomalous child process** — a network daemon (`nginx`, `sqlservr`) spawning `cmd`/`/bin/sh` is a near-certain post-exploitation signal.
 - **RWX memory / suspicious allocations** — shellcode needs executable memory; EDR flags `VirtualProtect`/`mprotect` making a region RWX, and ROP-like stack pivots.
@@ -89,11 +85,9 @@ Image IN ("*\\cmd.exe","*\\powershell.exe","*/sh","*/bash")
 | stats count by Host, ParentImage, Image      // daemon spawning a shell = exploitation
 ```
 
----
-
 ## Detecting Living off the Land
 
-Because LOLBins are trusted, detection is **behavioural** — correlate the tool with an anomalous action (the detections shipped alongside each technique in **Module 3.1**):
+Because LOLBins are trusted, detection is **behavioural** — correlate the tool with an anomalous action (the detections shipped alongside each technique in [[Local Privilege Escalation]]):
 
 - **PowerShell** — `IEX(DownloadString)`, `-EncodedCommand`, `-Exec Bypass`; enable **Script-Block Logging (EID 4104)**, **Module Logging**, **AMSI**, and **Constrained Language Mode**.
 - **certutil** — `-urlcache`/`-decode` (a certificate tool has no business downloading `.exe`s).
@@ -109,11 +103,9 @@ index=sysmon (EventCode=1 OR EventCode=4104)
 ```
 Parent-child anomalies are gold: `winword.exe → powershell.exe` is almost always malicious.
 
----
-
 ## Detecting Anti-Forensics
 
-The paradox from **Module 3.4** — *removal is itself an artifact*:
+The paradox from [[Operational Security, Anti-Forensics & Teardown]] — *removal is itself an artifact*:
 
 | Anti-forensic move | Alert |
 | --- | --- |
@@ -131,13 +123,21 @@ index=wineventlog (EventCode=1102 OR EventCode=104)         // Security/System l
 ```
 > **Design principle:** make logs **immutable and off-host**, alert on **log-source silence**, and treat *any* clearing event as an incident. The attacker owns the endpoint; they don't own the SIEM.
 
----
-
 **The deliberate break:** detection reads as recognising malicious tools — know the bad software, spot it when it appears.
 
 Living-off-the-land removes the thing being recognised. The binaries are already installed, already signed, and already used legitimately every day, so there is no malicious artefact anywhere in the sequence. Detection therefore has to be about **context and combination** — this binary, doing this, with that parent, at this hour — rather than about identity. Anti-forensics inverts the problem the same way: the signal becomes an absence, a log source that stopped, which nothing will alert on unless somebody is watching for silence.
 
 **How you'd spot it:** the tells are pairings and gaps rather than names: a signed system binary doing something outside its purpose, and a telemetry source that went quiet without an explanation. Both are only visible against a known baseline, which makes baselining the prerequisite rather than a maturity step — without it, "unusual" has no referent and every one of these detections is unimplementable.
+
+## Security Implications
+
+**A detection you cannot baseline is a detection you do not have.** Every query in this note asks whether something is unusual, and unusual is meaningless without a record of usual. A SOC that deploys these rules before it can answer "does `winword.exe` ever launch PowerShell here, and how often" will drown in alerts and switch them off within a fortnight. Baselining is not a maturity milestone that comes later; it is the precondition, and the correct order is to collect first, characterise second, and alert third.
+
+**The telemetry is more valuable than the alerts built on it.** Rules encode what was already understood to be an attack. The log that recorded a process tree nobody had thought to look at is what makes the next investigation possible, and it is why retention and off-host forwarding matter more than rule count. An organisation with six months of clean process telemetry and twenty rules is in a far better position than one with two weeks and four hundred.
+
+**Detection engineering is adversarial, and the adversary reads your rules.** Published detections — Sigma, ATT&CK mappings, vendor blogs — are read by both sides. A rule matching `-EncodedCommand` is trivially evaded by an attacker who stops using it. This is not a reason to stop writing rules; it is the reason to cost the attacker at the level of technique rather than string, and to accept that any single detection has a shelf life.
+
+**The controls in this note watch the endpoint, and the endpoint may already be lost.** Every one of these signals is generated on a host the attacker may control. This is the entire argument for immutable, off-host, real-time forwarding: not because it is tidier, but because it is the one place in the chain the attacker does not own.
 
 ## Summary
 
@@ -146,9 +146,7 @@ You should now be able to:
 - Adopt the detection mindset — assume compromise and hunt for the behaviour rather than waiting for a signature.
 - Build detections for privilege escalation, exploitation and shellcode, living-off-the-land, and anti-forensics.
 - Explain how EDR, SIEM and threat hunting compose into a layered defensive stack, and where each layer sees what.
+- Explain why baselining is a precondition rather than a maturity step, and why telemetry outlives the rules written against it.
 
-## 🔗 Related Master Notes & Deep-Dives
-- **3.1 Privilege Escalation & Living off the Land** · **3.3 Exploit Development** · **3.4 Anti-Forensics & ShadowStep** — the offense these detections counter
-- **Windows and OS Internals (Windows Event Logs)** · **OWASP Top 10 (A09 Security Logging and Monitoring Failures)** — logging foundations
-- **1.6 Defensive Groundwork** · **Docker and Containers (Container Security and Escapes)** — earlier defensive layers
-- [[Defensive Security]] — domain hub
+---
+> 🔼 Up: [[Defensive Security]]

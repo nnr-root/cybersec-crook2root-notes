@@ -51,6 +51,14 @@ WEIGHTS = [
 ]
 
 BLOCK  = re.compile(r"```[a-zA-Z]*\n(.*?)```", re.S)
+# a note whose artefact is source code, not a session transcript
+SOURCE = re.compile(r"```(python|go|golang|c|cpp|rust|java|javascript|ts|typescript|"
+                    r"ruby|perl|php|powershell|yaml|json|dockerfile|make)\n", re.I)
+# findings that assume a note demonstrates commands and shows what came back.
+# They are correct for a networking or forensics note and meaningless for one
+# whose whole subject is code someone will run themselves.
+TRANSCRIPT_SHAPED = {"shows nothing", "no worked example", "slow to first command",
+                     "command block(s), no output shown"}
 FENCE  = re.compile(r"^```", re.M)
 INLINE = re.compile(r"`([^`\n]{2,90})`")
 TELL   = re.compile(r"\*\*How you'd spot(?: the [^:]{1,40})?:\*\*(.*?)(?=\n\n|\n#|\Z)", re.S)
@@ -138,10 +146,14 @@ def main():
             if m:
                 shown_here.add(m.group(2))
 
+        code_note = bool(SOURCE.search(text))
+
         score, labels = 0, []
         for msg in gate.get(rel, []):
             for pat, w, label in WEIGHTS:
                 if pat.search(msg):
+                    if code_note and label in TRANSCRIPT_SHAPED:
+                        break
                     if w:
                         score += w
                         labels.append(label)
@@ -164,9 +176,9 @@ def main():
             if tool and tool not in shown_anywhere:
                 corpus_gaps[tool].add(rel)
 
-        runs = len(re.findall(r"```(?:bash|sh|shell|console|powershell)\n", text))
+        runs = len(re.findall(r"```(?:bash|sh|shell|console)\n", text))
         outs = len(re.findall(r"```(?:text|output|console)\n", text))
-        if runs and outs == 0:
+        if runs and outs == 0 and not code_note:
             score += 3
             labels.append("%d command block(s), no output shown" % runs)
         if words > 400 and not FENCE.search(text):
