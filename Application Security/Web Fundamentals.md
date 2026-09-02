@@ -1,5 +1,5 @@
 ---
-title: "2.1 Web Fundamentals Masterclass"
+title: "Web Fundamentals"
 aliases: ["Web Fundamentals", "Web Application Basics", "Web Hacking", "Walking an Application", "Content Discovery", "Subdomain Enumeration", "JWT Security"]
 tags:
   - tree/appsec
@@ -12,27 +12,31 @@ Domain:
 Color: "#911EB4"
 ---
 
-# 🕸️ 2.1 Web Fundamentals Masterclass
+# 🕸️ Web Fundamentals
 
-> [!abstract] The Masterclass
-> Before you can exploit a web application you must be able to *read* it — its requests, its responses, its hidden content, and its authentication. This chapter is the reconnaissance-and-fundamentals half of web hacking: HTTP anatomy in depth, the browser dev-tools workflow, content & subdomain discovery pipelines, and the full JWT attack surface. It's the on-ramp to the **OWASP Top 10** and **Web Exploitation** chapters. **`#level/apprentice`**
+> [!abstract] Note of [[Web Security]]
+> Before you can exploit a web application you have to be able to read it — its requests, its responses, the content it does not link to, and the tokens it trusts. This note is the reconnaissance half of web testing: HTTP anatomy, the browser dev-tools workflow, content and subdomain discovery, and the JWT attack surface. It is the on-ramp to [[OWASP Top 10]] and [[Web Exploitation]].
 
-> [!warning] Authorized Red-Team / Vulnerability-Assessment context
-> Every technique here is for **authorized security testing** — labs, CTFs, bug-bounty scope, or engagements with written permission. The material is framed for **defensive architecture testing**: each recon method is paired with what a defender should therefore lock down.
+> [!warning] Authorized vulnerability-assessment context
+> Every technique here is for authorized testing — a lab, a bug-bounty scope, or an engagement with written permission. Each recon method is paired with what a defender should therefore lock down.
 
-> [!tip] Chapter Map
-> **** · **** · **** · **** · ****
-
----
+## Parent Learning Order
+Web Fundamentals -> Web Exploitation
 
 ## Anatomy of an HTTP Transaction
+
+> *HTTP is stateless — the server forgets you the instant it answers. So how does a site still know who you are three pages later?*
+>
+> Hold your answer — the section below is the response.
+
+Because you tell it, every single time. The server keeps nothing between requests; the browser re-presents a cookie or a token on each one, and the server decides afresh who you are from what you handed it. That is the whole architecture, and it is why so much of this note is about what those values are, who can read them, and what happens when a client edits one before sending it back.
 
 A web app is a stack: **front-end** (HTML/CSS/JS in the browser) over **back-end** (web server, application code, database, WAF). Every interaction is a single HTTP request answered by a single HTTP response — and *every field in both* is something an assessor probes. The protocol foundations are in **the Networking Masterclass**; here we read it like an attacker.
 
 ### The full request/response, annotated
 ```http
 POST /api/login HTTP/1.1              ← request line: METHOD  path  version
-Host: target.thm                      ← which vhost (one IP can host many)
+Host: track.meridian.test                      ← which vhost (one IP can host many)
 User-Agent: Mozilla/5.0               ← client fingerprint (spoofable)
 Content-Type: application/json        ← how to parse the body
 Cookie: session=eyJ...                ← state carried across stateless requests
@@ -64,9 +68,9 @@ The **request line** is `METHOD /path HTTP/version`. The method declares intent,
 | **TRACE** | Debug echo | Cross-Site Tracing (XST) to steal headers | Disable it |
 
 ```bash
-curl -v https://target.thm            # full request + response headers
-curl -sI https://target.thm           # headers only — fingerprint the stack fast
-curl -X OPTIONS -i https://target.thm  # which methods are allowed here?
+curl -v https://track.meridian.test            # full request + response headers
+curl -sI https://track.meridian.test           # headers only — fingerprint the stack fast
+curl -X OPTIONS -i https://track.meridian.test  # which methods are allowed here?
 ```
 
 ### Body formats and response headers
@@ -81,8 +85,6 @@ POST/PUT bodies come as `application/x-www-form-urlencoded` (`k1=v1&k2=v2`), `mu
 | `Access-Control-Allow-Origin` | `*` with credentials = CORS misconfig |
 
 > **Defensive architecture note:** strip/obscure `Server`, set all three cookie flags, validate any user-influenced `Location`, ship a strict CSP + HSTS, and HTML-escape all user data in the **response body**.
-
----
 
 ## Walking an Application
 
@@ -104,19 +106,34 @@ flowchart LR
 ### Inspector — the DOM is attacker-controlled
 The Inspector shows the *live* DOM (after CSS/JS run), and you can edit it locally. The classic lesson: a client-side "paywall" that only *hides* premium content with CSS.
 
-Right-click the blocking element → **Inspect**, find the `div.premium-customer-blocker`, and flip its `display: block` to `none`:
+Right-click the blocking element, choose **Inspect**, and find the overlay sitting on top of the content:
 
-The content (and the flag) appears — proving the control was **client-side only**. This generalises to a rule you'll rely on constantly: *the client is fully attacker-controlled; never enforce authorization, price, or role in the browser.* Hidden form fields, disabled buttons, and `type=hidden` price inputs are all editable here.
+```html
+<div class="premium-customer-blocker" style="display: block">
+  <p>This content is for premium customers.</p>
+</div>
+<div class="premium-content">
+  <!-- the article is already here, in the page the server sent you -->
+</div>
+```
+
+Change `display: block` to `display: none` and the content underneath appears — because it was never withheld. The server sent it, and the browser was asked to cover it up. This generalises to a rule you'll rely on constantly: *the client is fully attacker-controlled; never enforce authorization, price, or role in the browser.* Hidden form fields, disabled buttons, and `type=hidden` price inputs are all editable here.
 
 ### Debugger — reading and pausing JavaScript
-The **Debugger** (Chrome: *Sources*) inspects and controls JS execution. Minified/**obfuscated** JS (variables renamed to gibberish, dummy code inserted, everything on one line) can be *Pretty-Print*'d (`{ }`) to restore formatting, then stepped through with **breakpoints** — pausing execution to freeze a page and read its logic. Here a `flash['remove']()` call wipes a popup; a breakpoint on that line freezes it in place so you can read what it was hiding:
+The **Debugger** (Chrome: *Sources*) inspects and controls JS execution. Minified/**obfuscated** JS (variables renamed to gibberish, dummy code inserted, everything on one line) can be *Pretty-Print*'d (`{ }`) to restore formatting, then stepped through with **breakpoints** — pausing execution to freeze a page and read its logic. Here a call wipes a popup before it can be read; a breakpoint on that line freezes execution with the popup still on screen:
+
+```javascript
+// after Pretty-Print, the obfuscated one-liner becomes readable
+function showMessage(m) {
+  flash.textContent = m;
+  flash['remove']();        // ← breakpoint here: the page pauses with the message visible
+}
+```
 
 > **On obfuscation & "web hacking" JS:** obfuscation *raises the effort* to read JS but is **not** a security control — a breakpoint, a deobfuscator site, or a JS beautifier recovers the logic. Never put secrets, API keys, or auth logic in client-side JS; it all ships to the attacker. Source maps (`.js.map`) often leak the original readable source entirely.
 
 ### Network — finding the real API
 The **Network** tab logs every request the page makes, including background **AJAX/fetch** calls. For a single-page app (React/Vue/Angular) this is the fastest way to discover the *real* API endpoints — the front-end is just a client to the same API you'll test directly in **API Security**. Filter by `XHR`, watch the request/response, and note auth headers.
-
----
 
 ## Content Discovery
 
@@ -132,9 +149,9 @@ The **Network** tab logs every request the page makes, including background **AJ
 | HTTP headers | `Server`, `X-Powered-By` → software + version |
 
 ```bash
-curl https://target.thm/robots.txt
-curl -s https://target.thm/images/favicon.ico | md5sum     # → look up the hash
-curl -v http://target.thm                                    # read Server / X-Powered-By
+curl https://track.meridian.test/robots.txt
+curl -s https://track.meridian.test/images/favicon.ico | md5sum     # → look up the hash
+curl -v http://track.meridian.test                                    # read Server / X-Powered-By
 ```
 
 ### OSINT
@@ -148,15 +165,13 @@ curl -v http://target.thm                                    # read Server / X-P
 Brute-force paths/files against a **wordlist** (SecLists is the standard). Wordlist choice matters more than the tool: `common.txt` for a quick pass, `raft-large-directories.txt` for depth, tech-specific lists once you've fingerprinted the stack.
 ```bash
 # Baseline directory fuzz
-ffuf -w /usr/share/seclists/Discovery/Web-Content/common.txt -u https://target.thm/FUZZ
+ffuf -w /usr/share/seclists/Discovery/Web-Content/common.txt -u https://track.meridian.test/FUZZ
 # Filter noise: hide 404s by size, and auto-calibrate against a bogus path
-ffuf -w common.txt -u https://target.thm/FUZZ -mc 200,301,302,403 -fs 1234 -ac
+ffuf -w common.txt -u https://track.meridian.test/FUZZ -mc 200,301,302,403 -fs 1234 -ac
 # Recurse into discovered dirs, and fuzz an extension list
-ffuf -w common.txt -u https://target.thm/FUZZ -recursion -e .php,.bak,.txt
+ffuf -w common.txt -u https://track.meridian.test/FUZZ -recursion -e .php,.bak,.txt
 ```
 Typical output — `admin [Status: 302]`, `backup [Status: 200]`, `.git [Status: 301]` — each a lead. See **Gobuster** for the alternative tool. *Defenders:* remove backups/config from web roots, return uniform 404s, and rate-limit so blind fuzzing is expensive and noisy in your logs.
-
----
 
 ## Subdomain Enumeration
 
@@ -164,29 +179,27 @@ Finding valid subdomains **expands the attack surface** — `dev.`, `staging.`, 
 
 ```mermaid
 flowchart LR
-    T["target.com"] --> CT["Certificate Transparency<br/>crt.sh / certspotter"]
-    T --> SE["Search engines<br/>site:*.target.com -site:www"]
+    T["meridian.test"] --> CT["Certificate Transparency<br/>crt.sh / certspotter"]
+    T --> SE["Search engines<br/>site:*.meridian.test -site:www"]
     T --> BF["DNS brute force<br/>amass / subfinder / ffuf"]
-    T --> VH["Virtual-host brute force<br/>Host: FUZZ.target.com"]
+    T --> VH["Virtual-host brute force<br/>Host: FUZZ.meridian.test"]
     CT & SE & BF & VH --> DEDUP["dedupe → httpx probe (which are live?)"]
     DEDUP --> M["📋 live subdomains → screenshot + test"]
 ```
 
 - **Certificate Transparency (CT) logs** — every CA-issued TLS cert is publicly logged; passive and instant:
   ```bash
-  curl -s "https://crt.sh/?q=%25.target.com&output=json" | jq -r '.[].name_value' | sort -u
+  curl -s "https://crt.sh/?q=%25.meridian.test&output=json" | jq -r '.[].name_value' | sort -u
   ```
-- **Search-engine dorking** — `site:*.target.com -site:www.target.com`.
+- **Search-engine dorking** — `site:*.meridian.test -site:www.meridian.test`.
 - **DNS brute force** — try thousands of candidate names against a wordlist:
   ```bash
-  subfinder -d target.com -silent | tee subs.txt        # passive aggregation
-  ffuf -w subdomains.txt -u https://target.com -H "Host: FUZZ.target.com" -fs 0
+  subfinder -d meridian.test -silent | tee subs.txt        # passive aggregation
+  ffuf -w subdomains.txt -u https://meridian.test -H "Host: FUZZ.meridian.test" -fs 0
   ```
 - **Virtual-host brute force** — fuzz the `Host:` header to find vhosts that share one IP but aren't in public DNS (internal apps).
 
 Chain it: `subfinder`/`amass` → dedupe → `httpx` (which resolve and serve HTTP) → `gowitness`/`aquatone` (screenshot at scale). This feeds **Reconnaissance** and **OSINT**. *Defenders:* inventory every subdomain, retire dangling DNS records (they enable **subdomain takeover**), and keep non-prod hosts off the public internet.
-
----
 
 ## JWT Security
 
@@ -207,7 +220,7 @@ flowchart TD
 
 **1 — Sensitive information disclosure.** Claims are readable by anyone with the token. Developers who treat the payload like a server-side session leak password hashes, internal IPs, and hostnames:
 ```bash
-curl -H 'Content-Type: application/json' -d '{"username":"user","password":"password1"}' http://target/api/example1
+curl -H 'Content-Type: application/json' -d '{"username":"user","password":"password1"}' https://api.meridian.test/v1/login
 echo "eyJ...<payload-segment>" | base64 -d      # read the claims — never store secrets here
 ```
 
@@ -235,17 +248,36 @@ token = jwt.encode({"username":"user","admin":1}, public_key, algorithm="HS256")
 
 **6 — Token lifetime.** No/oversized `exp` = a stolen token valid forever; JWTs can't be revoked server-side without a denylist. Choose `exp` per sensitivity (minutes for banking, not days), and pair short access tokens with rotating refresh tokens.
 
-**7 — Cross-service relay (audience confusion).** One SSO issuer, many apps. If an app doesn't enforce the `aud` claim, a token minted (with `"admin":true`) for App A is replayed against App B → privilege escalation:
+**7 — Cross-service relay (audience confusion).** One SSO issuer, many apps. If an app does not enforce the `aud` claim, a token minted for one service is accepted by another:
+
+```json
+{
+  "sub": "k.adeyemi",
+  "aud": "track.meridian.test",     ← minted for the tracking app
+  "role": "admin",                  ← where admin means "admin of the tracking app"
+  "exp": 1788400000
+}
+```
+
+Replay that at `api.meridian.test` and, if it never checks `aud`, the signature verifies, the claims are trusted, and a role that meant something modest on one service becomes administrative on another. The signature was never the problem — the token is genuine. It was issued for somewhere else.
 
 > **Secure JWT checklist:** pin the algorithm · reject `none` · strong random secret (or asymmetric keys, verify with the *public* key only) · verify `exp`, `aud`, `iss` server-side · never authorize on an unverified claim · keep lifetimes short. This is **OWASP A07** and API **API2**.
-
----
 
 **The deliberate break:** the attack surface reads as the application you were pointed at — the site named in the scope document.
 
 It is **every name that resolves into the organisation's space**, and the productive one is rarely the main site. A forgotten subdomain, a staging host left reachable, an old marketing site on a shared platform: each is in scope by ownership and none is in the brief. This is why subdomain enumeration sits in a fundamentals note rather than an advanced one — it is not a specialist technique, it is how you find out what you are actually assessing.
 
 **How you'd spot it:** enumerate first and pay particular attention to cookie scope, because that is what turns a peripheral host into a critical finding: a cookie set on `.example.com` is readable from every subdomain, so a scripting flaw on a forgotten marketing site reaches the main application's session directly. Certificate transparency logs are the highest-yield source, since they name hosts that were issued certificates and never intended to be found.
+
+## Security Implications
+
+**Reconnaissance decides what the assessment was.** Every finding in a report is a finding about something that was tested, and the boundary of what was tested is set here, before any tool runs. An assessment that never enumerated subdomains did not find the vulnerable staging host, and its clean report will say so in language indistinguishable from a genuinely clean estate. This is the one phase where a mistake is invisible in the output.
+
+**The client is not a place where security happens.** The paywall in the Inspector, the disabled button, the hidden price field, the obfuscated script — every one of them is a control that ships to the person it is meant to constrain. Obfuscation raises effort and buys time; it is not a boundary. The rule the whole note serves is that anything the browser can decide, an attacker can decide differently.
+
+**Passive discovery is not something a target can decline.** Certificate transparency is a public, append-only log of every certificate a CA issues, which means a host acquires a public record the moment it is given TLS — no scanning, no traffic, no opt-out. Defenders who reason about their exposure in terms of what they have exposed to scanners are reasoning about the wrong set.
+
+**A JWT's security lives in one segment, and every failure is the verifier declining to check it.** None of the attacks here break a signature. They persuade the server that the algorithm is `none`, or that the public key is the secret, or that a token for another service will do. The lesson generalises past JWTs: when verification is configurable by the thing being verified, the configuration is the vulnerability.
 
 ## Summary
 
@@ -254,11 +286,7 @@ You should now be able to:
 - Read and construct an HTTP transaction, and systematically walk an unfamiliar application's structure.
 - Discover hidden content and subdomains with calibrated fuzzing and enumeration, and feed the results into testing.
 - Decode and attack a JWT, and explain what each of its three segments controls and how tampering is detected.
+- Explain why reconnaissance is the one phase whose mistakes never appear in the report, and why a control that ships to the browser is not a control.
 
-## 🔗 Related Master Notes & Deep-Dives
-- **2.2 OWASP Top 10** — the vulnerability catalogue this recon feeds
-- **2.3 Web Exploitation** — turning findings into exploits
-- **2.4 API Security** — the API-specific counterpart
-- **Networking (HTTP and the Web)** · **Defensive Groundwork (Sessions (Cookies vs Tokens))** — foundations
-- **Gobuster** · **Burp Suite** · **OSINT** · **Reconnaissance** — tooling
-- [[Web Security]] — domain hub
+---
+> 🔼 Up: [[Web Security]]
