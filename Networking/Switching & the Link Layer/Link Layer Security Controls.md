@@ -93,11 +93,11 @@ Violation Mode             : Restrict
 Maximum MAC Addresses      : 2
 Total MAC Addresses        : 1
 Sticky MAC Addresses       : 1
-Last Source Address:Vlan   : 00:00:5E:00:53:DE:10
+Last Source Address:Vlan   : 0000.5e00.53de:10
 Security Violation Count   : 4831
 ```
 
-`Secure-up` with a violation count in the thousands is a port doing exactly what it was configured to do and nobody noticing. `Restrict` drops the excess and stays up, which keeps the user working and keeps the incident invisible unless something is reading the counter. The `Last Source Address` names the device that has been rebuffed nearly five thousand times — and on this segment that address belongs to nothing legitimate.
+`Secure-up` with a violation count in the thousands is a port doing exactly what it was configured to do and nobody noticing. `Restrict` drops the excess and stays up, which keeps the user working and keeps the incident invisible unless something is reading the counter. The `Last Source Address` names the device that has been rebuffed nearly five thousand times, and on this segment that address belongs to nothing legitimate. Note that it prints in the dotted form `0000.5e00.53de` with the VLAN appended after the colon, while the snooping table above prints the same kind of address as `00:00:5E:00:53:0E` — the two commands genuinely disagree about notation, and reading vendor output means expecting that rather than assuming one of them is wrong.
 
 ### DHCP Snooping — Establish the Truth
 
