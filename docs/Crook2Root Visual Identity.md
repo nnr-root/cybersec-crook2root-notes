@@ -253,7 +253,22 @@ than to rediscover.
    One continuous motion per clip. Show a contrast by animating both cases
    side by side in one frame, not one after the other — which is better
    teaching anyway, since the reader compares rather than remembers.
-6. **Audit by measurement, never by eye.** Crop at 2x and count arrowheads;
+6. **Structural nouns get drawn too.** Rule 1 is broader than it first
+   appeared. Describing a scene as "the left rectangle", "the third
+   rectangle", "the small square" caused Veo to render the string
+   `L—Third—f Right—Square` across the frame, and the word `Left` beside a
+   box. It is not only literal values like hex codes that leak — the
+   vocabulary used to *organise* the description leaks as well. Name shapes
+   by what they are and where they sit in a single flowing sentence, never as
+   a labelled inventory the model can mistake for a caption list.
+7. **The model can hold one relationship, not two objects that must agree.**
+   Nano Banana produced six dividers at a measured pitch of 362.5px with a
+   maximum error of 0.5px — flawless — and then floated the six arrows that
+   were supposed to sit on them up to 72px away. It has no way to measure one
+   object against another. Anything that must line up has to be *one stroke*:
+   a divider that continues upward and ends in a point is an arrow that
+   cannot miss, because there is nothing for it to miss.
+8. **Audit by measurement, never by eye.** Crop at 2x and count arrowheads;
    read centroid positions frame by frame. Three assets looked right and were
    wrong, in ways only pixel coordinates showed.
 
