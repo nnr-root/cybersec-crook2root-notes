@@ -60,7 +60,13 @@ Read the diagram top to bottom as a sequence of questions, each narrowing trust.
 
 **802.1X** is port-based network access control. Before a port carries any normal traffic, the connecting device must authenticate to an authentication server (typically RADIUS) using credentials or a certificate. Until it does, the port passes only the authentication exchange and nothing else.
 
-This is the strongest control because it addresses the root problem directly: an unauthorized device never reaches the segment, so it cannot flood, spoof, or inject anything. Where 802.1X is deployed and enforced, most of the other attacks become impossible from an unauthenticated port. Its cost is operational — every device needs a credential or a handled exception (printers, cameras, and other things that cannot authenticate need MAC Authentication Bypass or a guarded guest path, and those exceptions are where 802.1X deployments leak).
+This is the strongest control because it addresses the root problem directly: an unauthorized device never reaches the segment, so it cannot flood, spoof, or inject anything. Where 802.1X is deployed and enforced, most of the other attacks become impossible from an unauthenticated port. Its cost is operational — every device needs a credential, and plenty of devices cannot hold one. Printers, badge readers, cameras, lift controllers and building sensors have no supplicant, so real deployments fall back to **MAC Authentication Bypass**.
+
+Look closely at what MAB does. When 802.1X times out on a port, the switch takes the device's MAC address and submits it to the authentication server as both the username and the password. The device is admitted because of the address it claims to have.
+
+That is the same address this branch has spent five notes establishing is a **software-settable label** — read off a sticker on the back of a printer, or off the wire with any capture tool, and set on an attacker's interface with one command. The strongest control in the stack, the one that makes every other attack impossible from an unauthenticated port, falls back for its exceptions onto the weakest identifier in the entire link layer.
+
+This is not an argument against 802.1X, which is still the right control. It is the reason a MAB exception is a decision rather than a convenience: every device on the bypass list is a device an attacker can become by copying twelve hex digits, so the list should be short, inventoried, confined to VLANs worth little, and monitored for the same address appearing on two ports.
 
 ### Port Security — Cap the Addresses
 
@@ -75,6 +81,23 @@ switchport port-security mac-address sticky
 
 `sticky` learns the current addresses and pins them, so the port also resists a device being swapped for another. This is inventory enforcement as much as attack prevention.
 
+```bash
+show port-security interface GigabitEthernet0/3
+```
+
+```text
+Port Security              : Enabled
+Port Status                : Secure-up
+Violation Mode             : Restrict
+Maximum MAC Addresses      : 2
+Total MAC Addresses        : 1
+Sticky MAC Addresses       : 1
+Last Source Address:Vlan   : 00:00:5E:00:53:DE:10
+Security Violation Count   : 4831
+```
+
+`Secure-up` with a violation count in the thousands is a port doing exactly what it was configured to do and nobody noticing. `Restrict` drops the excess and stays up, which keeps the user working and keeps the incident invisible unless something is reading the counter. The `Last Source Address` names the device that has been rebuffed nearly five thousand times — and on this segment that address belongs to nothing legitimate.
+
 ### DHCP Snooping — Establish the Truth
 
 **DHCP snooping** classifies ports as trusted or untrusted. Only trusted ports (facing the real DHCP server or the uplink toward it) may send DHCP server messages; offers arriving on untrusted ports are dropped. This defeats rogue DHCP.
@@ -82,7 +105,6 @@ switchport port-security mac-address sticky
 Its more important output is the **binding table** it builds by watching legitimate DHCP exchanges: for each client it records port, MAC, IP, VLAN, and lease time. This table is the trusted record of "who legitimately has which IP behind which port," and it is what the next two controls validate against.
 
 ```bash
-# conceptual view of the binding table a switch maintains
 show ip dhcp snooping binding
 ```
 
@@ -92,11 +114,29 @@ Expected excerpt — the two workstations on VLAN 10:
 MacAddress          IpAddress      Lease(sec)  Type          VLAN  Interface
 00:00:5E:00:53:0E   10.10.10.14    84213       dhcp-snooping 10    Gi0/3
 00:00:5E:00:53:1E   10.10.10.30    84102       dhcp-snooping 10    Gi0/4
+------------------------------------------------------------------
+Total number of bindings: 2
 ```
+
+The last line is the one to check before trusting anything built on top of this table. Two bindings on a segment with two hosts is a healthy register. Two bindings on a segment with two hundred hosts means the other hundred and ninety-eight are statically addressed, never went through DHCP, and therefore have no entry — and every control that validates against this table is about to make a decision about them with nothing to go on.
 
 ### Dynamic ARP Inspection — Validate Neighbours
 
 **DAI** intercepts every ARP reply on untrusted ports and checks it against the binding table. A reply claiming `10.10.10.1 is at 00:00:5E:00:53:DE` is dropped if the table does not have that IP-to-MAC-to-port binding. This defeats ARP spoofing, and it works only because DHCP snooping supplied the table.
+
+The attack from **[[ARP & Neighbor Discovery]]** — the forged mapping re-sent every couple of seconds so it always wins the cache — is the same attack the counters here are counting:
+
+```bash
+show ip arp inspection statistics vlan 10
+```
+
+```text
+ Vlan      Forwarded        Dropped     DHCP Drops     ACL Drops
+ ----      ---------        -------     ----------     ---------
+   10          14027           1832           1832             0
+```
+
+Eighteen hundred drops against fourteen thousand forwarded is not a tuning problem. Recall why that attack has to repeat itself: a poisoned entry ages out and gets reprobed, so the attacker must re-send on a cadence to keep winning. That cadence is what produced this number. The control is working, and the counter is simultaneously the alert — which is the point of the monitoring argument below.
 
 ### IP Source Guard — Validate Source Addresses
 
@@ -142,6 +182,7 @@ You should now be able to:
 
 - State the common weakness all link-layer attacks share, and name the control that stops each one.
 - Explain what the DHCP snooping binding table contains and which controls depend on it; deploy the controls in the correct order and verify each by repeating the attack it stops.
+- Explain why MAC Authentication Bypass admits a device on the strength of an address anyone can copy, and why that makes every bypass entry a decision rather than a convenience.
 - Explain why 802.1X is the strongest control and where its exceptions leak; justify the deployment order from the binding-table dependency, describe what MACsec adds that the forgery-prevention controls do not, and argue why monitoring control violations turns prevention into detection.
 
 ---

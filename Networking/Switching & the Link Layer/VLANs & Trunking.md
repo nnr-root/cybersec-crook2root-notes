@@ -87,7 +87,7 @@ show vlan brief
 VLAN Name                             Status    Ports
 ---- -------------------------------- --------- -------------------------------
 1    default                          active    Gi0/22, Gi0/23
-10   WORKSTATIONS                     active    Gi0/1, Gi0/2, Gi0/3
+10   WORKSTATIONS                     active    Gi0/1, Gi0/2, Gi0/3, Gi0/4
 20   SERVERS                          active    Gi0/10, Gi0/11
 30   OPERATIONS                       active    Gi0/20
 ```
