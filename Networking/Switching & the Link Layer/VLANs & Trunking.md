@@ -6,6 +6,7 @@ tags:
   - cyber/networking/layer2
   - type/concept
   - difficulty/medium
+visual-verified: 2026-09-02
 Domain:
   - "[[Switching & the Link Layer]]"
 Color: "#42D4F4"
@@ -160,6 +161,10 @@ sequenceDiagram
     S2->>T: Deliver into VLAN 20
     Note over A,T: One-way injection; no reply path
 ```
+
+![[vlan-double-tag-peel.png|The same journey at the bytes. Top: the frame as the attacker builds it, carrying two stacked tags. Middle: the first switch has removed the outer tag because it matched the native VLAN, and every field behind it has moved up — the frame is now shorter by exactly one tag. Bottom: the second switch removes the inner tag on delivery. The payload block is the same width in all three rows; only the headers change.]]
+
+Follow one field across the three rows. The tag is not blanked or ignored — it is **removed**, and the frame physically shortens by four bytes at each hop while the payload it carries is never touched. That is why the inner tag arrives looking exactly like an ordinary single-tagged frame to the second switch: by the time it gets there, nothing distinguishes it from a legitimate frame for VLAN 20. The second switch is not fooled, and it has not been attacked. It is doing its job correctly on a frame the first switch should never have forwarded.
 
 Double tagging is one-directional — the attacker can inject frames into the target VLAN but receives no replies, because the return path has no matching double-tag trick. That still enables meaningful attacks: injecting into a management VLAN, or triggering a reflected response to a third party. The defence is to make the native VLAN an unused, dedicated VLAN that carries no real traffic and to which no access port is assigned, so an attacker is never on it, and to tag the native VLAN explicitly where the hardware allows.
 

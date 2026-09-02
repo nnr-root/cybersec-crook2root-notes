@@ -268,7 +268,27 @@ than to rediscover.
    object against another. Anything that must line up has to be *one stroke*:
    a divider that continues upward and ends in a point is an arrow that
    cannot miss, because there is nothing for it to miss.
-8. **Audit by measurement, never by eye.** Crop at 2x and count arrowheads;
+8. **When one row is right and the transform is wrong, derive the rest.** The
+   Note 4 frame-peel diagram came back with a correct top row and two lower
+   rows that failed to shift — the model blanked a field instead of removing
+   it, and shortened the payload instead. Because every boundary was snapped
+   to the background grid and the two coloured fields were exactly four grid
+   units wide, the correct lower rows were the top row with an exact-phase
+   column deletion applied once and then twice. No artwork was authored: the
+   lower bars *are* the upper bar with columns removed. Look for this whenever
+   a diagram's rows or panels are meant to be transformations of one another.
+9. **Flatten every asset before committing it.** Gemini returns JPEG, so a
+   drawing made of five tones arrives with several thousand colours and PNG
+   can run-length none of it. `docs/scripts/flatten.py` snaps each pixel to the
+   drawing's own palette where it is already within a small distance of one,
+   which leaves antialiased edges alone. The Note 4 asset went from 1,731 KB
+   to 78 KB with a maximum per-pixel change of 13 and not one pixel altered by
+   more than 20. `docs/scripts/regif.py` does the equivalent for animation by
+   forcing one shared palette across all frames so the encoder can write real
+   deltas. Three assets, unchanged to the eye, 3.3 MB lighter; over three
+   hundred notes this is the difference between a repository people clone and
+   one they give up on.
+10. **Audit by measurement, never by eye.** Crop at 2x and count arrowheads;
    read centroid positions frame by frame. Three assets looked right and were
    wrong, in ways only pixel coordinates showed.
 
