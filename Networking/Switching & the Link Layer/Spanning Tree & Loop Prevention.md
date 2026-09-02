@@ -6,6 +6,7 @@ tags:
   - cyber/networking/layer2
   - type/concept
   - difficulty/medium
+visual-verified: 2026-09-02
 Domain:
   - "[[Switching & the Link Layer]]"
 Color: "#42D4F4"
@@ -65,6 +66,10 @@ The algorithm elects and calculates:
 The bridge ID deserves a closer look, because the whole election turns on it and so does the whole attack.
 
 It is eight bytes: a two-byte **priority** followed by the switch's six-byte MAC address. The MAC is the tiebreaker and is not configurable. The priority is, and it is where the contest is decided — in modern per-VLAN implementations only the top four bits are yours to set, so it moves in steps of 4096, and the remaining twelve bits carry the VLAN number. That is why a bridge running VLAN 10 at default priority reports `32778` rather than `32768`: the VLAN is riding in the low bits.
+
+![[stp-bridge-id.png|Three bridge IDs, eight bytes each. Top and middle are SW-01 and SW-02 at the shipped priority of 32768; bottom is the attacker at 0. The two coloured cells are the priority field — the only part that decides anything. The six to the right are the MAC address, and in this election they are never read.]]
+
+The picture is the argument. Two of these belong to real switches and one to a laptop, and the only place they differ is the pair of cells on the left. Everything to the right — the hardware address, the part people assume identifies a device and settles a tie — is inert here, because a tie is the one thing that does not happen when someone sets their priority to zero.
 
 Every switch ships at priority `32768`. So on an untuned network every candidate has an identical priority and the election falls through to the MAC address — meaning the root is whichever switch happens to have the lowest hardware address, which is to say nobody chose it. And an attacker does not need a low MAC at all. Setting priority to `0` wins outright, in one step, without the tiebreaker ever being consulted.
 
