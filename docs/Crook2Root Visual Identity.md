@@ -199,20 +199,63 @@ twelve assets looking like one set.
 
 Append this to every prompt.
 
+> [!warning] Never put a hex code in a prompt body
+> The first version of this block specified the palette as `#0F1419`,
+> `#1A2129` and `#C8D3DD`. Nano Banana Pro **drew those strings into the
+> image**, one per cell. Any token in a prompt can end up rendered. Colour is
+> described in words here and remapped to the exact palette afterwards.
+
 ```text
 STYLE: technical schematic illustration, engineering drawing, orthographic
-projection, flat dark background #0F1419 with a faint 8px square grid in
-#1A2129. Uniform thin line work at consistent 1.5px weight in #C8D3DD.
-Absolutely flat — no gradients, no bevels, no drop shadows, no glow, no
-ambient occlusion, no 3D rendering, no photorealism, no texture, no noise.
-Precise, measured, drafting-table quality. Generous negative space.
-Centered composition.
+projection. Flat very dark neutral charcoal background, near black, edge to
+edge with no vignette, overlaid with a faint square grid of hairline lines
+only one shade lighter than the background. Uniform thin line work of
+constant weight in a pale cool grey. Absolutely flat — no gradients, no
+bevels, no drop shadows, no glow, no ambient occlusion, no 3D rendering, no
+photorealism, no texture, no noise. Precise, measured, drafting-table
+quality. Generous negative space. Centered composition. Draw every outline
+exactly once, with a single clean edge and no offset duplicate.
 
-DO NOT INCLUDE: any text, letters, numbers, words, labels, watermarks,
-signatures, logos. No people, no faces, no hands. No hoodies, no masks, no
-skulls, no padlocks, no binary rain, no circuit-board motifs, no neon, no
-scanlines, no lens flare, no glowing edges.
+DO NOT INCLUDE: any text, letters, numbers, digits, words, labels, captions,
+legends, keys, annotations, colour codes, hex values, watermarks, signatures,
+logos. No people, no faces, no hands. No hoodies, no masks, no skulls, no
+padlocks, no binary rain, no circuit-board motifs, no neon, no scanlines, no
+lens flare, no glowing edges. No sparkles, no stars, no glints, no twinkles,
+no decorative marks, no scattered particles or specks.
 ```
+
+### 4.1a Rules learned from rejected rounds
+
+Every rule below was paid for with a rejected asset. They are cheaper to obey
+than to rediscover.
+
+1. **Any token in the prompt can be drawn.** Hex codes came back as rendered
+   labels; position letters (`A B C D`) came back as rendered letters.
+   Describe colour in words and positions spatially — never name them.
+2. **Counts must be stated positionally.** "Exactly eight" produced thirty-six.
+   "All ports except the one it arrived on" produced all four. Say where each
+   element sits relative to the others, and the count follows.
+3. **Never state a geometric property two ways.** The timing diagram for
+   *ARP & Neighbor Discovery* asked for evenly spaced dividers *and* for
+   segments of deliberately unequal width — mutually exclusive, since the
+   dividers are the segment edges. The model resolved the contradiction by
+   breaking the spacing, and the spacing was the whole point of the diagram.
+   Derive every position from one stated rule; if a second sentence mentions
+   a position, it must be a consequence, not a new constraint.
+4. **Make the meaningful relationship structural, not metric.** Rather than
+   placing an element at a measured coordinate and separately placing what it
+   points at, define one from the other — "the bar is this colour from where
+   the short arrow lands until the next tall arrow" cannot come back
+   misaligned, because the alignment is what the sentence says.
+5. **Motion: never ask for a state change mid-clip.** Veo handled a single
+   continuous traversal correctly and then, given a reset beat, rewound the
+   moving element and improvised a route that did not exist in the scene.
+   One continuous motion per clip. Show a contrast by animating both cases
+   side by side in one frame, not one after the other — which is better
+   teaching anyway, since the reader compares rather than remembers.
+6. **Audit by measurement, never by eye.** Crop at 2x and count arrowheads;
+   read centroid positions frame by frame. Three assets looked right and were
+   wrong, in ways only pixel coordinates showed.
 
 ### 4.2 The mark — not generated
 
