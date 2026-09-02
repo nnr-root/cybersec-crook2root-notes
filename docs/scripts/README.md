@@ -48,8 +48,6 @@ These were run once during the 2026 restructure and the Offensive Security
 worked-example build. They are retained so the changes are reproducible and the
 patterns are reusable, not because they need re-running.
 
-> ⚠️ **Do not re-run the mining and example scripts.** `mine-offsec.py`,
-> `mine-batch2.py` … `mine-batch17.py`, `add-examples.py` and `strip-images.py`
 > were written when the standard still used `## Task N — ` headings, and they
 > emit that form. Re-running one would reintroduce numbering the standard now
 > forbids and the gate now rejects. Read them for their patterns; if you need to
@@ -57,11 +55,21 @@ patterns are reusable, not because they need re-running.
 
 | Script | What it did |
 |:--|:--|
-| `migrate-structure.py` | Removed the Crook/Operator/Root structure; converted to flat sections. |
-| `migrate-prose.py` | Removed the three-level vocabulary from body prose. |
-| `strip-images.py` | Removed all image embeds; rescued code screenshots into fenced blocks. |
-| `patch-visual-standard.py` | Rewrote the governance docs to the Mermaid-only visual standard. |
-| `strip-task-numbers.py` | Removed the `## Task N — ` prefix from 1,624 headings across 303 notes, keeping the descriptive titles. Fence-aware; `--apply` to write. |
-| `relabel-headings.py` + `heading-labels.py` | Replaced the four worn-out generic section titles (273 headings across 145 notes) with a subgoal label written from each section's own content. The label table is kept as the record of what changed. |
-| `tag-difficulty.py`, `add-summaries.py`, `add-examples.py` | Filled difficulty tags, summaries, and Networking worked examples. |
-| `mine-offsec.py`, `mine-batch2.py` … `mine-batch17.py` | Built the Offensive Security worked examples from `.archive/labs/`. |
+
+---
+
+## Removed 2026-09-02
+
+Twenty-nine one-shot scripts were deleted after the migrations they performed
+were complete and committed: the `mine-batch*` worked-example miners, the
+`migrate-*` structure and prose passes, the `add-*` section fillers, the
+`strip-*` purges (images, task numbering), `patch-visual-standard.py`,
+`tag-difficulty.py`, and the `heading-labels.py` / `relabel-headings.py` pair
+that authored the 273 subgoal headings.
+
+Each ran once, its output is in the notes, and its source is in git history.
+Keeping them implied they were part of the toolchain, which they were not.
+
+What remains is the toolchain proper: two gates that block a commit, two
+auditors, and two verification sweeps.
+
