@@ -97,7 +97,55 @@ Expected excerpt during an attack:
 10.10.10.30  dev eth0 lladdr 00:00:5e:00:53:de REACHABLE
 ```
 
-Two different IP addresses resolving to the identical MAC (`00:00:5e:00:53:de`) is the signature. A legitimate configuration essentially never does this, so it is a high-confidence indicator.
+Two different IP addresses resolving to the identical MAC (`00:00:5e:00:53:de`) is the signature. A legitimate configuration rarely does this, so it is a high-confidence indicator — with one honest exception.
+
+> [!note] One legitimate cause of a shared MAC
+> A router doing **proxy ARP** answers on behalf of hosts it can reach, so one hardware address deliberately covers many IP addresses; some VPN concentrators and wireless controllers behave the same way. The distinguishing feature is not the sharing but the *change*: proxy bindings are stable for days and belong to infrastructure, while poisoning shows an address that resolved to one MAC an hour ago resolving to a different one now. This is why detection is built on a baseline rather than on a single snapshot.
+
+### The Attacker Has to Choose to Relay
+
+Poisoning redirects frames; it does not forward them. A host that has been told the gateway is at the attacker's MAC delivers its traffic to the attacker's interface, and the attacker's operating system then decides what to do with packets that are not addressed to it. By default it drops them:
+
+```bash
+sysctl net.ipv4.ip_forward
+```
+
+```text
+net.ipv4.ip_forward = 0
+```
+
+With forwarding off, a successful poisoning is a **denial of service**: the victim's traffic vanishes, pages stop loading, and the user calls the help desk within a minute. The quiet on-path position everyone associates with ARP spoofing requires the attacker to take a second, separate action — turn forwarding on — so that traffic continues to reach the real gateway and nothing appears wrong.
+
+That gives defenders a second signature. A cluster of hosts on one segment losing connectivity at the same moment, and recovering when a device is disconnected or when the caches expire, is the shape of a *botched* poisoning attempt. It is the loudest version of the attack, and the one a beginner produces.
+
+### Why the Attack Has to Keep Shouting
+
+A poisoned cache entry is not a permanent write. Neighbour entries age: after a period without confirmation an entry becomes `STALE`, and the next time the host uses it, it probes the cached address to confirm the mapping is still current. The real gateway answers that probe truthfully. Left alone, the poisoning would be corrected within a minute or two by the protocol's own maintenance.
+
+So spoofing is not a takeover — it is a **sustained overwrite race**. The attacker re-sends the forged mapping every few seconds so that its answer is always the most recent one in the victim's cache, which is exactly why "a flood of gratuitous ARP" appears in every detection list. The attack's persistence requirement *is* its noise.
+
+```bash
+sudo tcpdump -l -i eth0 -n arp and host 10.10.10.1
+```
+
+Expected excerpt during an attack:
+
+```text
+14:22:07.118 ARP, Reply 10.10.10.1 is-at 00:00:5e:00:53:de, length 28
+14:22:09.121 ARP, Reply 10.10.10.1 is-at 00:00:5e:00:53:de, length 28
+14:22:11.119 ARP, Reply 10.10.10.1 is-at 00:00:5e:00:53:de, length 28
+14:22:11.402 ARP, Reply 10.10.10.1 is-at 00:00:5e:00:53:01, length 28
+14:22:13.120 ARP, Reply 10.10.10.1 is-at 00:00:5e:00:53:de, length 28
+14:22:15.121 ARP, Reply 10.10.10.1 is-at 00:00:5e:00:53:de, length 28
+```
+
+Read the timestamps rather than the addresses. Five of these replies arrive on an even two-second cadence from `00:00:5e:00:53:de`; one arrives out of rhythm at `.402` from `00:00:5e:00:53:01`, which is the real gateway answering a probe — and it is immediately overwritten by the next forged reply 1.7 seconds later. A machine that has genuinely changed hardware address announces itself a handful of times and stops. Anything answering for the same IP on a metronome is not a host, it is a loop.
+
+**The deliberate break:** ARP is shaped like a question and an answer, so it reads as a lookup protocol — you ask who has an address, the owner replies, the way a DNS query works.
+
+There is no binding between the question and the answer. A host caches replies it never requested, a later reply silently overwrites an earlier one, and an unsolicited announcement is honoured by design. That makes ARP less a query protocol than a **bulletin board any device on the segment may write to**, where the request is a courtesy rather than a precondition. Every link-layer on-path attack follows from that one property, and none of them require breaking anything — the attacker uses the protocol exactly as specified. It also explains the shape of the attack: on a bulletin board, nothing is ever taken down, so the only way to keep your notice on top is to keep pinning it there.
+
+**How you'd spot it:** the absence of symptoms is the symptom, because a competent attacker relays traffic and nothing appears broken. Test positively instead: `ip neigh show` (and `ip -6 neigh` for NDP) with two different addresses resolving to one MAC is a signature that legitimate configuration rarely produces, and a `tcpdump` of ARP showing one MAC answering for an address on a fixed cadence confirms it. On the infrastructure side, Dynamic ARP Inspection drop counters climbing on an access port is the same event caught by the switch.
 
 ## IPv6: Neighbor Discovery Inherits the Problem
 
@@ -116,12 +164,12 @@ fe80::1 dev eth0 lladdr 00:00:5e:00:53:01 router REACHABLE
 
 The same detection logic applies: two IPv6 addresses resolving to one MAC is suspicious. IPv6 additionally exposes router advertisement spoofing, a related but distinct attack covered where addressing is discussed. The lesson is that "we use IPv6" does not escape the trust problem — it renames it.
 
-## Detection and Prevention
+## Catching It, and Closing the Door
 
 **Detection** watches for the signatures above and for behavioural anomalies:
 
 - Multiple IP addresses mapping to one MAC in the neighbour table.
-- A flood of gratuitous ARP or unsolicited neighbour advertisements.
+- A flood of gratuitous ARP or unsolicited neighbour advertisements — the metronome cadence shown above, not an occasional announcement.
 - The gateway's MAC changing unexpectedly.
 
 A passive monitor can maintain a baseline of IP-to-MAC bindings and alarm on changes:
@@ -144,14 +192,9 @@ A "changed ethernet address" event for the gateway is the alert that matters mos
 - **Dynamic ARP Inspection (DAI)** on switches validates every ARP reply against a trusted binding table — typically the one built by DHCP snooping — and drops replies that do not match. An attacker's forged mapping fails validation and never reaches the victim.
 - **Static ARP entries** for critical mappings (a server's gateway) cannot be overwritten by a forged reply, but do not scale beyond a few high-value bindings.
 - For IPv6, the equivalent switch feature inspects neighbour advertisements against the same trusted bindings.
+- **Host-side knobs help less than they appear to.** On Linux, `net.ipv4.conf.all.arp_accept` governs whether an unsolicited announcement may *create* a new cache entry; it does not stop an announcement from *overwriting* an entry that already exists — and overwriting the gateway's entry is the attack. Host hardening is worth having, but the control that actually stops this lives on the switch.
 
 DAI is the scalable answer, and it depends on the snooping binding table — which is why the link-layer controls in this branch reinforce each other rather than standing alone.
-
-**The deliberate break:** ARP is shaped like a question and an answer, so it reads as a lookup protocol — you ask who has an address, the owner replies, the way a DNS query works.
-
-There is no binding between the question and the answer. A host caches replies it never requested, a later reply silently overwrites an earlier one, and an unsolicited announcement is honoured by design. That makes ARP less a query protocol than a **bulletin board any device on the segment may write to**, where the request is a courtesy rather than a precondition. Every link-layer on-path attack follows from that one property, and none of them require breaking anything — the attacker uses the protocol exactly as specified.
-
-**How you'd spot it:** the absence of symptoms is the symptom, because a competent attacker relays traffic and nothing appears broken. Test positively instead: `ip neigh show` (and `ip -6 neigh` for NDP) with two different addresses resolving to one MAC is a signature legitimate configuration essentially never produces. On the infrastructure side, Dynamic ARP Inspection drop counters climbing on an access port is the same event caught by the switch.
 
 ## Security Implications
 
@@ -168,7 +211,8 @@ All poisoning and interception described here must be performed only on an isola
 You should now be able to:
 
 - Explain why ARP exists, describe the request/reply exchange, and state what an ARP table stores.
-- Read a neighbour table, recognize the two-IPs-one-MAC signature of poisoning, and use a monitor to detect a gateway MAC change; explain why connectivity keeps working during the attack.
+- Read a neighbour table, recognize the two-IPs-one-MAC signature of poisoning, distinguish it from a proxy-ARP router by looking for change rather than sharing, and use a monitor to detect a gateway MAC change.
+- Explain why connectivity keeps working during a competent attack and collapses during an incompetent one, and why a forged mapping has to be re-sent on a cadence — so that the flood of gratuitous ARP is a consequence of the mechanism rather than a separate fact to memorize.
 - Explain why ARP's acceptance of unsolicited and overwriting replies makes on-path attacks trivial; describe how Dynamic ARP Inspection uses the snooping binding table to validate replies, why the attack is confined to one broadcast domain, and why transport-layer security is the backstop that survives an on-path adversary.
 
 ---
