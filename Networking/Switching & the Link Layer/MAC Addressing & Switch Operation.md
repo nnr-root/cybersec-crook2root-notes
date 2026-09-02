@@ -25,9 +25,11 @@ Ethernet & Frame Structure -> MAC Addressing & Switch Operation -> ARP & Neighbo
 
 ## What a MAC Address Is
 
-> *How long does it take to change a device's MAC address?*
+> *You find `00:0c:29:4a:9b:31` in a capture. What can you say about that device before looking anything up?*
 >
 > Hold your answer — the section below is the response.
+
+Three things, from the bytes alone. It is a **unicast** address, not multicast. It was **assigned by a vendor** rather than set by software. And the vendor is a virtualization platform — so this is almost certainly a virtual machine, not physical hardware. All of that is readable before any lookup, and the rest of this section is why.
 
 A **MAC (Media Access Control) address** is a 48-bit identifier assigned to a network interface, written as six hex pairs: `00:00:5e:00:53:0e`. It identifies a device on a local segment, and unlike an IP address it is not hierarchical and does not describe location — it is a flat name.
 
@@ -116,6 +118,40 @@ The consequence is that a switched network degrades into a hub: the attacker now
 Normal:   Host A -> Switch -> only Host B's port receives A's frames to B
 Flooded:  table full -> Switch floods -> attacker's port receives A's frames to B too
 ```
+
+### Watching the table fill
+
+The mechanism is easier to trust once you have watched the counter move. On Meridian's VLAN 10 access switch, with a rogue device on port `Gi0/14` — the port `WS-014` normally uses:
+
+```console
+switch# show mac address-table count
+
+Dynamic Address Count  :      412
+Total Mac Addresses    :      412
+Total Mac Address Space Available: 7780
+```
+
+412 real devices, and room for nearly eight thousand. Now the rogue device begins emitting frames with randomised source addresses, and the same command a few seconds later:
+
+```console
+switch# show mac address-table count
+
+Dynamic Address Count  :     8192
+Total Mac Addresses    :     8192
+Total Mac Address Space Available:    0
+```
+
+`Available: 0` is the whole attack. Nothing crashed and no vulnerability was exploited — the table reached the size it was built to hold, and every subsequent legitimate address has nowhere to be recorded. From that moment a frame for `WS-014` has no entry, so the switch does the only safe thing it knows and floods it out every port, including the rogue's.
+
+```console
+switch# show mac address-table interface Gi0/14 | count
+Number of lines which match regexp = 6847
+```
+
+One access port claiming 6,847 addresses is not a device. A workstation presents one, occasionally two if a phone is daisy-chained — and that ratio is the detection, available from a counter without any packet inspection at all.
+
+> [!note] A Linux bridge will not reproduce this
+> `bridge fdb` grows dynamically and has no small fixed ceiling, so flooding a software bridge fills memory rather than a table. The exhaustion behaviour above is a property of hardware CAM, which is sized at manufacture. A lab on `br0` demonstrates *learning* faithfully and cannot demonstrate *exhaustion*.
 
 The defence is not encryption of the frame; it is limiting how many addresses a port may present. **Port security** caps the MAC count per port and takes action — restrict, shut down, or alarm — when the cap is exceeded. A cap of one or two on an access port makes flooding impossible, because the flood requires presenting thousands of source addresses through a single port.
 

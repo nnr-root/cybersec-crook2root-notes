@@ -8,8 +8,7 @@ Two tiers:
           regardless of how finished a note is:
             * banned constructs (the retired Crook/Operator/Root structure, labs,
               checkpoints, level tags, reader-tasking, question boxes)
-            * image files committed anywhere but docs/brand/ (notes are Mermaid-only)
-            * image embeds ![[...]] in a note
+            * an image embed pointing at a file that is not in the repo
             * unbalanced code fences
             * numbered task headings (`## Task N — …`) — the public repo uses plain
               descriptive section headings; numbering belongs in the private site repo
@@ -19,6 +18,9 @@ Two tiers:
   WARNINGS (reported, do NOT block) — the incompleteness backlog:
             * missing ## Summary, missing difficulty tag, missing worked example,
               thin note (<800 words)
+            * an embedded asset with no `visual-verified:` date in the frontmatter
+              — generated imagery is audited for technical accuracy before it is
+              trusted, and this is the record of that audit having happened
 
 Run from the vault root:
     python3 docs/scripts/ci-check.py            # full check, exit 1 on any error
@@ -42,7 +44,7 @@ TASK_REF = re.compile(r"\bTask \d+\b")
 SUMMARY = re.compile(r"^## Summary\s*$", re.M)
 EXAMPLE = re.compile(r"^```(shell-session|console|bash|shell|powershell|text|sql|http)", re.M)
 MAPPING = re.compile(r"^#{2,4} [^\n]*Worked Mapping[^\n]*\n(?:.*\n)*?\|.*\|", re.M)
-EMBED = re.compile(r"!\[\[")
+EMBED = re.compile(r"!\[\[([^\]]+)\]\]")
 
 BANNED = [
     ("lab section", re.compile(r"^#{2,4}\s+.*\b(Authorized Lab|Hands-On Lab|Runnable Lab)\b", re.M | re.I)),
@@ -95,22 +97,17 @@ def note_files(root):
 def check(root="."):
     errors, warnings = [], []
 
-    # ── repo-level: no image files outside docs/brand/ ───────────────────────
-    # docs/brand/ holds the platform identity only — the mark, the hero, the
-    # domain marks, the social card. Brand assets never appear inside a note;
-    # every instructional visual stays Mermaid or a field table, because a
-    # picture of a mechanism can be wrong in ways text cannot.
-    BRAND_DIR = os.path.join("docs", "brand")
+    # ── repo-level: media is permitted anywhere ──────────────────────────────
+    # Generated imagery is produced externally and audited on arrival. The gate
+    # therefore does not police WHERE assets live; it polices whether an embed
+    # resolves, and whether the audit was recorded. A drawing that is wrong is
+    # caught by a person reading it, which is the only thing that can catch it.
+    assets = set()
     for dp, dn, fn in os.walk(root):
-        # _to_delete/ was a staging area, cleared 2026-09-02; skipped defensively
-        dn[:] = [d for d in dn if d not in {".git", "_to_delete", ".obsidian"}]
+        dn[:] = [d for d in dn if d not in SKIP_DIRS]
         for f in fn:
             if f.lower().endswith(IMAGE_EXT):
-                rel = os.path.relpath(os.path.join(dp, f), root)
-                if rel.startswith(BRAND_DIR + os.sep):
-                    continue
-                errors.append(f"{rel}: image file committed — instructional visuals are "
-                              f"Mermaid-only (brand assets belong in docs/brand/)")
+                assets.add(os.path.basename(f))
 
     for rel in note_files(root):
         text = open(os.path.join(root, rel), encoding="utf-8", errors="replace").read()
@@ -122,11 +119,19 @@ def check(root="."):
             if pat.search(text):
                 errors.append(f"{rel}: banned construct — {name}")
 
-        for m in EMBED.finditer(text):
-            ln = text[:m.start()].count("\n")
-            if not mask[ln]:
-                errors.append(f"{rel}: image embed ![[...]] — the repo is Mermaid-only")
-                break
+        embeds = [m.group(1).split("|")[0].strip()
+                  for i, m in enumerate(EMBED.finditer(text))
+                  if not mask[text[:m.start()].count("\n")]]
+        for target in embeds:
+            if not target.lower().endswith(IMAGE_EXT):
+                continue                       # a note-to-note transclusion, not media
+            if os.path.basename(target) not in assets:
+                errors.append(f"{rel}: embed points at a missing asset — {target}")
+
+        if embeds and "visual-verified:" not in text:
+            warnings.append(f"{rel}: {len(embeds)} embedded asset(s), no "
+                            f"`visual-verified:` date — generated imagery is not "
+                            f"trusted until someone has checked it")
 
         if unbalanced:
             errors.append(f"{rel}: unbalanced code fence")
