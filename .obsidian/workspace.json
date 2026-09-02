@@ -180,6 +180,7 @@
   },
   "active": "cd3cd438fdbb49bc",
   "lastOpenFiles": [
+    "Offensive Security/Offensive Security.md",
     "docs/scripts/sweep.py",
     "assets/networking/switch-cam-flood.gif",
     "assets/networking/switch-learn-flood.png",
@@ -208,7 +209,6 @@
     "docs/scripts/__pycache__/heading-labels.cpython-310.pyc",
     "docs/scripts/relabel-headings.py",
     "docs/scripts/heading-labels.py",
-    "docs/scripts/__pycache__/pedagogy-check.cpython-310.pyc",
     "Networking/Network Foundations/The OSI Model.md",
     "Offensive Security/Penetration Testing/Methodologies & Frameworks/Cyber Kill Chain.md",
     "Cryptography/Applied Trust & Tooling/JWT Security.md",

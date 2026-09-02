@@ -168,6 +168,27 @@ real single-vendor fleet would look.
 IPv6 hosts take `2001:db8:acad:<vlan>::<host>`, matching the IPv4 last octet:
 `WS-030` is `2001:db8:acad:10::30`. Link-local gateways stay `fe80::1`.
 
+## 5a-ii. Switches and port naming
+
+Added when the switching branch needed somewhere concrete to put a trunk. Two
+access switches are enough for every Layer 2 example in the corpus — one switch
+demonstrates VLANs, two demonstrate trunking, spanning tree and hopping.
+
+| Device | MAC | Role |
+|:--|:--|:--|
+| `SW-01` | `00:00:5E:00:53:F1` | Access switch. Carries VLANs 10, 20 and 30 |
+| `SW-02` | `00:00:5E:00:53:F2` | Second access switch, same VLANs, joined to `SW-01` by a trunk |
+
+Ports are named `Gi0/<n>`. Access ports live in `Gi0/1`–`Gi0/23`; the
+inter-switch trunk is `Gi0/48` on both devices. Where a note shows an
+**unhardened** switch the native VLAN is `1`, because that is the shipped
+default and the default is usually the finding; where a note shows a
+**hardened** one the native VLAN is `999`, an otherwise unused VLAN with no
+access port assigned to it.
+
+`SW-01` is the lower bridge ID of the two, so it is the spanning tree root
+unless a note is specifically demonstrating a root takeover.
+
 ## 5b. What The Thread does NOT govern
 
 This is the part that decides whether the retrofit improves the corpus or damages

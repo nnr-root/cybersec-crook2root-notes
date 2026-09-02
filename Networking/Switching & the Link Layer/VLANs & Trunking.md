@@ -46,7 +46,7 @@ How does a switch know which VLAN a frame belongs to when many VLANs share one u
 
 - **TPID** `0x8100` marks the frame as tagged; it sits where the EtherType normally would, signalling that the real EtherType follows the tag.
 - **VID (VLAN Identifier)** is 12 bits, giving 4094 usable VLANs (0 and 4095 are reserved).
-- **PCP** carries a priority value for quality of service.
+- **PCP** carries a priority value for quality of service, and **DEI** is a single bit marking the frame as eligible to be dropped first under congestion. Neither has security significance, but both appear in a capture and are worth recognising rather than puzzling over.
 
 The tag is added and removed by switches, not by hosts. An ordinary endpoint sends and receives *untagged* frames and is unaware VLANs exist; the switch tags the frame on ingress based on the port's VLAN and strips it before delivery.
 
@@ -65,14 +65,80 @@ A trunk port carries multiple VLANs between infrastructure devices, tagging each
 
 ```mermaid
 flowchart TB
-    PC1["PC — VLAN 10"] -->|"untagged"| SW1["Switch 1"]
-    PC2["Phone — VLAN 20"] -->|"untagged"| SW1
-    SW1 -->|"trunk: tagged 10 & 20"| SW2["Switch 2"]
-    SW2 -->|"untagged VLAN 10"| PC3["PC — VLAN 10"]
-    SW2 -->|"untagged VLAN 20"| PC4["Phone — VLAN 20"]
+    W14["WS-014 · 10.10.10.14<br/>VLAN 10"] -->|"untagged"| SW1["SW-01"]
+    FS["FS01 · 10.10.20.20<br/>VLAN 20"] -->|"untagged"| SW1
+    SW1 -->|"trunk — tagged 10 and 20"| SW2["SW-02"]
+    SW2 -->|"untagged VLAN 10"| W30["WS-030 · 10.10.10.30<br/>VLAN 10"]
+    SW2 -->|"untagged VLAN 20"| AP["APP01 · 10.10.20.30<br/>VLAN 20"]
 ```
 
-Read the diagram at the trunk: the single physical link between the switches carries both VLANs simultaneously, kept separate by their tags. The access links on either side are untagged, because the endpoints must not be aware of VLANs. The whole scheme depends on the switches agreeing about which ports are trunks — and that agreement is where attacks live.
+Read the diagram at the trunk: the single physical link between the switches carries both VLANs simultaneously, kept separate by their tags. The access links on either side are untagged, because the endpoints must not be aware of VLANs. `WS-014` and `FS01` share a switch and cannot reach each other at Layer 2; `WS-014` and `WS-030` are on different switches and can. Physical adjacency has stopped meaning anything — which is the point, and also the reason the whole scheme depends on the switches agreeing about which ports are trunks. That agreement is where the attacks live.
+
+### What the switch actually reports
+
+Two commands settle what a port is, and they are the first thing to run on any switch you have not configured yourself.
+
+```bash
+show vlan brief
+```
+
+```text
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- -------------------------------
+1    default                          active    Gi0/22, Gi0/23
+10   WORKSTATIONS                     active    Gi0/1, Gi0/2, Gi0/3
+20   SERVERS                          active    Gi0/10, Gi0/11
+30   OPERATIONS                       active    Gi0/20
+```
+
+```bash
+show interfaces trunk
+```
+
+```text
+Port        Mode         Encapsulation  Status        Native vlan
+Gi0/48      on           802.1q         trunking      1
+
+Port        Vlans allowed on trunk
+Gi0/48      1-4094
+
+Port        Vlans allowed and active in management domain
+Gi0/48      1,10,20,30
+```
+
+Read the trunk output right to left. `Gi0/48` carries every VLAN that exists on the switch, and its native VLAN is `1` — both of those are defaults, and both matter in the next section. The frames themselves are visible from any host with a tagged interface:
+
+```bash
+sudo tcpdump -i eth0 -e -n vlan
+```
+
+```text
+10:14:22.118 00:00:5e:00:53:0e > 00:00:5e:00:53:01, ethertype 802.1Q (0x8100),
+  length 102: vlan 10, p 0, ethertype IPv4, 10.10.10.14 > 10.10.20.20: ICMP echo request
+```
+
+The tag sits exactly where the frame diagram above puts it: after the addresses, before the EtherType that describes the payload.
+
+## The Native VLAN Is a Default, and the Default Is the Problem
+
+A trunk tags every VLAN it carries with one exception: the **native VLAN**, which crosses the trunk untagged. The mechanism exists for backward compatibility, so that a device which does not understand tags can still exchange traffic across a trunk link.
+
+The security consequence comes from what the native VLAN *is* out of the box. On common switch platforms every access port ships assigned to VLAN 1, and every trunk's native VLAN is also VLAN 1. An untouched switch therefore places the attacker's access port and the trunk's untagged VLAN in the same place — which, as the next section shows, is precisely the precondition for double tagging. The vulnerability is not something an administrator has to introduce; it is what the equipment does before anyone configures it.
+
+```bash
+show interfaces GigabitEthernet0/3 switchport
+```
+
+```text
+Name: Gi0/3
+Switchport: Enabled
+Administrative Mode: dynamic auto
+Operational Mode: static access
+Access Mode VLAN: 10 (WORKSTATIONS)
+Trunking Native Mode VLAN: 1 (default)
+```
+
+Two lines of that output are findings, and neither looks like one. `Administrative Mode: dynamic auto` means the port is *currently* an access port but is willing to become a trunk if something asks convincingly — the operational mode describes today, the administrative mode describes what the port will agree to. `Trunking Native Mode VLAN: 1 (default)` means that if it ever does become a trunk, VLAN 1 crosses it untagged. A port serving a desk should say `static access` and should name a native VLAN nobody uses.
 
 ## VLAN Hopping: Escaping Your Segment
 
@@ -101,7 +167,14 @@ Double tagging is one-directional — the attacker can inject frames into the ta
 
 The tag is a claim written by whoever built the frame, and what it means depends entirely on the port it arrives at. An access port ignores any tag it receives; a trunk port honours it; the native VLAN strips it. The same bytes therefore mean different things at two consecutive hops — which is precisely why double tagging works, and why a port willing to negotiate itself into a trunk hands over every VLAN on the switch. Segmentation lives in the port configuration, not in the frame.
 
-**How you'd spot it:** audit the ports rather than the design document. Any interface left in dynamic auto or dynamic desirable mode is willing to become a trunk, and that willingness is the entire switch-spoofing attack; an access port assigned to the native VLAN is the other half. In traffic, a frame carrying two stacked 802.1Q tags arriving on an access port has no legitimate explanation at all.
+**How you'd spot it:** audit the ports rather than the design document. `show interfaces <port> switchport` reports an administrative mode alongside the operational one, and any interface reading `dynamic auto` or `dynamic desirable` is willing to become a trunk whatever it happens to be doing today — that willingness is the entire switch-spoofing attack. An access port whose native VLAN matches a VLAN real users sit in is the other half. In traffic, the signature is unmistakable once you know the shape:
+
+```text
+10:14:31.902 00:00:5e:00:53:de > ff:ff:ff:ff:ff:ff, ethertype 802.1Q (0x8100),
+  length 68: vlan 1, p 0, ethertype 802.1Q (0x8100), vlan 20, p 0, ethertype ARP
+```
+
+Two 802.1Q headers stacked in one frame, arriving on a port that serves a desk. Nothing legitimate produces that.
 
 ## Security Implications
 
@@ -120,7 +193,8 @@ All hopping and trunk-negotiation testing described here must occur only on an i
 You should now be able to:
 
 - Explain what a VLAN accomplishes, the difference between an access port and a trunk port, and why an endpoint never sees a tag.
-- Read the 802.1Q tag in a capture, configure access and trunk ports, and verify that two VLANs are isolated by testing reachability rather than trusting the design.
+- Read the 802.1Q tag in a capture, recognise a stacked double tag on sight, and use `show vlan brief`, `show interfaces trunk` and `show interfaces <port> switchport` to establish what a port really is rather than what the documentation claims.
+- Explain why the native VLAN exists, why VLAN 1 being the default for both access ports and trunk natives is the condition double tagging depends on, and verify that two VLANs are isolated by testing reachability rather than trusting the design.
 - Explain switch spoofing and double tagging in terms of the native VLAN and dynamic trunk negotiation; justify why VLANs are a segmentation control rather than a boundary for the highest-value assets, and why VLAN design and inter-VLAN routing policy must be reviewed together.
 
 ---
