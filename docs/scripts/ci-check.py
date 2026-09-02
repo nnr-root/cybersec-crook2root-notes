@@ -95,13 +95,14 @@ def note_files(root):
 def check(root="."):
     errors, warnings = [], []
 
-    # ── repo-level: no image files outside _to_delete/ and docs/brand/ ────────
+    # ── repo-level: no image files outside docs/brand/ ───────────────────────
     # docs/brand/ holds the platform identity only — the mark, the hero, the
     # domain marks, the social card. Brand assets never appear inside a note;
     # every instructional visual stays Mermaid or a field table, because a
     # picture of a mechanism can be wrong in ways text cannot.
     BRAND_DIR = os.path.join("docs", "brand")
     for dp, dn, fn in os.walk(root):
+        # _to_delete/ was a staging area, cleared 2026-09-02; skipped defensively
         dn[:] = [d for d in dn if d not in {".git", "_to_delete", ".obsidian"}]
         for f in fn:
             if f.lower().endswith(IMAGE_EXT):
