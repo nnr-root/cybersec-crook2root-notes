@@ -1,28 +1,33 @@
 ---
-title: "1.6 Defensive Groundwork Masterclass"
+title: "Defensive Groundwork"
 aliases: ["Defensive Groundwork", "Firewalls", "Firewall", "iptables", "Cookie vs Token", "Session Management", "MFA", "2FA", "Multi-Factor Authentication"]
 tags:
   - tree/defensive
   - cyber/defense/foundations
   - cyber/web/basics
   - type/concept
+  - difficulty/medium
   - level/apprentice
 Domain:
   - "[[Defensive Security]]"
 Color: "#4363D8"
 ---
 
-# 🛡️ 1.6 Defensive Groundwork Masterclass
+# 🛡️ Defensive Groundwork
 
-> [!abstract] The Masterclass
-> *"Know how it is defended so you know how to break it."* This chapter covers the three defensive pillars every attacker meets: **firewalls** (what traffic is even allowed), **session management** (how stateless HTTP fakes "logged in", and how that's stolen), and **MFA** (the extra factor — and how real attacks defeat it). Each is presented offense-and-defense. **`#level/apprentice` → `#difficulty/medium`**
+> [!abstract] Note of [[Defensive Security]]
+> The three controls an attacker meets before anything else: firewalls, which decide what traffic exists at all; session management, which is how stateless HTTP maintains the fiction of being logged in, and how that fiction is stolen; and multi-factor authentication, along with the attacks that defeat it in practice. Each is presented from both sides, because knowing how something is defended is how you learn where it gives.
 
-> [!tip] Chapter Map
-> **** · **** · ****
-
----
+## Parent Learning Order
+Defensive Groundwork -> Advanced Defenses
 
 ## Firewalls
+
+> *A firewall's rules describe what may pass. What decides the fate of a packet that matches no rule at all?*
+>
+> Hold your answer — the section below is the response.
+
+The default policy, which is the most consequential line in the entire ruleset and the one nobody reads. Every rule after it is an exception to it. Set it to accept and your carefully written rules describe what you thought to block, which is a list that can only ever be incomplete; set it to deny and they describe what you meant to allow. The rules look identical either way — the difference is entirely in what happens when none of them match, which is the case you did not anticipate.
 
 A **firewall** is the chokepoint deciding which traffic passes, based on rules. It makes one of three decisions — **ACCEPT**, **DROP** (silent), or **REJECT** (notify) — matching on source/dest **IP**, **port**, **protocol**, interface, and direction. The critical design choice is the **default policy**: production hardening always prefers **default-deny** (whitelist).
 
@@ -182,8 +187,6 @@ A firewall reduces *exposure*, not vulnerability — it never replaces patching.
 
 Firewalls decide whether a packet reaches the application at all. The next chokepoint sits *inside* that application: proving a request came from someone who already logged in.
 
----
-
 ## Sessions (Cookies vs Tokens)
 
 **HTTP** has no memory — apps fake "logged in" two ways: **session cookies** (server holds state, browser auto-attaches an opaque ID) or **tokens/JWT** (client holds a signed token, JS attaches it manually). Each trades one attack surface for another. Both solve the same problem — persisting identity across many stateless requests — but they place trust in different places, and attackers have spent two decades mapping exactly where each one bends.
@@ -300,8 +303,6 @@ Signature: `HMAC-SHA256(base64url(header) + "." + base64url(payload), secret)` f
 
 Every attack above assumes the attacker never touched the password — cookies and tokens get stolen *after* authentication succeeds. MFA is the layer meant to make that initial step itself resistant to being faked or replayed — though "resistant" comes in very different grades.
 
----
-
 ## Multi-Factor Authentication
 
 **MFA** requires **two or more** independent proofs, so a stolen password alone isn't enough. **2FA** is exactly two factors (all 2FA is MFA, not vice-versa). The theory: compromising one factor shouldn't compromise the account. The practice, as this section shows, is that "independent" is doing a lot of work — two factors funnelled through the same phishing page aren't independent at all.
@@ -406,13 +407,21 @@ Common MFA flaws worth auditing for directly:
 
 See **2. Broken User Authentication (BUA)** and **Phishing Tools**.
 
----
-
 **The deliberate break:** defence reads as a stack of products — buy the endpoint agent, the SIEM and the scanner, deploy them, and coverage follows.
 
 Almost every control here depends on something unglamorous underneath it: an inventory of what you own, clocks that agree, a baseline of what normal looks like, and logs that are genuinely being collected rather than configured. A product installed above missing foundations does not fail loudly — it produces confident output nobody can act on, which is indistinguishable from working right up until the incident that tests it.
 
 **How you'd spot it:** ask what each control assumes, because the assumption is where it breaks. Detection assumes a baseline; correlation assumes synchronised time; response assumes an inventory that can turn a hostname into a person and a location. A tool whose prerequisites are absent still reports, still shows green, and still cannot support a decision — so the diagnostic question is not whether the product is deployed but whether anyone could act on its output tomorrow morning.
+
+## Security Implications
+
+**Each of these three controls fails open in a way its dashboard does not show.** A firewall with a permissive default reports the same green as one with a strict default. A session system with no rotation on privilege change looks identical to one that rotates. An MFA deployment with an unprotected recovery path shows the same enrolment percentage as one without. In all three cases the control is present, configured, and reporting — and the gap is in a property nobody displays, which is why these have to be read rather than monitored.
+
+**The recovery path is the real authentication mechanism.** Whatever an account's strongest factor is, an attacker will be evaluated against the weakest route to the same access — and that route is almost always the reset flow, the help desk, or the backup code. An organisation that deploys hardware keys and leaves SMS recovery enabled has bought the cost of hardware keys and kept the security of SMS. The control worth measuring is not what the strongest factor is but what the cheapest path to the account is.
+
+**Outbound is the direction that matters and the one that gets configured last.** Inbound rules receive the attention because that is where an intrusion is imagined to start. But every technique in the offensive half of this corpus — command and control, exfiltration, tunnelling, callbacks — depends on traffic leaving, and a default-allow egress policy sanctions all of it over the same port everything else needs. Egress filtering is unglamorous, breaks things when introduced, and is one of the few controls that meaningfully raises the cost of post-compromise activity.
+
+**These are foundations in the sense that failures here make later controls unreadable.** Detection engineering in [[Advanced Defenses]] assumes it can tell a session apart from a stolen one and a user apart from a phished credential. When session tokens do not rotate and MFA is bypassable by relay, the telemetry is technically correct and semantically worthless: the SIEM records a legitimate login because, by every property it can observe, that is exactly what happened.
 
 ## Summary
 
@@ -421,11 +430,7 @@ You should now be able to:
 - Configure a default-deny host firewall and explain the netfilter model beneath both iptables and ufw.
 - Distinguish cookie-based and token-based sessions, and reason about the attack surface each exposes.
 - Explain how multi-factor authentication factors compose, and why the recovery path is usually the weakest link.
+- Explain why all three of these controls fail open without changing what their dashboards report, and why egress filtering raises an attacker's cost more than inbound rules do.
 
-## 🔗 Related Master Notes & Deep-Dives
-- **1.1 Networking** — the traffic firewalls filter & the HTTP sessions run over
-- **1.3 Windows and OS Internals** — where MFA protects AD/VPN access
-- **JWT Security** · **Authentication Bypass** · **2. Broken User Authentication (BUA)** — Phase 2 deep-dives
-- **Phishing** · **Phishing Tools** — how credentials & OTPs get harvested
-- **Nmap Port Scans** · **Burp Suite** — the tooling behind firewall mapping and session/cookie replay
-- [[Defensive Security]] — domain hub
+---
+> 🔼 Up: [[Defensive Security]]
