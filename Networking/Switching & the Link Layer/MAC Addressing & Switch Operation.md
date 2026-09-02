@@ -13,6 +13,7 @@ thread-exempt:
   - "00:0c:29: a real vendor OUI — this note teaches device fingerprinting from the OUI, and 00:00:5E is IANA's, not a virtualization vendor's"
   - "00:50:56: named as a second real vendor OUI in the same comparison"
 Color: "#42D4F4"
+visual-verified: 2026-09-02
 ---
 
 # 🎚️ MAC Addressing & Switch Operation
@@ -88,6 +89,9 @@ flowchart TD
     R --> N["Next frame to dst is unicast, not flooded"]
 ```
 
+![[switch-learn-flood.png]]
+*Port B receives a frame and the switch records its source against that port — the short connector into the address table. The destination is not yet known, so the frame leaves by A, C and D: every port except the one it arrived on. Three arrowheads, never four.*
+
 The diagram shows why the first frame to a new destination is flooded but the conversation quickly becomes point-to-point: the reply teaches the switch where the destination lives. This is the entire efficiency argument for switches over hubs — a hub floods everything forever, a switch floods only until it has learned.
 
 Inspect the table on a Linux bridge (the software equivalent of a switch):
@@ -147,6 +151,9 @@ Total Mac Address Space Available:    0
 switch# show mac address-table interface Gi0/14 | count
 Number of lines which match regexp = 6847
 ```
+
+![[switch-cam-flood.gif]]
+*The table filling under a flood. The three legitimate entries at the top are never displaced — they are simply outnumbered, and once the last row is taken the switch has nowhere to record the next address. Only then does it begin flooding, which is the moment the arrows appear.*
 
 One access port claiming 6,847 addresses is not a device. A workstation presents one, occasionally two if a phone is daisy-chained — and that ratio is the detection, available from a counter without any packet inspection at all.
 
