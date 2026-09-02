@@ -8,16 +8,6 @@
         "type": "tabs",
         "children": [
           {
-            "id": "7c248500a89543cf",
-            "type": "leaf",
-            "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Grafik Görünümü"
-            }
-          },
-          {
             "id": "cd3cd438fdbb49bc",
             "type": "leaf",
             "state": {
@@ -188,11 +178,20 @@
       "bases:Yeni taban oluştur": false
     }
   },
-  "active": "7c248500a89543cf",
+  "active": "6273164f388200f3",
   "lastOpenFiles": [
-    "docs/brand/favicon.svg",
-    "docs/brand/mark-accent.svg",
-    "docs/brand/mark.svg",
+    "_to_delete/favicon.svg",
+    "_to_delete/mark-accent.svg",
+    "docs/brand/icon-16.png",
+    "docs/brand/icon-32.png",
+    "docs/brand/icon-48.png",
+    "docs/brand/icon-64.png",
+    "docs/brand/icon-128.png",
+    "docs/brand/icon-180.png",
+    "docs/brand/icon-256.png",
+    "docs/brand/icon-512.png",
+    "docs/brand/favicon.ico",
+    "docs/brand/og-card.png",
     "docs/Crook2Root Visual Identity.md",
     "docs/brand",
     "DevSecOps/Docker and Containers.md",
@@ -210,7 +209,6 @@
     "docs/scripts/__pycache__/pedagogy-check.cpython-310.pyc",
     "docs/scripts/pedagogy-check.py",
     "docs/scripts/__pycache__/ci-check.cpython-310.pyc",
-    "docs/scripts/strip-task-numbers.py",
     "Networking/Network Foundations/The OSI Model.md",
     "Offensive Security/Penetration Testing/Methodologies & Frameworks/Cyber Kill Chain.md",
     "Cryptography/Applied Trust & Tooling/JWT Security.md",
@@ -227,14 +225,6 @@
     "Cryptography/Hashing & Passwords/Salting and KDFs.md",
     "Cryptography/Hashing & Passwords/Password Cracking.md",
     "Cryptography/Hashing & Passwords/Hashing & Passwords.md",
-    "Cryptography/Hashing & Passwords/Hash Functions and Integrity.md",
-    "_to_delete/assets/vHQWOgi.png",
-    "_to_delete/assets/uptWRKW.png",
-    "_to_delete/assets/tool_wifi_crack.svg",
-    "_to_delete/assets/tool_web_request_path.svg",
-    "_to_delete/assets/tool_vuln_funnel.svg",
-    "_to_delete/assets/tool_siem_pipeline.svg",
-    "_to_delete/assets/tool_privesc_surface.svg",
-    "_to_delete/assets/tool_port_scan_states.svg"
+    "Cryptography/Hashing & Passwords/Hash Functions and Integrity.md"
   ]
 }

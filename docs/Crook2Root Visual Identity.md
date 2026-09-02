@@ -39,65 +39,92 @@ Everything below is downstream of those two.
 
 ---
 
-## 1. The concept
+## 1. The mark
 
-**The mark is `#`.**
+**The mark is a neon `#`.** The master is `docs/brand/mark.png`, and it is used as
+supplied — this document describes it rather than specifying how to redraw it.
 
 `$` is a user shell. `#` is root. Every practitioner this platform is for reads
-that instantly and reads it correctly — no legend, no explanation, no "it is a
-cross-section representing depth." It is the most economical mark available for
-the second half of the name, and it is understood before anyone has read a word
-of the corpus.
+that instantly, without a legend, before they have read a word of the corpus. It
+is the most economical mark available for the second half of the name.
 
-The first draft of this document proposed a strata cross-section instead. `#` is
-better, and the reason it is better than a compromise is what the glyph is made
-of:
+| | |
+|:--|:--|
+| Ground | `#17181A` with a soft vignette |
+| Tube | `#20B57C` — the neon body |
+| Core | `#CDFEE8` — the hot centre of the tube |
+| Fringe | Chromatic separation, red and cyan, at the stroke edges |
 
-> **Two horizontal bars, crossed by two strokes that lean rather than falling
-> straight.**
+### How it was chosen
 
-That is the strata concept already compressed into an existing character. The
-horizontals are layer boundaries; the leaning strokes are the descent that
-deviates instead of dropping straight through. **The symbol says root. The
-geometry says descent through layers, and not in a straight line.** Both halves
-of the name, in four strokes, in a character every reader already knows.
+A technical-schematic mark was drafted first — flat orthographic line work
+matching the field tables in the corpus. It was **rejected on sight, correctly**:
+it was defensible and forgettable, and it read as a UI icon rather than a brand.
+A mark nobody wants to put on a landing page has failed at its actual job.
 
-A straight-sided `#` would be the wrong drawing — it would say the route from
-surface to depth is obvious. The lean is load-bearing, and it is also simply how
-the glyph is drawn, which is the part that makes this work rather than feel
-imposed.
+Two arguments were made against the neon treatment. One of them was wrong, and
+recording which is the point of this section:
 
-**What the mark is not:** a padlock, a hoodie, a skull, a shield. Those say
-*security* generically, which is the one thing this platform never needs to
-establish — the reader arrived knowing.
+- **Wrong — "glow next to flat Mermaid line work reads as two projects."** Brand
+  assets never appear inside a note. The scope is brand-only and always was, so
+  the mark never sits beside a diagram and there was no continuity to break. This
+  was a constraint defended after it had already been removed.
+- **Partly right — the neighbourhood.** Green-on-black is the most-used palette
+  in this market. That remains true, and it was overruled deliberately: the mark
+  has to earn attention in marketing contexts, and a differentiated palette that
+  nobody looks at twice is worth less than a familiar one that lands.
+- **Weakest, and stated accurately — reduction.** The mark does soften below
+  32 px. This was measured rather than asserted, and it is handled by the icon
+  ladder below rather than by changing the design.
 
-### The rejected treatment, and why
+## 2. Usage
 
-A neon-green `#` with chromatic aberration and bloom was generated and
-seriously considered. The symbol was right and the treatment was refused, on
-three grounds, in order of weight:
+- **Dark grounds only.** The glow is part of the mark; on a light ground it has
+  nothing to bloom into. Where a light or single-colour reproduction is
+  unavoidable — print, embroidery, a fax of a purchase order — use
+  `docs/brand/mark.svg`, the flat monochrome fallback retained for exactly this.
+- **Do not recolour, rotate, outline or place on a busy photograph.**
+- **Minimum size 32 px.** Below that the tube closes up.
+- **Clear space** of at least one bar-width on every side. The master already
+  carries generous margin; the icon crop does not.
 
-1. **Neighbourhood.** Green-on-black with RGB fringing is the most crowded
-   corner of this market — it is what Hack The Box looks like, and roughly every
-   CTF platform of the last decade. A corpus whose actual differentiator is 302
-   notes that each name a misconception and supply a recognition cue should not
-   wear a mark saying *we are also a hacking site*.
-2. **Internal continuity.** Glow and fringing sitting next to flat 1.5 px
-   Mermaid line work reads as two projects. Every other visual decision here was
-   made to match the notes.
-3. **Reduction.** Weaker than the first two, and worth stating accurately: the
-   neon version *does* survive 32 px. It goes soft and muddy-teal and loses the
-   crisp core and the fringe — which are exactly the things that made it
-   distinctive — but it remains legibly a hash. This was checked by rendering it
-   rather than asserted.
+## 3. The asset ladder
 
-**The neon render is retained as a launch and social asset**, where volume is
-the job and permanence is not. It is not the identity, and it does not appear in
-`docs/brand/`.
+```text
+docs/brand/
+  mark.png       2048²   master, as supplied, untouched
+  hero.png       2400×1260   README and site header
+  og-card.png    1200×630    link previews
+  favicon.ico    multi-res, 16 → 256
+  icon-512.png … icon-16.png
+  mark.svg       flat monochrome fallback — print and single-colour only
+```
 
-## 2. The style
+**The icon ladder is a crop, not a redraw.** The master centres the glyph in a
+lot of empty frame, which is right for a hero and wrong for a browser tab, so the
+icons are cropped square to the glyph at ×1.25 and nothing else is altered.
 
-**Technical schematic.** Engineering drawing, not illustration.
+At **32 px and below** two things change, and only because plain downscaling
+destroys legibility there: the crop tightens a further 15%, and contrast and
+unsharp are applied. Every size at 48 px and above is a straight Lanczos
+reduction of the master with no adjustment at all. The 16 px result was compared
+across four treatments before this one was chosen.
+
+## 4. Supporting visuals
+
+Anything made *around* the mark — social cards, launch graphics, headers — follows
+the mark: dark ground, neon tube, restrained chromatic fringe.
+
+**Domain plates were dropped.** The original plan called for eight
+technical-schematic plates, one per domain. A flat orthographic plate in eight
+different accent colours does not sit with a neon mark, and reconciling them
+would mean either eight neon variants (repetitive) or two visual systems
+(incoherent). The mark, hero, OG card and icon ladder are a complete identity for
+a repository and a site; the plates were a nice-to-have that stopped being
+coherent the moment the mark changed.
+
+The schematic specification below is retained for the **flat fallback** only —
+`mark.svg`, and any print or single-colour reproduction.
 
 | Property | Specification |
 |:--|:--|

@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Crook2Root">
-  <rect width="64" height="64" rx="8" fill="#0F1419"/>
-  <g fill="none" stroke-linecap="butt">
-    <path d="M8 24H56M8 41H56" stroke="#E4EBF1" stroke-width="6"/>
-    <path d="M26 8 22 57M43 8 39 57" stroke="#DC143C" stroke-width="6.5"/>
-  </g>
-</svg>
