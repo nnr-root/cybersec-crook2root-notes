@@ -1,5 +1,5 @@
 ---
-title: "1.4 Docker & Containers Masterclass"
+title: "Docker and Containers"
 aliases: ["Docker Masterclass", "Docker", "Docker Compose", "Containerization", "Container Security & Escapes", "Container Escape", "Docker Escape"]
 tags:
   - tree/devsecops
@@ -12,17 +12,21 @@ Domain:
 Color: "#3CB44B"
 ---
 
-# 🐳 1.4 Docker & Containers Masterclass
+# 🐳 Docker and Containers
 
-> [!abstract] The Masterclass
-> **Docker** packages an app and all its dependencies into a portable, disposable **container** — letting you spin up vulnerable targets, full multi-service apps, or clean tooling in seconds. This chapter covers fundamentals and secure orchestration in depth — image layers, the build cache, multi-stage builds, volumes, and networking modes — then the dangerous flip-side: how the isolation model (namespaces, cgroups, capabilities, seccomp) is actually built, how containers are broken out of it step by step, and how to harden and detect against every vector. **`#level/apprentice` → `#difficulty/medium`**
+> [!abstract] Note of [[DevSecOps]]
+> Docker packages an application and its dependencies into a portable, disposable container. This note covers the fundamentals and secure orchestration — image layers, the build cache, multi-stage builds, volumes, networking — and then the flip side: how the isolation model is actually assembled from namespaces, cgroups, capabilities and seccomp, how containers are broken out of it, and how to harden and detect against each vector.
 
-> [!tip] Chapter Map
-> **** · ****
-
----
+## Parent Learning Order
+Docker and Containers
 
 ## Docker and Compose Fundamentals
+
+> *A virtual machine and a container both isolate a workload. Name the one thing the container shares with its host that the virtual machine does not.*
+>
+> Hold your answer — the section below is the response.
+
+The kernel. A virtual machine brings its own and talks to hardware through a hypervisor; a container is a set of processes on the host's kernel, wearing namespaces that restrict what they can see. Everything in the second half of this note follows from that single fact — a kernel bug is a shared bug, a capability is a real capability, and the isolation is only as complete as the namespaces someone actually applied.
 
 ```mermaid
 flowchart LR
@@ -66,7 +70,7 @@ flowchart TB
         Ns2 --> App4["App"]
     end
 ```
-This is *why* the **** section below exists at all: escaping a VM usually needs a hypervisor 0-day; "escaping" a container often just needs an operator's misconfiguration — no exploit required.
+This is *why* the **Container Security and Escapes** section below exists at all: escaping a VM usually needs a hypervisor 0-day; "escaping" a container often just needs an operator's misconfiguration — no exploit required.
 
 ```bash
 docker build -t myapp .    docker run -d -p 8000:8000 myapp
@@ -212,8 +216,6 @@ By default every container's stdout/stderr is captured by the **`json-file`** lo
 > Unbounded `json-file` logs are a container-native disk-fill denial of service — a chatty process (or an attacker deliberately generating noise) can grow that log file until the host runs out of disk. Cap it with log options, daemon-wide in `/etc/docker/daemon.json` or per-service in Compose: `logging: { driver: json-file, options: { max-size: "10m", max-file: "3" } }`.
 
 For real fleets, point the driver elsewhere entirely: `journald` (integrates with the host's `journalctl`), `syslog`, or `gelf`/`fluentd`/`awslogs` to ship straight to a central SIEM. That last option matters for the same reason off-host forwarding matters for **Windows event logs**: logs that only ever live on the box they describe can simply be deleted by whoever just compromised that box. Check what's actually configured with `docker inspect --format '{{.HostConfig.LogConfig}}' api`.
-
----
 
 ## Container Security and Escapes
 
@@ -366,13 +368,21 @@ flowchart LR
     Prevent --> Detect["Falco / audit rules"] --> Respond["Kill container, rotate secrets, patch"]
 ```
 
----
-
 **The deliberate break:** a container reads as a security boundary — work is isolated inside it, so a compromise inside stays inside.
 
 It is a packaging and isolation convenience assembled from namespaces and cgroups over a **shared kernel**, and the boundary is exactly the set of namespaces actually applied plus the capabilities not retained. That set is decided at run time by configuration, not by the fact of containerisation: `--privileged`, the Docker socket mounted inside, a host path mount, or the host PID namespace each removes the boundary completely. None of those is an exploit, none produces an error, and all of them are ordinary lines in a compose file.
 
 **How you'd spot it:** read the run configuration before the image, because that is where the boundary is decided. `--privileged`, `/var/run/docker.sock` mounted in, host PID or network namespace, added capabilities and host path mounts each collapse it by configuration alone — which is why most container escapes require no vulnerability at all. The audit that finds them is of the compose file and the orchestrator manifest, not of the CVE list for the base image.
+
+## Security Implications
+
+**The boundary is written down, which makes it auditable in a way most boundaries are not.** Whether a container is isolated is decided by a compose file, a Helm chart or a Kubernetes manifest — text, in version control, reviewable before anything runs. That is an unusual advantage and it is routinely wasted, because review attention goes to the application code and the base image CVE list while `privileged: true` passes unremarked in a file nobody treats as security-relevant. The single highest-value control here is making the run configuration a reviewed artifact.
+
+**An escape is lateral movement, not just a host compromise.** Containers are dense. The host an attacker lands on is running other people's workloads, holding their secrets in its Docker socket and their data in its volumes, so one escape does not compromise one service — it compromises every tenant scheduled onto that node. This is the argument for separating workloads by trust level across nodes rather than relying on the runtime to keep them apart.
+
+**A base image is somebody else's code running as your process.** Everything in [[OWASP Top 10]]'s component and integrity categories applies with the layer count as a multiplier: a pinned tag can move, a rebuild can pull a different upstream, and the resulting image ships to production without anyone reading a line of what changed. Digests and a bill of materials are not paperwork here; they are the only way the thing you tested and the thing you ran are known to be the same thing.
+
+**Ephemerality destroys evidence by design.** A compromised container is usually gone before anyone investigates — restarted, rescheduled, or scaled away — taking its filesystem, its process table and its logs with it. Everything about container forensics therefore has to be continuous and off-host: log drivers shipping elsewhere, runtime monitoring recording syscalls as they happen, image digests recorded at deploy. Evidence that only exists inside the container is evidence you have already agreed to lose.
 
 ## Summary
 
@@ -381,11 +391,7 @@ You should now be able to:
 - Build and reason about container images, including multi-stage builds that ship only the final artifact.
 - Identify and demonstrate the common container-escape paths — a mounted Docker socket, sensitive host mounts, dangerous capabilities — and explain why each breaks isolation.
 - Name the runtime controls (least privilege, dropped capabilities, read-only mounts, Falco-style monitoring) that detect or prevent an escape.
+- Explain why the run configuration is the security artifact rather than the image, and why container forensics has to be continuous and off-host to exist at all.
 
-## 🔗 Related Master Notes & Deep-Dives
-- **1.5 Programming for Security** — build the services you containerize
-- **1.2 Linux and Command Line** — the Linux fluency Docker assumes
-- **Privilege Escalation** · **GTFOBins** — post-escape escalation on Linux
-- **5. Security Misconfiguration** · **6. Vulnerable and Outdated Components** · **8.  Software and Data Integrity Failures** — the OWASP failure modes a misconfigured container embodies
-- **LoL(Living off the Land) Attacks** — what an attacker does next, once the escape lands on the host
-- [[DevSecOps]] — domain hub
+---
+> 🔼 Up: [[DevSecOps]]
