@@ -7,6 +7,7 @@ tags:
   - type/technique
   - difficulty/medium
   - level/apprentice
+visual-verified: 2026-09-02
 Domain:
   - "[[Switching & the Link Layer]]"
 Color: "#42D4F4"
@@ -138,6 +139,10 @@ Expected excerpt during an attack:
 14:22:13.120 ARP, Reply 10.10.10.1 is-at 00:00:5e:00:53:de, length 28
 14:22:15.121 ARP, Reply 10.10.10.1 is-at 00:00:5e:00:53:de, length 28
 ```
+
+![[arp-cache-race.gif|The victim's cache entry for the gateway, read left to right as time. The bar is what the host believes; each tall stroke from above is a forged reply arriving on its metronome, and the short stroke from below is the real gateway answering a probe. Notice how little the truth buys: one narrow band, ended by the next forged reply.]]
+
+The animation makes the shape of it plain. The forged replies land on a fixed beat and each one repaints the cache; the honest answer arrives once, out of rhythm and from a different direction, and holds for a fraction of the interval before the next forgery overwrites it. Nothing here is broken and nothing is exploited — the attacker is simply willing to speak more often than the gateway, and in a protocol where the most recent claim wins, that is the whole contest.
 
 Read the timestamps rather than the addresses. Five of these replies arrive on an even two-second cadence from `00:00:5e:00:53:de`; one arrives out of rhythm at `.402` from `00:00:5e:00:53:01`, which is the real gateway answering a probe — and it is immediately overwritten by the next forged reply 1.7 seconds later. A machine that has genuinely changed hardware address announces itself a handful of times and stops. Anything answering for the same IP on a metronome is not a host, it is a loop.
 
