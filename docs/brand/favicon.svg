@@ -1,14 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Crook2Root">
   <rect width="64" height="64" rx="8" fill="#0F1419"/>
-  <g>
-    <rect x="8" y="10" width="48" height="11" fill="#2A343E"/>
-    <rect x="8" y="21" width="48" height="11" fill="#1D242C"/>
-    <rect x="8" y="32" width="48" height="11" fill="#171D23"/>
-    <rect x="8" y="43" width="48" height="11" fill="#0D1114"/>
+  <g fill="none" stroke-linecap="butt">
+    <path d="M8 24H56M8 41H56" stroke="#E4EBF1" stroke-width="6"/>
+    <path d="M26 8 22 57M43 8 39 57" stroke="#DC143C" stroke-width="6.5"/>
   </g>
-  <g stroke="#C8D3DD" stroke-width="1.5" fill="none">
-    <path d="M8 10H56M8 21H56M8 32H56M8 43H56M8 54H56"/>
-  </g>
-  <polyline points="24,10 24,21 42,21 42,32 28,32 28,43 38,43 38,54"
-            fill="none" stroke="#DC143C" stroke-width="5" stroke-linecap="square"/>
 </svg>

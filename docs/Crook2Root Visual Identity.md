@@ -41,21 +41,59 @@ Everything below is downstream of those two.
 
 ## 1. The concept
 
-**Crook2Root is the descent from surface to depth.** That is the platform's
-name, its pedagogy (Chi/Feltovich/Glaser: novices sort by surface features,
-experts by deep structure), and the shape of every note in the corpus — the
-Break exists to move a reader from the visible story to the mechanism underneath.
+**The mark is `#`.**
 
-The mark is therefore not a lock, a hoodie, a skull or a terminal prompt. It is
-**strata with a single path descending through them**: horizontal bands stacked
-from light to dark, and one continuous line cutting from the topmost band to the
-lowest, deviating around each boundary rather than passing straight through.
+`$` is a user shell. `#` is root. Every practitioner this platform is for reads
+that instantly and reads it correctly — no legend, no explanation, no "it is a
+cross-section representing depth." It is the most economical mark available for
+the second half of the name, and it is understood before anyone has read a word
+of the corpus.
 
-Read at a glance it is a cross-section. Read carefully it is the argument: the
-surface layer is where the crook works, the bottom layer is root, and the path
-between them is not a straight line.
+The first draft of this document proposed a strata cross-section instead. `#` is
+better, and the reason it is better than a compromise is what the glyph is made
+of:
 
----
+> **Two horizontal bars, crossed by two strokes that lean rather than falling
+> straight.**
+
+That is the strata concept already compressed into an existing character. The
+horizontals are layer boundaries; the leaning strokes are the descent that
+deviates instead of dropping straight through. **The symbol says root. The
+geometry says descent through layers, and not in a straight line.** Both halves
+of the name, in four strokes, in a character every reader already knows.
+
+A straight-sided `#` would be the wrong drawing — it would say the route from
+surface to depth is obvious. The lean is load-bearing, and it is also simply how
+the glyph is drawn, which is the part that makes this work rather than feel
+imposed.
+
+**What the mark is not:** a padlock, a hoodie, a skull, a shield. Those say
+*security* generically, which is the one thing this platform never needs to
+establish — the reader arrived knowing.
+
+### The rejected treatment, and why
+
+A neon-green `#` with chromatic aberration and bloom was generated and
+seriously considered. The symbol was right and the treatment was refused, on
+three grounds, in order of weight:
+
+1. **Neighbourhood.** Green-on-black with RGB fringing is the most crowded
+   corner of this market — it is what Hack The Box looks like, and roughly every
+   CTF platform of the last decade. A corpus whose actual differentiator is 302
+   notes that each name a misconception and supply a recognition cue should not
+   wear a mark saying *we are also a hacking site*.
+2. **Internal continuity.** Glow and fringing sitting next to flat 1.5 px
+   Mermaid line work reads as two projects. Every other visual decision here was
+   made to match the notes.
+3. **Reduction.** Weaker than the first two, and worth stating accurately: the
+   neon version *does* survive 32 px. It goes soft and muddy-teal and loses the
+   crisp core and the fringe — which are exactly the things that made it
+   distinctive — but it remains legibly a hash. This was checked by rendering it
+   rather than asserted.
+
+**The neon render is retained as a launch and social asset**, where volume is
+the job and permanence is not. It is not the identity, and it does not appear in
+`docs/brand/`.
 
 ## 2. The style
 
@@ -103,8 +141,8 @@ Twelve assets. All live in `docs/brand/`. None is referenced from a note.
 
 ```text
 docs/brand/
-  mark.svg              the strata mark, monochrome, scalable
-  mark-accent.svg       the same with the crimson descent path
+  mark.svg              the hash, monochrome line work, on grid
+  mark-accent.svg       the hash in the strata stack, crimson descent strokes
   hero.png              2400×1260 — README and site header
   og-card.png           1200×630 — link previews
   favicon.svg           16px-legible reduction of the mark
@@ -148,19 +186,13 @@ skulls, no padlocks, no binary rain, no circuit-board motifs, no neon, no
 scanlines, no lens flare, no glowing edges.
 ```
 
-### 4.2 The mark
+### 4.2 The mark — not generated
 
 ```text
-A cross-section diagram of six horizontal geological strata stacked from
-top to bottom, drawn as parallel horizontal bands separated by thin
-boundary lines. The topmost band is the lightest, each band below is
-progressively darker. A single continuous line descends from the top
-surface to the deepest band — it does not fall straight, but steps and
-deviates laterally at each stratum boundary before continuing down.
-The descending line is the only element in crimson #DC143C; everything
-else is line work in #C8D3DD. Square canvas.
-
-[+ shared style block]
+The mark is authored as SVG, not generated — a form this geometric is
+drawn more precisely by code than by any model, and it stays diffable and
+exact at every size. See docs/brand/mark.svg. This section is kept only
+to record that the decision was deliberate.
 ```
 
 ### 4.3 The hero

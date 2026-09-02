@@ -1,23 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Crook2Root mark: six strata with a single path descending from surface to root">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Crook2Root mark: a hash drawn as two strata rules crossed by two leaning descent paths">
   <rect width="512" height="512" fill="#0F1419"/>
-  <g stroke="#1A2129" stroke-width="1">
+  <g stroke="#1A2129" stroke-width="1" opacity=".55" fill="none">
     <path d="M0 64H512M0 128H512M0 192H512M0 256H512M0 320H512M0 384H512M0 448H512
-             M64 0V512M128 0V512M192 0V512M256 0V512M320 0V512M384 0V512M448 0V512" opacity=".55"/>
+             M64 0V512M128 0V512M192 0V512M256 0V512M320 0V512M384 0V512M448 0V512"/>
   </g>
-  <g>
-    <rect x="64" y="64"  width="384" height="64" fill="#2A343E"/>
-    <rect x="64" y="128" width="384" height="64" fill="#232C35"/>
-    <rect x="64" y="192" width="384" height="64" fill="#1D242C"/>
-    <rect x="64" y="256" width="384" height="64" fill="#171D23"/>
-    <rect x="64" y="320" width="384" height="64" fill="#12171B"/>
-    <rect x="64" y="384" width="384" height="64" fill="#0D1114"/>
+  <g fill="none" stroke-linecap="butt">
+    <path d="M16 190H496M16 322H496" stroke="#75838F" stroke-width="2" opacity=".55"/>
+    <path d="M88 190H424M88 322H424" stroke="#C8D3DD" stroke-width="24"/>
+    <path d="M214 80 182 432M346 80 314 432" stroke="#C8D3DD" stroke-width="26"/>
   </g>
-  <g stroke="#C8D3DD" stroke-width="1.5" fill="none" shape-rendering="crispEdges">
-    <path d="M64 64H448M64 128H448M64 192H448M64 256H448M64 320H448M64 384H448M64 448H448"/>
-    <path d="M64 64V448M448 64V448"/>
-  </g>
-  <polyline points="200,64 200,128 296,128 296,192 216,192 216,256 320,256 320,320 248,320 248,384 288,384 288,448"
-            fill="none" stroke="#C8D3DD" stroke-width="6" stroke-linecap="square" stroke-linejoin="miter"/>
-  <circle cx="200" cy="64" r="9" fill="#0F1419" stroke="#C8D3DD" stroke-width="3"/>
-  <circle cx="288" cy="448" r="9" fill="#C8D3DD"/>
 </svg>
