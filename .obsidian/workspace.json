@@ -190,6 +190,10 @@
   },
   "active": "7c248500a89543cf",
   "lastOpenFiles": [
+    "docs/brand/favicon.svg",
+    "docs/brand/mark-accent.svg",
+    "docs/brand/mark.svg",
+    "docs/Crook2Root Visual Identity.md",
     "docs/brand",
     "DevSecOps/Docker and Containers.md",
     "docs/Crook2Root Pattern Glossary.md",
@@ -211,7 +215,6 @@
     "Offensive Security/Penetration Testing/Methodologies & Frameworks/Cyber Kill Chain.md",
     "Cryptography/Applied Trust & Tooling/JWT Security.md",
     "_to_delete/crypto-fabricated/Hashsmith CLI.md",
-    "_to_delete/crypto-fabricated",
     "Cryptography/Applied Trust & Tooling/CyberChef and the Crypto Toolkit.md",
     "Cryptography/Asymmetric Encryption/RSA.md",
     "Cryptography/Asymmetric Encryption/Digital Signatures.md",
@@ -225,7 +228,6 @@
     "Cryptography/Hashing & Passwords/Password Cracking.md",
     "Cryptography/Hashing & Passwords/Hashing & Passwords.md",
     "Cryptography/Hashing & Passwords/Hash Functions and Integrity.md",
-    "Cryptography/Symmetric Encryption/Symmetric Encryption.md",
     "_to_delete/assets/vHQWOgi.png",
     "_to_delete/assets/uptWRKW.png",
     "_to_delete/assets/tool_wifi_crack.svg",
@@ -233,8 +235,6 @@
     "_to_delete/assets/tool_vuln_funnel.svg",
     "_to_delete/assets/tool_siem_pipeline.svg",
     "_to_delete/assets/tool_privesc_surface.svg",
-    "_to_delete/assets/tool_port_scan_states.svg",
-    "_to_delete/assets/tool_packet_layers.svg",
-    "_to_delete/assets/tool_osint_recon.svg"
+    "_to_delete/assets/tool_port_scan_states.svg"
   ]
 }
