@@ -24,6 +24,10 @@ Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations 
 
 ## A Directory Is a Distributed Identity Database
 
+> *You rename a user account. Why does every permission that account held still work afterwards?*
+>
+> Hold your answer — the section below is the response.
+
 A **workgroup** lets each computer maintain its own users; a **domain** centralizes identities, policy, authentication, and resource discovery. Active Directory Domain Services stores those objects in a replicated database on **domain controllers**. A user name is only a label: the durable identity is a SID, and access depends on group membership, credentials, tickets, and ACLs. Learn four nouns first: an **object** is a directory record, an **attribute** is one field on that record, a **distinguished name** locates it in the hierarchy, and a **domain controller** authenticates identities while replicating directory state. This mental model prevents the beginner mistake of treating AD as merely a list of users.
 
 > [!tip] The analogy, and where it breaks

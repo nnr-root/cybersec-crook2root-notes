@@ -22,7 +22,7 @@ Network Types & Topologies -> The OSI Model -> The TCP-IP Model -> Encapsulation
 
 ## One Question per Device
 
-> *A switch and a router both forward traffic. State the difference in one sentence.*
+> *A switch and a router both forward traffic. What makes them different kinds of device?*
 >
 > Hold your answer — the section below is the response.
 

@@ -21,6 +21,10 @@ Linux Introduction & Distributions -> Linux CLI & Core Commands -> Linux I-O Red
 
 ## Start from zero — the machine, the operating system & the distribution
 
+> *Ubuntu and Arch can run a byte-identical kernel. What, then, is actually different between them?*
+>
+> Hold your answer — the section below is the response.
+
 A computer begins as physical components: a processor executes instructions, memory holds the working state, storage retains bytes after power loss, and devices move data to displays, networks, disks, and peripherals. Hardware alone does not know what a user, file, window, or network connection is. An **operating system** coordinates those components and presents stable abstractions so applications do not have to control each device directly. The Linux **kernel** is the privileged coordinator; user-space programs provide commands, services, libraries, and graphical interfaces.
 
 Keep five terms separate from the beginning. The **kernel** controls hardware and isolation. A **userland** is the collection of ordinary programs around it. A **shell** reads commands and launches programs. A **distribution** integrates a kernel, userland, package repositories, defaults, and an update policy. A **desktop environment** is an optional graphical layer. Ubuntu and Arch are distributions; Bash is a shell; GNOME is a desktop; none of them is the kernel itself.

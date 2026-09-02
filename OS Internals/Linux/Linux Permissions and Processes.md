@@ -22,6 +22,10 @@ Linux Introduction & Distributions -> Linux CLI & Core Commands -> Linux I-O Red
 
 ## Start from zero — subject, object & requested action
 
+> *You add your account to a group that can read a file, try immediately, and are still refused. Why does logging out and back in fix it?*
+>
+> Hold your answer — the section below is the response.
+
 Every access decision can be reduced to three questions: **who is asking**, **which object is targeted**, and **what operation is requested**. The asking subject is normally a process carrying a real and effective user ID, group IDs, supplementary groups, capabilities, and security labels. The object may be a file, directory, process, socket, device, or kernel interface. The action may be read, write, execute, traverse, signal, bind, mount, or administer.
 
 A **program** is executable content stored somewhere; a **process** is one running instance with a PID, memory, credentials, open descriptors, and execution state. A user account does not directly read a file—the kernel evaluates the credentials of a process acting for that user. This distinction explains why changing group membership may require a new login and why SUID execution changes effective identity without changing the human operator.

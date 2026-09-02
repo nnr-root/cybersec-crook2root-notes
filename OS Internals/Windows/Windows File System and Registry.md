@@ -21,6 +21,10 @@ Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations 
 
 ## Persistent Names & State
 
+> *You delete a Registry key and Registry Editor stops showing it. Is it gone?*
+>
+> Hold your answer — the section below is the response.
+
 A file system turns blocks on storage into named byte streams with metadata and permissions. A **volume** is a formatted storage region, a **file record** describes one file, a **directory** maps names to records, and a **stream** stores bytes associated with a record. The Registry is different: it is a hierarchical configuration database whose **keys** resemble folders, **values** hold typed data, and **hives** are independently backed stores. NTFS and the Registry both cache and journal state, so what is visible through Explorer or Registry Editor is only one view of a deeper transactional system.
 
 > [!tip] The analogy, and where it breaks

@@ -21,6 +21,10 @@ Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations 
 
 ## Boot Chain, Process & Service
 
+> *A suspicious process reports `explorer.exe` as its parent. Does that establish the user launched it?*
+>
+> Hold your answer — the section below is the response.
+
 The **boot chain** is the ordered handoff from firmware to boot manager, loader, kernel, and first user-mode processes. A **process** owns an address space, handles, identity token, and other resources; a **thread** is what the scheduler actually executes. A **service** is a long-lived workload managed by the Service Control Manager, not a special kind of executable. A **scheduled task** is a trigger-plus-action definition. Parent-child process relationships record creation, but they do not by themselves prove trust—each stage must also be evaluated by image path, signer, token, session, command line, and timing.
 
 > [!tip] The analogy, and where it breaks

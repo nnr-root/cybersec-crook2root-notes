@@ -21,6 +21,10 @@ Linux Introduction & Distributions -> Linux CLI & Core Commands -> Linux I-O Red
 
 ## Start from zero — the privileged mediator
 
+> *Your program calls `read()` on a file. It has no ability to touch a disk. What actually happens at that instant?*
+>
+> Hold your answer — the section below is the response.
+
 An application cannot safely control physical memory, schedule CPUs, or program devices directly. The **kernel** runs in a privileged CPU mode and mediates those shared resources. Ordinary programs run in user mode with isolated virtual address spaces. They request kernel operations through **system calls** such as `openat`, `read`, `mmap`, `clone`, and `sendmsg`. The system-call interface is an **ABI**: a binary contract covering call numbers, registers, argument layout, return values, and error conventions.
 
 Keep mechanism separate from policy. A scheduler mechanism selects runnable tasks; policy determines priorities and quotas. Virtual memory provides mappings; permission and security policies decide which mappings are legal. A driver translates generic kernel operations into device behavior. A namespace changes what selected resources a task can see, while a cgroup accounts for and limits resources. None of these alone is “a container”; container runtimes compose them.

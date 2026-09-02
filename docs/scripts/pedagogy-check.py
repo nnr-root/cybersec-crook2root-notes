@@ -149,8 +149,11 @@ def prose_questions(lines, mask, upto_line):
         l = re.sub(r"^\s*>\s?", "", l)
         if l.lstrip().startswith(("#", "|", "[!")):
             continue
-        # allow a closing emphasis/bracket after the mark: *…?*  **…?**  (…?)
-        for mm in re.finditer(r"[^\s].{0,180}?\?(?=[\s*_`)\]]|$)", l):
+        # allow a closing emphasis, bracket or quote after the mark:
+        #   *…?*   **…?**   (…?)   …is it valid?"
+        # the quote case matters: a question whose final clause is quoted is
+        # still a question, and without it NetExec's pre-question read as absent
+        for mm in re.finditer("[^\\s].{0,180}?\\?(?=[\\s*_`)\\]\"'”’]|$)", l):
             seg = mm.group(0)
             if "http" in seg or "](" in seg:
                 continue

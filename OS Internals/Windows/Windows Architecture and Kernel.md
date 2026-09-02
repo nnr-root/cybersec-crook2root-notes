@@ -21,6 +21,10 @@ Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations 
 
 ## What an Operating System Actually Does
 
+> *Two programs each have the same file "open". What is it that each of them is actually holding?*
+>
+> Hold your answer — the section below is the response.
+
 An application cannot safely control a CPU, RAM, disk, or network card directly. Windows therefore acts as a privileged broker: it schedules threads, maps virtual memory, names resources as objects, checks access tokens, sends I/O to drivers, and converts hardware events into work software can consume. A **process** is a protected container for resources; a **thread** is an executable stream inside it; a **handle** is a process-local reference to a kernel object; and a **system call** is a controlled transition into privileged code. Keep those four definitions in view—nearly every NT subsystem in this note refines one of them.
 
 > [!tip] The analogy, and where it breaks

@@ -21,6 +21,10 @@ Windows Architecture & Kernel -> Windows Memory Internals & Exploit Mitigations 
 
 ## Observation Before Intervention
 
+> *Process Explorer shows an unsigned binary running from a temporary folder. Have you found something?*
+>
+> Hold your answer — the section below is the response.
+
 Troubleshooting is controlled hypothesis testing. Establish the symptom and time window, capture volatile evidence, form one falsifiable explanation, collect the narrowest evidence that can disprove it, and change one variable at a time. Sysinternals tools expose different object types: processes and handles, file and Registry operations, autostart configuration, endpoints, signatures, and memory maps. Their output is evidence—not a verdict. “Unsigned,” “remote,” or “unusual parent” raises a question; provenance, baseline, access context, and correlated timing answer it.
 
 > [!tip] The analogy, and where it breaks

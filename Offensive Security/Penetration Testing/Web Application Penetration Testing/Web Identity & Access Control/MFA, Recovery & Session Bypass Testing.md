@@ -16,7 +16,7 @@ Web Authentication Testing -> Broken Access Control -> JWT Security Testing -> F
 
 ## The Second Factor and Its Escape Hatches
 
-> *MFA is enforced on every account. Name a way in that never touches the second factor.*
+> *MFA is enforced on every account. How does an attacker get in without ever meeting it?*
 >
 > Hold your answer — the section below is the response.
 

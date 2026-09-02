@@ -21,6 +21,10 @@ Linux Introduction & Distributions -> Linux CLI & Core Commands -> Linux I-O Red
 
 ## Start from zero — identity, reachability, transport & application
 
+> *The name resolves and the connection still fails. What did the successful lookup actually prove?*
+>
+> Hold your answer — the section below is the response.
+
 A network exchange succeeds only when several independent layers agree. An interface must be usable, the host must have an address, routing must select a next hop, neighbor discovery must resolve a local link destination, a firewall must permit the packet, a transport protocol must identify endpoints with ports, and an application must speak the expected protocol. A successful DNS lookup proves only name resolution; it does not prove routing, TCP reachability, TLS trust, or application health.
 
 Learn the vocabulary as contracts. An **IP address** identifies a network-layer endpoint. A **prefix** defines which addresses are local. A **route** chooses where packets go. A **port** identifies a transport endpoint. A **socket** binds protocol, addresses, and ports to a process. **DNS** maps names to records. **TLS** authenticates and encrypts an application session. A **file transfer** is an application operation whose integrity and authorization must still be verified.

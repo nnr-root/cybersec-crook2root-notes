@@ -24,6 +24,10 @@ Penetration Testing Fundamentals -> Rules of Engagement & Scoping -> Penetration
 
 ## Why Attacks Have a Shape
 
+> *An intrusion is already six stages deep and nobody noticed any of them. Is it too late?*
+>
+> Hold your answer — the section below is the response.
+
 Attacks are not single events — they are *sequences*. An intruder rarely goes from "outside" to "stealing data" in one move; they recon, build a weapon, deliver it, exploit, install a foothold, set up remote control, and only then act on their goal. The **Cyber Kill Chain**, introduced by Lockheed Martin in 2011, names those seven stages so both attackers and defenders share a map. Its power for defense is one insight: **the attacker must complete every link, but the defender only has to break one.**
 
 > [!tip] The analogy, and where it breaks

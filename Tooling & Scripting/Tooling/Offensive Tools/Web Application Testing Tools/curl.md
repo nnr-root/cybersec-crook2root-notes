@@ -18,7 +18,7 @@ curl -> Postman -> Burp Suite -> OWASP ZAP -> Nikto -> WPScan -> SQLmap
 
 ## Four parts of a request, four parts of a response
 
-> *A request and a response share the same four parts. Name them.*
+> *A request and a response share the same four parts. What are they?*
 >
 > Hold your answer — the section below is the response.
 

@@ -22,7 +22,7 @@ Docker and Containers
 
 ## Docker and Compose Fundamentals
 
-> *A virtual machine and a container both isolate a workload. Name the one thing the container shares with its host that the virtual machine does not.*
+> *A virtual machine and a container both isolate a workload. What does the container share with its host that the virtual machine does not?*
 >
 > Hold your answer — the section below is the response.
 

@@ -21,7 +21,7 @@ DNS Resolution & Records -> DNS Security & Encrypted Transports -> Local Name Re
 
 ## Why Clocks Drift and Why It Matters
 
-> *Two servers disagree about the time by four minutes. Name something that breaks.*
+> *Two servers disagree about the time by four minutes. What breaks?*
 >
 > Hold your answer — the section below is the response.
 
