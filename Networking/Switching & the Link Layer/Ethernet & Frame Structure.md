@@ -82,8 +82,31 @@ flowchart LR
 
 Read the diagram as the receiver's decision order: integrity is checked first (a corrupt frame is dropped before anything else looks at it), then addressing decides whether to process it at all, and only then does the EtherType select which upper-layer parser receives the payload.
 
-> [!tip] This note's Break
-> The opening question — how many times the destination address is rewritten between you and a server twelve hops away — is the deliberate break for this note. The intuitive answer is zero. The real answer is twelve, and the fourteen bytes you counted are why.
+**The deliberate break:** an address is the thing that gets you there. You type one destination, it names the machine that will answer, and it carries your data the whole way.
+
+Two addressing systems are running at once, and only one of them survives the trip. The IP addresses are **end-to-end** — written once, unchanged at every hop, still identical when the server reads them. The MAC addresses are **per link**: they name the next device on *this segment*, they are stripped and rewritten by every router in the path, and twelve hops means twelve entirely different pairs. A MAC address is not the identity of your destination. It is the answer to "who do I hand this to next," and it is correct for about one cable's length.
+
+```mermaid
+flowchart LR
+    subgraph L1["Link 1 · VLAN 10"]
+        F1["<b>Ethernet header</b><br/>src 00:00:5E:00:53:0E<br/>dst 00:00:5E:00:53:01"]
+    end
+    subgraph L2["Link 2 · to the edge"]
+        F2["<b>Ethernet header</b><br/>src 00:00:5E:00:53:01<br/>dst 00:00:5E:00:53:0A"]
+    end
+    subgraph L3["Link 3 · public segment"]
+        F3["<b>Ethernet header</b><br/>src 00:00:5E:00:53:0A<br/>dst 00:00:5E:00:53:14"]
+    end
+    F1 -->|"strip · rewrite"| F2 -->|"strip · rewrite"| F3
+    P["<b>IP packet — carried unchanged</b><br/>src 10.10.10.14 → dst 203.0.113.20"]
+    F1 -.carries.-> P
+    F2 -.carries.-> P
+    F3 -.carries.-> P
+```
+
+Read the dotted lines as the point: three different frames, one packet. `WS-014` reaches Meridian's `track` server by way of the VLAN 10 gateway and `edge` — every MAC in the diagram is that hop's own last byte, and the only thing that made the whole journey is the pair of IP addresses.
+
+**How you'd spot it:** capture at two points in the path and compare. The IP addresses will be byte-for-byte identical in both captures; the MAC addresses will share nothing at all. This is also why a MAC address in a log tells you which device was *adjacent* to the sensor, never who originated the traffic — the moment a router sits between you and the source, the source MAC you recorded belongs to the router.
 
 ## The EtherType: The Demultiplexing Key
 
@@ -130,7 +153,7 @@ analyst@lab:~$ sudo tcpdump -i veth-host -e -XX -c 1 icmp
         0x0020:  0002 0800 4d3a 1073 0001 ...
 ```
 
-Line `0x0000` is the first sixteen bytes on the wire. Read it against the field table in **The Envelope for the Local Hop**:
+Line `0x0000` is the first sixteen bytes on the wire. Read it against the field table in **Why your packet gets a new address every few metres**:
 
 ```text
 6e9a 0b1c 2d3e   <- bytes 0-5   destination MAC = the receiver
@@ -139,7 +162,7 @@ Line `0x0000` is the first sixteen bytes on the wire. Read it against the field 
 4500             <- byte 14     the IP header begins: 4 = IPv4, 5 = 20-byte header
 ```
 
-Two details are worth pausing on. **The destination comes first, before the source** — the receiver's most urgent question is "is this for me?", and putting the answer in the first six bytes lets a NIC discard a frame that is not without parsing any further. And `0a63 0001` on line `0x0010` is `10.99.0.1` in hex (`0a`=10, `63`=99, `00`=0, `01`=1) — the sender's IP, sitting inside the payload that the Ethernet header is merely carrying. The frame does not know or care what those bytes mean; the EtherType told it which parser does.
+Two details are worth pausing on. **The destination comes first, before the source** — the receiver's most urgent question is "is this for me?", and putting the answer in the first six bytes lets a NIC discard a frame that is not for it without parsing any further. And `0a63 0001` on line `0x0010` is `10.99.0.1` in hex (`0a`=10, `63`=99, `00`=0, `01`=1) — the sender's IP, sitting inside the payload that the Ethernet header is merely carrying. The frame does not know or care what those bytes mean; the EtherType told it which parser does.
 
 Note also what is **absent**: the preamble and the FCS. The NIC strips the preamble before handing the frame up, and validates then discards the FCS. A capture tool shows you what survived, not the complete wire format — which is why an FCS error never appears as a malformed frame in `tcpdump`, only as a counter increment.
 

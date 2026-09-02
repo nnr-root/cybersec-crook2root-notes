@@ -178,8 +178,9 @@
       "bases:Yeni taban oluştur": false
     }
   },
-  "active": "6273164f388200f3",
+  "active": "cd3cd438fdbb49bc",
   "lastOpenFiles": [
+    "docs/brand/favicon.svg",
     "_to_delete/favicon.svg",
     "_to_delete/mark-accent.svg",
     "docs/brand/icon-16.png",
@@ -191,7 +192,6 @@
     "docs/brand/icon-256.png",
     "docs/brand/icon-512.png",
     "docs/brand/favicon.ico",
-    "docs/brand/og-card.png",
     "docs/Crook2Root Visual Identity.md",
     "docs/brand",
     "DevSecOps/Docker and Containers.md",
