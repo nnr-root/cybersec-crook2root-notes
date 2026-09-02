@@ -6,6 +6,7 @@ tags:
   - cyber/networking/layer2
   - type/technique
   - difficulty/medium
+visual-verified: 2026-09-02
 Domain:
   - "[[Switching & the Link Layer]]"
 Color: "#42D4F4"
@@ -141,6 +142,14 @@ Eighteen hundred drops against fourteen thousand forwarded is not a tuning probl
 ### IP Source Guard — Validate Source Addresses
 
 **IP Source Guard** filters traffic by source IP against the same binding table, dropping frames whose source IP does not match the address leased to that port. This prevents a host from spoofing another's IP address, closing off address-based impersonation.
+
+### What Each Control Actually Covers
+
+![[l2-control-coverage.png|Rows are the attacks — MAC flooding, ARP spoofing, rogue DHCP, VLAN hopping, STP takeover, IP spoofing. Columns are the controls, in the same order: 802.1X, port security, DHCP snooping, Dynamic ARP Inspection, IP Source Guard, BPDU Guard. A filled cell means that control stops that attack from an untrusted port.]]
+
+The shape is the argument. One column is solid and every other column holds exactly one cell, because 802.1X is the only control here that addresses the cause rather than a symptom — an unauthenticated device never reaches the segment, so there is nothing for it to flood, forge or claim. Everything to the right of it is a specific answer to a specific lie.
+
+Read it a second time as a risk register. Every single-cell column is a control you can lose without losing the others, which is the layering argument. The solid column is the one whose failure is not a gap but a hole — and, per the section above, the exceptions carved into it are exactly where that failure gets arranged.
 
 ## The Deployment Order Matters
 

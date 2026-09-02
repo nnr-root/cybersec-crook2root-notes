@@ -288,7 +288,22 @@ than to rediscover.
    deltas. Three assets, unchanged to the eye, 3.3 MB lighter; over three
    hundred notes this is the difference between a repository people clone and
    one they give up on.
-10. **Audit by measurement, never by eye.** Crop at 2x and count arrowheads;
+10. **One dimension holds; two do not.** The clearest split in the assets made
+    so far. Asked for a row of cells inside a bar, Nano Banana returned six
+    dividers at a 362.5px pitch with 0.5px maximum error, and eight cells
+    within a pixel of one another across three stacked bars. Asked for a
+    six-by-six lattice it produced eight columns instead of six, with widths
+    from 184 to 275px and row heights from 188 to 232. The fill logic was
+    correct both times; only the lattice failed. Design mechanism diagrams as
+    rows — a bar divided into fields, several bars stacked — and treat a true
+    two-dimensional grid as something to be checked hard or avoided.
+11. **Judge a defect by whether it misleads, not by whether it is untidy.**
+    The Note 6 matrix kept cells that vary by about ten percent, because there
+    the cell sizes carry no meaning and the pattern is the whole content. The
+    same variance in the Note 3 timing diagram was fatal, because there the
+    even spacing *was* the teaching and the prose promised a metronome. Same
+    magnitude of error, opposite verdicts.
+12. **Audit by measurement, never by eye.** Crop at 2x and count arrowheads;
    read centroid positions frame by frame. Three assets looked right and were
    wrong, in ways only pixel coordinates showed.
 
