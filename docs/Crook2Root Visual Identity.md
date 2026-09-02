@@ -371,6 +371,41 @@ sequences where watching genuinely beats reading — a scan resolving states, a
 handshake completing, a `free -h` before and after cache pressure — and not with
 302 recordings nobody asked for.
 
+### 5.1 Mechanism motion — derived, not generated
+
+Section 5 is about *terminal* motion, where the objection is that generated
+video would invent command output. Mechanism motion is a separate case: a
+timing diagram or a topology has no output to fabricate, so the objection does
+not apply and Veo was worth trying.
+
+It was tried twice, for the *ARP & Neighbor Discovery* animation, and failed
+both times. Given a scene and a two-part sequence it rewound the moving element
+and improvised a route that did not exist in the drawing. Given a description
+organised as "the left rectangle, the third rectangle, the small square" it
+rendered that vocabulary into the frame as visible text. Neither failure is
+about quality — both are the model re-planning something the diagram's meaning
+depended on.
+
+**So mechanism motion is derived from an audited still.** `docs/scripts/sweep.py`
+takes a Gemini timing diagram that has passed audit and sweeps a playhead across
+it, revealing the state behind the head and holding it empty ahead. Every pixel
+of artwork is Gemini's; the only thing added is the reveal, which is arithmetic
+and cannot invent anything. The reader watches the state flip as each arrival
+lands instead of reading a finished chart, which is what the animation was for.
+
+```bash
+python3 docs/scripts/sweep.py assets/<domain>/<name>.png assets/<domain>/<name>.gif
+```
+
+It locates the bar and the ground colour itself, crops dead margin, and holds
+one shared palette across all frames so the encoder writes real deltas — that
+last detail is the difference between a 7.4 MB file and a 370 KB one. Defaults
+are five seconds at twelve frames per second, 1100px wide.
+
+This is a narrow exception to the all-Gemini rule and it should stay narrow: it
+applies where a still already carries the whole mechanism and time is the only
+thing missing. It is not a licence to author artwork.
+
 ---
 
 ## 6. The line that does not move
