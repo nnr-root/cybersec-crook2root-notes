@@ -336,7 +336,9 @@ abandoned: all 227 image files were removed and instructional visuals became
 > [!warning] The reason recorded here was wrong
 > This section previously stated that the removed visuals "read as
 > AI-generated." Reading the actual files in `_to_delete/assets/` shows
-> otherwise: they were **lifted third-party screenshots** — one still carrying a
+> otherwise (the files were inspected before `_to_delete/` was cleared on
+> 2026-09-02; they remain in history at `a489d0c^`): they were **lifted
+> third-party screenshots** — one still carrying a
 > `DRAFT` watermark and a stack trace from an unrelated commercial course — and
 > **generic stock clipart**. Unlicensed content and decoration, not AI art. The
 > removal was correct; the stated justification was not, and the distinction

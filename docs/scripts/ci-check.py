@@ -8,7 +8,7 @@ Two tiers:
           regardless of how finished a note is:
             * banned constructs (the retired Crook/Operator/Root structure, labs,
               checkpoints, level tags, reader-tasking, question boxes)
-            * image files committed anywhere but _to_delete/ (repo is Mermaid-only)
+            * image files committed anywhere but docs/brand/ (notes are Mermaid-only)
             * image embeds ![[...]] in a note
             * unbalanced code fences
             * numbered task headings (`## Task N — …`) — the public repo uses plain

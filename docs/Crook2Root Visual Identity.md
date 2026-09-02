@@ -12,9 +12,10 @@ On 2026-09-01 all 227 image files were removed from the repo and a CI gate was
 added to keep them out. The Master Blueprint recorded the reason as *"the
 AI-generated visuals read as AI-generated."*
 
-**That reason was wrong, and this note corrects the record.** The removed files
-are still in `_to_delete/assets/`, and reading them shows two different problems,
-neither of which was AI art:
+**That reason was wrong, and this note corrects the record.** The removed files were read before this was written — they sat in
+`_to_delete/assets/` until that staging directory was cleared on 2026-09-02, and
+remain recoverable from history at `a489d0c^`. They showed two different
+problems, neither of which was AI art:
 
 1. **Lifted third-party screenshots.** Tool captures taken from other people's
    training material — one still carries a `DRAFT` watermark and a stack trace
