@@ -190,6 +190,8 @@
   },
   "active": "7c248500a89543cf",
   "lastOpenFiles": [
+    "docs/brand",
+    "DevSecOps/Docker and Containers.md",
     "docs/Crook2Root Pattern Glossary.md",
     "docs/PR-teaching-standard-tier0.md",
     "docs/Retrofit Batch Plan.md",
@@ -224,8 +226,6 @@
     "Cryptography/Hashing & Passwords/Hashing & Passwords.md",
     "Cryptography/Hashing & Passwords/Hash Functions and Integrity.md",
     "Cryptography/Symmetric Encryption/Symmetric Encryption.md",
-    "Cryptography/Symmetric Encryption/Stream Ciphers.md",
-    "Cryptography/Symmetric Encryption/Block Cipher Modes.md",
     "_to_delete/assets/vHQWOgi.png",
     "_to_delete/assets/uptWRKW.png",
     "_to_delete/assets/tool_wifi_crack.svg",

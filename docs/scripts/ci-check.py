@@ -95,14 +95,21 @@ def note_files(root):
 def check(root="."):
     errors, warnings = [], []
 
-    # ── repo-level: no image files outside _to_delete/ ────────────────────────
+    # ── repo-level: no image files outside _to_delete/ and docs/brand/ ────────
+    # docs/brand/ holds the platform identity only — the mark, the hero, the
+    # domain marks, the social card. Brand assets never appear inside a note;
+    # every instructional visual stays Mermaid or a field table, because a
+    # picture of a mechanism can be wrong in ways text cannot.
+    BRAND_DIR = os.path.join("docs", "brand")
     for dp, dn, fn in os.walk(root):
         dn[:] = [d for d in dn if d not in {".git", "_to_delete", ".obsidian"}]
         for f in fn:
             if f.lower().endswith(IMAGE_EXT):
                 rel = os.path.relpath(os.path.join(dp, f), root)
-                errors.append(f"{rel}: image file committed — the repo is Mermaid-only "
-                              f"(move to _to_delete/ or remove)")
+                if rel.startswith(BRAND_DIR + os.sep):
+                    continue
+                errors.append(f"{rel}: image file committed — instructional visuals are "
+                              f"Mermaid-only (brand assets belong in docs/brand/)")
 
     for rel in note_files(root):
         text = open(os.path.join(root, rel), encoding="utf-8", errors="replace").read()

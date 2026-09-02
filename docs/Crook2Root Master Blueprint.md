@@ -327,10 +327,24 @@ Roughly two thirds of a worked example is already written in the archive. **The 
 
 ## 4. Pillar Three — The Visual Standard
 
-**Superseded.** This pillar originally specified a five-tier media pipeline ending
-in AI-generated imagery, with authored SVGs for spatial subjects and terminal GIFs
-for command sequences. That model was abandoned: the AI-generated visuals read as
-AI-generated, all 227 image files were removed, and the repo became **Mermaid-only**.
+**Superseded, and revised 2026-09-02.** This pillar originally specified a
+five-tier media pipeline ending in AI-generated imagery, with authored SVGs for
+spatial subjects and terminal GIFs for command sequences. That model was
+abandoned: all 227 image files were removed and instructional visuals became
+**Mermaid-only**.
+
+> [!warning] The reason recorded here was wrong
+> This section previously stated that the removed visuals "read as
+> AI-generated." Reading the actual files in `_to_delete/assets/` shows
+> otherwise: they were **lifted third-party screenshots** — one still carrying a
+> `DRAFT` watermark and a stack trace from an unrelated commercial course — and
+> **generic stock clipart**. Unlicensed content and decoration, not AI art. The
+> removal was correct; the stated justification was not, and the distinction
+> changes what is permitted now. See **[[Crook2Root Visual Identity]]**.
+
+A **brand-only** exception was adopted on 2026-09-02: platform identity assets
+live in `docs/brand/`, in a technical-schematic style, and never appear inside a
+note. `ci-check.py` enforces the boundary.
 
 The decision procedure now has three outcomes, not five:
 
@@ -346,9 +360,10 @@ flowchart TD
     style F fill:#2a2a2a,stroke:#888,color:#aaa
 ```
 
-**Current state:** 235 Mermaid diagrams and field maps, **0 image files**. The CI
-gate errors on any image file or `![[...]]` embed anywhere in the repo, so this is
-enforced rather than agreed.
+**Current state:** 235 Mermaid diagrams and field maps, and **0 image files in
+any note**. The CI gate errors on an image file anywhere outside `docs/brand/`,
+and on an `![[...]]` embed anywhere at all, so this is enforced rather than
+agreed.
 
 ### What survived from the original pillar
 
