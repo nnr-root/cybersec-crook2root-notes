@@ -6,6 +6,7 @@ tags:
   - cyber/networking/layer2
   - type/concept
   - difficulty/easy
+visual-verified: 2026-09-02
 Domain:
   - "[[Switching & the Link Layer]]"
 Color: "#42D4F4"
@@ -210,6 +211,10 @@ analyst@lab:~$ sudo tcpdump -i veth-host -c 1 -e arp
 ```
 
 An ARP request carries 28 bytes of payload, and `length 42` is those 28 plus the 14-byte Ethernet header. On a physical wire this frame would be **padded out to 60 bytes plus the 4-byte FCS** to satisfy the 46-byte minimum — the padding is added by the NIC and is not shown here because a virtual link has no such requirement. Note the destination `ff:ff:ff:ff:ff:ff` as well: the broadcast address, meaning "every station on this link", which is how a host asks a question when it does not yet know who to ask.
+
+![[ethernet-minimum-frame.png|Three frames carrying different amounts of data. Cyan is real payload, red is padding, and the narrow unfilled regions at each end are the header and the FCS. Top: a payload far under the floor, mostly padding. Middle: about half. Bottom: a payload that reaches the floor on its own, needing none. The three bars are the same length, which is the point.]]
+
+Line the three up and the floor stops being a rule to memorise. A frame carrying one byte and a frame carrying forty-six occupy exactly the same space on the wire, because the padding expands to absorb the difference — so below the floor, sending less data does not cost less. This is why a network saturated by tiny frames is a real failure mode: at minimum size, an Ethernet segment spends most of its capacity on headers, padding and the gaps between frames, and almost none on anything anyone wanted to send. It is also the arithmetic behind the flooding attack in [[MAC Addressing & Switch Operation]], where each of those thousands of forged frames costs the switch a full 64 bytes regardless of how little the attacker put in it.
 
 The **maximum** standard payload is 1500 bytes — the Ethernet **MTU**. This single number ripples upward: it is why TCP advertises a maximum segment size of 1460 (1500 minus 20 bytes of IP and 20 of TCP header), and why every discussion of fragmentation traces back here.
 
