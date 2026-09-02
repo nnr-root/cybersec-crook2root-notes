@@ -179,8 +179,12 @@ demonstrates VLANs, two demonstrate trunking, spanning tree and hopping.
 | `SW-01` | `00:00:5E:00:53:F1` | Access switch. Carries VLANs 10, 20 and 30 |
 | `SW-02` | `00:00:5E:00:53:F2` | Second access switch, same VLANs, joined to `SW-01` by a trunk |
 
-Ports are named `Gi0/<n>`. Access ports live in `Gi0/1`–`Gi0/23`; the
-inter-switch trunk is `Gi0/48` on both devices. Where a note shows an
+Ports are named `Gi0/<n>`. Access ports live in `Gi0/1`–`Gi0/23`. The two
+switches are joined by **two** trunks, `Gi0/47` and `Gi0/48`, so either cable
+can fail without isolating a switch — which also makes the pair a physical
+loop, and therefore the smallest topology in which Spanning Tree has anything
+to do. Where a note needs a single trunk it uses `Gi0/48`; where it needs a
+blocked redundant port it uses `Gi0/47`. Where a note shows an
 **unhardened** switch the native VLAN is `1`, because that is the shipped
 default and the default is usually the finding; where a note shows a
 **hardened** one the native VLAN is `999`, an otherwise unused VLAN with no
