@@ -8,6 +8,9 @@ Color: "#708090"
 
 # Postman
 
+> [!abstract] Note of [[Web Application Testing Tools]]
+> Postman organises collections of API requests, injects auth through environment variables, and codifies checks as assertions a CLI runner gates a pipeline on. This note covers the variable-and-environment model that makes cross-user testing two clicks, and why the secrets that model stores are the tool's real security exposure.
+
 Postman is the graphical API workbench. Where curl sends one request, Postman organizes **collections** of requests, manages **environments** and variables, handles complex auth (OAuth2, Bearer, HMAC), and runs **test scripts** against responses. For modern targets that are mostly JSON APIs, it is the fastest way to map an API, replay authenticated calls, and automate a regression suite — including a CLI runner (`newman`) for CI.
 
 > [!warning] Authorized targets only
@@ -59,10 +62,10 @@ Postman's real power at the Root level is **Newman**, the CLI runner that turns 
 ```shell-session
 operator@ci:~$ newman run api-tests.postman_collection.json -e staging.postman_environment.json
 → Login
-  POST https://staging.example.test/login [200 OK, 412B, 141ms]
+  POST https://staging.meridian.test/login [200 OK, 412B, 141ms]
   ✓  login ok
 → Cross-tenant read (should be 404)
-  GET https://staging.example.test/api/orders/9001 [200 OK, 512B, 88ms]
+  GET https://staging.meridian.test/api/orders/9001 [200 OK, 512B, 88ms]
   1✗  expected 404 but got 200
 ┌─────────────────────────┬──────────┬──────────┐
 │                         │ executed │   failed │
@@ -76,6 +79,14 @@ operator@ci:~$ newman run api-tests.postman_collection.json -e staging.postman_e
 **How you'd spot it:** a suite worth keeping asserts on status codes that should be *refusals*. A collection where every test expects `200` is checking that the API works, not that it is safe. In CI the signal is Newman's exit code — a cross-tenant test that starts passing after a deploy has caught a real access-control regression.
 
 Internals worth knowing: Postman variables have a **scope chain** (global → collection → environment → local), and a subtle bug is a stale global shadowing an environment value — check the variable's resolved value in the console. Pre-request scripts run *before* the request (used for HMAC signing or timestamp nonces). And beware secret hygiene: tokens saved in environments are stored locally and can sync to the cloud — use "secret" variable type and never commit exported environments containing live credentials.
+
+## Security Implications
+
+**A Postman collection is a place secrets go to leak.** Environments and requests routinely hold live tokens, API keys and passwords, and a collection or environment file committed to a git repository or shared with a teammate carries them along — exported Postman files are a recurring source of real credential breaches. Keep secrets in environment variables, never in the request, and never commit an environment file that holds a live token.
+
+**It replays real, authenticated requests, so a collection is as dangerous as where it points.** A suite aimed at production runs as a real user and can create, modify or delete real data. A dedicated test environment and a low-privilege test account are what keep a regression run from being a production incident.
+
+**Codified authorization tests are its security payoff.** The cross-tenant assertion — request customer B's object with customer A's token and expect a 404 — turns a broken-access-control check into something Newman runs every build and fails the pipeline on, rather than a one-off manual test that rots. That is the case for Postman over curl in a security context: the check outlives the tester.
 
 ## Summary
 

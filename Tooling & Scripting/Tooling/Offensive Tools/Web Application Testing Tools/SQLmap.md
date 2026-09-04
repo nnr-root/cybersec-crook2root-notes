@@ -8,6 +8,9 @@ Color: "#708090"
 
 # SQLmap
 
+> [!abstract] Note of [[Web Application Testing Tools]]
+> SQLmap is a sniper: one request, one parameter, probed to the point where the app hands a query to the database. This note covers the two safety dials that keep a run bounded, why time-based inference is a statistical problem rather than a yes/no answer, and why a negative run is never proof of safety while an aggressive one can change state.
+
 SQLmap automates SQL-injection detection, DBMS fingerprinting, and — with authorization — data extraction. It takes a single request, hammers one parameter with the injection techniques you'd otherwise try by hand, and infers the backend from how the app responds. It is enormously powerful and enormously dangerous: start with detection-only settings and never extract or reach the OS beyond explicit authorization.
 
 > [!warning] Authorized, bounded testing only
@@ -53,6 +56,18 @@ Interpretation: strong differential — but still verify manually
 **The deliberate break:** a single delayed response is *not* proof. Congestion, a slow query, a GC pause, or a queue can all mimic a `SLEEP(5)`, and — worse — `--risk 3` enables **stacked queries** that can *change state* (a `; UPDATE` or `; DROP` your payload didn't intend on a fragile app). The safe method is many samples with a conservative threshold, the lowest risk that works, and a canary DB. And the cardinal rule: a **negative** SQLmap run is *not* proof of safety — second-order injection, unusual encodings, and business-logic context all evade automated detection. SQLmap tells you "yes, here's how"; it never authoritatively tells you "no." Treat `--tamper` (WAF evasion) as a separate, explicitly-approved exercise, not a default.
 
 **How you'd spot it:** one slow response is noise. What you need is clean separation across repeated samples — the true condition consistently slow, the false condition consistently fast, over many trials; if the timings overlap at all, the oracle is not reliable yet. Check `--risk` before running, too: risk 3 against an application you cannot restore is a state-change hazard, not a detection setting.
+
+## Security Implications
+
+**Every payload reaches the database, and the aggressive ones change it.** `--dump` exfiltrates real data, `--os-shell` is remote code execution, and `--risk 3` enables stacked queries that can run a `; UPDATE` or `; DROP` the tester never intended. This is why a captured request, the lowest useful `--risk`/`--level`, and a canary database are not caution but method — pointing it at production and walking away is how an assessment becomes an outage.
+
+**It is noisy in a place the app owner can see.** Thousands of malformed queries fill the database error log and the application log, and the classic injection strings trip any WAF. SQLmap is a detection-heavy tool, so the finding is often discovered by the defender mid-run.
+
+**The source-level fix ends the whole class, WAF or not.** Parameterized queries and prepared statements make user input data rather than SQL, so no payload SQLmap sends can escape the parameter. `--tamper` WAF evasion is a separate, explicitly-approved exercise precisely because a WAF is a filter, not the fix.
+
+**A negative run is not proof of safety.** Second-order injection, unusual encodings and business-logic context all evade automated detection — SQLmap tells you "yes, here's how", never authoritatively "no".
+
+All use here is authorised and bounded; extraction and OS access are high-impact and require explicit sign-off beyond detection.
 
 ## Summary
 

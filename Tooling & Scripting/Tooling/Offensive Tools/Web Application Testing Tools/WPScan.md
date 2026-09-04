@@ -8,6 +8,9 @@ Color: "#708090"
 
 # WPScan
 
+> [!abstract] Note of [[Web Application Testing Tools]]
+> WPScan is the specialist that knows how WordPress exposes its version, plugins, themes and users, then matches each against a CVE feed — because a WordPress site is only as secure as its weakest plugin. This note covers what the API token unlocks, confirming an inferred version before claiming a CVE, and why user brute-forcing over xmlrpc is both a lockout risk and an amplified one.
+
 WPScan is a WordPress-specific security scanner. WordPress powers a huge share of the web, and its risk is rarely the core — it's the sprawl of **plugins and themes**, each a third-party codebase with its own CVEs. WPScan enumerates the version, installed plugins/themes, and users, then cross-references a vulnerability database to say exactly what is exploitable.
 
 > [!warning] Authorized targets only
@@ -29,7 +32,7 @@ The insight WPScan encodes: a WordPress site is only as secure as its *weakest p
 ## Enumerating plugins and users, and what the token unlocks
 
 ```shell-session
-operator@lab:~$ wpscan --url https://blog.example.test --enumerate vp,u --api-token $TOK
+operator@lab:~$ wpscan --url https://blog.meridian.test --enumerate vp,u --api-token $TOK
 [+] WordPress version 5.8.1 identified (Insecure, released 2021-09-09)
 [+] contact-form-7 5.4.1 - outdated
  |   [!] Contact Form 7 - Unrestricted File Upload (CVE-2020-35489)
@@ -41,18 +44,26 @@ operator@lab:~$ wpscan --url https://blog.example.test --enumerate vp,u --api-to
 ## Confirming an inferred version before claiming a CVE
 
 ```shell-session
-operator@lab:~$ wpscan --url https://blog.example.test --enumerate vp --api-token $TOK | grep CVE
+operator@lab:~$ wpscan --url https://blog.meridian.test --enumerate vp --api-token $TOK | grep CVE
  |   Contact Form 7 - Unrestricted File Upload (CVE-2020-35489)
-operator@lab:~$ curl -s https://blog.example.test/wp-content/plugins/contact-form-7/readme.txt | grep -i 'Stable tag'
+operator@lab:~$ curl -s https://blog.meridian.test/wp-content/plugins/contact-form-7/readme.txt | grep -i 'Stable tag'
 Stable tag: 5.4.1
 # --- after the site updates the plugin ---
-operator@lab:~$ wpscan --url https://blog.example.test --enumerate vp --api-token $TOK | grep -c CVE
+operator@lab:~$ wpscan --url https://blog.meridian.test --enumerate vp --api-token $TOK | grep -c CVE
 0
 ```
 
 **The deliberate break:** WPScan *inferred* the plugin version from fingerprints — the `readme.txt` **curl** confirms `5.4.1` is really installed before you assert CVE-2020-35489 applies (fingerprints can lie; a partial install or a hidden version means guessing). After the update, the CVE count drops to `0` — an objective before/after remediation metric. The professional flow is the same everywhere in this category: the scanner *narrows*, a manual check *confirms*, and the fix is measured by re-running the scanner.
 
 **How you'd spot it:** the output says which it is — a version derived from a fingerprint is an inference, and WPScan marks its confidence next to it. Confirm against `readme.txt` or the plugin's own assets before asserting that a CVE applies. A report mapping every detected plugin straight onto CVEs with no confirmation step is the signature of skipping this.
+
+## Security Implications
+
+**The plugin sprawl is the attack surface, and the CVE count is a remediation metric.** The core is well-maintained; the twelve plugins installed years ago are not, and each is a third-party codebase with its own CVEs. Re-running WPScan after an update turns "we patched" into an objective before/after number — the count dropping to zero is the evidence.
+
+**User brute-forcing over `xmlrpc.php` is a lockout risk and an amplified one.** `--passwords` against enumerated users hits a real login and can lock accounts (a denial of service against real people), and `xmlrpc`'s `system.multicall` packs many guesses into one request, amplifying the attack. Respect lockout thresholds and the API token's rate limits, exactly as with any online guessing.
+
+**User enumeration is the precursor the defender should close.** Author archives, the REST API and login-error differences leak valid usernames, which is what makes the brute-force possible. Disabling `xmlrpc.php` where unused, blocking user enumeration, and keeping plugins patched are the controls; WPScan run against your own site finds all three before an attacker does.
 
 ## Summary
 

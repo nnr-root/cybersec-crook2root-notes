@@ -87,6 +87,7 @@ flowchart TB
 | `track.meridian.test` | 203.0.113.20 | Customer shipment-tracking web app. Deliberately weak. | AppSec (injection, IDOR, upload, SSRF, deserialization) |
 | `api.meridian.test` | 203.0.113.21 | REST/JSON API, JWT-authenticated | API security, JWT, BOLA/BFLA |
 | `mail.meridian.test` | 203.0.113.30 | SMTP, SPF/DKIM/DMARC records to inspect | Social engineering, email security |
+| `blog.meridian.test` | 203.0.113.60 | Marketing WordPress site — the plugin-and-theme sprawl, not the core, is the risk | WordPress, plugin CVEs, WPScan |
 | `ns1.meridian.test` | 203.0.113.53 | Authoritative DNS, one zone, DNSSEC optional | DNS recon, DNSSEC, subdomain enumeration |
 | *(egress)* | 203.0.113.5 | The address the corporate LAN is translated to on the way out. Not a host — the boundary's public identity, and the only address the outside world sees for everything behind it | NAT, attribution, egress filtering |
 | `jump.meridian.test` | 10.20.0.5 | SSH bastion, the only DMZ→LAN path | Pivoting, tunnelling, SSH |

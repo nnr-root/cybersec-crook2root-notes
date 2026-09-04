@@ -8,6 +8,9 @@ Color: "#708090"
 
 # curl
 
+> [!abstract] Note of [[Web Application Testing Tools]]
+> curl hand-crafts a single request and shows the raw response, which is where you actually learn HTTP — every header, method and byte explicit. This note covers reading which layer answered a request, what `-k` really disables, and why the tool that faithfully sends whatever you type also faithfully leaks whatever you put on its command line.
+
 curl is the universal command-line HTTP client — the tool that lets you *hand-craft a single request* and read the raw response. Burp and ZAP are indispensable for interception, but curl is where you truly learn HTTP: every header, method, and byte of the body is explicit and under your control. It is also the backbone of scripted testing, reproducible bug reports, and CI checks.
 
 > [!warning] Authorized targets only
@@ -31,7 +34,7 @@ Read the diagram left to right and you have curl's core flags: `-X` sets the met
 The everyday verbs. `-I` fetches only headers (a `HEAD` request) — the fastest way to fingerprint a server:
 
 ```shell-session
-operator@lab:~$ curl -sI https://app.example.test
+operator@lab:~$ curl -sI https://track.meridian.test
 HTTP/2 200
 server: nginx
 content-type: text/html; charset=UTF-8
@@ -42,7 +45,7 @@ strict-transport-security: max-age=31536000
 That single response already tells a tester a lot: HTTP/2, nginx, and — importantly — the cookie flags and HSTS that a security review checks. Send data with `-d` (implies `POST`) and add headers with `-H`:
 
 ```shell-session
-operator@lab:~$ curl -i -X POST https://app.example.test/api/login \
+operator@lab:~$ curl -i -X POST https://track.meridian.test/api/login \
     -H 'Content-Type: application/json' \
     -d '{"user":"alice","pass":"s3cret"}'
 HTTP/2 401
@@ -76,7 +79,7 @@ The flags you will use constantly:
 `-w` turns curl into a measurement tool — perfect for scripted checks:
 
 ```shell-session
-operator@lab:~$ curl -s -o /dev/null -w 'code=%{http_code} time=%{time_total}s size=%{size_download}B\n' https://app.example.test
+operator@lab:~$ curl -s -o /dev/null -w 'code=%{http_code} time=%{time_total}s size=%{size_download}B\n' https://track.meridian.test
 code=200 time=0.142s size=1256B
 ```
 
@@ -97,6 +100,16 @@ HTTP/2 200
 **How you'd spot it:** the tell is `-k` or `--insecure` in a command touching anything you do not own. In the error itself, read *which* check failed: a SubjectAltName mismatch, an expired certificate and an unknown issuer are three different findings, and only the first is plausibly a naming problem rather than a trust problem.
 
 Other internals worth mastering: curl does **not** follow redirects unless you pass `-L` (so a `301` shows you the redirect, not the destination — useful for testing open redirects); `-d` URL-encodes form data but `--data-raw` does not (matters for injection payloads); and `--resolve` / `-H 'Host:'` let you test **virtual-host routing** and reach a specific backend behind a load balancer. For untrusted input, remember curl is a *shell* command — never build a curl line by concatenating unescaped user data (a lesson from **Bash**).
+
+## Security Implications
+
+**curl sends exactly what you type, including the secrets on its command line.** A `-u user:pass` or a token in `-H` is visible in `ps`, in shell history, and in any process-listing an attacker on the box can read. Prefer `--netrc`, a header read from a file, or an environment variable — a credential passed as an argument is a credential disclosed to every other user of the host.
+
+**Redirect-following can leak authentication across hosts.** `-L` resends the request to wherever a `3xx` points, and older or misconfigured setups forward the `Authorization` header to the new host — so an open redirect plus `-L` can hand a token to a server you did not mean to trust. Know where a redirect leads before following it with credentials attached.
+
+**`-k` disables the check that stops a man-in-the-middle.** The SAN-mismatch failure is curl refusing an unverified endpoint; reaching for `-k` reflexively is how interception succeeds. Read *which* check failed — SAN mismatch, expired, unknown issuer are three different findings.
+
+**`curl | bash` is the canonical dropper, so it is an IOC.** The same scriptability that makes curl the backbone of CI makes it malware's favourite installer; a curl piped to a shell in a log is worth investigating. Mark authorised test traffic with an assessment header so the blue team can tell it from the real thing.
 
 ## Summary
 
