@@ -84,17 +84,17 @@ Remaining space begins at `10.10.42.160`.
 ```mermaid
 flowchart TB
     P["10.10.40.0/22 — 1024 addresses"]
-    P --> S["Staff /23 — 512"]
-    P --> R["10.10.42.0/24 remainder"]
-    R --> SV["Servers /25 — 128"]
-    R --> R2["10.10.42.128/25 remainder"]
-    R2 --> M["Management /27 — 32"]
-    R2 --> R3["10.10.42.160/27 remainder"]
-    R3 --> L["P2P link /30 — 4"]
-    R3 --> F["Free space, contiguous, reserved for growth"]
+    P --> S["Staff /23 — 512<br/>10.10.40.0 – 10.10.41.255"]
+    P --> R["remainder<br/>10.10.42.0 – 10.10.43.255"]
+    R --> SV["Servers /25 — 128<br/>10.10.42.0 – 10.10.42.127"]
+    R --> R2["remainder<br/>10.10.42.128 – 10.10.43.255"]
+    R2 --> M["Management /27 — 32<br/>10.10.42.128 – 10.10.42.159"]
+    R2 --> R3["remainder<br/>10.10.42.160 – 10.10.43.255"]
+    R3 --> L["P2P link /30 — 4<br/>10.10.42.160 – 10.10.42.163"]
+    R3 --> F["free — 348 addresses<br/>10.10.42.164 – 10.10.43.255"]
 ```
 
-Read the diagram as repeated halving. Each allocation consumes an aligned block and leaves an aligned remainder, which is what keeps the free space usable. Allocating out of order — taking the `/30` from the middle of the range first — would leave two smaller fragments where the `/23` needed to fit, and the design would fail with plenty of "free" addresses available.
+Read the diagram as repeated halving, and note that the remainders are labelled by range rather than by prefix. That is deliberate: only the first of them happens to be a single clean block (`10.10.42.0/23`). After the servers are allocated, what is left is `10.10.42.128/25` **plus** the whole of `10.10.43.0/24` — two prefixes, not one. Remaining space in a VLSM design is a range that may need several prefixes to express, and writing it as a single prefix is how people convince themselves they have less room than they do. Each allocation still consumes an aligned block and leaves an aligned remainder, which is what keeps the free space usable. Allocating out of order — taking the `/30` from the middle of the range first — would leave two smaller fragments where the `/23` needed to fit, and the design would fail with plenty of "free" addresses available.
 
 Verify each block:
 
@@ -167,10 +167,10 @@ Consider a table containing:
 
 ```text
 0.0.0.0/0          via 10.10.250.1
-10.10.0.0/16     via 10.10.250.2
-10.10.40.0/22     via 10.10.250.3
-10.10.41.0/24     via 10.10.250.4
-10.10.41.77/32    via 10.10.250.5
+10.10.0.0/16       via 10.10.250.2
+10.10.40.0/22      via 10.10.250.3
+10.10.41.0/24      via 10.10.250.4
+10.10.41.77/32     via 10.10.250.5
 ```
 
 Trace destinations:
