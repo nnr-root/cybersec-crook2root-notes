@@ -6,7 +6,6 @@ tags:
   - cyber/foundations/windows
   - type/technique
   - difficulty/easy
-  - level/apprentice
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"

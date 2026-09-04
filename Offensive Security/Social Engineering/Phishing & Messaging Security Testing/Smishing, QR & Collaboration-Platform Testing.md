@@ -6,7 +6,6 @@ tags:
   - cyber/offensive/social/messaging
   - type/concept
   - difficulty/medium
-  - level/apprentice
 Domain: "[[Phishing & Messaging Security Testing]]"
 Color: "#DC143C"
 ---

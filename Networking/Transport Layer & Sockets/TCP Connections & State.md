@@ -6,7 +6,6 @@ tags:
   - cyber/networking/transport
   - type/concept
   - difficulty/medium
-  - level/apprentice
 Domain:
   - "[[Transport Layer & Sockets]]"
 Color: "#42D4F4"

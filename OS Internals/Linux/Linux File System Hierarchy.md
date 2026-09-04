@@ -6,7 +6,6 @@ tags:
   - cyber/foundations/linux
   - type/concept
   - difficulty/easy
-  - level/apprentice
 Domain:
   - "[[Linux]]"
 Color: "#FFA500"

@@ -6,7 +6,6 @@ tags:
   - cyber/web/basics
   - type/concept
   - difficulty/easy
-  - level/apprentice
 Domain:
   - "[[Web Security]]"
 Color: "#911EB4"

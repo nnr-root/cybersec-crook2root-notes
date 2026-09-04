@@ -6,7 +6,6 @@ tags:
   - cyber/networking/foundations
   - type/technique
   - difficulty/easy
-  - level/apprentice
 Domain:
   - "[[Network Foundations]]"
 Color: "#42D4F4"

@@ -6,7 +6,6 @@ tags:
   - cyber/offensive/social/phishing-methodology
   - type/concept
   - difficulty/easy
-  - level/novice
 Domain: "[[Phishing & Messaging Security Testing]]"
 Color: "#DC143C"
 ---

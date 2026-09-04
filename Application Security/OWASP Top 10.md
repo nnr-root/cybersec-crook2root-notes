@@ -6,7 +6,6 @@ tags:
   - cyber/web/owasp
   - type/concept
   - difficulty/medium
-  - level/apprentice
 Domain:
   - "[[Standards & API]]"
 Color: "#911EB4"

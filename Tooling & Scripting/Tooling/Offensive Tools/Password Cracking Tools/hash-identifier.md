@@ -1,7 +1,7 @@
 ---
 title: "hash-identifier"
 aliases: ["hash-identifier", "hashid", "hash-id"]
-tags: [tree/tooling, cyber/tooling/offensive/cracking/hashid, type/tool, level/apprentice, difficulty/easy]
+tags: [tree/tooling, cyber/tooling/offensive/cracking/hashid, type/tool, difficulty/easy]
 Domain: "[[Password Cracking Tools]]"
 Color: "#708090"
 ---

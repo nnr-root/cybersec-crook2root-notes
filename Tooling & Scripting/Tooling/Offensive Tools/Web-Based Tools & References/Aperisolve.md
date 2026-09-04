@@ -1,7 +1,7 @@
 ---
 title: "Aperisolve"
 aliases: ["Aperisolve", "aperisolve"]
-tags: [tree/tooling, cyber/tooling/offensive/web-tools/aperisolve, type/tool, level/apprentice, difficulty/easy]
+tags: [tree/tooling, cyber/tooling/offensive/web-tools/aperisolve, type/tool, difficulty/easy]
 Domain: "[[Web-Based Tools & References]]"
 Color: "#708090"
 ---

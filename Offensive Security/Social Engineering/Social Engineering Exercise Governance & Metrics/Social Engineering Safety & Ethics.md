@@ -6,7 +6,6 @@ tags:
   - cyber/offensive/social/safety
   - type/concept
   - difficulty/easy
-  - level/novice
 Domain: "[[Social Engineering Exercise Governance & Metrics]]"
 Color: "#DC143C"
 ---

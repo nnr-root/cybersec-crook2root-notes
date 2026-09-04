@@ -6,7 +6,6 @@ tags:
   - cyber/offensive/social/vishing
   - type/concept
   - difficulty/medium
-  - level/apprentice
 Domain: "[[Voice, Help Desk & Identity Verification]]"
 Color: "#DC143C"
 ---

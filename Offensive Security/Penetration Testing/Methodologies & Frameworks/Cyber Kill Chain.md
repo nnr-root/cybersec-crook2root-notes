@@ -9,7 +9,6 @@ tags:
   - cyber/offensive/methodology
   - type/concept
   - difficulty/easy
-  - level/apprentice
 Domain: "[[Methodologies & Frameworks]]"
 Color: "#DC143C"
 ---

@@ -6,7 +6,6 @@ tags:
   - cyber/offensive/social/psychology
   - type/concept
   - difficulty/easy
-  - level/novice
 Domain: "[[Human Factors & Pretext Development]]"
 Color: "#DC143C"
 ---

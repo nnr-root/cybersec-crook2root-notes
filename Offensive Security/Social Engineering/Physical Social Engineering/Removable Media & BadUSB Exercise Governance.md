@@ -6,7 +6,6 @@ tags:
   - cyber/offensive/social/removable-media
   - type/concept
   - difficulty/medium
-  - level/apprentice
 Domain: "[[Physical Social Engineering]]"
 Color: "#DC143C"
 ---

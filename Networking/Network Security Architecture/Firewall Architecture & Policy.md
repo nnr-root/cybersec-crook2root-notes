@@ -6,7 +6,6 @@ tags:
   - cyber/networking/secarch
   - type/concept
   - difficulty/medium
-  - level/apprentice
 Domain:
   - "[[Network Security Architecture]]"
 Color: "#42D4F4"

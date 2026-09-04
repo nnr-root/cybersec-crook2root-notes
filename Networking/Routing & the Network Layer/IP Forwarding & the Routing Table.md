@@ -6,7 +6,6 @@ tags:
   - cyber/networking/routing
   - type/concept
   - difficulty/easy
-  - level/apprentice
 Domain:
   - "[[Routing & the Network Layer]]"
 Color: "#42D4F4"

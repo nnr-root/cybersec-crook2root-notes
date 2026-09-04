@@ -6,7 +6,6 @@ tags:
   - cyber/networking/dhcp
   - type/concept
   - difficulty/medium
-  - level/apprentice
 Domain:
   - "[[Addressing & Subnetting]]"
 Color: "#42D4F4"

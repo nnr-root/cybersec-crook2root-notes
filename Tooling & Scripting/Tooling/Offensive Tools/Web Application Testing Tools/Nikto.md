@@ -1,7 +1,7 @@
 ---
 title: "Nikto"
 aliases: ["nikto"]
-tags: [tree/tooling, cyber/tooling/offensive/web/nikto, type/tool, level/apprentice, difficulty/medium]
+tags: [tree/tooling, cyber/tooling/offensive/web/nikto, type/tool, difficulty/medium]
 Domain: "[[Web Application Testing Tools]]"
 Color: "#708090"
 ---

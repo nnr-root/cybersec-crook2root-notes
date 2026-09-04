@@ -6,7 +6,6 @@ tags:
   - cyber/foundations/macos
   - type/concept
   - difficulty/medium
-  - level/apprentice
 Domain:
   - "[[macOS]]"
 Color: "#FFA500"

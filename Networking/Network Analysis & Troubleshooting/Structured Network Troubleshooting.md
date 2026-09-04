@@ -6,7 +6,6 @@ tags:
   - cyber/networking/analysis
   - type/technique
   - difficulty/medium
-  - level/apprentice
 Domain:
   - "[[Network Analysis & Troubleshooting]]"
 Color: "#42D4F4"

@@ -6,7 +6,6 @@ tags:
   - cyber/networking/layer2
   - type/technique
   - difficulty/medium
-  - level/apprentice
 visual-verified: 2026-09-02
 Domain:
   - "[[Switching & the Link Layer]]"

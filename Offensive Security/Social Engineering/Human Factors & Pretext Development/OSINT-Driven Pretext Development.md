@@ -6,7 +6,6 @@ tags:
   - cyber/offensive/social/pretext
   - type/concept
   - difficulty/medium
-  - level/apprentice
 Domain: "[[Human Factors & Pretext Development]]"
 Color: "#DC143C"
 ---

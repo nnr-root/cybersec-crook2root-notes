@@ -7,7 +7,6 @@ tags:
   - cyber/web/basics
   - type/concept
   - difficulty/medium
-  - level/apprentice
 Domain:
   - "[[Defensive Security]]"
 Color: "#4363D8"

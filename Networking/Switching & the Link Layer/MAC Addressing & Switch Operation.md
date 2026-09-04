@@ -6,7 +6,6 @@ tags:
   - cyber/networking/layer2
   - type/concept
   - difficulty/easy
-  - level/apprentice
 Domain:
   - "[[Switching & the Link Layer]]"
 thread-exempt:

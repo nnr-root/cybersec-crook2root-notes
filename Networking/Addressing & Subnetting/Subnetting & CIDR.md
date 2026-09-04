@@ -6,7 +6,6 @@ tags:
   - cyber/networking/addressing
   - type/technique
   - difficulty/easy
-  - level/apprentice
 Domain:
   - "[[Addressing & Subnetting]]"
 thread-exempt:

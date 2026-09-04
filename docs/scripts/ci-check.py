@@ -49,7 +49,12 @@ EMBED = re.compile(r"!\[\[([^\]]+)\]\]")
 BANNED = [
     ("lab section", re.compile(r"^#{2,4}\s+.*\b(Authorized Lab|Hands-On Lab|Runnable Lab)\b", re.M | re.I)),
     ("checkpoint heading", re.compile(r"^#{2,4}\s+.*\bCheckpoint\b", re.M | re.I)),
-    ("level/* tag", re.compile(r"level/(crook|operator|root)\b")),
+    # The Sept-2026 purge removed level/* entirely: difficulty/* is the only
+    # grading axis, and the learning path is carried by frontmatter and the
+    # Parent Learning Order line. This pattern used to name only the three
+    # original levels, so 38 notes tagged level/apprentice and level/novice
+    # survived a purge that was reported as complete. Match any level/ tag.
+    ("level/* tag", re.compile(r"^\s*-?\s*level/[A-Za-z0-9_-]+\b", re.M)),
     ("Crook/Operator/Root heading", re.compile(r"^#{2,4}\s+(Crook|Operator|Root)\s*[—–-]", re.M)),
     ("reader tasking", re.compile(
         r"\b(try (this|it) yourself|your turn|verify that you get|now clean ?up|set up two (hosts|VMs))\b", re.I)),

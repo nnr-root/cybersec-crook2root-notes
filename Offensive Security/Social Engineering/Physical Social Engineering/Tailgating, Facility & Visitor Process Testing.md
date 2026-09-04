@@ -6,7 +6,6 @@ tags:
   - cyber/offensive/social/facility
   - type/concept
   - difficulty/easy
-  - level/novice
 Domain: "[[Physical Social Engineering]]"
 Color: "#DC143C"
 ---

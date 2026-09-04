@@ -1,7 +1,7 @@
 ---
 title: "CrackStation"
 aliases: ["CrackStation", "crackstation"]
-tags: [tree/tooling, cyber/tooling/offensive/web-tools/crackstation, type/tool, level/apprentice, difficulty/easy]
+tags: [tree/tooling, cyber/tooling/offensive/web-tools/crackstation, type/tool, difficulty/easy]
 Domain: "[[Web-Based Tools & References]]"
 Color: "#708090"
 ---
