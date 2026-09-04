@@ -324,9 +324,12 @@ as an exploded engineering diagram. Multiple descent paths thread downward
 through the layers at different lateral positions, each stepping around the
 boundaries rather than piercing them straight. Faint dimension lines and
 leader lines extend from several strata boundaries into empty margin space,
-ending without labels. One path is crimson #DC143C; all others are #C8D3DD.
-Wide 2:1 landscape composition with the strata occupying the lower two
-thirds and open space above.
+ending without labels. One path is a deep crimson red; every other path and
+all line work is the same pale cool grey. Wide 2:1 landscape composition
+with the strata occupying the lower two thirds and open space above.
+
+*(Colour is named in words here, never as a hex value — see the warning in
+4.1. The exact palette is applied after generation.)*
 
 [+ shared style block]
 ```
@@ -339,23 +342,26 @@ One template, eight runs. Swap the two bracketed values.
 A technical schematic plate representing [SUBJECT], drawn as an orthographic
 engineering diagram: clean geometric forms, thin uniform line work, faint
 dimension and leader lines extending into empty margin space and ending
-without labels. Single accent colour [HEX] used sparingly on one focal
-element; everything else in #C8D3DD line work. 16:9 landscape, subject
-centered, generous margins.
+without labels. A single accent colour, [COLOUR IN WORDS], used sparingly on one focal
+element; everything else in the same pale cool grey line work. 16:9
+landscape, subject centered, generous margins.
+
+*(Never substitute a hex value for [COLOUR IN WORDS] — rule 1. The table
+below gives the word form to paste and the hex to remap to afterwards.)*
 
 [+ shared style block]
 ```
 
-| Domain | `[SUBJECT]` | `[HEX]` |
-|:--|:--|:--|
-| Offensive Security | a lattice of connected nodes with one traced path crossing several boundary lines | `#DC143C` |
-| Tooling & Scripting | an exploded view of nested modular components on a rail | `#708090` |
-| Networking | concentric routing rings connected by radial links, drawn as a plan view | `#42D4F4` |
-| OS Internals | nested concentric rectangular boundaries, innermost solid, drawn as a plan view | `#FFA500` |
-| Cryptography | interlocking geometric key-forms and a lattice of paired points | `#FFE119` |
-| Application Security | stacked request-response layers as horizontal bands with one vertical connector | `#911EB4` |
-| Defensive Security | overlapping sensor arcs covering a field, with one uncovered wedge | `#4363D8` |
-| DevSecOps | a closed cyclic loop of connected stages with inspection gates on each segment | `#3CB44B` |
+| Domain | `[SUBJECT]` | `[COLOUR IN WORDS]` to paste | remap to |
+|:--|:--|:--|:--|
+| Offensive Security | a lattice of connected nodes with one traced path crossing several boundary lines | deep crimson red | `#DC143C` |
+| Tooling & Scripting | an exploded view of nested modular components on a rail | muted slate grey-blue | `#708090` |
+| Networking | concentric routing rings connected by radial links, drawn as a plan view | bright pale cyan | `#42D4F4` |
+| OS Internals | nested concentric rectangular boundaries, innermost solid, drawn as a plan view | saturated amber orange | `#FFA500` |
+| Cryptography | interlocking geometric key-forms and a lattice of paired points | bright warm yellow | `#FFE119` |
+| Application Security | stacked request-response layers as horizontal bands with one vertical connector | deep violet purple | `#911EB4` |
+| Defensive Security | overlapping sensor arcs covering a field, with one uncovered wedge | strong medium blue | `#4363D8` |
+| DevSecOps | a closed cyclic loop of connected stages with inspection gates on each segment | medium leaf green | `#3CB44B` |
 
 The uncovered wedge in the Defensive plate is deliberate — it is the blind-spot
 argument from the monitoring notes, drawn.
