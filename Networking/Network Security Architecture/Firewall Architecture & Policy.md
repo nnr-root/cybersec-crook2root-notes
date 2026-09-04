@@ -81,7 +81,32 @@ Read this top to bottom, because that is how it executes:
 - **`policy drop`** is the foundation — **default deny**. Anything not explicitly permitted is dropped. This is the single most important property of a sound firewall: the rule base states what is *allowed*, and everything else is denied by default. The opposite (default allow, block known-bad) is unwinnable, because you cannot enumerate all bad traffic.
 - **`ct state established,related accept`** is the stateful heart: return traffic for existing connections is permitted because a connection exists, not because an address is trusted. `related` covers helper flows like an FTP data connection tied to a control connection.
 - **`ct state invalid drop`** discards packets that match no known connection and are not a valid new one — a cheap, high-value rule.
-- **`tcp dport 22 ip saddr 10.10.0.0/16 accept`** permits SSH only from internal addresses. Restricting by both port and source is far stronger than by port alone.
+- **`tcp dport 22 ip saddr 10.10.0.0/16 accept`** permits SSH only from internal addresses. Restricting by both port and source is stronger than by port alone — and it is also the rule this note's own Tell is about, so it is worth doing what the Tell says.
+
+### Expanding the range in the rule above
+
+`10.10.0.0/16` reads as "internal", which is a description rather than a quantity. Write it out:
+
+```bash
+ipcalc -n -b 10.10.0.0/16 | grep -E "HostMin|HostMax|Hosts"
+```
+
+```text
+HostMin:   10.10.0.1
+HostMax:   10.10.255.254
+Hosts/Net: 65534
+```
+
+Sixty-five thousand addresses, and per Meridian's own allocation that range contains VLAN 10 workstations, VLAN 30 operations, the depot block, the VPN pool — and `10.10.51.0/24`, the **guest wireless network**, which exists specifically to have no path to corporate systems. One `/16` in one permit rule hands SSH to a visitor in reception who typed a passphrase off a card.
+
+Nothing about the notation announced that. The rule looks tighter than `tcp dport 22 accept` and is tighter, which is exactly why it survives review: it is an improvement, and improvements stop getting questioned. What it needed was to name the hosts that administer things rather than the supernet they happen to live in:
+
+```text
+tcp dport 22 ip saddr 10.10.20.0/24 accept        # servers, 254 addresses
+tcp dport 22 ip saddr 10.10.10.30 accept          # WS-030, the IT admin workstation
+```
+
+Two rules, 255 permitted sources instead of 65,534 — a 250-fold reduction from reading one number carefully. Do this to every range in a rule base and the exercise usually finds one rule doing something nobody would have approved if it had been written out.
 
 Rules are evaluated **in order**, and the first match wins. This makes ordering a correctness property: a broad `accept` placed above a specific `drop` renders the drop dead, silently permitting what you meant to block. Auditing a rule base means reading it as the firewall does — sequentially — not as a set.
 
@@ -92,6 +117,24 @@ Rules are evaluated **in order**, and the first match wins. This makes ordering 
 **Overly broad rules.** `permit any any` on a segment, or a rule allowing an entire `/8` where a `/24` was intended, authorizes vastly more than the author realized. Because address ranges hide their size in the notation, reviewing a rule base by expanding every range to its literal extent reveals the gap between intent and effect.
 
 **Any-any-any at the bottom that should be a deny.** A rule base without an explicit final deny relies on the default, which is fine only if the default is drop. Making the final deny explicit — and logging it — turns "everything else" into visible, investigable events.
+
+**Shadowed rules, which look correct and never run.** Ordering makes this invisible to reading and obvious to counting. Ask the firewall how many packets each rule has actually matched:
+
+```bash
+sudo nft list ruleset -a -s counters
+```
+
+```text
+chain forward {
+  ip saddr 10.10.10.0/24 ip daddr 10.10.20.0/24 accept       counter packets 2841902 bytes 3.1G
+  ip saddr 10.10.10.0/24 tcp dport 3306 drop                  counter packets 0 bytes 0
+  ip saddr 10.10.51.0/24 ip daddr 10.10.20.0/24 drop          counter packets 14 bytes 840
+}
+```
+
+The middle rule was written to stop workstations reaching the database directly, and it has matched nothing since the firewall was reloaded — not because nobody tried, but because the broader `accept` above it matches first and stops evaluation. Every one of those attempts is inside the 2.8 million packets on line one.
+
+A zero counter is not proof of a dead rule; a rule guarding something genuinely unused reads the same way. It is a question worth asking of each one, and the third rule shows what the answer looks like when the rule is alive — fourteen packets from the guest wireless network, dropped, which is a working control and a small alert waiting to be written.
 
 ```mermaid
 flowchart TD

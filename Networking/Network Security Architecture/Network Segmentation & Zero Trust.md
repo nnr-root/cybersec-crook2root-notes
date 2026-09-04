@@ -31,6 +31,17 @@ This model has a fatal flaw that defined a generation of breaches. Once an attac
 
 The entire evolution of network security architecture is a response to this single problem: **how do you contain an attacker who is already inside?**
 
+Four answers were given in succession, and each one narrows what "trusted" means:
+
+| Model | What earns trust | What a compromised host reaches |
+|:--|:--|:--|
+| **Perimeter** | being inside the network | everything inside |
+| **Segmentation** | being inside your zone | everything in that zone |
+| **Microsegmentation** | being a workload with an explicit permitted flow | only that workload's permitted flows |
+| **Zero trust** | nothing, by location — every access is verified by identity | only what that identity is authorised for, per request |
+
+Read the middle column downward and the whole progression is one idea applied repeatedly: each step removes a category of thing that used to be trusted for free. The rest of this note is those four rows in detail, and the last of them is a direction of travel rather than a place most organisations have arrived at.
+
 **Prerequisites:** VLANs, routing, and firewall policy.
 
 > [!tip] The analogy, and where it breaks
@@ -42,6 +53,43 @@ A perimeter firewall filters traffic **crossing** the boundary — north-south. 
 
 **How you'd spot it:** from one internal host, try to reach another host's SMB or RDP port. If it answers, those two machines are in the same trust zone, whatever the network diagram claims.
 
+### Blast radius, as a number
+
+That test is worth running properly, because "blast radius" is used throughout this note as the metric and it is genuinely countable. Take `WS-014` as the compromised host and ask what it can reach:
+
+```bash
+sudo nmap -Pn -n --open -p- 10.10.10.0/24 10.10.20.0/24 10.10.30.0/24 \
+  -oG - | awk '/Ports:/ {print $2, $0}'
+```
+
+Before segmentation, with the three VLANs routed to each other and no policy between them:
+
+```text
+10.10.10.30   WS-030    135, 139, 445, 3389
+10.10.20.10   DC01      53, 88, 135, 139, 389, 445, 636, 3268, 3389
+10.10.20.20   FS01      135, 139, 445, 3389
+10.10.20.30   APP01     22, 80, 443, 3306
+10.10.20.40   LOG01     22, 443, 9200
+10.10.30.7    SCAN-07   23, 80
+
+6 hosts, 26 open ports reachable from one workstation
+```
+
+Now with inter-VLAN policy permitting only what a workstation actually needs, and host isolation on the access VLAN:
+
+```text
+10.10.20.10   DC01      53, 88, 389, 445
+10.10.20.20   FS01      445
+10.10.20.30   APP01     443
+
+3 hosts, 6 open ports reachable from one workstation
+```
+
+Twenty-six services down to six. That ratio is the blast radius, and the note's later claims about containment mean exactly this and nothing more mystical.
+
+Three of the removals matter more than the count suggests. `WS-030` vanishing is the lateral-movement path closing — the IT admin's workstation was one SMB hop from the finance analyst's, which is the single most valuable hop an attacker on VLAN 10 has. `SCAN-07` vanishing removes a device running telnet on ancient firmware from a compromised laptop's reach entirely. And `LOG01` vanishing matters in the other direction: the SIEM collects *from* hosts and has no reason to accept connections from them, so its reachability was pure exposure with no function behind it.
+
+Note what did *not* change. `DC01` still answers on 445, because a domain member genuinely needs it, and that is the honest limit of segmentation: it removes the flows nobody needed and leaves the ones the business runs on. An attacker with a valid credential still has Kerberos, LDAP and SMB to a domain controller — which is precisely the gap the rest of this note exists to close, and why segmentation alone is a step rather than an answer.
 ## Step One: Segmentation
 
 **Segmentation** divides the flat interior into zones separated by controls, so that compromising one zone does not grant access to the others. Instead of one trusted network, there are many smaller ones with firewalls, ACLs, or VLANs between them, and traffic crossing a zone boundary is subject to policy.
@@ -80,13 +128,6 @@ The consequences are structural:
 - **Every request is verified.** Authentication and authorization happen per-access, continuously, not once at a perimeter.
 - **Least privilege is enforced per resource.** A verified identity gets access only to the specific resources it needs, not to a network segment.
 - **Encryption is assumed everywhere**, because the network — internal included — is treated as hostile. This is the architectural reason the internal path is no longer trusted, and why re-encryption to backends became standard.
-
-```text
-Perimeter model:  trusted if inside the network
-Segmentation:     trusted within your zone
-Microsegmentation: trusted only for explicitly permitted workload flows
-Zero trust:        trusted for nothing by location; every access verified by identity
-```
 
 Zero trust is a direction of travel, not a product. It is implemented incrementally — strong identity, device posture checking, per-application access instead of network-level VPN access, pervasive encryption, and continuous verification — and most organizations are somewhere along the path rather than at its end.
 

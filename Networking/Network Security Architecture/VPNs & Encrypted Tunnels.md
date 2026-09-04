@@ -73,13 +73,25 @@ interface: wg0
   public key: <redacted>
   listening port: 51820
 peer: <peer key>
-  endpoint: 203.0.113.44:51820
+  endpoint: 192.0.2.44:51820
   allowed ips: 10.10.60.0/24
   latest handshake: 41 seconds ago
   transfer: 1.24 MiB received, 892 KiB sent
 ```
 
-`allowed ips` is the security-critical field: it defines exactly which addresses this peer may send and receive through the tunnel. A too-broad value here (`0.0.0.0/0` for a peer that should reach one subnet) is an over-permissive tunnel — the VPN equivalent of a broad firewall rule.
+Note the endpoint: `192.0.2.44` is an ordinary internet address, because that is where a remote worker actually is. Meridian's own `203.0.113.0/24` appears on the other side of this tunnel, never as the peer.
+
+`allowed ips` is the security-critical field: it defines exactly which addresses this peer may send and receive through the tunnel. Set beside a misconfigured peer the difference is one line:
+
+```text
+peer: <laptop key>
+  allowed ips: 10.10.60.0/24        # the VPN pool only
+
+peer: <contractor key>
+  allowed ips: 0.0.0.0/0            # every address there is
+```
+
+The second peer is not merely permitted to reach more; `allowed ips` is bidirectional in WireGuard, serving as both the routing table for outbound traffic and the **cryptokey routing** check on inbound. A peer with `0.0.0.0/0` may therefore *send* packets claiming any source address in the world and have them accepted as legitimate tunnel traffic. It is the VPN equivalent of a broad firewall rule with the source check removed at the same time, and it is a default that gets copied between peers because it works.
 
 ## Split Tunnel Versus Full Tunnel
 

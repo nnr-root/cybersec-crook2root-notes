@@ -122,7 +122,7 @@ carries more than a yes:
 ```shell-session
 admin@radius:~$ sudo journalctl -u freeradius -n 6 --no-pager
 Sending Access-Accept ID 214 from 10.20.0.5:1812 to 10.20.0.9:41003
-  User-Name = "host/ws-4471.corp.example.com"
+  User-Name = "host/ws-014.meridian.test"
   Tunnel-Type = VLAN
   Tunnel-Medium-Type = IEEE-802
   Tunnel-Private-Group-Id = "310"

@@ -29,10 +29,15 @@ Firewall attention overwhelmingly goes to **ingress** — keeping bad traffic ou
 
 Consider what depends on outbound connectivity from inside the network:
 
-- **Data exfiltration** — stolen data has to *leave*, which is an outbound transfer.
-- **Command and control** — malware connects *out* to its operator's server for instructions; it rarely accepts inbound connections, precisely because outbound is unfiltered.
-- **Tool download** — an attacker with a foothold pulls additional tools from the Internet.
-- **Beaconing** — implants check in on a schedule, all outbound.
+| Attack phase | Direction | What it needs |
+|:--|:--|:--|
+| Initial compromise | inbound, or the user fetches it | many possible routes |
+| **Tool download** | **outbound** | reach an attacker-controlled host |
+| **Command and control** | **outbound** | a channel the implant opens itself |
+| **Beaconing** | **outbound** | the same channel, on a schedule |
+| **Data exfiltration** | **outbound** | enough bandwidth, to anywhere |
+
+Only the first row has alternatives. Malware rarely accepts inbound connections, precisely because outbound is the direction nobody filters — the implant calls its operator, not the other way round.
 
 The pattern is unmistakable: **the damaging phases of an attack are outbound.** An attacker can often get in through many routes, but everything they do afterward — receiving commands, downloading tools, stealing data — requires talking to the outside. Controlling egress attacks the attacker at the step they cannot avoid.
 
@@ -71,17 +76,41 @@ A web proxy provides several controls at once:
 The proxy is where the earlier NAT-gateway concept meets security: rather than merely translating outbound addresses, it decides and records what may leave.
 
 ```bash
-# a proxy access log entry
-grep exfil-domain /var/log/squid/access.log
+grep 'TCP_DENIED' /var/log/squid/access.log | tail -1
 ```
 
 Expected excerpt:
 
 ```text
-1690984922.431 512 10.10.10.22 TCP_DENIED/403 3821 CONNECT known-bad.example:443 alice DENIED-CATEGORY-MALWARE
+1690984922.431 512 10.10.10.14 TCP_DENIED/403 3821 CONNECT known-bad.example:443 r.okonkwo DENIED-CATEGORY-MALWARE
 ```
 
 That single line is egress control working: an internal host's outbound connection to a known-bad destination was denied, logged, and attributed to a user — the exact event that, unlogged and unblocked, would be an exfiltration channel.
+
+### The lines that were allowed
+
+A denial is the satisfying log entry and the less useful one. Ask the harder question instead — everything `WS-014` contacted, whether or not it was permitted:
+
+```bash
+awk '$3=="10.10.10.14"' /var/log/squid/access.log | tail -8
+```
+
+```text
+1690983122.104  241 10.10.10.14 TCP_TUNNEL/200  1420 CONNECT cdn.meridian-freight.test:443 r.okonkwo ALLOWED
+1690983422.118  238 10.10.10.14 TCP_TUNNEL/200  1436 CONNECT cdn.meridian-freight.test:443 r.okonkwo ALLOWED
+1690983722.096  244 10.10.10.14 TCP_TUNNEL/200  1418 CONNECT cdn.meridian-freight.test:443 r.okonkwo ALLOWED
+1690984022.131  239 10.10.10.14 TCP_TUNNEL/200  1441 CONNECT cdn.meridian-freight.test:443 r.okonkwo ALLOWED
+1690984322.107  242 10.10.10.14 TCP_TUNNEL/200  1427 CONNECT cdn.meridian-freight.test:443 r.okonkwo ALLOWED
+1690984622.115  240 10.10.10.14 TCP_TUNNEL/200 84219 CONNECT cdn.meridian-freight.test:443 r.okonkwo ALLOWED
+1690984922.431  512 10.10.10.14 TCP_DENIED/403  3821 CONNECT known-bad.example:443 r.okonkwo DENIED-CATEGORY-MALWARE
+1690985222.109  238 10.10.10.14 TCP_TUNNEL/200  1433 CONNECT cdn.meridian-freight.test:443 r.okonkwo ALLOWED
+```
+
+Every `ALLOWED` line is the incident. Subtract the timestamps: 300.01, 299.98, 300.04, 299.98, 300.01 — a five-minute interval holding to a fraction of a second across the whole window. That is a thing software does and people do not. The transfer sizes cluster around 1,430 bytes because a check-in has a fixed shape, and the one line at 84 KB is the moment the implant was given something to send. The destination was permitted throughout, since `cdn.meridian-freight.test` was categorised as a content-delivery domain and nothing about it was known-bad at the time.
+
+Now compare the two views. The `DENIED` line proves the malware category list contained one domain this implant tried once — useful, and it identifies nothing. The `ALLOWED` lines identify the channel, the interval, the moment of exfiltration, and the domain to block and search for across every other host. The control that produced the second view was, for this entire episode, permitting the traffic.
+
+That is the case for logging egress even where you cannot yet filter it, and it is why monitor-only is a defensible first deployment rather than a half-measure.
 
 ## The Encryption and Tunnelling Challenge
 

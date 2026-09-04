@@ -29,8 +29,15 @@ A firewall enforces policy at a boundary. A **detection system** watches traffic
 
 Two roles exist, and the difference is consequential:
 
-- An **IDS (Intrusion Detection System)** observes and alerts. It sits out of the traffic path (or on a copy of it) and raises an alarm when it sees something suspicious. It cannot block; it can only tell you.
-- An **IPS (Intrusion Prevention System)** sits inline in the traffic path and can drop malicious traffic in real time. It prevents, not just detects.
+| | **IDS** | **IPS** |
+|:--|:--|:--|
+| Position | out of path, on a copy of the traffic | inline, in the traffic path |
+| Can it stop an attack? | no — it alerts | yes — it drops |
+| Cost of a false positive | a wasted analyst hour | a legitimate flow blocked |
+| Cost of failing | you find out later | the traffic path fails with it |
+| What it adds to latency | nothing | its inspection time, on everything |
+
+The bottom three rows are the whole decision. An IDS cannot break what it cannot touch; an IPS earns its blocking by becoming a component every packet depends on, which means its outages are the network's outages and its mistakes are visible to users within seconds.
 
 The trade-off is direct. An IPS stops attacks but, being inline, is a potential bottleneck and a single point of failure — and a false positive means it blocks legitimate traffic, causing an outage. An IDS never breaks legitimate traffic but only tells you after the fact. Many deployments run detection broadly and enable prevention selectively for high-confidence signatures, accepting alerts elsewhere.
 
