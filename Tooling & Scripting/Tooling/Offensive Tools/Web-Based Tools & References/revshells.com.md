@@ -8,6 +8,9 @@ Color: "#708090"
 
 # revshells.com
 
+> [!abstract] Note of [[Web-Based Tools & References]]
+> revshells.com generates the correct reverse-shell one-liner for a chosen shell, OS and listener, plus the matching listener command. This note covers why a shell travels *outbound* to exploit the firewall's asymmetry, why the payload runs entirely in your browser so nothing is submitted, and why that outbound call-home is exactly what a defender detects.
+
 revshells.com is an online **reverse-shell generator**. You enter your listener IP and port, pick a shell type (bash, `nc`, python, PowerShell, PHP, …) and target OS, and it prints the correct one-liner — plus the matching listener command. It eliminates the error-prone job of remembering and correctly quoting dozens of payload variants, and teaches the *shape* of a reverse shell along the way.
 
 > [!warning] Authorized targets only
@@ -80,6 +83,16 @@ victim$ sudo su
 ```
 
 Understanding *why* (a reverse shell is a byte pipe, not a terminal — no PTY means no line discipline, no job control) is what separates "the shell keeps dying" from a stable, interactive foothold. The generator gives you the payload; knowing the PTY limitation makes it usable.
+
+## Security Implications
+
+**The whole technique is an outbound connection, so egress filtering is the network control that stops it.** A reverse shell works because firewalls block inbound and permit outbound; a default-deny *outbound* policy that permits only known destinations removes the path the victim uses to call home. This is the offensive mirror of the egress-control material — the reverse shell is precisely the C2 channel that egress filtering exists to catch.
+
+**The call-home has a behavioural signature.** `bash -i >& /dev/tcp/…`, or `python`/`php`/`powershell` holding a socket to an external host on an odd port, is a shell process with a network connection it should not have — the same anomaly flow analysis flags as beaconing. A `/dev/tcp` redirect needs no tools on the victim, which is why it is a favourite and why detection is behavioural rather than file-based.
+
+**The generator runs client-side, so nothing you type is submitted.** Unlike CrackStation or Aperisolve, revshells.com builds the payload in the browser — your `LHOST` and `LPORT` never leave the page — so the OpSec concern is not data disclosure but that the generated payload is live remote code execution to be used only in scope.
+
+All payloads here are RCE; generate and fire them only against systems you are authorised to test.
 
 ## Summary
 

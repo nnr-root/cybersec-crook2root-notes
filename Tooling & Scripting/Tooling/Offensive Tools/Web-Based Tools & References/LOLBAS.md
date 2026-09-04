@@ -8,6 +8,9 @@ Color: "#708090"
 
 # LOLBAS
 
+> [!abstract] Note of [[Web-Based Tools & References]]
+> LOLBAS is the Windows counterpart to GTFOBins — a catalogue of signed, built-in Microsoft binaries abused to download, execute, bypass application control or dump credentials. This note covers why signature- and path-based allow-listing cannot stop them, and why the catalogue is as much a detection-engineering resource as an offensive one.
+
 LOLBAS (`lolbas-project.github.io`) — Living Off the Land Binaries And Scripts — is the Windows counterpart to GTFOBins. It catalogs **signed, built-in Microsoft binaries** that can be abused to download files, execute code, bypass application control, or dump credentials. Because these binaries ship with Windows and are trusted/signed, using them helps an attacker blend into normal activity and slip past allow-listing.
 
 > [!warning] Authorized operations only
@@ -68,6 +71,16 @@ CertUtil: -URLCache command completed successfully.
 **The deliberate break:** allow-listing stops `evil.exe` but *not* `certutil`, because signature/path-based control trusts the binary, not its behaviour. That is the whole point of living-off-the-land — and also the key to defeating it: since you can't block `certutil`, you must detect the **anomalous behaviour** (why is a certificate utility making an outbound HTTP request and writing an executable?). LOLBAS is therefore a detection-engineering goldmine as much as an offensive one — every entry names the parent-process/command-line pattern a EDR rule should flag. Blocking the binary is usually impossible; catching the misuse is the achievable defense.
 
 **How you'd spot it:** detection here is about the pairing, not the process. `certutil` alone is unremarkable; `certutil` making an outbound HTTP request and writing an executable is not. The same holds for `mshta` and `regsvr32` — look for a signed system binary with a network connection and a child process it has no business spawning, which is exactly the join Sysmon Event IDs 1 and 3 make possible.
+
+## Security Implications
+
+**Allow-listing trusts the binary, so it cannot stop the technique.** AppLocker and WDAC decide by signature and path, and every LOLBin is signed by Microsoft and lives in a standard path — so blocking them is not an option without breaking Windows. This is the structural reason living-off-the-land works, and the reason the defence must move to behaviour.
+
+**Detection is the pairing, not the process.** `certutil` is unremarkable; `certutil` making an outbound HTTP request and writing an executable is not. `mshta` or `regsvr32` reaching the network, or a signed system binary spawning a child it has no business spawning, is the anomaly — the join Sysmon Event IDs 1 (process, with parent and command line) and 3 (network connection) make possible. Every LOLBAS entry names exactly that pattern, which is why the catalogue is a detection-rule source as much as an attack menu.
+
+**The command line is the evidence, so log it.** These abuses live in arguments — a URL passed to `certutil`, a scriptlet path to `regsvr32` — so command-line logging (and PowerShell script-block logging for the PowerShell cases) is what turns an invisible built-in into a recorded one. On an authorised test, coordinate the expected telemetry with the blue team rather than evading it silently.
+
+All use here is authorised and in scope; these binaries execute real code on Windows hosts.
 
 ## Summary
 

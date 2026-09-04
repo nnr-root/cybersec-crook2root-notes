@@ -8,6 +8,9 @@ Color: "#708090"
 
 # CrackStation
 
+> [!abstract] Note of [[Web-Based Tools & References]]
+> CrackStation looks an unsalted hash up in a precomputed table of billions of hash-to-password pairs, returning the plaintext instantly for anything a wordlist or breach ever contained. This note covers why precomputation beats guessing, why a per-hash salt defeats the whole model, and why pasting a real captured hash into a public service is the OpSec failure to avoid.
+
 CrackStation (`crackstation.net`) is a free online **hash lookup**. Paste an unsalted hash and it returns the plaintext instantly — not by cracking on demand, but by looking it up in a massive precomputed table of hash→password pairs built from wordlists and past breaches. For a weak, unsalted hash it is the fastest possible "crack": a single lookup.
 
 > [!warning] Never paste real production hashes
@@ -62,6 +65,16 @@ MD5("password"+"a1B9") = 7c2e51f3...   → unique per salt → NOT in any table 
 **The deliberate break:** the *identical password* `password` is instantly recovered when hashed bare, but **unrecoverable** the moment a per-user salt is added — because the salt makes each hash unique, so no precomputed table can ever contain it. That is precisely why salting exists: it doesn't make one password stronger, it makes *precomputation useless*, forcing an attacker back to slow per-hash guessing (Hashcat/John). CrackStation is therefore the clearest possible demonstration of *why every stored password must be salted* — and why bcrypt/argon2 (salted **and** slow) defeat it twice over.
 
 **How you'd spot it:** look at the structure of the stored value. A bare digest and nothing else is a lookup candidate; anything carrying a per-user component — a `$`-delimited field, a separate salt column, a `$2b$` prefix — cannot be in any precomputed table, and time on lookup sites is wasted. The check takes a second and saves the entire detour.
+
+## Security Implications
+
+**A public lookup service sees everything you submit, which makes real hashes off-limits.** Pasting a captured production hash into a third-party site discloses client credential material to an outside party — a scope and confidentiality failure regardless of whether it cracks. Real hashes stay in offline tools ([[Hashcat]], [[John the Ripper]]); CrackStation is for CTF and lab values only, and the same caveat applies to every submit-your-data web service.
+
+**The salt is the defence, and it defeats the entire model rather than slowing it.** A precomputed table can only hold hashes of `password`, not `password` with a random per-user salt appended — so a unique salt makes every table miss, which is why salting matters beyond making cracking slower. A hit on CrackStation is therefore itself a finding: the hash was unsalted and the password was common enough to be in a breach corpus.
+
+**Instant lookup reframes what "fast hash" costs.** For an unsalted MD5 or SHA1, cracking is not even a computation — it is a database query, so the work factor is effectively zero. That is the concrete argument for slow, salted storage: it moves the attacker from a single lookup to an offline campaign, or stops them entirely.
+
+Use only CTF or self-generated hashes here; real captured hashes must never be submitted to a public service.
 
 ## Summary
 
