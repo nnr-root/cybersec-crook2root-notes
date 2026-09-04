@@ -17,7 +17,7 @@ BloodHound turns Active Directory from a list of objects into a **graph of attac
 > Collection is read-heavy LDAP/SMB enumeration of every domain object. Run only in scope; session and ACL data is sensitive engagement evidence.
 
 ## Parent Learning Order
-Impacket -> NetExec -> BloodHound -> Responder
+Impacket -> NetExec -> BloodHound -> Responder -> Mimikatz
 
 ## Active Directory as a directed graph
 

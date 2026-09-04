@@ -17,7 +17,7 @@ NetExec (`nxc`, the maintained successor to CrackMapExec) is the swiss-army knif
 > Spraying and mass-authentication can trigger account lockouts — a careless spray is a self-inflicted denial of service. Respect lockout thresholds and scope.
 
 ## Parent Learning Order
-Impacket -> NetExec -> BloodHound -> Responder
+Impacket -> NetExec -> BloodHound -> Responder -> Mimikatz
 
 ## One credential, checked everywhere at once
 

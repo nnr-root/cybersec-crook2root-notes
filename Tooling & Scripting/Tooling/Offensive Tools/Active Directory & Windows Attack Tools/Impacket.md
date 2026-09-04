@@ -17,7 +17,7 @@ Impacket is a Python library of low-level implementations of network protocols (
 > Secret-dumping and remote execution are high-impact. Use against a scoped lab/engagement domain, keep bounded, and evidence everything.
 
 ## Parent Learning Order
-Impacket -> NetExec -> BloodHound -> Responder
+Impacket -> NetExec -> BloodHound -> Responder -> Mimikatz
 
 ## The execution engine of the AD attack chain
 

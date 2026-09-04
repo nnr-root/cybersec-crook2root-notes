@@ -17,7 +17,7 @@ Responder is a link-local poisoner. When a Windows host fails DNS and falls back
 > Poisoning intercepts real user authentication on the segment. Run only on an authorized internal engagement, and never enable the relay servers unless relaying is explicitly in scope.
 
 ## Parent Learning Order
-Impacket -> NetExec -> BloodHound -> Responder
+Impacket -> NetExec -> BloodHound -> Responder -> Mimikatz
 
 ## Getting a hash with no credentials at all
 

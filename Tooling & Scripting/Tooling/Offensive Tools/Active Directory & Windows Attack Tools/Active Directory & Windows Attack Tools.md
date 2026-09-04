@@ -18,6 +18,7 @@ flowchart LR
     H --> R["Relay or crack"]
     E["Authenticated enum (NetExec)"] --> G["Graph attack paths (BloodHound)"]
     G --> X["Execute / dump secrets (Impacket)"]
+    X --> M["Read LSASS / forge tickets (Mimikatz)"]
 ```
 
 ## Tools in this category
@@ -26,9 +27,10 @@ flowchart LR
 - [[NetExec]]
 - [[BloodHound]]
 - [[Responder]]
+- [[Mimikatz]]
 
 ```text
-Capture identity -> enumerate the domain -> graph the shortest path to DA -> execute/collect under scope
+Capture identity -> enumerate the domain -> graph the shortest path to DA -> execute/collect -> read LSASS and forge tickets for persistence
 ```
 
 The techniques these tools automate are taught in **Offensive Security → Active Directory & Identity Exploitation**; this branch documents the instruments themselves.
