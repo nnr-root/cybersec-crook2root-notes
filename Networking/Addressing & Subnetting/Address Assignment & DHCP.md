@@ -62,8 +62,8 @@ sequenceDiagram
     participant S2 as Second server (:67)
     C->>S1: DHCPDISCOVER (broadcast 255.255.255.255, includes client identifier)
     C->>S2: DHCPDISCOVER (same broadcast reaches every listener)
-    S1-->>C: DHCPOFFER 10.10.10.14, gw .1, dns .53, lease 86400
-    S2-->>C: DHCPOFFER 10.10.10.99, gw .99, dns .99, lease 86400
+    S1-->>C: DHCPOFFER 10.10.10.14, gw 10.10.10.1, dns 10.10.20.10, lease 86400
+    S2-->>C: DHCPOFFER 10.10.10.99, gw 10.10.10.99, dns 10.10.10.99, lease 86400
     Note over C: Client accepts an offer — normally the first to arrive
     C->>S1: DHCPREQUEST (broadcast, naming the chosen server)
     S1-->>C: DHCPACK — lease committed
@@ -75,6 +75,8 @@ Four details in that diagram do the real teaching.
 **The Discover is broadcast** because the client has no address yet and no knowledge of who might serve it. Every device on the segment receives it, including any device pretending to be a server.
 
 **Multiple offers are legitimate.** Redundant DHCP servers are a normal design. The protocol has no notion of an authoritative server, so the client cannot distinguish redundancy from an impostor.
+
+Read the two offers against each other, though, and a human can. The legitimate one points the client at two *different* documented devices — the gateway at `10.10.10.1` and the resolver at `10.10.20.10` on the server segment. The rogue points gateway, resolver and address at one machine, itself, because an attacker who is not also your router and your DNS server has gained nothing. Every field naming the same host is the shape of the attack, and it is visible in the client's own lease without any tooling at all.
 
 **The client typically takes the first offer.** There is no ranking, no signature, no trust evaluation. An attacker on the segment does not need to disable the real server — only to answer faster, which is easy when the attacker is closer or the real server is loaded.
 
@@ -115,7 +117,7 @@ Expected excerpt:
 ● 2: eth0
     Address: 10.10.10.14 (DHCP4 via 10.10.10.1)
     Gateway: 10.10.10.1
-        DNS: 10.10.10.30
+        DNS: 10.10.20.10
   DHCP4 Client: Lease: 86400s, T1: 43200s, T2: 75600s
 ```
 
