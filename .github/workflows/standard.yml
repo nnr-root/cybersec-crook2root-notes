@@ -21,6 +21,9 @@ jobs:
       - name: Structural gate
         run: python3 docs/scripts/ci-check.py
 
+      - name: Address arithmetic gate
+        run: python3 docs/scripts/addrmath.py
+
       - name: Teaching gate
         run: python3 docs/scripts/pedagogy-check.py
 

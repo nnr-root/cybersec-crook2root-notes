@@ -62,7 +62,7 @@ The subtraction of two removes the network address (all host bits zero, which na
 
 The number counts **network bits**, so every bit you add to the prefix halves the host space. A `/24` holds 254 usable addresses; a `/16` holds 65,534. If that inversion is not automatic yet, it is the single most reliable source of subnetting mistakes — and it is why a firewall rule written for `/16` when `/24` was meant silently authorises 256 times as many hosts.
 
-**How you'd spot it:** read the prefix as "how much is fixed", never as "how big". `10.10.0.0/16` fixes `10.10`, leaving two octets free.
+**How you'd spot it:** read a prefix as "how much is fixed", never as "how big" — `10.10.0.0/16` fixes `10.10` and leaves two octets free. The place this costs money is a rule review, where the inversion is invisible in the notation: `/8` and `/24` differ by two characters and by sixteen million addresses. So expand every prefix in a rule set into its first and last address before approving it, and check that number against the count of hosts the rule was written for. A prefix whose range is an order of magnitude larger than its stated purpose is either a mistake or an undocumented decision, and both are worth a sentence in the review.
 
 ## The Reference Table You Should Be Able to Derive
 
@@ -120,10 +120,10 @@ ipcalc 10.10.203.77/20
 Expected excerpt:
 
 ```text
-Address:   10.10.203.77         00001010.00001110.1100 1011.01001101
+Address:   10.10.203.77         00001010.00001010.1100 1011.01001101
 Netmask:   255.255.240.0 = 20   11111111.11111111.1111 0000.00000000
 =>
-Network:   10.10.192.0/20       00001010.00001110.1100 0000.00000000
+Network:   10.10.192.0/20       00001010.00001010.1100 0000.00000000
 HostMin:   10.10.192.1
 HostMax:   10.10.207.254
 Broadcast: 10.10.207.255

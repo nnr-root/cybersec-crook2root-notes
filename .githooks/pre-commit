@@ -5,10 +5,11 @@
 #     git config core.hooksPath .githooks
 #
 # Blocks a commit that introduces a standard violation (a banned Crook/Operator/
-# Root construct, a committed image file, an image embed, an unbalanced fence,
-# or a `## Task N —` heading), or a Teaching Standard violation (a hedge that
-# minimises the reader's task, a generic heading label). Incompleteness (missing
-# summary, thin note, no cold open) is a backlog warning and never blocks.
+# Root construct, an unbalanced fence, an embed pointing at a missing asset, or
+# a `## Task N —` heading), a Teaching Standard violation (a hedge that
+# minimises the reader's task, a generic heading label), or an arithmetic error
+# in a worked address example. Incompleteness (missing summary, thin note, no
+# cold open) is a backlog warning and never blocks.
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
@@ -24,6 +25,15 @@ if ! python3 docs/scripts/ci-check.py --quiet; then
     echo "✗ Commit blocked by the Crook2Root standard gate." >&2
     echo "  Run:  python3 docs/scripts/ci-check.py        (to see the errors)" >&2
     echo "  Then fix them, or use 'git commit --no-verify' only if you are certain." >&2
+    exit 1
+fi
+
+if ! python3 docs/scripts/addrmath.py >/dev/null; then
+    echo >&2
+    python3 docs/scripts/addrmath.py >&2 || true
+    echo >&2
+    echo "✗ Commit blocked: an address, mask or binary expansion does not compute." >&2
+    echo "  Every finding here has exactly one right answer — check the arithmetic." >&2
     exit 1
 fi
 
