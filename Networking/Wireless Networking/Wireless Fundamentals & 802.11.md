@@ -53,30 +53,64 @@ An **access point (AP)** bridges the wireless medium to the wired network. The n
 The AP announces itself by broadcasting **beacon frames** many times per second, advertising the SSID, supported rates, and security capabilities. This beaconing is why networks appear in your device's list without any action — the AP is continuously shouting "I am here, this is my name, here is how to join." It is also why "hiding" an SSID by not including it in beacons provides almost no security: the name still travels in other frames whenever a client connects, and is trivially captured.
 
 ```bash
-sudo iw dev wlan0 scan | grep -E "SSID|freq|signal" | head -12
+sudo iw dev wlan0 scan | grep -E "^BSS|SSID|freq|signal" | head -12
 ```
 
 Expected excerpt:
 
 ```text
+BSS 00:00:5e:00:53:c0
 	freq: 2437
 	signal: -42.00 dBm
-	SSID: CorpNet
+	SSID: MERIDIAN-CORP
+BSS 00:00:5e:00:53:c0
 	freq: 5180
 	signal: -67.00 dBm
-	SSID: CorpNet-5G
+	SSID: MERIDIAN-CORP
+BSS 00:00:5e:00:53:c1
 	freq: 2412
 	signal: -71.00 dBm
-	SSID: Guest
+	SSID: MERIDIAN-GUEST
 ```
 
 `freq: 2437` is channel 6; `signal: -42 dBm` is strong (closer to zero is stronger, so -42 beats -71). Reading signal strength in dBm is basic wireless literacy: roughly, -30 is excellent, -67 is usable for most things, -80 is marginal, -90 is unusable.
+
+Read the first column too, because it is the one that means something. `MERIDIAN-CORP` appears twice with the same **BSSID** — the AP's own hardware address — on two different frequencies: the same radio serving 2.4 and 5 GHz. The SSID is a name anyone may type into any access point, and later notes in this branch turn entirely on that; the BSSID is what a specific box actually transmits from. Two entries sharing an SSID and *differing* in BSSID would be a completely different observation.
 
 **The deliberate break:** Wi-Fi is presented as wireless Ethernet, so it is natural to expect it to behave like a switch — each client gets its own path, and adding clients adds capacity.
 
 It behaves like a **hub on a shared half-duplex medium**. Only one device on a channel may transmit at a time; everyone else waits. Bandwidth is divided among active devices and total throughput *falls* as the room fills, because collision avoidance overhead grows. And because the medium is shared and broadcast, every device in range receives every frame — the encryption is what stops them reading it, not the topology.
 
 **How you'd spot it:** watch throughput per client as the room fills. Switched Ethernet holds steady; a Wi-Fi channel degrades for everyone.
+
+The opening question deserves a number rather than "it falls", and the number comes from adding up airtime. Every frame costs a fixed amount of channel time before and after its payload, whatever that payload is:
+
+```text
+DIFS (wait before transmitting)                 28 us
+average backoff (7.5 slots x 9 us)              68 us
+PLCP preamble and header                        20 us
+SIFS (gap before the acknowledgement)           10 us
+ACK frame                                       24 us
+                                          ----------
+fixed overhead per frame                       150 us
+
+1500-byte payload at 72 Mbps                   167 us
+                                          ----------
+total airtime for one full frame               317 us   -> 53% efficient
+```
+
+Half the channel is spent on the protocol before a second device is even present. Now shrink the payload, which is what a room full of phones, sensors and voice handsets actually sends:
+
+```text
+64-byte payload at 72 Mbps                       7 us
+fixed overhead per frame                       150 us
+                                          ----------
+total airtime                                  157 us   -> 5% efficient
+```
+
+That is the whole answer. The channel's ceiling is not really bits per second, it is roughly three thousand frames per second, and each device claims one frame's worth of airtime at a time regardless of how little it has to say. Ten more clients therefore do not divide the throughput ten ways and leave the total intact — the total *falls*, because more contenders mean longer average backoff, and because a channel shared between many quiet devices spends nearly all its airtime on overhead.
+
+The assumptions above are one common configuration and the exact figures vary by standard, guard interval and rate; the ratio is the durable part.
 
 ## How Frames Share the Air
 
@@ -108,7 +142,31 @@ sequenceDiagram
     Note over C,A: Security handshake (WPA) follows before data flows
 ```
 
-The sequence shows that joining a network is a conversation of management frames *before* any encryption is established. That pre-encryption window — beacons, probes, authentication, association — is visible to anyone listening and is where much wireless reconnaissance and attack occurs. Note the **probe request**: a client actively asks for networks it knows, which means a device's probe requests leak the names of networks it has previously joined — a privacy and tracking concern examined in the reconnaissance leaf.
+The sequence shows that joining a network is a conversation of management frames *before* any encryption is established. That pre-encryption window — beacons, probes, authentication, association — is visible to anyone listening and is where much wireless reconnaissance and attack occurs.
+
+Put the interface into monitor mode and the whole exchange is readable without joining anything:
+
+```bash
+sudo iw dev wlan0 set type monitor && sudo ip link set wlan0 up
+sudo tcpdump -i wlan0 -e -s0 'type mgt'
+```
+
+```text
+1  Beacon (MERIDIAN-CORP) BSSID:00:00:5e:00:53:c0  -42dBm
+2  Probe Request (MERIDIAN-CORP) SA:00:00:5e:00:53:0e
+3  Probe Request (Heathrow_Free_WiFi) SA:00:00:5e:00:53:0e
+4  Probe Request (BA-Lounge) SA:00:00:5e:00:53:0e
+5  Probe Response (MERIDIAN-CORP) BSSID:00:00:5e:00:53:c0 -> 00:00:5e:00:53:0e
+6  Authentication  00:00:5e:00:53:0e -> 00:00:5e:00:53:c0
+7  Assoc Request (MERIDIAN-CORP) 00:00:5e:00:53:0e -> 00:00:5e:00:53:c0
+8  Assoc Response 00:00:5e:00:53:c0 -> 00:00:5e:00:53:0e (status 0)
+```
+
+Every frame here is in the clear, and none of it required being on the network — the capture is passive, from radio range.
+
+Frames 3 and 4 are the ones worth stopping on. `WS-014` did not only ask for `MERIDIAN-CORP`; it asked, out loud and by name, for every network in its saved list. Anyone in range now knows this device has previously connected at an airport and an airline lounge, which is a travel history obtained without touching the device, and — combined with the source address in every frame — a way to recognise the same laptop in a different city. It is also the raw material for an evil twin: a network name a device will connect to on sight is one an attacker can simply offer.
+
+Modern clients mitigate this with randomised source addresses and by probing without naming networks where they can, but the behaviour persists widely, and the reconnaissance leaf takes it further.
 
 ## Security Implications
 

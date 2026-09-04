@@ -73,7 +73,38 @@ sequenceDiagram
 
 The design is clever — the passphrase never crosses the air, and each session gets a fresh key. But there is a fatal exposure: **the handshake contains enough information for an offline attack.** An attacker who captures the four-way handshake can take it away and, offline, guess passphrases — for each candidate, derive what the key would be and check whether it produces the captured handshake's verification value. No further interaction with the network is needed.
 
-This is the defining WPA2 weakness. The attacker does not need to break the encryption; they need to capture one handshake and then guess the passphrase offline, at whatever speed their hardware allows, forever, with no lockout. A weak or common passphrase falls quickly. To capture a handshake, an attacker often forces a connected client to reconnect using a forged deauthentication frame (the management-frame weakness from the previous leaf), then captures the resulting handshake — the two flaws chaining together.
+This is the defining WPA2 weakness. The attacker does not need to break the encryption; they need to capture one handshake and then guess the passphrase offline, forever, with no lockout. To capture a handshake, an attacker often forces a connected client to reconnect using a forged deauthentication frame (the management-frame weakness from the previous leaf), then captures the resulting handshake — the two flaws chaining together.
+
+`MERIDIAN-GUEST` runs WPA2-Personal, so it is the one to watch. In monitor mode the four messages arrive as EAPOL frames and are unmistakable:
+
+```bash
+sudo tcpdump -i wlan0 -e -nn 'ether proto 0x888e'
+```
+
+```text
+00:00:5e:00:53:c1 > 00:00:5e:00:53:30, EAPOL key (1/4), replay 1, ANonce
+00:00:5e:00:53:30 > 00:00:5e:00:53:c1, EAPOL key (2/4), replay 1, SNonce + MIC
+00:00:5e:00:53:c1 > 00:00:5e:00:53:30, EAPOL key (3/4), replay 2, install + MIC
+00:00:5e:00:53:30 > 00:00:5e:00:53:c1, EAPOL key (4/4), replay 2, MIC
+```
+
+Four frames, captured passively, and the attack is now entirely offline. Nothing further touches the network — no more radio, no logs, no rate limit, no lockout. The AP has no way to know it happened.
+
+### How fast "offline" actually is
+
+"At whatever speed their hardware allows" is where the argument usually stops, and it is the wrong place to stop, because the speed is what decides whether any of this matters. WPA2 does not hash the passphrase once; it runs PBKDF2 with 4,096 iterations, deliberately slow. A strong single GPU manages roughly a million candidates per second — not billions:
+
+| What the passphrase is | Candidates | Time at 1,000,000/s |
+|:--|--:|--:|
+| in a rule-mangled wordlist (`Summer2024!`) | 10⁹ | **17 minutes** |
+| 8 random characters, mixed case and digits | 2.2 × 10¹⁴ | 7 years |
+| 4 random dictionary words | 3.7 × 10¹⁵ | 116 years |
+| 10 random characters | 8.4 × 10¹⁷ | 27,000 years |
+| 12 random characters | 3.2 × 10²¹ | 100 million years |
+
+Read the first row against the rest. `Summer2024!` has an uppercase letter, digits and a symbol — it satisfies every complexity policy ever written — and it falls in under twenty minutes, because it is not being guessed character by character. It is being read from a list of known passwords with predictable mangling rules applied, and the search space is the *list*, not the alphabet.
+
+Everything below the first row is unreachable, and by an enormous margin. Rent a thousand GPUs and the 12-character row still runs to a hundred thousand years. So the honest conclusion is narrower than "use a strong passphrase": the offline attack is not a threat to a passphrase that was **randomly generated**, and it is close to a certainty against one a person invented. Length matters because it multiplies the space; complexity rules mostly do not, because they shape passwords people can remember, which is the same thing as passwords the wordlist already has.
 
 WPA3 fixes exactly this. It replaces the handshake with **SAE (Simultaneous Authentication of Equals)**, a design that does not expose a capturable value an attacker can guess against offline. Each guess requires a fresh interaction with the network, which is slow, rate-limitable, and detectable — turning an unlimited offline attack into a bounded online one. WPA3 also provides forward secrecy, so capturing traffic and later learning the passphrase does not decrypt past sessions.
 
@@ -93,6 +124,8 @@ Personal:    one passphrase, everyone shares it, offline-crackable if captured
 Enterprise:  per-user credentials via 802.1X/RADIUS, individually revocable, no shared secret
 ```
 
+Meridian runs one of each, which makes the difference concrete. `MERIDIAN-CORP` is WPA2-Enterprise: `r.okonkwo` authenticates as herself against RADIUS, and if she leaves, one account is disabled and nobody else notices. `MERIDIAN-GUEST` is WPA2-Personal with a passphrase printed on a card at reception — captured once, guessed offline, and it stays valid until someone reprints the card and reconfigures every device that used it. The guest network is on `10.10.51.0/24` with no path to any corporate segment precisely because its authentication cannot be trusted to identify anyone.
+
 The consequences are decisive for any organization:
 
 - **Revocation** — disable one user without touching anyone else's access.
@@ -102,20 +135,21 @@ The consequences are decisive for any organization:
 
 The trade-off is infrastructure: Enterprise requires a RADIUS server and a credential system, which is why homes and small offices use Personal. For any organization of size, Enterprise is the correct choice, and Personal is a liability that scales badly.
 
+The same filter that captured the guest network's handshake distinguishes the two, because both modes speak EAPOL and only one of them says anything first:
+
 ```bash
-# capture the handshake type in use (enterprise shows EAP frames)
 sudo tcpdump -i wlan0 -nn 'ether proto 0x888e'
 ```
 
-Expected excerpt (Enterprise):
+Expected excerpt on `MERIDIAN-CORP` (Enterprise):
 
 ```text
 EAPOL (802.1X), Request, Identity
-EAP, Response, Identity
+EAP, Response, Identity  (r.okonkwo@meridian.test)
 EAP, Request, TLS
 ```
 
-The presence of EAP/identity exchange distinguishes Enterprise (individual authentication) from Personal (the four-way handshake alone).
+An identity exchange and a TLS tunnel to the RADIUS server come *before* any key derivation, and only then does a four-way handshake follow. On `MERIDIAN-GUEST` there is no identity exchange at all — the four EAPOL key frames are the entire authentication, because the network has nothing to ask. That difference is visible in one capture and it is the whole architectural distinction: one network authenticates a person, the other confirms that somebody knows a shared string.
 
 ## Security Implications
 

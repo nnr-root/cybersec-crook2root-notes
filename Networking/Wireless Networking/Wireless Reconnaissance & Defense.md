@@ -8,6 +8,8 @@ tags:
   - difficulty/medium
 Domain:
   - "[[Wireless Networking]]"
+thread-exempt:
+  - "6a:11:04: the rogue AP's BSSID — the locally-administered bit in its first octet is the lesson, and 00:00:5E has that bit clear"
 Color: "#42D4F4"
 ---
 
@@ -32,23 +34,41 @@ This is the same principle as sensor placement and blind-spot mapping in the sec
 **Wardriving** is the technique, named for driving an area while scanning, and it is dual-use: an attacker maps target networks and their security, and a defender maps their own airspace to know what is there. The tools and the act are identical; only the authorization and the purpose differ.
 
 ```bash
-sudo iw dev wlan0 scan | grep -E "SSID|signal|freq|WPA|RSN|Privacy" | head -20
+sudo iw dev wlan0 scan | grep -E "^BSS|SSID|signal|freq|WPA|RSN|Privacy" | head -20
 ```
 
 Expected excerpt:
 
 ```text
+BSS 00:00:5e:00:53:c0
 	freq: 2437
 	signal: -45.00 dBm
-	SSID: CorpNet
+	SSID: MERIDIAN-CORP
 	RSN:	 * Pairwise ciphers: CCMP
+BSS 6a:11:04:c3:9e:22
 	freq: 2412
 	signal: -78.00 dBm
-	SSID: CorpNet          <-- same SSID, weaker signal, different location?
-	Privacy: (no RSN/WPA)  <-- open! an evil twin?
+	SSID: MERIDIAN-CORP     <-- same SSID, different BSSID
+	Privacy: (no RSN/WPA)   <-- and open
 ```
 
-That excerpt is a rogue-AP hunt in miniature: two APs claiming `CorpNet`, one properly secured with strong encryption and one open — the second is a candidate evil twin worth investigating. Reading security capabilities (RSN/WPA present or `Privacy` absent) alongside SSID and signal is how a defender distinguishes their real network from an impostor.
+That excerpt is a rogue-AP hunt in miniature, and the decisive line is the one most scans are run without. `MERIDIAN-CORP` appears twice, and the SSID being identical proves nothing at all — an SSID is a string anyone may type into any access point. The **BSSID** is what separates them: `00:00:5e:00:53:c0` is on the authorized inventory and `6a:11:04:c3:9e:22` is not, which settles the question before anyone examines a single security capability.
+
+The open `Privacy` line and the weaker signal are corroboration, not evidence. Read them the right way round: a competent evil twin would advertise RSN and CCMP exactly like the real one, and a well-placed one would be stronger rather than weaker. Every field in this output can be forged except membership of a list you maintain yourself, which is why the authorized-AP inventory is the linchpin and the rest is decoration.
+
+One detail in the rogue's address is worth reading, though, because it is free. Expand its first octet:
+
+```text
+0x6a = 0110 1010
+              |+-- bit 0 = 0  unicast
+              +--- bit 1 = 1  locally administered
+
+0x00 = 0000 0000
+              |+-- bit 0 = 0  unicast
+              +--- bit 1 = 0  globally unique — assigned from a vendor OUI
+```
+
+Bit 1 of the first octet says whether the address was allocated to a manufacturer or made up locally. The real AP's is globally unique; the rogue's is locally administered, which is what a software access point on a randomised address looks like. It is a hint rather than a verdict — privacy-preserving clients set the same bit for entirely good reasons, and an attacker who cares will set a plausible vendor prefix instead — but it costs one glance and it narrows the candidate list.
 
 > [!tip] The analogy, and where it breaks
 > Surveying your own building's radio footprint the way you would survey where its lights are visible from — you cannot secure a boundary you have never measured. The analogy breaks in the defender's favour: an intruder's radio equipment must *transmit* to work, so unlike a silent trespasser it announces its own presence, and enough listening posts can even triangulate where it is standing.
@@ -84,7 +104,25 @@ flowchart TB
 
 The defender's structural advantage is decisive: **a rogue AP or an active attack must transmit to function, and transmitting is detectable.** An evil twin has to broadcast the SSID to lure clients; a deauth attack has to send deauth frames; a karma AP has to answer probes. None can operate silently, so continuous monitoring of the airspace catches them — and signal strength from multiple sensors can even triangulate the rogue's physical location. Unlike many attacks, wireless attacks announce themselves by their nature.
 
-Deauthentication floods are especially clear: a burst of deauth frames far exceeding normal is an unmistakable signature, and detecting it is straightforward for any monitor watching management frames.
+Deauthentication floods are especially clear, and worth quantifying so "far exceeding normal" means something. Count them per second rather than reading them:
+
+```bash
+sudo tcpdump -i wlan0mon -nn 'wlan type mgt subtype deauth' \
+  | awk '{print $1}' | cut -d. -f1 | uniq -c
+```
+
+```text
+      2 15:06:19
+      1 15:06:20
+    218 15:06:21
+    241 15:06:22
+    237 15:06:23
+      3 15:06:26
+```
+
+A healthy network emits deauthentication frames continuously and legitimately — clients leave, roam, and time out — so their presence is not the signal and a rule that alerts on one is a rule that alerts constantly. The rate is the signal. Two per second is a building going about its day; two hundred is one radio disconnecting everything it can reach, and the burst lasting three seconds and stopping is the shape of a tool being run rather than a fault occurring.
+
+Note also what this costs the attacker: nothing, and it leaves the rest of the airspace untouched, which is why the deauth flood is usually a means rather than an end. Those three seconds are how an evil twin collects a reconnection, and how a WPA2 handshake is forced into the air for capture.
 
 ## Hardening the Wireless Network
 

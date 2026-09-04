@@ -10,7 +10,6 @@ Domain:
   - "[[Wireless Networking]]"
 thread-exempt:
   - "A4:2B:8C: a real vendor OUI — the note teaches rogue-AP detection by comparing it against a prefix in no registry"
-  - "9c:b6:d0: the legitimate AP's BSSID in the same OUI comparison"
   - "00:11:22: the rogue BSSID, deliberately a prefix that appears in no vendor registry"
 Color: "#42D4F4"
 ---
@@ -69,6 +68,34 @@ For a **WPA-Personal** network, the attacker who knows the shared passphrase (of
 
 For **WPA-Enterprise**, the picture improves *if configured correctly*: the client can validate the RADIUS server's certificate, which an attacker cannot forge. But if clients are misconfigured to not validate the server certificate — a distressingly common default — the attacker stands up a rogue Enterprise AP, the client authenticates to it without checking the certificate, and the attacker captures the credentials or relays the authentication. **The defense exists but depends on client-side certificate validation being enforced**, which is the recurring Enterprise Wi-Fi failure.
 
+That misconfiguration is worth watching, because it is the moment credentials leave the device. Both captures below are the same rogue Enterprise AP answering for `MERIDIAN-CORP`; only the client's certificate setting differs.
+
+A client that validates the server certificate:
+
+```text
+EAPOL Request, Identity
+EAP Response, Identity  (anonymous@meridian.test)
+EAP Request, TLS  Server Hello, Certificate (CN=radius.meridian-freight.test)
+EAP Response, TLS  Alert: unknown_ca
+    -- exchange aborted, no inner authentication attempted
+```
+
+The same client with validation disabled:
+
+```text
+EAPOL Request, Identity
+EAP Response, Identity  (anonymous@meridian.test)
+EAP Request, TLS  Server Hello, Certificate (CN=radius.meridian-freight.test)
+EAP Response, TLS  Client Key Exchange, Change Cipher Spec
+    -- tunnel established to the attacker
+EAP Request, MSCHAPv2 Challenge
+EAP Response, MSCHAPv2  (r.okonkwo, challenge response)
+```
+
+Note what the certificate says in both: `radius.meridian-freight.test`, the attacker's own domain, on a certificate that may be entirely valid for it. The validating client does not reject it for being invalid — it rejects it for not being the CA the client was told to expect, which is a different and stronger check than the browser's. It is the one place in this branch where a client demands proof of identity from the infrastructure rather than the other way round.
+
+The second capture ends with `r.okonkwo`'s MSCHAPv2 response inside a tunnel the attacker terminated, which is an offline-crackable credential for her domain account — not merely for the wireless network. One unset checkbox converted a Wi-Fi impersonation into an Active Directory problem.
+
 The general principle: the evil twin succeeds wherever the client cannot, or does not, cryptographically verify the AP's identity. Strong, correctly configured mutual authentication is what defeats it; anything less leaves the door open.
 
 ## Worked Example: Two Access Points, One Name
@@ -88,12 +115,12 @@ analyst@lab:~$ sudo airodump-ng wlan0mon
 
  BSSID              PWR  Beacons  #Data, #/s  CH   MB   ENC  CIPHER AUTH ESSID
 
- A4:2B:8C:11:0D:E2  -62      184      12    0   6  130   WPA2 CCMP   PSK  corp-wifi
- 00:11:22:33:44:55  -31      612     104    3  11   54e  WPA2 CCMP   PSK  corp-wifi
- A4:2B:8C:11:0D:E3  -63      181       0    0   6  130   WPA2 CCMP   MGT  corp-guest
+ A4:2B:8C:11:0D:E2  -62      184      12    0   6  130   WPA2 CCMP   PSK  MERIDIAN-CORP
+ 00:11:22:33:44:55  -31      612     104    3  11   54e  WPA2 CCMP   PSK  MERIDIAN-CORP
+ A4:2B:8C:11:0D:E3  -63      181       0    0   6  130   WPA2 CCMP   MGT  MERIDIAN-GUEST
 ```
 
-Two rows advertise `corp-wifi` with different BSSIDs, and four fields separate
+Two rows advertise `MERIDIAN-CORP` with different BSSIDs, and four fields separate
 them. The second is **31 dB stronger**, which at these levels means far closer.
 Its **max rate is 54e**, the signature of a software access point on a generic
 adapter rather than the 130 Mbit/s of the real enterprise hardware. It sits on a
@@ -108,11 +135,11 @@ association that follows lands on the wrong BSSID:
 
 ```shell-session
 analyst@lab:~$ sudo tcpdump -i wlan0mon -e -n 'wlan type mgt' -c 4
-15:06:22.104881 BSSID:a4:2b:8c:11:0d:e2 SA:a4:2b:8c:11:0d:e2 DA:9c:b6:d0:44:1f:07
+15:06:22.104881 BSSID:a4:2b:8c:11:0d:e2 SA:a4:2b:8c:11:0d:e2 DA:00:00:5e:00:53:0e
     DeAuthentication (7): Class 3 frame received from nonassociated STA
-15:06:22.118440 BSSID:00:11:22:33:44:55 SA:9c:b6:d0:44:1f:07 DA:00:11:22:33:44:55
-    Assoc Request (corp-wifi) [1.0 2.0 5.5 11.0 Mbit]
-15:06:22.121973 BSSID:00:11:22:33:44:55 SA:00:11:22:33:44:55 DA:9c:b6:d0:44:1f:07
+15:06:22.118440 BSSID:00:11:22:33:44:55 SA:00:00:5e:00:53:0e DA:00:11:22:33:44:55
+    Assoc Request (MERIDIAN-CORP) [1.0 2.0 5.5 11.0 Mbit]
+15:06:22.121973 BSSID:00:11:22:33:44:55 SA:00:11:22:33:44:55 DA:00:00:5e:00:53:0e
     Assoc Response AID(1) :: Successful
 ```
 
