@@ -44,7 +44,7 @@ Networks are conventionally named by geographic and administrative reach. The na
 | --- | --- | --- | --- |
 | **PAN** | A person, metres | The individual | Bluetooth headset, wearable |
 | **LAN** | One site or building | The organization | Office floor, home network |
-| **VLAN** | A logical slice of a LAN | The organization | `Finance` separated from `Guest` |
+| **VLAN** | A logical slice of a LAN | The organization | Meridian's `servers` separated from `workstations` |
 | **CAN** | Several adjacent buildings | The organization | University campus |
 | **MAN** | A metropolitan area | Carrier or municipality | City-wide fibre ring |
 | **WAN** | Regions, countries | Multiple carriers | Corporate inter-site links, the Internet |
@@ -80,12 +80,12 @@ flowchart TD
     FW --> CORE["Core switch / router"]
     CORE --> D1["Distribution A"]
     CORE --> D2["Distribution B"]
-    D1 --> A1["Access switch: VLAN 10 Staff"]
-    D1 --> A2["Access switch: VLAN 20 Finance"]
-    D2 --> A3["Access switch: VLAN 30 Guest"]
-    A1 --> H1["Workstations"]
-    A2 --> H2["Finance hosts"]
-    A3 --> H3["Guest devices"]
+    D1 --> A1["SW-01: VLAN 10 workstations"]
+    D1 --> A2["SW-01: VLAN 20 servers"]
+    D2 --> A3["SW-02: VLAN 30 operations"]
+    A1 --> H1["WS-014, WS-030"]
+    A2 --> H2["DC01, FS01, APP01, LOG01"]
+    A3 --> H3["SCAN-07"]
 ```
 
 Read the diagram as a policy map, not a cable map. Every downward edge is a place where a forwarding decision is made, and every horizontal boundary between VLANs is a place where a rule can allow or deny. If two branches meet only at the core, then the core is the only place a control can be applied between them — and if that control is absent, the two branches are effectively one flat network regardless of how the drawing looks.
@@ -130,6 +130,29 @@ Three facts fall out of that output, and each one answers a scope question:
 - `10.10.10.14/24` means this host's own segment holds 254 usable addresses. That is the set of hosts reachable without any routing decision.
 - `default via 10.10.10.1` identifies the gateway — the only exit from this broadcast domain, and therefore the natural place for policy.
 - The neighbour entry proves the gateway answered at the link layer, which is a stronger statement than "an address is configured."
+
+### Watching the boundary appear
+
+The definition at the top of this note claims something specific and testable: hosts in one broadcast domain reach each other directly, and hosts in different ones cannot. Two pings from `WS-014` make the boundary visible, and the evidence is not in the pings at all — it is in what they leave behind in the neighbour table.
+
+```bash
+ping -c 1 10.10.10.30 >/dev/null    # WS-030, same VLAN
+ping -c 1 10.10.20.10 >/dev/null    # DC01, VLAN 20
+ip neigh
+```
+
+Expected output:
+
+```text
+10.10.10.30 dev eth0 lladdr 00:00:5e:00:53:1e REACHABLE
+10.10.10.1 dev eth0 lladdr 00:00:5e:00:53:01 REACHABLE
+```
+
+Both pings succeeded. Only one of the two destinations is in the table.
+
+`WS-030` is there because it is on this segment: `WS-014` resolved its hardware address by asking the segment directly, and now holds a link-layer route to it. `DC01` is not there and never will be, because it is not on this segment — there is no address to resolve. Its packets went to `10.10.10.1`, and the only new neighbour entry is the gateway's.
+
+That difference is the broadcast domain, and it is worth holding onto because most of Layer 2 security follows from it. Every attack in the switching branch — ARP spoofing, MAC flooding, VLAN hopping — works by living inside that first line. An attacker on VLAN 10 can offer `WS-014` a false answer for `10.10.10.30` because the question was asked out loud on a shared segment. They cannot do the same for `10.10.20.10`, because `WS-014` never asks about it; it asks the router, and the router is where a control can sit. Segmentation is a security boundary for exactly this mechanical reason, not as a matter of policy hygiene.
 
 To enumerate live hosts within a block you are explicitly authorized to test, use a host-discovery sweep:
 

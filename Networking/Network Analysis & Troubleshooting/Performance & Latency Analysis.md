@@ -88,18 +88,18 @@ Expected excerpt:
 Once you know *which* metric is bad, locate *where*. Per-hop analysis reveals whether latency accumulates gradually (distance) or jumps at a specific hop (a problem there):
 
 ```bash
-mtr -n --report --report-cycles 30 example.com
+mtr -n --report --report-cycles 30 192.0.2.10
 ```
 
 Expected excerpt:
 
 ```text
 HOST: workstation          Loss%   Snt   Last   Avg  Best  Wrst StDev
-  1.|-- 10.10.10.1         0.0%    30    0.5   0.6   0.4   1.2   0.2
-  2.|-- 10.10.250.1          0.0%    30    8.1   8.4   7.9  12.1   0.9
+  1.|-- 10.10.10.1          0.0%    30    0.5   0.6   0.4   1.2   0.2
+  2.|-- 10.10.250.1         0.0%    30    1.1   1.2   1.0   2.1   0.2
   3.|-- 203.0.113.1         0.0%    30    9.0   9.2   8.8  10.1   0.3
-  4.|-- 198.51.100.9        2.1%    30   88.4  91.2  85.0 140.2  12.4
-  5.|-- example.com         2.0%    30   89.1  90.8  86.1 138.9  11.8
+  4.|-- 192.0.2.23          2.1%    30   88.4  91.2  85.0 140.2  12.4
+  5.|-- 192.0.2.10          2.0%    30   89.1  90.8  86.1 138.9  11.8
 ```
 
 The story is at hop 4: latency jumps from 9 ms to 88 ms and loss and jitter appear, and both persist to the destination. That hop is where the problem enters. Critically — and this is the persistent misreading from the ICMP leaf — **only impairment that continues to the destination matters.** Loss at an intermediate hop that does *not* persist to later hops is a reporting artifact (that hop deprioritizing ICMP), not a real problem. Here it persists, so it is real.

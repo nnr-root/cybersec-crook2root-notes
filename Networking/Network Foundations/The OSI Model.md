@@ -54,6 +54,25 @@ A mnemonic for the bottom-up order: **P**lease **D**o **N**ot **T**hrow **S**aus
 
 The layers most often misunderstood are 5 and 6, precisely because no widely deployed stack implements them as separate entities. Their functions are real; their separation is not. Session management lives inside application protocols, and TLS — the canonical "Layer 6" example — actually spans the boundary between transport and application, running as a record protocol above TCP while presenting a byte-stream API to applications. Being able to say *why* TLS resists clean placement is a better signal of understanding than reciting that it is Layer 6.
 
+### Two protocols that will not sit in a row
+
+TLS is the gentle case. It is called Layer 6 because it encodes and encrypts, which is a presentation-layer job description; it behaves like Layer 5 because it negotiates and resumes sessions; and it depends on TCP having already delivered bytes in order, which makes it unambiguously *above* Layer 4. Three layers, one protocol, and the answer people memorize picks one of them.
+
+QUIC is the case that ends the argument. Walk it down the table and it appears in four places at once:
+
+| It does this | Which is the job of | 
+|:--|:--|
+| runs inside UDP datagrams | above Layer 4 |
+| provides reliability, ordering, flow control and congestion control | Layer 4 |
+| performs the TLS 1.3 handshake as part of its own connection setup | Layer 5/6 |
+| multiplexes independent streams and carries HTTP/3 | Layer 7 |
+
+The honest answer to "what layer is QUIC" is that the question assumes something untrue. QUIC took the functions OSI assigns to layers 4 through 6, implemented them together in one userspace library, and shipped the result on top of the one transport protocol that gets out of the way.
+
+There is a security consequence, and it is not a footnote. Because QUIC encrypts its own transport headers, a middlebox cannot read sequence numbers, cannot see a connection being established or torn down, and cannot inspect or modify the transport state it has spent thirty years reading. Everything a firewall used to know about a TCP connection by looking at it — is this a new flow, is this a retransmission, is this a reset — is inside the ciphertext. Layer 4 visibility, which most network security tooling quietly assumes, is a property of TCP rather than of networking.
+
+So the model survives as a vocabulary and fails as an architecture, and the useful skill is knowing which of those you are using it for. Saying "the problem is at Layer 3" to a colleague is precise and helpful. Asking "which layer is QUIC" is asking a filing question about something that was not filed.
+
 ## What Each Layer Genuinely Decides
 
 The productive way to hold the model is by the decision each layer makes.
@@ -100,7 +119,7 @@ The model's real value is diagnostic. When something "doesn't work," resolve the
 ip link show eth0                      # L1/L2: is the interface up, is carrier present?
 ip neigh show 10.10.10.1             # L2: did the gateway answer at the link layer?
 ping -c 2 10.10.10.1                 # L3: is the local gateway reachable?
-ping -c 2 1.1.1.1                      # L3: does routing off-segment work?
+ping -c 2 192.0.2.10                   # L3: does routing off-segment work?
 getent hosts example.com               # L7: does name resolution work?
 curl -sS -o /dev/null -w '%{http_code}\n' https://example.com   # L4-L7
 ```
@@ -122,7 +141,7 @@ Each line answers exactly one question, and the order is not arbitrary. `state U
 Consider this outcome:
 
 ```text
-2 packets transmitted, 2 received, 0% packet loss     # ping 1.1.1.1 works
+2 packets transmitted, 2 received, 0% packet loss     # ping 192.0.2.10 works
 ;; connection timed out; no servers could be reached  # name resolution fails
 ```
 

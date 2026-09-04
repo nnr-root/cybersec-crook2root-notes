@@ -67,7 +67,7 @@ It is faster when the hunch is right and catastrophically slower when it is not 
 ip link show eth0                       # L1/L2: is the link up? carrier present?
 ip addr show eth0                       # L3: do I have a valid address and mask?
 ping -c 2 <gateway>                     # L3: is the local gateway reachable?
-ping -c 2 1.1.1.1                       # L3: does off-segment routing work?
+ping -c 2 192.0.2.10                    # L3: does off-segment routing work?
 getent hosts example.com                # L7: does name resolution work?
 nc -vz example.com 443                  # L4: does the destination port answer?
 curl -sS -o /dev/null -w '%{http_code}\n' https://example.com   # L4-L7 end to end
@@ -78,7 +78,7 @@ Each command answers exactly one question, and the order matters because a failu
 ```text
 Link down                    -> L1/L2; stop, nothing above matters
 Link up, no address          -> L3; DHCP or configuration
-Gateway pings, 1.1.1.1 doesn't -> L3 routing off-segment
+Gateway pings, 192.0.2.10 doesn't -> L3 routing off-segment
 Everything pings, name fails  -> L7 DNS
 IP works, name fails          -> L7 DNS (the classic)
 Port doesn't answer           -> L4; service down or firewall

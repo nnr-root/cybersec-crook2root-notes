@@ -43,7 +43,7 @@ Ping is merely the best-known *use* of ICMP. The messages that keep the Internet
 The reason this table matters more than the ping command is that **blocking ICMP wholesale breaks things that are not diagnostics**. Type 3 code 4 is a load-bearing part of TCP over paths with varying MTU; suppress it and you get connections that establish and then hang on large transfers. The reflexive "block ICMP for security" posture trades a small reconnaissance benefit for a class of failures that are very hard to diagnose.
 
 > [!tip] The analogy, and where it breaks
-> ICMP is often called the network's error console. That is fair for the error types. It breaks for echo: nothing about ping is an error, and treating a missing echo reply as an error report is precisely the misreading this note is written to prevent.
+> ICMP is the postal service's paperwork rather than its post: the *return to sender*, *no such address*, *too large for this route* slips a carrier generates **about** mail it could not deliver. That captures the error types well, and it captures why they are load-bearing — a sender who never receives the "too large for this route" slip keeps posting parcels that keep vanishing. The analogy breaks in three places, and each one is a section of this note. First, echo is not an error: nothing about ping is a failure report, and reading a missing reply as one is the misreading this note exists to prevent. Second, a postal service always issues the slip, whereas dropping ICMP silently is the *normal* configuration on the modern Internet — the default outcome here is no paperwork at all. Third, no postal system lets you hide a letter inside a return-to-sender slip, which is exactly what ICMP tunnelling does.
 
 ## What Ping Proves, and What It Does Not
 
@@ -100,7 +100,7 @@ From 10.10.10.1 icmp_seq=1 Destination Host Unreachable
 From 10.10.10.1 icmp_seq=2 Destination Host Unreachable
 ```
 
-Here the gateway told you something concrete: it tried to deliver on the local segment and got no address resolution. That is a far stronger finding than silence, and note that the message came from `10.10.10.1` — the *router* — not the target.
+Here the gateway told you something concrete. `SCAN-07` is on VLAN 30, so `10.10.10.1` routed the packet to its own interface on that VLAN, asked the segment for `10.10.30.7`'s hardware address, and got no answer — which is a fact about VLAN 30, discovered by a host that has never been on it. Note who is speaking: the message came from `10.10.10.1`, the *router*, not from the target. Compare that with the silence above. Both are failures; only one of them tells you where the delivery got as far as, and which device made the last decision.
 
 ## Traceroute: Weaponizing TTL for Good
 
@@ -132,11 +132,11 @@ traceroute -n -T -p 443 203.0.113.10
 Expected excerpt:
 
 ```text
- 1  10.10.10.1     0.498 ms  0.472 ms  0.510 ms
- 2  10.10.250.1       2.104 ms  2.081 ms  2.190 ms
+ 1  10.10.10.1      0.498 ms  0.472 ms  0.510 ms
+ 2  10.10.250.1     2.104 ms  2.081 ms  2.190 ms
  3  * * *
- 4  198.51.100.9    12.410 ms 12.377 ms 12.502 ms
- 5  203.0.113.10    13.011 ms 12.958 ms 13.033 ms
+ 4  10.10.250.9     2.410 ms  2.377 ms  2.502 ms
+ 5  203.0.113.10    3.011 ms  2.958 ms  3.033 ms
 ```
 
 The `-T -p 443` flags send TCP SYN probes to port 443 instead of the default UDP or ICMP. This matters enormously in filtered environments: many networks drop ICMP and high-numbered UDP but must permit HTTPS, so a TCP traceroute frequently completes where the default fails. Choosing a probe protocol the path is expected to allow is the difference between mapping a path and concluding, incorrectly, that it is broken.
@@ -151,11 +151,11 @@ Expected excerpt:
 
 ```text
 HOST: workstation           Loss%   Snt   Last   Avg  Best  Wrst StDev
-  1.|-- 10.10.10.1         0.0%    20    0.5   0.5   0.4   0.7   0.1
-  2.|-- 10.10.250.1           0.0%    20    2.1   2.2   2.0   3.1   0.3
-  3.|-- ???                 100.0%    20    0.0   0.0   0.0   0.0   0.0
-  4.|-- 198.51.100.9         0.0%    20   12.4  12.5  12.3  13.9   0.4
-  5.|-- 203.0.113.10         5.0%    20   13.0  13.1  12.9  15.2   0.6
+  1.|-- 10.10.10.1          0.0%    20    0.5   0.5   0.4   0.7   0.1
+  2.|-- 10.10.250.1         0.0%    20    2.1   2.2   2.0   3.1   0.3
+  3.|-- ???               100.0%    20    0.0   0.0   0.0   0.0   0.0
+  4.|-- 10.10.250.9         0.0%    20    2.4   2.5   2.3   3.9   0.4
+  5.|-- 203.0.113.10        5.0%    20    3.0   3.1   2.9   5.2   0.6
 ```
 
 This output contains the single most misread pattern in network diagnostics. Hop 3 shows 100% loss, yet hops 4 and 5 are fine — so traffic obviously passes through hop 3 without difficulty. That hop simply does not generate Time Exceeded messages, usually by policy or ICMP rate limiting. **Loss at an intermediate hop that does not persist to subsequent hops is a reporting artefact, not a fault.** Only loss that continues to the final destination — the 5% at hop 5 here — describes the actual path quality.

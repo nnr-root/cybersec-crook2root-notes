@@ -86,7 +86,7 @@ The waist is also the root of a security property. Because IP carries no notion 
 
 ## Following One Request Through the Suite
 
-Consider a browser fetching `https://shop.example.com/cart`. Watch the layers do their work in order.
+Consider a browser on `WS-014` fetching `https://track.meridian.test/cart`. Watch the layers do their work in order.
 
 **Application** decides the intent: an HTTP `GET` for `/cart`, with a `Host` header and cookies. But before any of that, a *different* application-layer protocol runs — DNS must turn the name into an address.
 
@@ -117,7 +117,7 @@ Memorizing a mapping table hides three real disagreements worth understanding.
 
 **ARP has no clean home.** Address Resolution Protocol maps an IP address to a hardware address. It is used *by* the Internet layer but travels *inside* link-layer frames and is not carried in IP. OSI purists call it Layer 2.5; RFC 1122 places it in the Link layer. The honest answer is that it is a layer-crossing helper, and its lack of authentication is a direct consequence of being designed as plumbing rather than a protocol with peers to verify.
 
-**TLS spans a boundary.** It runs over a reliable transport, provides Layer 6 services, and is configured by applications. QUIC goes further: it implements transport reliability, ordering, and TLS-equivalent security *together*, over UDP. In QUIC, asking "which layer is this?" is not a meaningful question — the layers were deliberately merged to remove a round trip and to escape the ossification of middleboxes that inspect TCP.
+**TLS spans a boundary.** It runs over a reliable transport, provides Layer 6 services, and is configured by applications; [[The OSI Model]] works through why it and QUIC refuse to sit in a single row. The point that belongs here is what that costs the four-layer picture: QUIC merges the Transport and Application layers of *this* model, not just OSI's middle three, which means the clean statement "transport is TCP or UDP, and the application sits on top" describes a stack that a large share of web traffic no longer uses.
 
 **Tunnelling breaks the ordering entirely.** A VPN carries IP inside IP, or IP inside UDP. The layer stack becomes recursive rather than linear, and the "layer" of a given header depends on which encapsulation you are currently inside. Any analysis tool must track depth, not just position.
 
@@ -135,7 +135,16 @@ Offensive and defensive tooling is organized around this suite, and knowing whic
 
 A port scanner manipulates transport-layer state — it constructs TCP segments and interprets the responses. Its results describe reachability and listener state, not application health. A packet-crafting tool operates at the Internet and Transport layers and can therefore forge fields that higher-layer tools take on trust. A capture tool decodes all four layers at once, which is why it is the arbiter when tools at different layers disagree.
 
-The pattern to internalize: **every layer trusts the layer beneath it to have done its job honestly, and none of them verify it by default.** An application trusts that the transport delivered data from the peer it believes it is talking to. Transport trusts that IP delivered from the stated source. IP trusts that the link delivered from the stated device. Break any link in that chain low enough, and everything above inherits the lie. This is the mechanism behind on-path attacks, and the reason authentication has to be end-to-end and cryptographic rather than positional.
+The second consequence is about who can lie where, because the layers are not equally reachable. Each one demands a different position from an attacker, and that requirement — not the protocol's design — is what usually decides your exposure:
+
+| To forge at this layer | An attacker must | So the threat comes from |
+|:--|:--|:--|
+| Link | be on the segment, physically or through a compromised host on it | an insider, a rogue device, one foothold on the VLAN |
+| Internet | be able to emit a packet with a chosen source address | anywhere on a network that permits it — see [[Routing Security & Path Validation]] on why ingress filtering is the control and why it is under-deployed |
+| Transport | usually be on-path, or guess connection state | an on-path position, or a protocol that made state cheap to guess |
+| Application | be able to connect | anyone on the Internet |
+
+Read that column upward and the industry's shape follows from it. Application-layer attacks dominate the breach statistics because the entry requirement is nothing at all, while link-layer attacks are rarer and far more serious when they happen, because getting into position was already most of the work. A control chosen without asking which row an adversary can actually occupy is defending a layer they were never going to reach.
 
 All traffic generation described here belongs on systems within an authorized scope. Crafted packets and scans are recorded by network telemetry, and probing outside an agreed boundary is out of scope regardless of intent.
 
@@ -144,8 +153,8 @@ All traffic generation described here belongs on systems within an authorized sc
 You should now be able to:
 
 - Name the four layers, map them to OSI, and explain why the top three OSI layers were collapsed into one.
-- Read a capture and attribute each header to its layer; use `ss` to identify the five-tuple of a live connection and explain what the ephemeral port is for.
-- Explain the hourglass model and its consequences for both innovation and security; describe why ARP, TLS, and QUIC resist clean placement, and how tunnelling turns the layer stack into a recursive structure that layer-assuming controls fail to inspect.
+- Use `ss` to identify the five-tuple of a live connection, explain what the ephemeral port is for, and state which layers its output does and does not describe. ([[Encapsulation & Protocol Data Units]] takes the same connection apart header by header.)
+- Explain the hourglass model and its consequences for both innovation and security; describe why ARP and TLS resist clean placement, how tunnelling turns the layer stack into a recursive structure that layer-assuming controls fail to inspect, and what position an attacker needs to forge at each layer.
 
 ---
 > 🔼 Up: [[Network Foundations]]

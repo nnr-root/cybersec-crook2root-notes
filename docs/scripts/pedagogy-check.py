@@ -178,6 +178,36 @@ PROTECTED_IPS = {
     "8.8.8.8", "8.8.4.4", "1.1.1.1", "9.9.9.9",
     "255.255.255.255",    # limited broadcast
 }
+RESOLVERS = {"8.8.8.8", "8.8.4.4", "1.1.1.1", "9.9.9.9"}
+
+# The resolver exemption above is for a note that NAMES a resolver — dig @1.1.1.1,
+# kdig +tls @1.1.1.1, a DoH endpoint. It is not for "somewhere on the internet",
+# and the difference is invisible to a set membership test, so the misuse ran
+# free until four notes had it.
+#
+# The half of that distinction a checker can see: a resolver address used as the
+# destination of a reachability command is being pinged, not consulted. An
+# address preceded by '@', or by a resolver-naming option, is the legitimate use.
+# This only reads command lines; the same address standing in for the internet in
+# prose still passes, so a clean run here is not proof the note is clean.
+REACH = re.compile(
+    r"\b(?:ping6?|traceroute6?|tracert|mtr|hping3?|nc|ncat|netcat|telnet|curl|wget|nmap)\b"
+    r"(?P<args>[^\n|#]*)")
+RESOLVER_ARG = re.compile(r"(?:@|--(?:dns|resolver|nameserver)[= ]|(?:server|resolver|nameserver)[= ])\s*$")
+
+
+def resolver_as_destination(lines):
+    """Lines where a public resolver is the target of a reachability command."""
+    out = []
+    for i, line in enumerate(lines, 1):
+        for m in REACH.finditer(line):
+            for am in re.finditer(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", m.group("args")):
+                if am.group(0) not in RESOLVERS:
+                    continue
+                if RESOLVER_ARG.search(m.group("args")[:am.start()]):
+                    continue
+                out.append((i, am.group(0)))
+    return out
 def _thread_ok(ip):
     if ip in PROTECTED_IPS or ip.startswith(("127.", "255.", "224.", "239.")):
         return True                                  # identity is the lesson
@@ -437,6 +467,12 @@ def check(root="."):
             warnings.append(f"{rel}: {len(off)} address(es) off The Thread — {shown}. "
                             f"Move onto Meridian, or confirm they are exempt "
                             f"(Lab Topology §5b)")
+
+        # ── WARNING: a public resolver standing in for "the internet" ─────────
+        for ln, ip in resolver_as_destination(body.split("\n")):
+            warnings.append(f"{rel}:{ln}: {ip} is the destination of a reachability "
+                            f"command — the resolver exemption is for naming a resolver "
+                            f"(dig @{ip}), not for a generic external host. Use 192.0.2.10")
 
         # ── WARNING: staleness ────────────────────────────────────────────────
         if EXAMPLE_FENCE.search(body):

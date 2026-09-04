@@ -147,6 +147,39 @@ Expected excerpt:
 
 This is the routing decision made explicit for one destination: which gateway, which interface, and which source address will be used. It answers "how will this host actually send that packet" without sending anything.
 
+### The same packet, captured on both sides of a router
+
+Step 5 above — the router builds a *new* frame — is the claim most worth checking rather than believing, because everything about traceroute, about why link-layer attacks stay local, and about why a capture never shows the server's hardware address follows from it. Capture the same request on `WS-014` and again on the far side of the gateway:
+
+```bash
+# on WS-014, VLAN 10
+sudo tcpdump -i eth0 -nn -e -c 1 'host 203.0.113.10 and tcp[tcpflags] & tcp-syn != 0'
+# on the DMZ side of the gateway
+sudo tcpdump -i eth1 -nn -e -c 1 'host 203.0.113.10 and tcp[tcpflags] & tcp-syn != 0'
+```
+
+Expected excerpts:
+
+```text
+00:00:5e:00:53:0e > 00:00:5e:00:53:01, ethertype IPv4 (0x0800), length 74:
+    (tos 0x0, ttl 64, id 41207, proto TCP (6), length 60)
+    10.10.10.14.52418 > 203.0.113.10.443: Flags [S], seq 2419087713
+
+00:00:5e:00:53:02 > 00:00:5e:00:53:50, ethertype IPv4 (0x0800), length 74:
+    (tos 0x0, ttl 63, id 41207, proto TCP (6), length 60)
+    10.10.10.14.52418 > 203.0.113.10.443: Flags [S], seq 2419087713
+```
+
+Set the two side by side and sort the fields into three groups.
+
+**Both hardware addresses changed.** Not one — both. The first capture is `WS-014` talking to its gateway; the second is the router talking to `edge`. Neither address in the second line appeared in the first. The frame was not edited in transit, it was discarded and a new one built, which is what step 5 means in practice.
+
+**The IP addresses, the ports and the sequence number did not change.** `10.10.10.14` is still the source at a point in the network where `10.10.10.14` is not reachable and its VLAN does not exist. That is the end-to-end property the whole Internet layer is built on, and it is also precisely why a forged source address survives to the destination: nothing along the path had any reason to rewrite it.
+
+**Exactly two fields moved.** `ttl 64` became `ttl 63`, and the header checksum was recomputed to match. Those are the entire footprint a router leaves on a packet it forwards.
+
+Hold onto the second group. An attacker who can reach the segment can change the first group at will; an attacker anywhere at all can set the second group to whatever they like before the packet is ever sent. Nothing in the path corrected either one, and that is the default state of the network — [[Routing Security & Path Validation]] is the note about the controls that have to be added to change it.
+
 ```bash
 traceroute -n 203.0.113.10
 ```
@@ -154,11 +187,11 @@ traceroute -n 203.0.113.10
 Expected excerpt:
 
 ```text
- 1  10.10.10.1     0.512 ms  0.489 ms  0.501 ms
- 2  10.10.250.1       2.118 ms  2.087 ms  2.201 ms
+ 1  10.10.10.1      0.512 ms  0.489 ms  0.501 ms
+ 2  10.10.250.1     2.118 ms  2.087 ms  2.201 ms
  3  * * *
- 4  198.51.100.9    12.402 ms 12.388 ms 12.511 ms
- 5  203.0.113.10    13.004 ms 12.947 ms 13.020 ms
+ 4  10.10.250.9     2.402 ms  2.388 ms  2.511 ms
+ 5  203.0.113.10    3.004 ms  2.947 ms  3.020 ms
 ```
 
 The row of asterisks at hop 3 is the field most often misread. It does not mean the packet stopped there. It means that hop did not return a Time Exceeded message — commonly because the device is configured not to, or rate-limits ICMP. Traffic clearly continued, since hops 4 and 5 replied. Concluding "the network breaks at hop 3" from this output is a classic false conclusion; the correct reading is "hop 3 is silent, and the path is intact."
@@ -167,7 +200,7 @@ The row of asterisks at hop 3 is the field most often misread. It does not mean 
 
 The classification that predicts behaviour is **which header the device reads, and whether it keeps state**. A layer-3 switch, a router and a firewall all forward packets; what separates them is inspection depth and memory of previous packets. Once you know how deep a device parses, you know both what it is able to enforce and what is invisible to it — which is why a control that reads only link-layer fields cannot express an application policy, and why a stateless filter cannot tell a reply from an unsolicited packet that merely looks like one.
 
-**How you'd spot it:** for every device in the path, ask which header it reads; that single question bounds what it can possibly enforce, and it exposes controls that were bought to solve a problem one layer above what they parse. The recurring concrete finding is a management interface answering from an ordinary user segment — check what responds on each device's management address from a normal workstation, because compromising the device that enforces segmentation removes the segmentation entirely.
+**How you'd spot it:** for every device in the path, ask which header it reads; that single question bounds what it can possibly enforce, and it exposes controls that were bought to solve a problem one layer above what they parse. A firewall cannot enforce a rule about a URL it never parses, and a layer-3 switch offered as a segmentation control between two VLANs is only a control if something on it reads past the IP header. The gap is easiest to find in procurement language: a device sold on what it *protects against* rather than on what it *reads* is usually being asked to enforce a policy one layer deeper than it parses.
 
 ## Security Implications
 

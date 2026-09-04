@@ -36,6 +36,24 @@ When a program sends data, each layer beneath it prepends its own **header** —
 | Link | **Frame** | Source and destination hardware address, ethertype, trailer checksum |
 | Physical | **Bits** | No header; encoding and timing on the medium |
 
+So the opening question has an answer, and it is worth adding up before going further. One hundred bytes handed to a TCP socket over Ethernet leaves as:
+
+```text
+  100  application payload
+ + 20  TCP header (no options)
+ + 20  IPv4 header
+ + 14  Ethernet header (6 dst + 6 src + 2 ethertype)
+ +  4  Ethernet frame check sequence
+ ----
+  158  bytes in the frame
+ +  8  preamble and start-of-frame delimiter
+ + 12  interframe gap
+ ----
+  178  bytes of time on the medium
+```
+
+Fifty-eight per cent overhead, and that is the *lean* case — a real TCP header usually carries timestamps and runs to 32 bytes, and a VLAN tag adds 4 more. The ratio is why protocol designers care about small messages, why a chatty application performs badly on a link that looked fast enough, and why an attack made of many tiny packets costs a network far more than its payload volume suggests.
+
 **Encapsulation** is the process of adding these headers on the way down. **Decapsulation** is stripping them on the way up. The receiving layer removes exactly its own header and hands the remainder upward, using a field in the header it just read to decide *which* upper-layer protocol to hand it to.
 
 That last point is the mechanism that makes the whole thing work, and it is usually skipped. Each header contains a **demultiplexing key**:
@@ -128,7 +146,7 @@ Expected excerpt:
 
 ```text
  1:  10.10.10.1       0.412ms
- 2:  10.10.30.1       1.104ms  pmtu 1420
+ 2:  10.10.250.5      1.104ms  pmtu 1420
  3:  10.10.20.10      1.881ms  reached
      Resume: pmtu 1420 hops 3
 ```

@@ -153,6 +153,8 @@ real single-vendor fleet would look.
 | MAC | Host |
 |:--|:--|
 | `00:00:5E:00:53:01` | VLAN 10 gateway (10.10.10.1) — the address hosts resolve for the gateway. `10.10.10.1` is a **virtual** IP, not a physical router; this MAC is a lab convention like every other row here. Real VRRP derives its virtual MAC from the group number instead, `00:00:5E:00:01:<VRID>`, which the first-hop redundancy note teaches and declares exempt |
+| `00:00:5E:00:53:02` | `R1`, the first physical router on VLAN 10 (10.10.10.2) |
+| `00:00:5E:00:53:03` | `R2`, the second (10.10.10.3) |
 | `00:00:5E:00:53:0E` | `WS-014` |
 | `00:00:5E:00:53:1E` | `WS-030` |
 | `00:00:5E:00:53:20` | `DC01` |
