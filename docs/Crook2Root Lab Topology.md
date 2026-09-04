@@ -180,6 +180,23 @@ demonstrates VLANs, two demonstrate trunking, spanning tree and hopping.
 | `SW-01` | `00:00:5E:00:53:F1` | Access switch. Carries VLANs 10, 20 and 30 |
 | `SW-02` | `00:00:5E:00:53:F2` | Second access switch, same VLANs, joined to `SW-01` by a trunk |
 
+### AS numbers
+
+Routing notes that reach the Internet need autonomous system numbers, and the
+same rule applies to them as to addresses: use the range reserved for
+documentation, not one that belongs to somebody. RFC 5398 reserves
+**64496–64511**, which is where all of these sit. RFC 6996's private range
+(64512–65534) is *not* documentation space — it is in daily use inside real
+networks — so it does not belong in published teaching material any more than
+a real routable address does.
+
+| AS | Who |
+|:--|:--|
+| `64500` | Meridian, origin of `203.0.113.0/24` |
+| `64501` | Meridian's upstream transit provider |
+| `64502`, `64503` | Further-away autonomous systems, for showing a path lengthen |
+| `64511` | The hijacker — top of the range, deliberately memorable, used wherever a note shows a bogus announcement |
+
 ### Routers on VLAN 10
 
 `10.10.10.1` is a **virtual** address. Two physical routers, `10.10.10.2` and

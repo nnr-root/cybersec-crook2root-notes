@@ -34,6 +34,12 @@ RE_TABLE = re.compile(
 RE_NETBC = re.compile(
     r"(Network|Broadcast|HostMin|HostMax)\s*:\s*(%s)(?:/(\d{1,2}))?" % DOTTED, re.I)
 RE_CTX_PREFIX = re.compile(r"(%s)/(\d{1,2})" % DOTTED)
+# RFC 5398 reserves 64496-64511 and 65536-65551 for documentation. RFC 6996's
+# private range is not documentation space — it is in daily use inside real
+# networks — so an ASN outside the reserved blocks is the same defect as a real
+# routable address in an example.
+RE_ASN = re.compile(r"\bAS ?(\d{4,10})\b")
+DOC_ASN = [(64496, 64511), (65536, 65551)]
 
 
 def b(v):
@@ -65,6 +71,12 @@ def check(path):
                            % (path, i, dec, ", ".join(str(j + 1) for j in bad),
                               ", ".join(bits.split(".")[j] for j in bad),
                               ", ".join(want.split(".")[j] for j in bad)))
+
+        for m in RE_ASN.finditer(line):
+            n = int(m.group(1))
+            if not any(lo <= n <= hi for lo, hi in DOC_ASN):
+                out.append("%s:%d: AS %d is outside the documentation ranges "
+                           "(64496-64511, 65536-65551)" % (path, i, n))
 
         # a dotted mask stated as equal to a prefix length
         for m in RE_MASK_PFX.finditer(line):

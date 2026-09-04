@@ -81,14 +81,14 @@ back to the origin is written out in full:
 operator@router-c:~$ sudo vtysh -c "show ip bgp 203.0.113.0/24"
 BGP routing table entry for 203.0.113.0/24
 Paths: (1 available, best #1, table default)
-  65002 65001
+  64501 64500
     192.0.2.23 from 192.0.2.23 (192.0.2.2)
       Origin IGP, valid, external, best (First path received)
       Last update: Sun Apr 12 09:41:18 2026
 ```
 
-`65002 65001` is the AS-path read right to left: AS 65001 originated the prefix,
-AS 65002 passed it along. That list is the entire basis on which the rest of the
+`64501 64500` is the AS-path read right to left: AS 64500 originated the prefix,
+AS 64501 passed it along. That list is the entire basis on which the rest of the
 Internet decides this route is genuine — a claim, propagated by other people's
 routers, with no cryptographic backing at all.
 
@@ -98,14 +98,14 @@ that /24, and the table changes without complaint:
 ```shell-session
 operator@router-c:~$ sudo vtysh -c "show ip bgp"
    Network          Next Hop      Metric LocPrf Weight Path
-*> 203.0.113.0/24   192.0.2.23                       0 65002 65001 i
-*> 203.0.113.0/25   192.0.2.13                       0 65003 i
+*> 203.0.113.0/24   192.0.2.23                       0 64501 64500 i
+*> 203.0.113.0/25   192.0.2.13                       0 64511 i
 ```
 
 Both routes are marked `*>` — valid and best *for their own prefix*. Nothing is
 in conflict as far as BGP is concerned, because they are different prefixes. But
 forwarding uses longest-prefix match, so every packet for the first half of that
-range now leaves toward AS 65003:
+range now leaves toward AS 64511:
 
 ```shell-session
 operator@router-c:~$ sudo vtysh -c "show ip route 203.0.113.20"
@@ -121,18 +121,18 @@ everywhere it propagates, which is why a hijack of a /25 out of someone else's
 /24 is both effective and hard to notice from inside the affected network.
 
 **What origin validation catches.** With RPKI enabled and a ROA declaring AS
-65001 as the only authorized origin, the router can now express an opinion:
+64500 as the only authorized origin, the router can now express an opinion:
 
 ```shell-session
 operator@router-c:~$ sudo vtysh -c "show bgp ipv4 unicast rpki invalid"
    Network          Next Hop      Path
-*  203.0.113.0/25   192.0.2.13     65003 i
+*  203.0.113.0/25   192.0.2.13     64511 i
 ```
 
 The route is now marked `invalid` and, with a policy that acts on that state, is
 never selected. Note what this does *not* prove: RPKI validates that the origin
 AS is entitled to announce the prefix, not that the AS-path is truthful. An
-attacker who forges a path ending in `65001` while still carrying the traffic
+attacker who forges a path ending in `64500` while still carrying the traffic
 themselves produces a route that validates cleanly — which is exactly the residual
 gap path validation exists to close.
 
