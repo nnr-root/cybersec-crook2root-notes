@@ -8,6 +8,9 @@ Color: "#708090"
 
 # Masscan
 
+> [!abstract] Note of [[Network Discovery Tools]]
+> Masscan probes the whole IPv4 space in minutes by decoupling sending from receiving and keeping no per-connection state — which is its power and its danger, because rate is decoupled from safety. This note covers how a stateless scanner re-associates replies, why an aggressive rate produces false negatives that look like closed ports, and the outbound flood a sweep is from the defender's side.
+
 Masscan is an asynchronous, stateless, Internet-scale SYN scanner. It can probe the entire IPv4 space in minutes because it decouples sending from receiving and keeps *no per-connection state*. That speed is also its danger: it discovers reachability but proves nothing about services, and it can flatten a fragile network long before it strains the scanning host.
 
 > [!warning] Rate is a weapon
@@ -34,11 +37,11 @@ Masscan needs raw-packet privilege. Put scope in a config file, review it with `
 operator@lab:~$ sudo masscan --conf approved.conf --echo
 rate = 100.00
 ports = 22,80,443
-range = 192.0.2.0/28
-exclude = 192.0.2.7/32
+range = 203.0.113.0/28
+exclude = 203.0.113.7/32
 operator@lab:~$ sudo masscan --conf approved.conf
-Discovered open port 443/tcp on 192.0.2.10
-Discovered open port 22/tcp on 192.0.2.12
+Discovered open port 443/tcp on 203.0.113.10
+Discovered open port 22/tcp on 203.0.113.12
 ```
 
 The options that matter most:
@@ -73,6 +76,16 @@ Reply bandwidth is tiny — but firewall STATE tables and IDS event volume are n
 **The deliberate break:** run at an aggressive `--rate` and results can *drop* — not because ports closed, but because a NAT/firewall state table filled, a router's ARP cache thrashed, or the sensor's ingestion dropped packets. Silence from Masscan is the diagram's `filtered` ambiguity multiplied by loss: a missed port may mean "closed" or "I flooded the path." The fix is to lower the rate, re-sample a small slice, and compare a known-open **canary** service — if the canary disappears at high rate, your optimisation invalidated the whole scan.
 
 **How you'd spot it:** plant a canary — a port you already know is open — and carry it in every sweep. Present at a low rate and absent at a high one means the missing results are your loss, not the target's state. Two runs at the same rate returning materially different port sets say the same thing.
+
+## Security Implications
+
+**A sweep is a measurable outbound flood, and that is the first thing a defender sees.** At 100,000 packets/s the reply bandwidth is tiny but the *event* volume is not: firewall state tables, IDS ingestion, and flow collectors all see a single source touching a vast address-and-port space in seconds. A stateless scanner cannot be quiet by design — its whole premise is volume — so the only real control is rate, and rate is exactly what the operator is tempted to raise.
+
+**The danger runs toward the target, not the scanner.** A rate comfortable for the scanning host can fill a NAT/firewall state table, thrash a router's ARP cache, or exhaust a fragile embedded device on the path — a denial of service delivered by reconnaissance. Calculating rate from the *weakest device on the path* rather than the fastest is the safety discipline, and the canary check is what proves the rate did not silently break the scan.
+
+**A Masscan hit is a lead, never a finding.** It proves a SYN-ACK came back, nothing more — no service, no version, no proof the port is what its number implies. Feeding the deduplicated set into a slower `-sV` stage is not optional polish; reporting a raw Masscan result as a service is reporting an inference as a fact.
+
+All sweeping here targets only approved ranges at a reviewed rate; the outbound volume is attributable and the collateral risk to path devices is real.
 
 ## Summary
 

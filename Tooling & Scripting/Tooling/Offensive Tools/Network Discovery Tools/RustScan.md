@@ -8,6 +8,9 @@ Color: "#708090"
 
 # RustScan
 
+> [!abstract] Note of [[Network Discovery Tools]]
+> RustScan sprints through TCP ports with a full connect scan and hands the open set to Nmap, so its speed is a concurrency knob that collides directly with an OS limit. This note covers why it needs no root, why the batch size is the one number to get right, and the completed-handshake trail it leaves on every port it touches.
+
 RustScan is a fast TCP port-discovery front end that finds open ports quickly and then **hands them to Nmap** for real service enumeration. It splits the job in two: a rapid Rust connect-scan for reachability, then Nmap for the fingerprinting Nmap does best. Its speed comes from concurrency tuning, which is also the one thing you must get right.
 
 > [!warning] Fast defaults can be destructive
@@ -31,9 +34,9 @@ Unlike Masscan's stateless SYN or Nmap's half-open `-sS`, RustScan lets the OS c
 Everything after `--` is passed straight to Nmap, so all your Nmap knowledge transfers:
 
 ```shell-session
-operator@lab:~$ rustscan -a 192.0.2.10 -p 22,80,443 -b 100 -t 1500 -- -sV --reason -oN evidence/web01.nmap
-Open 192.0.2.10:22
-Open 192.0.2.10:443
+operator@lab:~$ rustscan -a 203.0.113.10 -p 22,80,443 -b 100 -t 1500 -- -sV --reason -oN evidence/web01.nmap
+Open 203.0.113.10:22
+Open 203.0.113.10:443
 PORT    STATE SERVICE VERSION
 22/tcp  open  ssh     OpenSSH 9.6
 443/tcp open  https   nginx 1.24
@@ -57,7 +60,7 @@ RustScan's speed is `-b` (batch size = simultaneous socket attempts), and that n
 ```shell-session
 operator@lab:~$ ulimit -n
 1024
-operator@lab:~$ rustscan -a 192.0.2.10 -p 1-65535 -b 5000
+operator@lab:~$ rustscan -a 203.0.113.10 -p 1-65535 -b 5000
 [!] Too many open files. Try a smaller batch (-b) or raise ulimit -n.
 ```
 
@@ -66,13 +69,23 @@ operator@lab:~$ rustscan -a 192.0.2.10 -p 1-65535 -b 5000
 **How you'd spot it:** compare `ulimit -n` against your `-b` value before running. A batch above the descriptor limit is the loud failure; a batch just under it is the quiet one, and it shows up as a rerun that finds a port the previous run missed. Two scans of the same host disagreeing is the signal that the batch size exceeds what this machine sustains.
 
 ```shell-session
-operator@range:~$ for b in 10 50 200; do /usr/bin/time -f "batch=$b elapsed=%e" rustscan -a 192.0.2.10 -p 1-1024 -b "$b" --scripts none; done
+operator@range:~$ for b in 10 50 200; do /usr/bin/time -f "batch=$b elapsed=%e" rustscan -a 203.0.113.10 -p 1-1024 -b "$b" --scripts none; done
 batch=10 elapsed=4.72
 batch=50 elapsed=1.21
 batch=200 elapsed=0.48
 ```
 
 The fastest run is **not** automatically the best: validate that a known-open canary port still appears at your chosen batch. If it vanishes at `-b 200`, local or network pressure invalidated the optimisation — back off. Record `run_id`, ports, batch, timeout, and the exact downstream Nmap arguments, because the combined pipeline is otherwise impossible to reproduce.
+
+## Security Implications
+
+**Every probe completes a handshake, so the target application logs it.** RustScan uses `connect()` rather than a half-open SYN, which is why it needs no root — and the price is that each open port sees a full TCP session the service accepts and records. Unlike an Nmap `-sS` sweep, there is no stealthy version: the connect scan is the loud-but-unprivileged option, and on a monitored host every open port carries a log line naming the scanner's source.
+
+**The Nmap it hands off to inherits Nmap's whole footprint.** Everything after `--` runs as a real Nmap invocation, so `-sV` banners, NSE application requests and their User-Agents all land in the target's logs exactly as the Nmap note describes. RustScan's speed is only the discovery half; the enumeration half is as noisy as whatever Nmap arguments were passed.
+
+**A too-high batch is a false-negative generator, not just an error.** Above `ulimit -n` it fails loudly; just under it, it silently drops probes and reports open ports as closed. Two scans disagreeing is the tell, which is why a known-open canary carried in every run — present at a low batch, absent at a high one — is what distinguishes local socket pressure from a real result.
+
+All scanning here targets only approved scope; a completed-connection scan is fully attributable, and the downstream Nmap stage must stay rate-limited and in scope.
 
 ## Summary
 

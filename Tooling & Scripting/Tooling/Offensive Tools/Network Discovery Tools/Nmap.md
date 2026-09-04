@@ -8,6 +8,9 @@ Color: "#708090"
 
 # Nmap
 
+> [!abstract] Note of [[Network Discovery Tools]]
+> Nmap never sees an open port — it infers state from a reply or from silence, and the whole tool is that inference plus three fingerprinting engines built on top of it. This note covers why a SYN scan needs root (it bypasses the kernel's own TCP stack), how version, OS and NSE detection actually decide what they report, and the fan-out a scan leaves in a defender's logs.
+
 Nmap is a network-discovery, port-state inference, service-fingerprinting, and scriptable enumeration platform. Its output is *evidence about packets and responses* — not proof of vulnerability. It is the single most important tool in an assessor's kit, and learning it well means learning how the network answers a probe.
 
 > [!warning] Scope first
@@ -48,6 +51,11 @@ state always needs a second technique to confirm. `-sS` sends `RST` instead of
 the final `ACK`, so the connection never completes and the application never logs
 a session; `-sT` needs no privileges but completes the handshake, and the
 application sees it.
+
+**Prerequisites:** the TCP three-way handshake and flags, ICMP, and the difference between a raw socket and an OS `connect()`.
+
+> [!tip] The analogy, and where it breaks
+> Knocking on doors and listening: a knock answered is open, a "go away" is closed, and no answer at all is the ambiguous case. The analogy breaks on that silence — a person who does not answer is usually in or out, but a filtered port's silence is deliberately manufactured by a firewall standing in front of the door, so "no answer" is itself a finding rather than an absence of one.
 
 ## The flags you actually use, grouped by phase
 
@@ -155,15 +163,26 @@ Read that middle line as a sentence: *don't ping first* (`-Pn`), *don't resolve 
 
 ## Why -sS and -sT are a detection choice
 
-The difference between `-sS` and `-sT` is not cosmetic — it is a packet-level and a *detection* choice. `-sS` sends a `RST` instead of the final `ACK`, so the connection never completes and the target application never logs a session (but it needs raw-socket privilege). `-sT` uses the OS `connect()` call, needs no privilege, but completes the handshake — the app sees and logs it. Choosing wrong changes both your footprint and what you can run.
+The difference between `-sS` and `-sT` is not cosmetic — it is a packet-level and a *detection* choice, and the reason for it is a syscall boundary. `-sS` **bypasses the kernel's TCP stack entirely**: Nmap crafts the SYN with a raw socket, reads the reply with a packet capture, and — crucially — the kernel never knows a connection was attempted, so it never sends the final `ACK`. Nmap sees the `SYN-ACK`, infers "open", and sends a `RST` itself to tear the half-open connection down before the target's application layer is ever handed a session. That raw-socket access is a privileged operation, which is the whole reason `-sS` needs root.
+
+`-sT` is the opposite: it calls the OS `connect()`, so the *kernel* completes the full three-way handshake on Nmap's behalf. No privilege is needed because nothing raw is being crafted — but the handshake completes, the listening service accepts a connection, and the application logs it. The choice is therefore not speed, it is whether the target's application ever records that you were there.
 
 ```shell-session
-operator@range:~$ sudo nmap -sS -Pn -p- --reason 192.0.2.10 -oA evidence/02-tcp
+operator@lab:~$ sudo nmap -sS -Pn -p22 --packet-trace 10.10.20.30
+SENT  TCP 10.10.10.14:52011 > 10.10.20.30:22 S     ← our crafted SYN
+RCVD  TCP 10.10.20.30:22 > 10.10.10.14:52011 SA    ← target's SYN-ACK (open)
+SENT  TCP 10.10.10.14:52011 > 10.10.20.30:22 R     ← Nmap's RST, no ACK ever sent
+```
+
+Choosing wrong changes both your footprint and what you can run.
+
+```shell-session
+operator@range:~$ sudo nmap -sS -Pn -p- --reason 10.10.20.30 -oA evidence/02-tcp
 PORT    STATE    SERVICE REASON
 22/tcp  open     ssh     syn-ack ttl 64
 80/tcp  closed   http    reset ttl 64
 443/tcp filtered https   no-response
-operator@range:~$ sudo nmap -sU -p53,123,161 192.0.2.10
+operator@range:~$ sudo nmap -sU -p53,123,161 10.10.20.10
 53/udp  open          domain
 123/udp open|filtered ntp
 161/udp closed        snmp
@@ -173,7 +192,37 @@ operator@range:~$ sudo nmap -sU -p53,123,161 192.0.2.10
 
 **How you'd spot it:** run with `--reason` and read the reason rather than the state. `no-response` is silence; `reset` is an answer; they support completely different sentences in a report. `filtered` and `open|filtered` are the two states never to paraphrase — the moment either becomes "closed" or "open" in your notes, evidence has quietly turned into a guess.
 
-**Defensive visibility:** discovery produces recognizable fan-out — many destination ports from one source, incomplete handshakes, unusual flag combinations, and NSE application requests. During purple-team work, correlate scanner source, firewall flow logs, and target service logs; success means the assessment evidence and the defensive evidence describe the same activity.
+## The three fingerprinting engines
+
+Once a port is open, three separate engines turn that fact into detail, and each decides what it reports in a way worth understanding — because each can be fooled.
+
+**Version detection (`-sV`)** is a probe-and-match database, not magic. Nmap opens the port, optionally sends one of the probes in `nmap-service-probes`, and matches the response bytes against thousands of regular expressions, each mapped to a product and version. So `-sV` reports what the *banner and behaviour* claim — a service configured to lie, or a proxy answering for something behind it, produces a confident wrong answer. `--version-intensity` controls how many probes it will try before giving up.
+
+**OS detection (`-O`)** is TCP/IP stack fingerprinting. Nmap sends around sixteen crafted probes — unusual flag combinations, odd window sizes, malformed packets — and measures how the target's stack responds: initial TTL, window size, options ordering, how it handles the illegal. Those quirks are compared against `nmap-os-db`. It needs at least one open and one closed port to have something to measure, degrades through NAT and load balancers, and offers `--osscan-guess` precisely because the match is probabilistic.
+
+**NSE**, the scripting engine, runs **Lua** scripts organised by category, and the category names hide a scope decision:
+
+```shell-session
+operator@lab:~$ sudo nmap -sV --script vuln 10.10.20.30
+| http-sql-injection: Possible sqli for queries:
+|   http://10.10.20.30:80/product?id=1%27%20OR%20sqlspider
+```
+
+`default` and `safe` scripts only enumerate; `vuln` and especially `exploit` scripts **actively attack** — the `vuln` example above sent live injection payloads to the app. Running `--script vuln` is therefore not reconnaissance, it is exploitation, and it belongs under the same authorisation. Reading a script's category before running it is the difference between a scan and an unauthorised attack.
+
+## Security Implications
+
+**A scan is a fan-out with a shape, and the shape is the detection.** Many destination ports from one source in a short window, a burst of half-open connections (`-sS`) or completed-then-reset sessions (`-sT`), and unusual flag combinations (`-sN`/`-sF`/`-sX`) are all patterns a firewall or IDS keys on directly. The tool cannot enumerate quietly by volume; the only lever is rate, which trades detection risk against time.
+
+**`-sV` and NSE reach the application layer, so they land in application logs, not just the firewall.** A version probe opens the port and talks to the service; an NSE HTTP script makes real requests that appear in the web server's access log with whatever User-Agent the script carries. The stealth of the *port scan* says nothing about the noise of the *enumeration* that follows it.
+
+**`-sS` versus `-sT` is a footprint decision the target records differently.** `-sS` leaves half-open connections the application never sees; `-sT` leaves completed sessions the application logs. On a monitored target the choice determines whether the service owner has a record of you at all.
+
+**`filtered` and `open|filtered` must never be paraphrased.** The moment `no-response` becomes "closed" in a report, evidence has turned into a guess — and a firewall dropping probes (a finding) has been quietly rewritten as a port that is shut (not one). `--reason` is what keeps the report honest.
+
+**Evasion options are RoE-gated because they are attacks on the network, not the host.** Decoys, source spoofing and fragmentation manipulate other systems' view of the traffic; they belong only in explicitly authorised testing, and spoofing a source you do not control can implicate a third party.
+
+All scanning here targets only approved addresses and rates; discovery traffic is logged and attributable, and `vuln`/`exploit` NSE scripts require the same authorisation as any other exploitation.
 
 ## Summary
 
@@ -181,7 +230,9 @@ You should now be able to:
 
 - Interpret an `open|filtered` UDP result, and explain why it is ambiguous.
 - Distinguish a host firewall from a routing or source-address problem when a scan shows everything `filtered`.
-- Explain how `-sS` and `-sT` differ at the packet level, and why one needs root while the other is logged by the application.
+- Explain how `-sS` and `-sT` differ at the packet level, why `-sS` bypasses the kernel TCP stack and therefore needs root, and why only `-sT` is logged by the application.
+- Explain how version detection, OS fingerprinting and NSE each decide what they report, and why `--script vuln` is exploitation rather than reconnaissance.
+- Describe the fan-out signature a scan leaves, and why `-sV`/NSE noise reaches application logs even when the port scan itself was stealthy.
 
 ---
 > 🔼 Up: [[Network Discovery Tools]]
