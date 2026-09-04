@@ -8,6 +8,9 @@ Color: "#708090"
 
 # hcxtools
 
+> [!abstract] Note of [[Wireless Tools]]
+> hcxtools captures crackable WPA material from a single association frame — no connected client, no deauth — and converts it into the 22000 format Hashcat consumes. This note covers what the PMKID attack removes from the aircrack method, when an AP yields no PMKID, and why the quietness of the capture makes prevention the only real defence.
+
 hcxtools (with its capture companion `hcxdumptool`) is the modern WPA-capture toolkit. Its headline capability is the **PMKID attack**: against many APs you can obtain crackable material from a *single frame* during association — **no connected client and no deauth required**. hcxtools then converts captures into the `22000` hash format Hashcat consumes, making it the bridge from radio to GPU.
 
 > [!warning] Authorized RF testing only
@@ -54,6 +57,16 @@ operator@kali:~$ sudo hcxdumptool -i wlan0mon -o cap.pcapng --enable_status=1
 **The deliberate break:** `MERIDIAN-CORP` leaked a PMKID on association, but `MERIDIAN-GUEST` did **not** — because the PMKID is only present when the AP caches it (a roaming/802.11r-related feature), and plenty of APs simply don't include one. A beginner assumes PMKID always works and gives up when an AP is silent; the right move is to **fall back to method A** (capture a real 4-way handshake from a connecting client) — which is why the `-m 22000` format existing for *both* matters so much. And the wall from the whole category still stands: whether it's a PMKID or a handshake, the offline crack only beats a **weak** passphrase — `Summer2024!` falls, a 20-character random PSK does not. hcxtools made *capture* clientless and quiet; it did nothing to make a strong passphrase crackable, so the reportable finding remains passphrase strength, not the tool's cleverness.
 
 **How you'd spot it:** silence from one AP while another yields a PMKID is a configuration difference, not a tool failure. If nothing appears after several association attempts, that AP does not cache one — switch to capturing a real 4-way handshake rather than repeating the same request. Both paths converge on the same `-m 22000` format, so the cracking step is unchanged.
+
+## Security Implications
+
+**The PMKID attack is quiet, which shifts the defence from detection to prevention.** No deauth and no client means almost nothing for a WIDS to alarm on — a single association exchange looks ordinary. So unlike the aircrack deauth, there is no reliable network signal to catch, and the defence has to be the passphrase and the protocol rather than an alert. Where 802.11r roaming is not needed, disabling PMKID caching removes the frame the attack depends on.
+
+**WPA3-SAE removes the offline-crackable material entirely, which is the real fix.** Both PMKID and 4-way handshake attacks work because the captured value is derived from the passphrase and can be guessed offline; WPA3's SAE handshake exposes no such value, turning the unlimited offline attack into a bounded online one ([[Wi-Fi Security & WPA]]). Migrating off WPA2-PSK is the durable answer that a stronger passphrase only postpones.
+
+**The offline step is identical to aircrack's, so the finding is the same.** `-m 22000` cracks PMKIDs and handshakes alike, and either way a strong PSK defeats it — hcxtools made capture clientless and silent, not cracking easier. The reportable weakness remains passphrase strength.
+
+All RF testing here is on owned or authorized networks; the capture feeds offline cracking that reports weakness, not the key.
 
 ## Summary
 

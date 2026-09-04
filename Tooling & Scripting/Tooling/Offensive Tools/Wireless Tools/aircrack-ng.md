@@ -8,6 +8,9 @@ Color: "#708090"
 
 # aircrack-ng
 
+> [!abstract] Note of [[Wireless Tools]]
+> aircrack-ng is a pipeline, not a program: monitor mode, survey and capture, optionally force a reconnect, then crack the captured WPA2 handshake offline. This note covers why the crypto is never broken over the air, why capturing a handshake is not cracking a network, and why the deauth that speeds capture is an active denial of service that Protected Management Frames exists to stop.
+
 aircrack-ng is the classic 802.11 assessment suite. It is not one program but a **pipeline**: put the card in monitor mode (`airmon-ng`), survey the air and capture frames (`airodump-ng`), optionally nudge a client to reconnect (`aireplay-ng`), and crack the captured WPA2 handshake against a wordlist (`aircrack-ng`). The crypto is never broken over the air — the handshake is captured and attacked **offline**.
 
 > [!warning] Authorized RF testing only
@@ -61,6 +64,16 @@ Passphrase not in dictionary          (exhausted 14 million candidates)
 **The deliberate break:** both handshakes were captured identically and in seconds — but the corporate WLAN's `Summer2024!` falls to rockyou instantly while the guest network's 20-character random PSK never appears in any wordlist. "I captured the handshake" is **not** "I cracked the network" — beginners celebrate the `WPA handshake` line and forget that the offline crack still has to *find* the passphrase, and a strong one is computationally out of reach. The finding a report should carry is therefore **passphrase policy**, not "WPA2 is broken." Two operational cautions the map flags: the `--deauth` that forces a fast handshake is a real **DoS** against those clients (owned/authorized APs only), and you can also just *wait* passively for a natural join to avoid disrupting anyone.
 
 **How you'd spot it:** the `WPA handshake:` line means capture succeeded and says nothing whatever about the passphrase. The number that matters comes afterwards — keyspace against your rate. A long random passphrase exhausts the wordlist and reports nothing, and the honest finding is "handshake captured, passphrase not recovered within the engagement window", never a pass.
+
+## Security Implications
+
+**Capture is passive but the deauth is an active denial of service.** Waiting for a natural join transmits nothing; `aireplay-ng --deauth` forges management frames that knock real clients off the network, which is a genuine availability attack on those users — owned or authorized APs only. It works because pre-802.11w management frames are unauthenticated, the exact weakness [[Wi-Fi Security & WPA]] describes, and **Protected Management Frames (802.11w)** is the control that authenticates them and defeats the forced-handshake shortcut.
+
+**The finding is passphrase policy, never "WPA2 is broken".** Identical captures crack in seconds or never, decided entirely by the PSK: `Summer2024!` falls to rockyou, a 20-character random key exhausts it. The honest report line is "handshake captured, passphrase not recovered within the engagement window" — and the defensive answer is a strong PSK, or WPA2-Enterprise so there is no shared secret to capture at all.
+
+**The deauth is loud, so a WIDS catches it.** A burst of deauthentication frames from one source is the classic [[Kismet]] alert — the attack that speeds capture is also the one most visible to the blue team, which is why patient passive capture is the quieter tradecraft.
+
+All RF testing here is on an owned or authorized AP; the offline crack reports weakness, not the recovered key.
 
 ## Summary
 
