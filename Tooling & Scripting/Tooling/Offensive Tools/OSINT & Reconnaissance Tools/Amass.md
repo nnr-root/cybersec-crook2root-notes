@@ -8,6 +8,9 @@ Color: "#708090"
 
 # Amass
 
+> [!abstract] Note of [[OSINT & Reconnaissance Tools]]
+> Amass maps one target's whole DNS estate into a graph, and its single most important property is that it straddles the passive/active line — one flag turns invisible third-party lookups into thousands of queries at the target's own resolvers. This note covers what each mode touches, the finding certificate transparency hands you for free, and why the tool is as valuable pointed at your own domains.
+
 OWASP Amass is the deep subdomain-enumeration and attack-surface-mapping engine. It fuses dozens of passive sources (certificate transparency, DNS aggregators, ASN/WHOIS, web archives) and optional active techniques (DNS brute-force, permutations) into one deduplicated graph of a target's DNS estate — far broader than any single source.
 
 > [!warning] Passive by default, active on request
@@ -31,19 +34,19 @@ But note *where* Amass sits on the map: it **straddles the passive/active line**
 Passive first — quiet and free:
 
 ```shell-session
-operator@kali:~$ amass enum -passive -d acme-corp.com -o subs.txt
-vpn.acme-corp.com
-api.acme-corp.com
-staging.acme-corp.com
-internal-dev.acme-corp.com     ← "internal" name leaked via a public certificate
+operator@kali:~$ amass enum -passive -d meridian.test -o subs.txt
+vpn.meridian.test
+api.meridian.test
+staging.meridian.test
+internal-dev.meridian.test     ← "internal" name leaked via a public certificate
 operator@kali:~$ wc -l subs.txt
-147 acme-corp.com subdomains
+147 meridian.test subdomains
 ```
 
 Then, *in scope*, go active to find names no public source knows:
 
 ```shell-session
-operator@kali:~$ amass enum -active -brute -d acme-corp.com -w wordlist.txt
+operator@kali:~$ amass enum -active -brute -d meridian.test -w wordlist.txt
 ```
 
 `intel` gathers ASNs/orgs; `-df` scopes to specific domains; the graph database (`amass db`) lets you track how the surface changes over time.
@@ -54,17 +57,25 @@ The passive/active distinction is not academic — it's the difference between i
 
 ```shell-session
 # PASSIVE — third parties only, target sees nothing
-operator@kali:~$ amass enum -passive -d acme-corp.com
-[reads crt.sh, DNS datasets, web archives]     ← 0 packets to acme-corp.com's DNS
+operator@kali:~$ amass enum -passive -d meridian.test
+[reads crt.sh, DNS datasets, web archives]     ← 0 packets to meridian.test's DNS
 
 # ACTIVE/BRUTE — thousands of DNS queries STRAIGHT AT the target's resolvers
-operator@kali:~$ amass enum -brute -d acme-corp.com -w big-wordlist.txt
-[a1.acme-corp.com? a2.acme-corp.com? ...]       ← acme's DNS logs light up
+operator@kali:~$ amass enum -brute -d meridian.test -w big-wordlist.txt
+[a1.meridian.test? a2.meridian.test? ...]       ← Meridian's DNS logs light up
 ```
 
 **The deliberate break:** a beginner runs `amass enum -brute` on a "passive recon" engagement, assuming Amass is always passive, and dumps tens of thousands of DNS lookups onto the target's authoritative servers — noisy, potentially disruptive, and outside a passive scope. Same tool, two utterly different footprints, separated by one flag. Always run `-passive` first (it's quiet, free, and often finds the "internal-dev" names leaked in certificates), and only cross into `-active`/`-brute` when the RoE authorizes touching the target. The corollary discovery from the passive run above — an `internal-*` hostname exposed in a public TLS certificate — is exactly the kind of finding cert transparency hands you for free, no active probing required.
 
 **How you'd spot it:** the flag is the finding, so read the command before the output. `-passive` touches third-party sources only; `-brute` and `-active` send queries to the target's own authoritative servers. From the target's side it is unmistakable — tens of thousands of NXDOMAIN responses from one resolver inside a short window.
+
+## Security Implications
+
+**Passive enumeration leaves nothing on the target, which is the security point, not a gap.** The names Amass finds passively come from certificate transparency, DNS datasets and archives — the target's own logs never see the query, so there is no telemetry to detect and nothing to alert on. Exposure that leaks this way cannot be caught at the perimeter; it can only be managed at the source, which is why the defensive answer is to run Amass against your own domains before an attacker does.
+
+**Certificate transparency is the leak that needs no probing.** The `internal-dev` name above came from a public TLS certificate: every certificate an organisation is issued is published to append-only CT logs, so an internal hostname put behind a public cert is public the moment the cert exists. Monitoring CT for your own domains turns that from an attacker's free finding into a defender's alert.
+
+**`-brute` and `-active` cross into logged traffic and possible disruption.** They send queries straight at the target's authoritative servers — tens of thousands of NXDOMAINs from one resolver — so the mode is a scope decision, not a preference, and running it under a passive RoE is an out-of-scope act, not an aggressive one.
 
 ## Summary
 
