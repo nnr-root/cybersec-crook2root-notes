@@ -105,11 +105,11 @@ Expected excerpt:
 
 ```text
 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500
-    inet6 2001:db8:acad:1:a1b2:c3d4:e5f6:7890/64 scope global temporary dynamic
+    inet6 2001:db8:acad:10:a1b2:c3d4:e5f6:7890/64 scope global temporary dynamic
        valid_lft 6821sec preferred_lft 3221sec
-    inet6 2001:db8:acad:1:20c:29ff:fe4a:9b31/64 scope global dynamic mngtmpaddr
+    inet6 2001:db8:acad:10:200:5eff:fe00:530e/64 scope global dynamic mngtmpaddr
        valid_lft 2591821sec preferred_lft 604621sec
-    inet6 fe80::20c:29ff:fe4a:9b31/64 scope link
+    inet6 fe80::200:5eff:fe00:530e/64 scope link
        valid_lft forever preferred_lft forever
 
 default via fe80::1 dev eth0 proto ra metric 100 expires 1621sec
@@ -118,10 +118,12 @@ default via fe80::1 dev eth0 proto ra metric 100 expires 1621sec
 fe80::1 dev eth0 lladdr 00:00:5e:00:53:01 router REACHABLE
 ```
 
-Every line carries a finding:
+Read the prefixes first: all three global forms sit in `2001:db8:acad:10::/64`, the same prefix the router advertised in the exchange above, which is what confirms they were built from it rather than configured by hand.
+
+Every line then carries a finding:
 
 - **Three addresses on one interface.** A rotating `temporary` address for outbound connections, a stable one, and the permanent link-local. Correlating logs across all three is necessary to attribute activity to a host.
-- **`20c:29ff:fe4a:9b31`** — the `ff:fe` in the middle marks a EUI-64 identifier derived from the hardware address. This leaks the network card's identity and makes a host trackable across networks, which is exactly why privacy extensions were introduced. Seeing this pattern on a modern client suggests privacy extensions are disabled.
+- **`200:5eff:fe00:530e`** — the `ff:fe` in the middle marks a EUI-64 identifier derived from the hardware address. Work it backwards and the MAC falls out: split the interface identifier into bytes, drop the `ff:fe` inserted in the middle, and invert the second-lowest bit of the first byte, which is the universal/local flag that IPv6 flips on the way in. `02:00:5e:ff:fe:00:53:0e` becomes `00:00:5e:00:53:0e`, which is `WS-014`. That is the whole problem with EUI-64: the address carries the network card's identity, so a host is trackable across every network it joins, and one line of arithmetic recovers the hardware address from a packet capture. It is why privacy extensions exist, and seeing this pattern on a modern client means they are switched off.
 - **`default via fe80::1 ... proto ra`** — the default gateway is a *link-local* address learned from a Router Advertisement. `proto ra` names the source of the route, and `expires` shows it must be refreshed. If a rogue advertisement wins, this line is where it appears.
 - **`router REACHABLE`** — the neighbour entry confirms the device identified itself as a router.
 
@@ -129,14 +131,14 @@ Test reachability, noting that link-local addresses require a zone index because
 
 ```bash
 ping6 -c 2 fe80::1%eth0
-ping6 -c 2 2001:db8:acad:10::10
+ping6 -c 2 2001:db8:acad:10::30
 ```
 
 Expected excerpt:
 
 ```text
 64 bytes from fe80::1%eth0: icmp_seq=1 ttl=64 time=0.48 ms
-64 bytes from 2001:db8:acad:10::10: icmp_seq=1 ttl=64 time=1.21 ms
+64 bytes from 2001:db8:acad:10::30: icmp_seq=1 ttl=64 time=1.21 ms
 ```
 
 The `%eth0` suffix is mandatory for link-local and omitting it produces `Invalid argument` — a small detail that consumes a surprising amount of troubleshooting time.
