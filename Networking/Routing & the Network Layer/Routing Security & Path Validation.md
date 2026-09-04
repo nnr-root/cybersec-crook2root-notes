@@ -30,7 +30,14 @@ The network layer was designed to move packets, not to prove anything about them
 1. **A packet's source address is whatever the sender wrote.** Nothing in IP verifies it.
 2. **A routing advertisement is believed because it was received.** The protocols trust their peers.
 
-Everything in this note follows from attacking or defending those two assumptions. The controls fall into two groups: **validating where a packet came from** (source and path validation) and **validating what a route claims** (origin and update authentication). A mature routing posture applies both, because they cover different attacks.
+Everything in this note follows from attacking or defending those two assumptions. The controls fall into two groups, and every control in this note belongs to exactly one of them:
+
+| Assumption | What it buys an attacker | Which branch note showed it | The control group |
+|:--|:--|:--|:--|
+| A source address is whatever the sender wrote | reflection and amplification; an untraceable origin | this note | validating **where a packet came from** |
+| A routing advertisement is believed because it was received | an injected route in an IGP; a stolen prefix in BGP; a stolen gateway on a segment | [[Interior Gateway Protocols]], [[BGP & Internet Routing]], [[First-Hop Redundancy & Gateway Failover]] | validating **what a route claims** |
+
+A mature posture applies both, because they cover different attacks and neither degrades gracefully into the other. Ingress filtering will not notice a hijacked prefix; RPKI will not notice a spoofed packet.
 
 The unifying diagnostic insight: **a compromised route usually preserves connectivity.** Traffic reaches its destination, so uptime monitoring stays green. The evidence of compromise is in the *path* and the *origin*, not in reachability. Any detection strategy that only asks "can I reach it?" is blind to the entire class.
 
@@ -55,17 +62,21 @@ Loose uRPF:   the source must merely exist somewhere in the routing table
 Strict mode is stronger but breaks under asymmetric routing, where the return path legitimately differs from the arrival path; loose mode tolerates asymmetry at the cost of catching fewer spoofs. The choice depends on whether the network's routing is symmetric, which is why deployment requires understanding the traffic, not just enabling a feature.
 
 ```bash
-# conceptual: strict reverse-path filtering on a Linux router
-sysctl net.ipv4.conf.eth1.rp_filter
+sysctl net.ipv4.conf.all.rp_filter net.ipv4.conf.eth1.rp_filter
 ```
 
 Expected output:
 
 ```text
-net.ipv4.conf.eth1.rp_filter = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.eth1.rp_filter = 0
 ```
 
-A value of 1 enables strict reverse-path filtering on that interface; 2 is loose mode; 0 is off. On an edge interface facing untrusted networks, this drops packets with implausible source addresses automatically.
+A value of 1 is strict reverse-path filtering, 2 is loose mode, 0 is off. On an edge interface facing untrusted networks, strict mode drops packets with implausible source addresses automatically.
+
+Read both lines, because one of them alone will mislead you. Linux takes the **larger** of `conf.all` and the interface's own setting, not the interface's setting. The output above does not mean filtering is off on `eth1` — the effective value is `max(1, 0)`, so `eth1` is in strict mode. The consequence runs the wrong way round from the intuition: setting an interface to `0` cannot turn filtering off while `all` is `1`, and an operator who disables it on the one interface with asymmetric routing will find the packets still dropped and the setting still reading `0`. Only lowering `conf.all` changes anything, which lowers it everywhere.
+
+This is worth knowing before you deploy strict mode rather than after. A single asymmetric path that appears later has no per-interface escape hatch.
 
 Ingress filtering is one of the few controls where deploying it protects *others* more than yourself — it stops *your* network from being used to attack someone else. This is precisely why it is under-deployed and why coordinated efforts exist to encourage it: the benefit is collective.
 
@@ -102,13 +113,51 @@ Because routing attacks preserve connectivity, detection must observe path and o
 - **Traffic-path telemetry** — traceroute baselines, flow records, latency shifts — reveals when traffic that should take one path suddenly takes another, even when it still arrives.
 - **Control-plane logging** captures adjacency changes, mastership changes, and route-table churn; an unexpected new neighbour or a flood of updates is a control-plane event worth investigating.
 
-The mindset shift is the deliverable: replace "is the destination up?" with "is the destination reached the way it should be, from the origin it should be, over the path it should be?" A green uptime dashboard is consistent with an active interception.
+### The two answers side by side
+
+[[BGP & Internet Routing]] showed this hijack from inside a router's control plane: AS 64511 announcing `203.0.113.0/25`, a more specific prefix than the `203.0.113.0/24` that AS 64500 legitimately originates, and winning on specificity alone. Here is the same event as an outside observer experiences it. Take a baseline from an ordinary internet host toward Meridian's tracking site while everything is normal:
+
+```bash
+traceroute -A -n 203.0.113.20
+```
+
+```text
+ 1  192.0.2.41 [AS64503]   0.412 ms
+ 2  192.0.2.33 [AS64502]   4.118 ms
+ 3  192.0.2.23 [AS64501]  11.907 ms
+ 4  203.0.113.1 [AS64500] 12.244 ms
+ 5  203.0.113.20 [AS64500] 12.610 ms
+```
+
+Store that. Now run the identical command during the hijack:
+
+```bash
+traceroute -A -n 203.0.113.20
+curl -s -o /dev/null -w '%{http_code}\n' https://track.meridian.test/
+```
+
+```text
+ 1  192.0.2.41 [AS64503]   0.398 ms
+ 2  192.0.2.33 [AS64502]   4.203 ms
+ 3  192.0.2.13 [AS64511]   9.771 ms
+ 4  203.0.113.1 [AS64500] 26.882 ms
+ 5  203.0.113.20 [AS64500] 27.104 ms
+200
+```
+
+Compare the two, line by line, and notice what the incident does **not** look like. The destination is identical. The final hop is identical. The hop count is identical. The site returns `200`, so every uptime check, every synthetic monitor and every user reports the service healthy — which is not the hijacker being merciful, it is the hijacker being competent, because a hijack that drops traffic is discovered in minutes and one that forwards it is not discovered at all.
+
+Exactly two things changed. Hop 3 is `192.0.2.13` in AS 64511 where the baseline had `192.0.2.23` in AS 64501, and the round trip roughly doubled. The latency is the weaker signal — it moves for a dozen innocent reasons and a hijacker one hop off the legitimate path may add almost none. The AS at hop 3 is the finding, and it is only a finding because you recorded what belonged there beforehand.
+
+That is the whole discipline in one comparison. Nothing in the second capture is an error, so nothing can alarm on "something went wrong"; the alarm has to be on "this differs from the baseline", and a baseline is something you either captured while the network was healthy or do not have when you need it.
+
+The mindset shift is the deliverable: replace "is the destination up?" with "is the destination reached the way it should be, from the origin it should be, over the path it should be?" A green uptime dashboard is consistent with an active interception — and in the capture above, it is one.
 
 **The deliberate break:** presented as a list of controls — ingress filtering, peer authentication, origin validation, prefix filtering — the natural question is which one is strongest, and which one to deploy first.
 
 They are not substitutes and there is no strongest. Each covers a gap the others leave open: ingress filtering stops spoofed sources but not injected routes; authentication stops injection but not a peer that has itself been compromised; origin validation catches the common hijack but not a forged AS path; prefix filtering catches implausible announcements but only as well as your intent data describes them. An attacker's task is to find the layer that was skipped, which makes "which one" the wrong question and "what does each of ours not cover" the right one.
 
-**How you'd spot it:** audit by gap rather than by presence — for every control in place, state plainly what it does not address, then check whether anything else covers that. And watch for the one with no local symptom: ingress filtering protects other networks rather than your own, so omitting it produces no visible consequence on your side at all while contributing directly to everyone else's attack volume. Controls whose benefit accrues elsewhere are the ones that quietly never get deployed.
+**How you'd spot it:** audit by gap rather than by presence — for every control in place, state plainly what it does not address, then check whether anything else covers that. Two gaps hide better than the rest. The first is the control with no local symptom: ingress filtering protects other networks rather than your own, so omitting it produces no visible consequence on your side at all while contributing directly to everyone else's attack volume, and controls whose benefit accrues elsewhere are the ones that quietly never get deployed. The second is the missing baseline. A `traceroute -A` comparison catches a hijack that every other check calls healthy, but only against a capture taken while the path was known good — so the audit question is not "do we monitor paths" but "show me the recorded path for our top ten destinations, and the date it was taken". An unanswerable version of that question is itself the finding.
 
 ## Security Implications
 

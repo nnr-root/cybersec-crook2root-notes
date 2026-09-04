@@ -30,6 +30,10 @@ Routing is not something only routers do. Every device with an IP stack consults
 
 The decision uses the destination IP and the host's own routes. If the destination falls within a directly connected network, the host delivers it at the link layer. Otherwise it forwards the packet to the **next hop** — a gateway — trusting that gateway to move it closer. The gateway then repeats the identical decision with its own table. Routing is this decision, made independently, hop after hop, with no single device knowing the whole path.
 
+So: one lookup per packet sent, which makes the opening question arithmetic rather than rhetoric. A typical page pulls roughly 2 MB across about 70 requests. The bytes arrive in segments of about 1,448, so around 1,400 segments come back, and the laptop acknowledges roughly every second one — call it 700 ACKs. Add the 70 requests themselves, a TCP handshake and a TLS handshake per connection, and a DNS query or two. The laptop sends on the order of **a thousand packets** to load one page, and performs a routing-table lookup for every one of them.
+
+The number is not the point; the ratio is. Nothing in that page load involved a router doing anything the laptop did not also do, a thousand times, before the packets ever left the building.
+
 ```bash
 ip route
 ```
@@ -69,7 +73,7 @@ Consider a destination `10.10.20.50` against this table:
 0.0.0.0/0        via 10.10.10.1     (prefix length 0)
 10.10.0.0/16     via 10.10.10.253   (prefix length 16)
 10.10.20.0/24    via 10.10.10.254   (prefix length 24)
-10.10.20.50/32   via 10.10.10.2     (prefix length 32)
+10.10.20.50/32   via 10.10.10.252   (prefix length 32)
 ```
 
 All four match `10.10.20.50` — the default matches everything, `/16` matches all of `10.10.x`, `/24` matches `10.10.20.x`, and `/32` matches this exact host. Longest-prefix match selects the `/32`. Ask the kernel to confirm the decision without sending anything:
@@ -81,17 +85,19 @@ ip route get 10.10.20.50
 Expected excerpt:
 
 ```text
-10.10.20.50 via 10.10.10.2 dev eth0 src 10.10.10.14
+10.10.20.50 via 10.10.10.252 dev eth0 src 10.10.10.14
 ```
 
 `ip route get` is the single most valuable routing diagnostic: it reports the exact decision the kernel will make for a destination, resolving all the overlapping routes for you. Trace several destinations and the rule becomes concrete:
 
 ```text
-10.10.20.50   -> via .2     (matched the /32, most specific)
+10.10.20.50   -> via .252   (matched the /32, most specific)
 10.10.20.77   -> via .254   (matched the /24)
 10.10.99.5    -> via .253   (matched the /16)
 192.0.2.10    -> via .1     (matched only the default)
 ```
+
+Read the second and third lines together. `10.10.20.77` and `10.10.99.5` differ in one octet and leave by different next hops, because one of them falls inside `10.10.20.0/24` and the other does not. Nothing about the addresses says so; only the table does.
 
 ```mermaid
 flowchart TD
@@ -112,6 +118,27 @@ The **RIB (Routing Information Base)** is the full collection of everything the 
 The **FIB (Forwarding Information Base)** is the distilled result: the single best route to each destination, installed into the fast-path forwarding hardware or kernel structure that actually moves packets. `ip route` on Linux shows what is effectively the FIB; a full router distinguishes the two explicitly.
 
 The distinction matters during troubleshooting. A route can exist in the RIB — the device *knows* it — yet not be in the FIB because a more preferred route won, so the device does not *use* it. "The route is there but traffic doesn't take it" is almost always a RIB/FIB or longest-prefix issue, not a broken route.
+
+You can produce that situation on one host in a few seconds. Install a second route to the same prefix with a worse metric:
+
+```bash
+sudo ip route add 10.10.20.0/24 via 10.10.10.253 metric 200
+ip route show 10.10.20.0/24
+ip route get 10.10.20.77
+```
+
+Expected output:
+
+```text
+10.10.20.0/24 via 10.10.10.254 dev eth0 proto static metric 50
+10.10.20.0/24 via 10.10.10.253 dev eth0 metric 200
+
+10.10.20.77 via 10.10.10.254 dev eth0 src 10.10.10.14
+```
+
+Both routes are listed. Neither is invalid, neither is flagged, and nothing distinguishes them but the metric. Yet every packet to `10.10.20.77` takes `.254`, because equal prefix lengths are broken by metric and 50 beats 200. The `.253` route is knowledge the host has and does not act on — RIB without FIB.
+
+This is why `ip route` and `ip route get` are different questions, and why an engineer who confirms a route exists has not confirmed it is used. On a full router the two tables are named and displayed separately; on Linux they are collapsed into one command, which makes the confusion easier and the habit of asking `ip route get` more valuable.
 
 ## Security Implications
 

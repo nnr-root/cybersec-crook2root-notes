@@ -152,7 +152,7 @@ real single-vendor fleet would look.
 
 | MAC | Host |
 |:--|:--|
-| `00:00:5E:00:53:01` | VLAN 10 gateway (10.10.10.1) — the VRRP **virtual** address, not a physical router |
+| `00:00:5E:00:53:01` | VLAN 10 gateway (10.10.10.1) — the address hosts resolve for the gateway. `10.10.10.1` is a **virtual** IP, not a physical router; this MAC is a lab convention like every other row here. Real VRRP derives its virtual MAC from the group number instead, `00:00:5E:00:01:<VRID>`, which the first-hop redundancy note teaches and declares exempt |
 | `00:00:5E:00:53:0E` | `WS-014` |
 | `00:00:5E:00:53:1E` | `WS-030` |
 | `00:00:5E:00:53:20` | `DC01` |
@@ -202,10 +202,21 @@ a real routable address does.
 `10.10.10.1` is a **virtual** address. Two physical routers, `10.10.10.2` and
 `10.10.10.3`, present it between them under VRRP, which is what the first-hop
 redundancy note describes; hosts are configured with `.1` and never see either.
+The pair are named `R1` and `R2` where a note has to say which one holds the
+role. Router interconnects come out of `10.10.250.0/24`, allocated by link
+rather than by host: a note needing a transit pair takes a `/30` from it and
+needs no entry here.
 Where a note needs a second or third next hop on the segment — a static route
 to the DMZ, a longest-prefix demonstration with several overlapping routes —
-it uses `10.10.10.253` and `10.10.10.254`, which are additional routers on the
-same wire. Nothing else on VLAN 10 forwards.
+it uses `10.10.10.252`, `10.10.10.253` and `10.10.10.254`, which are additional
+routers on the same wire — three, because a longest-prefix ladder wants a
+distinct next hop per tier and the default already owns `.1`. Nothing else on
+VLAN 10 forwards.
+
+`10.10.10.2` and `10.10.10.3` stay out of those examples deliberately. They are
+the VRRP pair, and a note that routes traffic straight at one of them
+undercuts the point the first-hop redundancy note makes about hosts only ever
+knowing `.1`.
 
 Ports are named `Gi0/<n>`. Access ports live in `Gi0/1`–`Gi0/23`. The two
 switches are joined by **two** trunks, `Gi0/47` and `Gi0/48`, so either cable
