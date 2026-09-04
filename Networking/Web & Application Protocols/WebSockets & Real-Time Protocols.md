@@ -62,7 +62,7 @@ Because it starts as HTTP, WebSocket traverses existing web infrastructure — t
 ```bash
 curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" \
   -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" \
-  -H "Sec-WebSocket-Version: 13" http://<lab server>/chat
+  -H "Sec-WebSocket-Version: 13" http://track.meridian.test/chat
 ```
 
 Expected excerpt:
@@ -75,6 +75,19 @@ Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
 ```
 
 The `101` is the moment the connection stops being HTTP.
+
+That `Sec-WebSocket-Accept` value is not arbitrary and is worth checking once, because it is the only part of the handshake that proves the server understood what it agreed to. The server takes the client's key, appends the fixed GUID `258EAFA5-E914-47DA-95CA-C5AB0DC85B11`, hashes it with SHA-1 and base64-encodes the result:
+
+```bash
+printf '%s258EAFA5-E914-47DA-95CA-C5AB0DC85B11' 'dGhlIHNhbXBsZSBub25jZQ==' \
+  | openssl sha1 -binary | openssl base64
+```
+
+```text
+s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+```
+
+It is not a security mechanism — the GUID is public and the client's key is not secret — and it was never meant to be. Its job is to prevent a cache or a proxy that does not understand `Upgrade` from replaying an old response and accidentally convincing a client that a WebSocket exists where none does. A protocol transition needs a confirmation that could not have been produced by accident, which is a different requirement from a confirmation that could not have been forged.
 
 ## Lighter Options: Server-Sent Events
 
@@ -92,6 +105,27 @@ SSE is a single long-lived HTTP response that the server keeps writing to, strea
 **The deliberate break:** the handshake reads as the checkpoint. It is an ordinary HTTP request, the WAF inspects it, authorisation is decided there, and the connection proceeds having been vetted.
 
 It is the **only** HTTP request in the entire conversation. Everything after it — thousands of messages, in both directions, for as long as the connection lives — never appears as a separate request, so every control that operates per request inspected the doorway and nothing that came through it. Security has to move inside the message handler, validating and authorising each frame as it arrives, because the upstream checks are structurally unable to see them.
+
+To see how completely that is true, send the same hostile string twice — once as the handshake, once as a frame. In the URL, it is an ordinary HTTP request and the edge treats it as one:
+
+```bash
+curl -si "https://track.meridian.test/chat?room=' OR 1=1--" \
+  -H "Connection: Upgrade" -H "Upgrade: websocket" \
+  -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" -H "Sec-WebSocket-Version: 13" | head -1
+```
+
+```text
+HTTP/1.1 403 Forbidden
+```
+
+Now complete a clean handshake to `/chat` and send the identical string as message two:
+
+```text
+>>> {"room":"general","q":"' OR 1=1--"}
+<<< {"results":[ ... 4,812 rows ... ]}
+```
+
+The edge saw one request in this conversation and approved it. It will see no others for as long as the connection lives, however many thousands of messages pass, because there are no others to see — a frame is not a request and never becomes one.
 
 **How you'd spot it:** ask what inspects message number two. If the answer names the WAF or the API gateway, then nothing does. The second question is when authorisation was last evaluated on a connection that has been open for hours — a permission revoked an hour ago is still in force on a channel opened before it, which is how access outlives its entitlement and why long-lived sessions need periodic re-validation rather than a single check at the door.
 

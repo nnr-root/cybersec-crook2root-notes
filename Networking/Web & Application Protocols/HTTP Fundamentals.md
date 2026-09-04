@@ -55,14 +55,14 @@ HTTP is **stateless**. Every request is independent and the server has no memory
 ## A Request and Its Response
 
 ```bash
-curl -v https://shop.example.com/cart -H 'Cookie: session=abc123'
+curl -v https://track.meridian.test/cart -H 'Cookie: session=abc123'
 ```
 
 The request on the wire:
 
 ```text
 GET /cart HTTP/1.1
-Host: shop.example.com
+Host: track.meridian.test
 User-Agent: curl/8.4.0
 Accept: */*
 Cookie: session=abc123
@@ -146,6 +146,37 @@ sequenceDiagram
 ```
 
 The diagram is the whole trick: the server has no memory, so it hands the browser a token and relies on the browser to present it each time, reconstructing "who this is" on every request from that token alone.
+
+### Removing the token, and moving it
+
+The Tell above is an experiment, not a metaphor. Send the same request twice, once with the cookie and once without:
+
+```bash
+curl -si https://track.meridian.test/account -H 'Cookie: session=abc123' | head -1
+curl -si https://track.meridian.test/account                             | head -1
+```
+
+```text
+HTTP/1.1 200 OK
+HTTP/1.1 302 Found
+```
+
+Identical method, identical path, identical everything else — and the second one does not know who is asking. Nothing else about the first request identified the user: not the source address, not the TLS session, not the `User-Agent`. Remove that one header and the application has no idea a logged-in person exists.
+
+The mirror experiment is the one with consequences. Take the same string to a different machine on a different network and send it there:
+
+```bash
+# from a host that has never authenticated to this application
+curl -si https://track.meridian.test/account -H 'Cookie: session=abc123' | head -1
+```
+
+```text
+HTTP/1.1 200 OK
+```
+
+`200 OK`, and the account is Alice's. The server did not fail a check; it performed exactly the check it has, which is "does this request carry a session token I issued". A cookie is a **bearer** token — whoever bears it is the user, and nothing in the protocol distinguishes the browser it was issued to from any other client presenting the same bytes.
+
+That is the whole reason the flags above exist. `HttpOnly` and `Secure` do not make the token harder to *use*; nothing can. They narrow the set of places it can be *obtained* — out of reach of injected script, never on a cleartext wire — because once it is obtained, the two requests above are indistinguishable to the server.
 
 ## Security Implications
 

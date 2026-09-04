@@ -69,7 +69,7 @@ flowchart TB
 The health check is deceptively important. A **shallow** check (does the port answer?) can pass while the application behind it is broken — the balancer keeps sending traffic to a server that returns errors. A **deep** check (does a real request succeed end to end?) catches that but costs more and, if pointed at a shared dependency like a database, can make every backend fail its check at once when that dependency wobbles, taking the whole service out of rotation over a problem that was not the servers' fault. Designing the health check is a real engineering decision with availability consequences in both directions.
 
 ```bash
-curl -s -o /dev/null -w '%{http_code} %{time_total}\n' https://<service>/healthz
+curl -s -o /dev/null -w '%{http_code} %{time_total}\n' https://track.meridian.test/healthz
 ```
 
 Expected excerpt:
@@ -78,7 +78,36 @@ Expected excerpt:
 200 0.043
 ```
 
-A dedicated health endpoint that exercises the critical path without heavy side effects is the standard pattern.
+A dedicated health endpoint that exercises the critical path without heavy side effects is the standard pattern. The two ways to get it wrong are worth seeing side by side, because they fail in opposite directions.
+
+**Too shallow.** A check that only opens a TCP connection reports a backend that cannot serve a single request:
+
+```bash
+nc -zv 10.10.20.30 443 && curl -s -o /dev/null -w '%{http_code}\n' https://track.meridian.test/orders
+```
+
+```text
+Connection to 10.10.20.30 443 port [tcp/*] succeeded!
+500
+```
+
+The port answers, so the balancer keeps this backend in rotation and keeps handing it users, each of whom receives a `500`. Every dashboard reads healthy; the only signal is the error rate, which is measured somewhere else entirely by someone else.
+
+**Too deep, and shared.** Now the opposite failure. A check that queries the database on every probe is honest about each backend — and all of them depend on the same database:
+
+```text
+09:14:02  backend-1 /healthz -> 200
+09:14:02  backend-2 /healthz -> 200
+09:14:02  backend-3 /healthz -> 200
+09:14:32  backend-1 /healthz -> 503  db connect timeout
+09:14:32  backend-2 /healthz -> 503  db connect timeout
+09:14:32  backend-3 /healthz -> 503  db connect timeout
+09:14:33  balancer: no healthy backends — returning 503 to all clients
+```
+
+Thirty seconds, and the whole service is out of rotation. The database was slow, not gone; a request that took four seconds would have succeeded. Instead the check turned a degradation into a total outage, and — this is the part that makes it hard to recover from — the balancer will not send *any* traffic through, so the service stays down until a human intervenes, even after the database recovers enough to serve.
+
+The rule that falls out of the pair: a health check should test what *this backend* is responsible for, and treat a shared dependency's failure as something to report rather than something to withdraw from. Correlated health checks are not health checks; they are a single point of failure with a status code.
 
 ## Session Affinity and TLS Termination
 

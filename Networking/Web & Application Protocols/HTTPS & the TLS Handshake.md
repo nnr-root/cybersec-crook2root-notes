@@ -79,22 +79,22 @@ Three elements of this exchange carry the security.
 A **certificate** binds a public key to a hostname, signed by a **Certificate Authority (CA)** the client already trusts. The client's trust does not extend to the server directly; it extends to a small set of root CAs shipped with the operating system or browser, and the certificate presents a **chain** from the server up to one of those roots.
 
 ```bash
-echo | openssl s_client -connect shop.example.com:443 -servername shop.example.com 2>/dev/null \
+echo | openssl s_client -connect edge.meridian.test:443 -servername edge.meridian.test 2>/dev/null \
   | openssl x509 -noout -subject -issuer -dates
 ```
 
 Expected excerpt:
 
 ```text
-subject=CN = shop.example.com
-issuer=C = US, O = Let's Encrypt, CN = R3
+subject=CN = edge.meridian.test
+issuer=C = GB, O = Meridian Freight, CN = Meridian Freight Lab Root CA
 notBefore=Jul  1 00:00:00 2026 GMT
 notAfter=Sep 29 23:59:59 2026 GMT
 ```
 
 Validation checks, all of which must pass:
 
-1. **Hostname match** — the certificate's subject or Subject Alternative Names must include the host you requested. A certificate valid for `example.com` presented for `evil.com` fails here.
+1. **Hostname match** — the certificate's subject or Subject Alternative Names must include the host you requested. A certificate valid for `meridian.test` presented for `meridian-freight.test` fails here.
 2. **Chain to a trusted root** — each certificate is signed by the next up to a root the client trusts.
 3. **Validity dates** — not before, not after. This is why clock skew breaks TLS: a wrong clock makes valid certificates appear expired.
 4. **Not revoked** — the CA has not withdrawn the certificate.
@@ -105,7 +105,54 @@ A failure of any check is what produces the browser's certificate warning. That 
 
 The padlock icon means exactly one thing: **the connection to the named server is encrypted, and the server proved it controls a certificate for that hostname.** It means the traffic is confidential and authenticated to that host.
 
-It does **not** mean the site is safe, honest, or run by the organization you have in mind. Anyone can obtain a valid certificate for a domain they control, including a phishing site at `paypa1-secure.com`. That site has a perfectly valid padlock. The padlock authenticates the *hostname*, and reading the hostname is the human's job — TLS proves you reached `paypa1-secure.com`, it does not tell you that is not PayPal. Conflating "encrypted" with "trustworthy" is precisely the confusion phishing relies on.
+It does **not** mean the site is safe, honest, or run by the organization you have in mind. Anyone can obtain a valid certificate for a domain they control — including the attacker who registered `meridian-freight.test`.
+
+### Two verifications, and the wrong one warns
+
+Inspect the attacker's certificate the same way:
+
+```bash
+echo | openssl s_client -connect meridian-freight.test:443 \
+  -servername meridian-freight.test 2>/dev/null | openssl x509 -noout -subject -issuer -dates
+```
+
+```text
+subject=CN = meridian-freight.test
+issuer=C = US, O = Let's Encrypt, CN = R11
+notBefore=Aug 14 00:00:00 2026 GMT
+notAfter=Nov 12 23:59:59 2026 GMT
+```
+
+Run all four checks against it. The hostname matches. The chain reaches a root every browser ships. The dates are current. Nothing is revoked. A browser renders a padlock and no warning of any kind, correctly, because every question TLS is able to ask was answered truthfully.
+
+Now verify Meridian's own edge server from a client that has not been given the lab root:
+
+```bash
+echo | openssl s_client -connect edge.meridian.test:443 -servername edge.meridian.test 2>&1 \
+  | grep -E "verify (error|return)"
+```
+
+```text
+verify error:num=20:unable to get local issuer certificate
+Verify return code: 20 (unable to get local issuer certificate)
+```
+
+Supply the root and it passes:
+
+```bash
+echo | openssl s_client -connect edge.meridian.test:443 -servername edge.meridian.test \
+  -CAfile meridian-lab-root.pem 2>&1 | grep -E "Verify return"
+```
+
+```text
+Verify return code: 0 (ok)
+```
+
+Set the two side by side and the intuition inverts. The site that produced **no warning at all** is the attacker's. The site that produced a **verification failure** is Meridian's own edge server, working perfectly, failing only because this particular client had never been told which root to trust.
+
+Neither result says anything about honesty, and neither was ever going to. Check 1 asks whether the name on the certificate is the name you asked for — and you asked for `meridian-freight.test`, so it is. Check 2 asks whether some CA vouched for the key — and one did, for a domain its owner genuinely controls. The padlock authenticates the *hostname*, which means reading the hostname stays the human's job.
+
+This is the same shape as the `Authentication-Results` header in [[Email Transport Protocols]], one layer up. There, every check read `pass` and the message was still a phish, for the same reason: the mechanism proves which domain, honestly and completely, and cannot be asked whether that domain deserves trust. Conflating "encrypted" with "trustworthy" is precisely the confusion phishing relies on, and it survives because the technology is not lying — it is answering a narrower question than the one being asked.
 
 ## Security Implications
 
@@ -120,8 +167,22 @@ It does **not** mean the site is safe, honest, or run by the organization you ha
 **Weak configuration undoes strong protocols.** Obsolete protocol versions, weak ciphers, missing forward secrecy, and expired or misissued certificates are the common findings. Testing a server's actual configuration matters more than assuming "we use HTTPS."
 
 ```bash
-nmap --script ssl-enum-ciphers -p 443 <server>
+nmap --script ssl-enum-ciphers -p 443 edge.meridian.test
 ```
+
+```text
+| ssl-enum-ciphers:
+|   TLSv1.2:
+|     ciphers:
+|       TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 (secp256r1) - A
+|       TLS_RSA_WITH_AES_128_CBC_SHA (rsa 2048) - C
+|   TLSv1.3:
+|     ciphers:
+|       TLS_AES_256_GCM_SHA384 (ecdh_x25519) - A
+|_  least strength: C
+```
+
+The `C` grade is the finding, and it is not about the cipher's strength. `TLS_RSA_WITH_AES_128_CBC_SHA` uses RSA key transport rather than an ephemeral exchange, so a session negotiated with it has **no forward secrecy** — recorded traffic decrypts later if the server's private key is ever obtained. One offered suite quietly withdraws the property the previous section described, for any client that selects it.
 
 All testing described here must target only servers within an authorized scope; certificate and cipher enumeration is reconnaissance and is logged.
 

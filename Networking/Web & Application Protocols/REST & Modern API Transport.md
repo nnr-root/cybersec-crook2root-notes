@@ -47,7 +47,7 @@ REST leans on HTTP's own machinery rather than reinventing it:
 - **Statelessness** is preserved: each request carries everything needed to process it, typically including an authentication token, because the server remembers nothing between requests.
 
 ```bash
-curl -s https://api.example.com/orders/42 \
+curl -s https://api.meridian.test/orders/42 \
   -H 'Authorization: Bearer eyJhbGci...' \
   -H 'Accept: application/json'
 ```
@@ -74,6 +74,34 @@ flowchart TD
 ```
 
 The diagram isolates the single most damaging API mistake: performing the authentication check (is the token valid?) but skipping the per-object authorization check (does this caller own this object?). The dashed path is broken object-level authorization, and it is where most real API breaches occur.
+
+### One request, one finding
+
+The dashed path is testable in the time it takes to edit a URL. Fetch your own order with your own token:
+
+```bash
+curl -s https://api.meridian.test/orders/42 -H 'Authorization: Bearer eyJhbGci...'
+```
+
+```text
+{"id":42,"account":"r.okonkwo","status":"shipped","total":51.25}
+```
+
+Now change one character and send the identical token again:
+
+```bash
+curl -s https://api.meridian.test/orders/41 -H 'Authorization: Bearer eyJhbGci...'
+```
+
+```text
+{"id":41,"account":"d.varga","status":"processing","total":1840.00}
+```
+
+That is the finding, complete. No credential was stolen, no token was forged, nothing was injected, and the request is well-formed in every respect — it is the same request that worked a moment ago with a different number in it. The API answered honestly: the token is valid, so here is order 41.
+
+Note what makes this so much worse than it looks. The identifiers are sequential, so `/orders/1` through `/orders/41` is a loop rather than an attack, and the response body names the account it belongs to, which turns the leak into a customer list. And every network control in the chain sees a properly authenticated request to a legitimate endpoint — a WAF has nothing to match, a rate limiter sees one user's normal traffic pattern, and the access log records a successful authorised call.
+
+The failure is a missing clause in a database query. Nothing outside the application can supply it, which is why this class of flaw appears at the top of every API risk list and why it is not, in any useful sense, a network problem — it just happens to be reachable over the network.
 
 **Prerequisites:** HTTP methods, status codes, and TLS.
 

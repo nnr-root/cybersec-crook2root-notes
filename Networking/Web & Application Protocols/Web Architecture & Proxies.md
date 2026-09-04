@@ -63,18 +63,18 @@ Because a reverse proxy terminates the client's connection and opens a new one t
 The workaround is a header the proxy adds:
 
 ```text
-X-Forwarded-For: 203.0.113.55, 198.51.100.9
-Forwarded: for=203.0.113.55; proto=https; host=shop.example.com
+X-Forwarded-For: 192.0.2.10, 203.0.113.10
+Forwarded: for=192.0.2.10; proto=https; host=track.meridian.test
 ```
 
-`X-Forwarded-For` accumulates client addresses as the request passes through proxies. The standardized `Forwarded` header does the same more robustly.
+`X-Forwarded-For` accumulates addresses left to right as the request passes through proxies: `192.0.2.10` is the original client, and `203.0.113.10` is `edge`, which added itself when it forwarded onward. The standardized `Forwarded` header does the same more robustly.
 
 Here is the critical security subtlety: **these headers are trivially forged.** A client can send `X-Forwarded-For: 127.0.0.1` in its very first request, and if any component trusts that header uncritically, the client has just spoofed its own source address at the application layer. Applications that make security decisions on `X-Forwarded-For` — allowlisting "internal" addresses, rate-limiting by client IP, logging for attribution — can be bypassed by forging it.
 
 The correct handling: a proxy must **overwrite**, not append to, the header for untrusted inbound requests, and the application must only trust the header when the immediate connection came from a known proxy. The real client address is "the last address added by a proxy you trust," counting from the right — never the leftmost value a client supplied. Getting this wrong is a recurring, high-impact configuration error.
 
 ```bash
-curl -H 'X-Forwarded-For: 10.10.10.1' https://<lab app>/whoami
+curl -H 'X-Forwarded-For: 10.10.10.1' https://track.meridian.test/whoami
 ```
 
 Expected excerpt from a misconfigured app:
@@ -83,7 +83,7 @@ Expected excerpt from a misconfigured app:
 {"client_ip":"10.10.10.1"}
 ```
 
-That output is the vulnerability: the app believed a header the client wrote.
+That output is the vulnerability: the app believed a header the client wrote. Read the list the app should have seen instead — `192.0.2.10, 203.0.113.10, 10.10.10.1` if the proxy appended rather than overwrote — and the rule becomes mechanical. Walk it from the **right**, discarding entries while they are proxies you operate; the first entry that is not yours is the furthest point you can vouch for. Walking from the left gets you whatever the client typed, every time, because the client wrote the left.
 
 ## HTTP Versions Change the Wire, Not the Semantics
 
@@ -106,6 +106,35 @@ The security relevance is at the **boundaries between versions**. A chain often 
 **Cache poisoning** exploits the cache in the chain. If a cache stores a response keyed on parts of the request it should have included in the key but did not — say it ignores a header that the backend uses to build the response — an attacker can craft a request that causes a malicious response to be cached and then served to every subsequent user. Again, the flaw lives at the boundary: the cache and the application disagree about what makes a response unique.
 
 Both share a lesson: **each component parses and keys requests slightly differently, and every difference is an attack surface.** This is the web-layer version of the fragment-reassembly and tag-stacking ambiguities seen lower in the stack — wherever two implementations may interpret the same bytes differently, that gap is exploitable.
+
+### The chain only exists if it cannot be walked around
+
+Before any of that subtlety matters, there is a blunter question: is the chain in the request path at all, or merely in the diagram? Send an obviously hostile request through the front door:
+
+```bash
+curl -si "https://track.meridian.test/search?q=' OR 1=1--" | head -1
+```
+
+```text
+HTTP/1.1 403 Forbidden
+```
+
+The WAF at the edge did its job. Now resolve what is behind it and ask the same question directly, supplying the `Host` header the backend expects:
+
+```bash
+curl -si --resolve track.meridian.test:443:10.10.20.30 \
+  "https://track.meridian.test/search?q=' OR 1=1--" | head -1
+```
+
+```text
+HTTP/1.1 200 OK
+```
+
+Same hostname, same path, same payload, same TLS certificate — and no WAF, because the request never went near it. `APP01` on `10.10.20.30` answered a stranger on the corporate network directly.
+
+Everything else in this note is now moot for that backend. The parser-boundary subtleties assume requests *traverse* the boundaries; smuggling past a front-end is unnecessary when you can decline to use one. And note what the misconfiguration is not: nothing is wrong with the WAF, which blocked exactly what it was asked to block, and nothing is wrong with the application, which has the injection flaw it always had. The defect is that the topology diagram shows one path in and the network offers two.
+
+This is why the audit question is *reachability* rather than configuration. A control that can be bypassed has not failed a test — it was never in the path, and it will keep passing every test you run through it.
 
 **The deliberate break:** adding components to the chain reads as adding defence — a CDN absorbs floods, a WAF filters, a balancer terminates TLS, and each new layer is another control.
 
