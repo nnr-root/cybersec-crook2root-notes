@@ -33,15 +33,15 @@ The device performing translation must solve one problem. If ten internal hosts 
 
 ```mermaid
 sequenceDiagram
-    participant L as Laptop 10.10.10.129:15401
+    participant L as WS-014 10.10.10.14:15401
     participant R as NAT router (public 203.0.113.5)
-    participant S as Server 198.51.100.20:443
-    L->>R: src 10.10.10.129:15401 dst 198.51.100.20:443
-    Note over R: Create entry — 10.10.10.129:15401 <-> 203.0.113.5:19273
-    R->>S: src 203.0.113.5:19273 dst 198.51.100.20:443
-    S-->>R: src 198.51.100.20:443 dst 203.0.113.5:19273
+    participant S as Server 192.0.2.20:443
+    L->>R: src 10.10.10.14:15401 dst 192.0.2.20:443
+    Note over R: Create entry — 10.10.10.14:15401 <-> 203.0.113.5:19273
+    R->>S: src 203.0.113.5:19273 dst 192.0.2.20:443
+    S-->>R: src 192.0.2.20:443 dst 203.0.113.5:19273
     Note over R: Table lookup reverses the rewrite
-    R-->>L: src 198.51.100.20:443 dst 10.10.10.129:15401
+    R-->>L: src 192.0.2.20:443 dst 10.10.10.14:15401
 ```
 
 The server never learns the internal address. It sees only `203.0.113.5:19273`, which is why translation destroys attribution unless the translating device logs the mapping — a point returned to below.
@@ -77,8 +77,8 @@ sudo conntrack -L -j 2>/dev/null | head -5
 Expected excerpt:
 
 ```text
-tcp 6 431990 ESTABLISHED src=10.10.10.129 dst=198.51.100.20 sport=15401 dport=443
-    src=198.51.100.20 dst=203.0.113.5 sport=443 dport=19273 [ASSURED] mark=0 use=1
+tcp 6 431990 ESTABLISHED src=10.10.10.14 dst=192.0.2.20 sport=15401 dport=443
+    src=192.0.2.20 dst=203.0.113.5 sport=443 dport=19273 [ASSURED] mark=0 use=1
 ```
 
 Read this as two tuples describing one flow. The first is the connection as the internal host sees it. The second is the reply direction as it arrives from outside. The gateway's job is to match one to the other. `sport=15401` becoming `dport=19273` in the reply tuple is the port rewrite made visible.
@@ -99,12 +99,12 @@ table ip nat {
   }
   chain prerouting {
     type nat hook prerouting priority dstnat; policy accept;
-    iifname "eth0" tcp dport 8443 dnat to 10.10.10.50:443
+    iifname "eth0" tcp dport 8443 dnat to 10.10.20.30:443
   }
 }
 ```
 
-`masquerade` is SNAT that takes its public address from the outgoing interface automatically — correct when the public address is dynamic, slightly slower than a fixed SNAT rule because the address is resolved per flow. The `prerouting` rule is a port forward: anything arriving on the public interface at port 8443 is redirected to an internal host. That one line is the entire difference between an internal service and an Internet-exposed one.
+`masquerade` is SNAT that takes its public address from the outgoing interface automatically — correct when the public address is dynamic, slightly slower than a fixed SNAT rule because the address is resolved per flow. The `prerouting` rule is a port forward: anything arriving on the public interface at port 8443 is redirected to `10.10.20.30`, which is `APP01` on the server segment. Read what that means rather than what it says. `APP01` sits two segments in, behind a routed boundary, on a VLAN no workstation shares — and this single line makes it answerable from the entire Internet, on a non-obvious port that will not appear in anybody's mental model of the perimeter. That one rule is the whole difference between an internal service and an exposed one, and it is four words long.
 
 ### Table exhaustion — the failure that looks like a network fault
 

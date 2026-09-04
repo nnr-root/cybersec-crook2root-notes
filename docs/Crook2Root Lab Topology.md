@@ -22,7 +22,7 @@ ever collide with a real host, a real domain, or a real organisation.
 | Domain | `meridian.test` | RFC 6761 — `.test` is permanently reserved and can never be registered |
 | Public IPv4 | `203.0.113.0/24` | RFC 5737 TEST-NET-3 |
 | Second public range | `198.51.100.0/24` | RFC 5737 TEST-NET-2 (attacker infrastructure). The attacker is `198.51.100.9` — the address forty-odd notes already use for a listener, a callback host, a scan source or a C2 endpoint. Other hosts in the range are ordinary attacker infrastructure and need no allocation |
-| Third public range | `192.0.2.0/24` | RFC 5737 TEST-NET-1 (upstream providers and BGP peers — inter-AS links are public by nature) |
+| Third public range | `192.0.2.0/24` | RFC 5737 TEST-NET-1 (upstream providers and BGP peers — inter-AS links are public by nature — and any ordinary third-party host on the wider internet, which is what the corpus mostly uses it for: a server Meridian connects *out* to, as distinct from Meridian's own public edge and from attacker infrastructure) |
 | Private IPv4 | `10.10.0.0/16`, `10.20.0.0/24` | RFC 1918 |
 | MAC addresses | `00:00:5E:00:53:00`–`FF` | RFC 7042 §2.1.2, reserved for documentation |
 | Cloud metadata | `169.254.169.254` | link-local, the real metadata address |
@@ -87,6 +87,7 @@ flowchart TB
 | `api.meridian.test` | 203.0.113.21 | REST/JSON API, JWT-authenticated | API security, JWT, BOLA/BFLA |
 | `mail.meridian.test` | 203.0.113.30 | SMTP, SPF/DKIM/DMARC records to inspect | Social engineering, email security |
 | `ns1.meridian.test` | 203.0.113.53 | Authoritative DNS, one zone, DNSSEC optional | DNS recon, DNSSEC, subdomain enumeration |
+| *(egress)* | 203.0.113.5 | The address the corporate LAN is translated to on the way out. Not a host — the boundary's public identity, and the only address the outside world sees for everything behind it | NAT, attribution, egress filtering |
 | `jump.meridian.test` | 10.20.0.5 | SSH bastion, the only DMZ→LAN path | Pivoting, tunnelling, SSH |
 | `DC01` | 10.10.20.10 | Windows Server domain controller, ADCS enabled. Also the **internal resolver** every LAN client is pointed at — `ns1` is authoritative for the public zone and is not what a workstation asks | AD, Kerberos, NTLM, ADCS, BloodHound, DNS |
 | `FS01` | 10.10.20.20 | Windows file server, SMB shares, one null session left on | SMB, enum4linux, Responder, relay |
