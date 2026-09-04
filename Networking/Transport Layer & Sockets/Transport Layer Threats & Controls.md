@@ -74,6 +74,30 @@ Slow exhaustion   -> many ESTAB, near-zero throughput, long connection ages
 Legitimate spike  -> many ESTAB, proportional throughput
 ```
 
+The middle row is the one that hides, so it is worth seeing. `ss` reports connection age and byte counts alongside state, and those two columns are the entire finding:
+
+```bash
+ss -tone state established '( sport = :443 )' | head -6
+```
+
+```text
+0 0 203.0.113.20:443 198.51.100.9:44101  timer:(keepalive,8.4s,0) bytes_received:187 age:1841.3
+0 0 203.0.113.20:443 198.51.100.9:44102  timer:(keepalive,3.1s,0) bytes_received:187 age:1840.9
+0 0 203.0.113.20:443 198.51.100.9:44103  timer:(keepalive,9.7s,0) bytes_received:186 age:1840.4
+0 0 203.0.113.20:443 198.51.100.9:44104  timer:(keepalive,1.2s,0) bytes_received:190 age:1839.8
+0 0 203.0.113.20:443 198.51.100.9:44105  timer:(keepalive,6.6s,0) bytes_received:188 age:1839.2
+```
+
+Every one of these connections is legitimate. Each completed a three-way handshake honestly, each is in `ESTAB`, and none is malformed in any way a filter could name. What condemns them is the pair of numbers at the end: thirty minutes old, and fewer than two hundred bytes received in that entire time. A real request finishes in milliseconds and moves kilobytes.
+
+Now the bandwidth, because this is where the intuition fails hardest. Ten thousand such connections, each sending one byte every ten seconds to defeat an idle timeout, costs the attacker one byte of payload plus 20 bytes of TCP, 20 of IP, and 18 of Ethernet framing — 59 bytes on the wire, ten thousand times, every ten seconds:
+
+```text
+10,000 conns x 59 bytes / 10 s = 59,000 B/s = 472 kbps
+```
+
+Under half a megabit. About a quarter of what a single video call uses, sustained from one host, to hold ten thousand connection slots. Every bandwidth graph in the estate stays flat, every scrubbing service sees nothing worth scrubbing, and the server stops accepting connections.
+
 Distinguishing these by state distribution and throughput is the diagnostic skill. Controls are per-connection timeouts, minimum data-rate requirements, connection limits per source address, and placing a reverse proxy that absorbs slow clients in front of application servers.
 
 **Middlebox table exhaustion** applies the same principle to the infrastructure. Stateful firewalls, NAT gateways, and load balancers track connections and have finite tables. Exhausting them causes dropped legitimate flows across everything behind the device. Monitoring connection-tracking utilization as a first-class metric is the defense, because it fails long before CPU or bandwidth does:

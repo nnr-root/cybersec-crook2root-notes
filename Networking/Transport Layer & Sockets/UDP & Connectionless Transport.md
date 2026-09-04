@@ -112,17 +112,33 @@ An attacker exploits this in three steps:
 
 ```mermaid
 sequenceDiagram
-    participant A as Attacker
-    participant S as Public UDP service
-    participant V as Victim
-    A->>S: Small request, source spoofed as V
+    participant A as Attacker 198.51.100.9
+    participant S as ns1.meridian.test 203.0.113.53
+    participant V as Victim 192.0.2.10
+    A->>S: 64-byte query, source spoofed as 192.0.2.10
     Note over S: No handshake — cannot verify the source
-    S->>V: Large reply sent to V
-    Note over V: Receives unsolicited traffic, amplified
-    Note over A,V: Thousands of servers, one victim, traffic multiplied
+    S->>V: 3,456-byte reply sent to 192.0.2.10
+    Note over V: Receives unsolicited traffic it never asked for
+    Note over A,V: Thousands of resolvers, one victim, traffic multiplied
 ```
 
-The **amplification factor** is the ratio of reply size to request size. Some UDP services have historically offered factors in the tens or even thousands, meaning an attacker with modest bandwidth can direct enormous traffic at a victim. Because the traffic genuinely originates from many legitimate servers, it is hard to filter by source and the true attacker is hidden.
+Note who the reflector is in that diagram. It is not the attacker's infrastructure and it is not compromised — it is Meridian's own name server, correctly configured, answering a question it was asked. The abuse consists entirely of believing the return address.
+
+The **amplification factor** is the ratio of reply size to request size, and the published figures are worth carrying because they explain why particular services keep appearing in incident reports:
+
+| Service | Typical factor | Why the reply is large |
+|:--|--:|:--|
+| NetBIOS | 3.8× | small name records |
+| SNMPv2 | 6.3× | a `GetBulk` walk returns many values |
+| DNS | 28–54× | a signed or `ANY` response dwarfs the query |
+| SSDP | 30.8× | device descriptions |
+| chargen | 358.8× | the service exists to emit characters |
+| NTP `monlist` | 556× | up to 600 recent clients, six per packet |
+| memcached | 10,000–51,000× | arbitrary stored values, retrieved by key |
+
+Do the arithmetic on the middle row, because the numbers are what make this a structural problem rather than a nuisance. A 64-byte query drawing a 3,456-byte answer is 54×. An attacker with a single gigabit of upstream — a rented server, not a botnet — directs 54 Gbps at the victim. The bottom row is worse by two orders of magnitude: memcached amplification meant an attacker needed roughly twenty *kilobits* per second to deliver a gigabit, which is why those incidents produced record-breaking figures from unremarkable origins.
+
+Because the traffic genuinely originates from many legitimate servers, it is hard to filter by source and the true attacker is hidden — every packet the victim receives has an honest return address belonging to someone who did nothing wrong.
 
 TCP is structurally immune to this: the handshake requires a reply to reach the claimed source before any data is sent, so a spoofed source never completes a connection.
 
@@ -138,7 +154,15 @@ The recurring theme is that operators of UDP services must protect *third partie
 
 The more consequential exposure runs the other way. With no handshake, the service cannot verify who asked, so it replies to whatever source address the request claimed. A hardened, fully patched, perfectly behaving UDP service is therefore still **a weapon aimed at a third party**: an attacker spoofs a victim's address, your server answers dutifully, and the victim absorbs a reply many times larger than the request that triggered it. The risk you carry is not only being a target but being an unwitting participant, and no amount of patching the service changes that — the property belongs to the transport.
 
-**How you'd spot it:** look at the direction of the bytes. A UDP service whose outbound volume materially exceeds its inbound volume is being used as an amplifier, and that ratio is visible in flow data long before anyone complains. Then check the specific features that make the ratio large — recursion on a resolver, `monlist` on NTP, public community strings on SNMP, an exposed memcached — and fix the origin as well as the reflector: source-address validation at your own edge (BCP 38) stops your network emitting the spoofed requests that make everyone else's servers into weapons.
+**How you'd spot it:** look at the direction of the bytes. A UDP service whose outbound volume materially exceeds its inbound volume is being used as an amplifier, and that ratio is visible in flow data long before anyone complains — it looks like this, and the giveaway is not any single row but the column:
+
+```text
+SrcIP           DstIP           Proto SrcPt DstPt  Packets  Bytes
+198.51.100.9    203.0.113.53    UDP   40001 53     14022    897408
+203.0.113.53    192.0.2.10      UDP   53    40001  14022    48460032
+```
+
+Equal packet counts, fifty-four times the bytes, and — the part that no single-flow view would show — the two rows have *different peers*. Requests arrive from one address and replies leave to another, which is not a thing a real client-server exchange ever does. Ordinary DNS flow rows are symmetric in address and roughly symmetric in size; these are neither, and either anomaly alone would be enough. Then check the specific features that make the ratio large — recursion on a resolver, `monlist` on NTP, public community strings on SNMP, an exposed memcached — and fix the origin as well as the reflector: source-address validation at your own edge (BCP 38) stops your network emitting the spoofed requests that make everyone else's servers into weapons.
 
 ## Security Implications
 

@@ -60,8 +60,8 @@ Opening a connection takes three segments, and each has a specific job beyond "s
 
 ```mermaid
 sequenceDiagram
-    participant C as Client
-    participant S as Server
+    participant C as WS-014
+    participant S as APP01:443
     Note over C: State CLOSED -> SYN-SENT
     C->>S: SYN, seq=x
     Note over S: LISTEN -> SYN-RECEIVED (half-open state allocated)
@@ -79,6 +79,38 @@ Two consequences follow immediately.
 **Half-open state is allocated on the second step.** When the server sends SYN+ACK, it has committed memory to a connection that is not yet complete, and it waits for the final ACK. That waiting state, held for a client who may never respond, is a finite resource — and deliberately creating many such states is the SYN flood attack.
 
 **Initial sequence numbers must be unpredictable.** If an attacker can guess the server's initial sequence number, they can forge segments that the server accepts as part of an existing connection, injecting data or resetting it without being on the path. Early implementations used predictable increments and were exploitable; modern stacks randomize initial sequence numbers specifically to make off-path injection impractical. This is one of the clearest examples of a security property retrofitted into a protocol's core mechanics.
+
+### Watching it happen, and the flag that hides it
+
+Capture a handshake from `WS-014` to `APP01`:
+
+```bash
+sudo tcpdump -i eth0 -nn 'host 10.10.20.30 and port 443' -c 3
+```
+
+```text
+09:31:02.418  10.10.10.14.52418 > 10.10.20.30.443: Flags [S],  seq 0, win 64240
+09:31:02.420  10.10.20.30.443 > 10.10.10.14.52418: Flags [S.], seq 0, ack 1, win 65160
+09:31:02.420  10.10.10.14.52418 > 10.10.20.30.443: Flags [.],  ack 1, win 502
+```
+
+Three segments, exactly as the diagram promised — and the sequence numbers are both zero, which contradicts everything the paragraph above just said about randomization.
+
+They are not zero. `tcpdump` prints **relative** sequence numbers by default: it records each direction's initial value and subtracts it, so every flow starts at 0 and the arithmetic stays readable. That is a genuine convenience and it happens to conceal the exact field the security property lives in. Ask for the real numbers:
+
+```bash
+sudo tcpdump -i eth0 -nn -S 'host 10.10.20.30 and port 443' -c 3
+```
+
+```text
+09:33:47.101  10.10.10.14.52630 > 10.10.20.30.443: Flags [S],  seq 2419087713, win 64240
+09:33:47.103  10.10.20.30.443 > 10.10.10.14.52630: Flags [S.], seq 3872140556, ack 2419087714, win 65160
+09:33:47.103  10.10.10.14.52630 > 10.10.20.30.443: Flags [.],  ack 3872140557, win 502
+```
+
+Now the mechanism is legible. The client proposed `2419087713`; the server acknowledged `2419087714`, which is `x+1`, and proposed its own unrelated `3872140556`; the client acknowledged `3872140557`. Two independently chosen 32-bit numbers, each confirmed once, and an off-path attacker who wants to inject into this connection has to guess one of them within the receive window.
+
+The habit worth taking from this is not about `-S`. It is that a tool's default output is a *presentation choice* made for the common case, and the common case is reading data flow rather than auditing entropy. Any time an analysis depends on a specific field, check whether the tool is showing you that field or a friendlier derivative of it — because nothing in the first capture announced that a subtraction had taken place.
 
 ## The State Machine
 

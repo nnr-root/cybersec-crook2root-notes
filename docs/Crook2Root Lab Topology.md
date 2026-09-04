@@ -99,7 +99,11 @@ flowchart TB
 | `WS-030` | 10.10.10.30 | Windows 11, IT admin — *already referenced by the BloodHound note* | Lateral movement, sessions |
 | `SCAN-07` | 10.10.30.7 | Embedded Linux barcode scanner, ancient firmware | Hardware/IoT, wireless |
 
-**Wireless:** `MERIDIAN-CORP` (WPA2-Enterprise) and `MERIDIAN-GUEST` (WPA2-PSK,
+**Wireless:** `MERIDIAN-CORP` on `10.10.50.0/24` (VLAN 50) and `MERIDIAN-GUEST`
+on `10.10.51.0/24` (VLAN 51), which has no path to any corporate segment — the
+separation is the point of having two. A workstation that roams keeps its
+identity and changes its address, which is what the QUIC connection-migration
+example uses. `MERIDIAN-CORP` (WPA2-Enterprise) and `MERIDIAN-GUEST` (WPA2-PSK,
 weak passphrase). The existing hcxtools note's `CorpWiFi` / `GuestNet` map onto
 these directly.
 
@@ -292,6 +296,8 @@ Meridian is allocated a supernet with deliberate room:
 │   ├── 10.10.42.128/27   depot management  (30 usable, need 25)
 │   ├── 10.10.42.160/30   depot router link (2 usable)
 │   └── 10.10.42.164 — 10.10.43.255 free (348 addresses, still summarizable)
+├── 10.10.50.0/24     VLAN 50  corporate wireless — MERIDIAN-CORP
+├── 10.10.51.0/24     VLAN 51  guest wireless — MERIDIAN-GUEST, no path to corporate
 ├── 10.10.192.0/20    the /20 worked example in Subnetting & CIDR
 ├── 10.10.60.0/24     VPN clients
 ├── 10.10.250.0/24    router interconnects / next-hops

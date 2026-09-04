@@ -92,7 +92,39 @@ ftp> bye
 
 FTP also uses a **second port, 20**, for the data channel: the control connection on 21 negotiates a separate data connection, which is why FTP is awkward through firewalls and NAT (active vs. passive mode).
 
-**The security lesson.** Capture both sessions with `tcpdump`/Wireshark and the contrast is stark — the FTP username, password, and file contents are readable in the clear, while the SSH session is opaque ciphertext. This is why **FTP is deprecated for anything sensitive**; its modern replacement is **SFTP** (file transfer *inside* the SSH channel, on port 22) or FTPS (FTP wrapped in TLS). Recognising `21` on a scan is recognising a plaintext-credential exposure.
+**The security lesson.** Capture both sessions and the contrast needs no interpretation. Watch the FTP control connection first:
+
+```bash
+sudo tcpdump -i eth0 -nn -A 'host 10.10.20.30 and port 21'
+```
+
+```text
+10.10.10.14.51882 > 10.10.20.30.21: Flags [P.], length 12
+E..4..@.@.....................USER admin
+
+10.10.10.14.51882 > 10.10.20.30.21: Flags [P.], length 21
+E..=..@.@.....................PASS Sp3edw@y-2026!
+```
+
+Then the SSH session to the same host, captured the same way:
+
+```bash
+sudo tcpdump -i eth0 -nn -A 'host 10.10.20.30 and port 22'
+```
+
+```text
+10.10.10.14.51884 > 10.10.20.30.22: Flags [P.], length 21
+SSH-2.0-OpenSSH_9.6
+
+10.10.10.14.51884 > 10.10.20.30.22: Flags [P.], length 1108
+E..L..@.@.......k.<.....}.{.9...."..[..fY..'.....n..*|..1.....Q...
+```
+
+Two details are worth more than the general point. The FTP password is not merely *readable*, it is a complete line of ASCII sitting in a packet of its own, because FTP sends each command as its own line — an attacker capturing this does not need to reassemble a stream or understand a format, they need to read English. And the SSH capture is not opaque from the first byte: the version banner `SSH-2.0-OpenSSH_9.6` goes out in the clear, deliberately, so both ends can agree on what they support before any keys exist. Everything after the key exchange is ciphertext, and the boundary between those two states is visible in the capture as the point where the output stops being words.
+
+That banner is also why an SSH port yields a software version to a scanner without a single credential being offered — the same field that makes negotiation possible makes fingerprinting free.
+
+This is why **FTP is deprecated for anything sensitive**; its modern replacement is **SFTP** (file transfer *inside* the SSH channel, on port 22) or FTPS (FTP wrapped in TLS). Recognising `21` on a scan is recognising a plaintext-credential exposure.
 
 ```shell-session
 user@laptop:~$ sftp admin@10.10.20.30     # same copy, encrypted — rides SSH port 22, not 21
@@ -123,10 +155,10 @@ This is the mechanism that lets one server handle thousands of simultaneous clie
 
 ```mermaid
 flowchart TB
-    S["Server listening on 203.0.113.10:443"]
-    C1["Client A 198.51.100.5:52418"] --> S
-    C2["Client B 198.51.100.5:52419"] --> S
-    C3["Client C 192.0.2.77:41003"] --> S
+    S["edge.meridian.test listening on 203.0.113.10:443"]
+    C1["Client A 192.0.2.10:52418"] --> S
+    C2["Client B 192.0.2.10:52419"] --> S
+    C3["Client C 192.0.2.40:41003"] --> S
     S --> T["Three distinct five-tuples -> three independent connections on ONE port"]
 ```
 

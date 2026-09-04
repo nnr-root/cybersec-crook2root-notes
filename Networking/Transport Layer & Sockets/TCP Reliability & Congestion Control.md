@@ -95,6 +95,34 @@ The **bandwidth-delay product** is the amount of data needed in flight to keep a
 
 **Window scaling**, negotiated during the handshake, multiplies the advertised window by a factor to lift this ceiling. It is why a modern high-latency, high-bandwidth transfer performs at all. When a middlebox strips or mangles the window-scale option during the handshake, throughput collapses to the unscaled ceiling — a genuinely confusing failure where a fast link delivers a few megabits and every simple test looks fine.
 
+That failure is settled in the first packet of the connection and nowhere else, so it has to be looked for there:
+
+```bash
+sudo tcpdump -i eth0 -nn -v 'tcp[tcpflags] & tcp-syn != 0 and host 203.0.113.20' -c 2
+```
+
+A healthy negotiation:
+
+```text
+10.10.10.14.52418 > 203.0.113.20.443: Flags [S], seq 2419087713, win 64240,
+    options [mss 1460,sackOK,TS val 88213 ecr 0,nop,wscale 7], length 0
+203.0.113.20.443 > 10.10.10.14.52418: Flags [S.], seq 3872140556, ack 2419087714, win 65160,
+    options [mss 1460,sackOK,TS val 41902 ecr 88213,nop,wscale 7], length 0
+```
+
+The same handshake across a middlebox that strips the option:
+
+```text
+10.10.10.14.52418 > 203.0.113.20.443: Flags [S], seq 2419087713, win 64240,
+    options [mss 1460,sackOK,TS val 88213 ecr 0], length 0
+203.0.113.20.443 > 10.10.10.14.52418: Flags [S.], seq 3872140556, ack 2419087714, win 65160,
+    options [mss 1460,sackOK,TS val 41902 ecr 88213], length 0
+```
+
+One missing option, and the arithmetic above becomes the connection's permanent ceiling: 65,535 bytes divided by a 100 ms round trip is about 5 Mbps, on a link that can do a thousand times that. Nothing is lost, no retransmission occurs, `ss -tin` reports a healthy connection with zero `retrans`, and a `ping` reports excellent latency — every test that measures loss or delay passes, because neither loss nor delay is the problem.
+
+Two things make this worth recognising by shape rather than by measurement. Window scaling is negotiated **once, in the SYN**, and cannot be turned on later; a connection that started without it will never have it. And because both ends must offer it, one stripped option in one direction silently disables it for the whole connection. So the diagnostic is not "is the window small" — by the time you look at an established connection, the evidence has already gone past.
+
 Inspect live per-connection transport state:
 
 ```bash

@@ -103,14 +103,42 @@ IP 203.0.113.20.443 > 10.10.10.14.51284: UDP, length 1252
 IP 10.10.10.14.51284 > 203.0.113.20.443: UDP, length 44
 ```
 
-Compare with a TCP capture, which reveals flags, sequence numbers, window sizes, and connection state transitions. Here there is a UDP header and an opaque payload. Only a small portion of the QUIC header — enough for routing and version negotiation — is unencrypted; the rest, including acknowledgments and stream framing, is protected.
+Compare with a TCP capture, which reveals flags, sequence numbers, window sizes, and connection state transitions. Here there is a UDP header and an opaque payload.
+
+"Only a small portion is unencrypted" is worth making exact, because that portion is the entire remaining surface for network-side analysis. Decode the packets rather than counting their lengths:
+
+```bash
+sudo tshark -i eth0 -Y quic -T fields \
+  -e frame.number -e ip.src -e udp.srcport -e quic.long.packet_type \
+  -e quic.dcid -e quic.scid
+```
+
+```text
+1   10.10.10.14   51284   0 (Initial)   8f2a1c04d9b73e56   -
+2   203.0.113.20  443     0 (Initial)   3b70e9a2           8f2a1c04d9b73e56
+3   10.10.10.14   51284   -             3b70e9a2           -
+4   10.10.10.14   51284   -             3b70e9a2           -
+```
+
+Four packets, and the only fields that resolve are the packet type and the connection IDs. There is no sequence number column because the sequence numbers are encrypted; no flags column, no window, no acknowledgment. Frames 3 and 4 do not even report a packet type — those are short-header packets, where everything past the destination connection ID is protected.
+
+Now watch what the connection ID does, which is the part with consequences. `WS-014` is undocked and joins `MERIDIAN-CORP`, so it leaves VLAN 10 for the wireless VLAN and its address changes:
+
+```text
+5   10.10.10.14   51284   -             3b70e9a2           -
+6   10.10.50.31   57001   -             3b70e9a2           -
+```
+
+Different source address, different source port — a different five-tuple in every respect, and therefore a different flow to every device that accounts by five-tuple. The same session, because the connection ID did not change. A flow collector records two conversations, a stateful firewall sees an unsolicited stream arriving from a host it has no state for, and an analyst reading either one sees a session that vanished and an unrelated one that appeared.
+
+That is the single most important operational fact in this note, and it is legible only because `quic.dcid` survives in the clear. Correlating on it is not an optimisation — it is the difference between one session and two ghosts.
 
 ### The operational surprise
 
 A network that permits TCP/443 but blocks or rate-limits UDP/443 will find that clients "work" while performing worse than expected. Most browsers attempt QUIC and fall back to TCP when it fails, so the symptom is not an outage but silent extra latency on every first connection. Meanwhile, a firewall rule set written entirely around TCP/443 does not describe the traffic actually flowing. Verifying which transport is in use is now a necessary step:
 
 ```bash
-curl -sI --http3 https://example.com | head -1
+curl -sI --http3 https://track.meridian.test | head -1
 ```
 
 Expected output when QUIC succeeds:
