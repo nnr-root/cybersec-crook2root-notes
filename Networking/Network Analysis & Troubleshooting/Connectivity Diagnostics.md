@@ -50,7 +50,7 @@ These tools recur throughout the domain because they are the primitives of every
 **ping** tests IP-layer reachability with ICMP echo. Its result is genuinely informative and genuinely limited:
 
 ```bash
-ping -c 3 example.com
+ping -c 3 track.meridian.test
 ```
 
 A successful reply proves the host is reachable and the round-trip works — Layers 1 through 3 in both directions. It proves **nothing** about whether any service is running. A host can answer ping perfectly with every application down.
@@ -60,16 +60,35 @@ Silence is the trap. `100% packet loss` does **not** mean "host down." It means 
 **Test the actual service instead**, which is both more relevant and harder to filter:
 
 ```bash
-nc -vz example.com 443
+nc -vz track.meridian.test 443
 ```
 
 Expected excerpt:
 
 ```text
-Connection to example.com (203.0.113.20) 443 port [tcp/*] succeeded!
+Connection to track.meridian.test (203.0.113.20) 443 port [tcp/*] succeeded!
 ```
 
-An open port is positive proof the host is up *and* the service is listening — a stronger, more useful result than ping, because it tests what you actually care about. When ping fails but the port answers, the host was never down; ICMP was simply filtered. `nc -vz` (or `nmap -Pn`) is the correct tool once you suspect ICMP filtering.
+An open port is positive proof the host is up *and* the service is listening — a stronger, more useful result than ping, because it tests what you actually care about.
+
+The pair is worth running together, on the same host, seconds apart:
+
+```bash
+ping -c 3 203.0.113.20 ; nc -vz 203.0.113.20 443
+```
+
+```text
+PING 203.0.113.20 (203.0.113.20) 56(84) bytes of data.
+
+--- 203.0.113.20 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 2043ms
+
+Connection to 203.0.113.20 443 port [tcp/*] succeeded!
+```
+
+`100% packet loss` sits directly above `succeeded`. Both results are correct and they are answers to different questions: the first says no ICMP echo reply came back, the second says a TCP handshake completed. Only one of those was ever a question about whether the host was up.
+
+Write the first result down on its own and you have "the host is down" in an incident channel, sending someone to check a machine that is serving traffic. Run the second and the finding becomes "ICMP is filtered at or before this host, and the service is healthy" — which is a different ticket, for a different team, or for nobody at all. `nc -vz` (or `nmap -Pn`) is the correct tool once you suspect ICMP filtering, and suspecting it should be the default rather than the afterthought, because filtering ICMP at the edge is normal practice rather than a fault.
 
 **traceroute / mtr** reveal the path and where it breaks, with the same silence caveat: asterisks mean a hop did not reply, not that traffic stopped there, and only impairment persisting to the destination is real (the performance and ICMP leaves cover this).
 
@@ -101,8 +120,8 @@ This answers "how will my host actually try to reach this?" — which gateway, w
 **DNS diagnosis** is its own frequent culprit, and `dig` separates resolution from connectivity decisively:
 
 ```bash
-dig +short example.com          # what does my resolver return?
-dig @1.1.1.1 +short example.com  # what does a different resolver return?
+dig +short track.meridian.test        # what does my resolver return?
+dig @ns1.meridian.test +short track.meridian.test  # what does the zone actually hold?
 ```
 
 If `ping <IP>` works but `ping <name>` fails, the fault is resolution, not connectivity — and comparing your resolver against a known-good one localizes it to your resolver versus the record itself, exactly as the DNS leaf details.

@@ -54,7 +54,7 @@ Diagnosing performance starts with identifying which metric the workload actuall
 **Latency** is measured by round-trip time — ping is the most direct instrument — and read as a distribution, not a single number:
 
 ```bash
-ping -c 20 example.com | tail -3
+ping -c 20 192.0.2.10 | tail -3
 ```
 
 Expected excerpt:
@@ -69,7 +69,7 @@ Read all four values. `avg` is the typical delay. `max` far above `avg`, and a l
 **Throughput** is measured by an active test that actually moves data:
 
 ```bash
-iperf3 -c <server> -t 10
+iperf3 -c 10.10.20.30 -t 10
 ```
 
 Expected excerpt:

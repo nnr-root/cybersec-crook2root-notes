@@ -66,11 +66,11 @@ It is faster when the hunch is right and catastrophically slower when it is not 
 ```bash
 ip link show eth0                       # L1/L2: is the link up? carrier present?
 ip addr show eth0                       # L3: do I have a valid address and mask?
-ping -c 2 <gateway>                     # L3: is the local gateway reachable?
+ping -c 2 10.10.10.1                    # L3: is the local gateway reachable?
 ping -c 2 192.0.2.10                    # L3: does off-segment routing work?
-getent hosts example.com                # L7: does name resolution work?
-nc -vz example.com 443                  # L4: does the destination port answer?
-curl -sS -o /dev/null -w '%{http_code}\n' https://example.com   # L4-L7 end to end
+getent hosts track.meridian.test        # L7: does name resolution work?
+nc -vz track.meridian.test 443          # L4: does the destination port answer?
+curl -sS -o /dev/null -w '%{http_code}\n' https://track.meridian.test   # L4-L7 end to end
 ```
 
 Each command answers exactly one question, and the order matters because a failure early invalidates everything after it. The skill is reading each result as evidence for or against a specific layer:
@@ -82,10 +82,67 @@ Gateway pings, 192.0.2.10 doesn't -> L3 routing off-segment
 Everything pings, name fails  -> L7 DNS
 IP works, name fails          -> L7 DNS (the classic)
 Port doesn't answer           -> L4; service down or firewall
-Everything works but the app fails -> above the network; hand off to the app team
+Everything works but the app fails -> probably above the network — but read the caveat below
 ```
 
 That last line is as important as any: **structured troubleshooting also proves when the network is *not* the problem.** Demonstrating that connectivity, routing, resolution, and the port are all healthy localizes the fault to the application, ending the reflexive "it must be the network" and directing effort where it belongs.
+
+### One fault, worked divide-and-conquer
+
+Divide-and-conquer was named above as the method experienced responders actually use, so here it is on a real symptom: *the shipment tracking site is down for the finance desk.*
+
+**Pivot at Layer 3**, because it is the most informative single question:
+
+```bash
+ping -c 2 10.10.10.1 && ping -c 2 192.0.2.10
+```
+
+```text
+2 packets transmitted, 2 received, 0% packet loss, time 1002ms
+2 packets transmitted, 2 received, 0% packet loss, time 1003ms
+```
+
+Gateway and off-segment both answer, so Layers 1 to 3 are healthy and everything below the pivot is eliminated in one step. That is the whole value of starting in the middle. Go **up**:
+
+```bash
+getent hosts track.meridian.test
+nc -vz track.meridian.test 443
+```
+
+```text
+203.0.113.20    track.meridian.test
+Connection to track.meridian.test (203.0.113.20) 443 port [tcp/https] succeeded!
+```
+
+Resolution is correct and the port accepts a connection. By the table above, that is four green lights and a handoff to the application team. Make the actual request before doing that:
+
+```bash
+curl -sS -o /dev/null -w '%{http_code} %{size_download}\n' --max-time 10 https://track.meridian.test/
+curl -sS -o /dev/null -w '%{http_code} %{size_download}\n' --max-time 10 https://track.meridian.test/orders
+```
+
+```text
+200 1274
+curl: (28) Operation timed out after 10001 milliseconds with 0 bytes received
+```
+
+The site is not down. The small page returns; the large one hangs with **zero bytes received**, after a TLS handshake that plainly completed. An application that was broken would return a `500`, or an error page, or something — a response that stalls before the first byte of body, only on the larger resource, is not a symptom applications produce.
+
+This is the PMTU black hole from [[Encapsulation & Protocol Data Units]], and confirming it takes one more command:
+
+```bash
+ping -M do -s 1472 -c 2 203.0.113.20
+ping -M do -s 1400 -c 2 203.0.113.20
+```
+
+```text
+2 packets transmitted, 0 received, 100% packet loss
+2 packets transmitted, 2 received, 0% packet loss
+```
+
+A 1472-byte payload with Don't Fragment set vanishes silently while 1400 gets through, so something on the path drops oversized packets without returning the ICMP message that would have told the sender to send smaller ones. The handshake and the small page fit; the large response does not.
+
+Three things about this case are worth keeping. The symptom named the wrong thing — "the site is down" was a site that was up. Every layered check passed, and the table's last line would have sent this to the application team, who would have found nothing and sent it back. And the fault was in Layer 3, *below* the pivot, in the one respect the ping at the top did not test: a 64-byte ping proves reachability and says nothing about size. Passing a layer means passing the test you ran, not the layer.
 
 ## The Traps That Waste Hours
 

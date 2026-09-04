@@ -45,7 +45,20 @@ This captures 100 TCP/443 packets to a file. The `-w` writes raw packets (openab
 
 Promiscuous mode tells your NIC to stop discarding frames not addressed to it. It does not tell the **switch** to send you any. A switch forwards unicast only to the port that owns the destination MAC, so the frames you want never reach your cable. This is the single most common reason a capture "isn't working," and no tcpdump flag fixes it — you need a SPAN/mirror port, a TAP, or to be in the path.
 
-**How you'd spot it:** if every packet you see involves your own address, plus ARP and broadcast, you are on a switch port with no mirror. That is a topology problem, not a filter problem.
+**How you'd spot it:** if every packet you see involves your own address, plus ARP and broadcast, you are on a switch port with no mirror. That is a topology problem, not a filter problem. It looks like this — a capture with no filter at all, taken while two other hosts on the VLAN are actively talking:
+
+```text
+10.10.10.14.52418 > 203.0.113.20.443: Flags [.], ack 1, win 502
+203.0.113.20.443 > 10.10.10.14.52418: Flags [P.], seq 1:1449, length 1448
+ARP, Request who-has 10.10.10.30 tell 10.10.10.1, length 28
+ARP, Reply 10.10.10.30 is-at 00:00:5e:00:53:1e, length 28
+10.10.10.14.52418 > 203.0.113.20.443: Flags [.], ack 1449, win 501
+IP6 fe80::200:5eff:fe00:5330 > ff02::2: ICMP6, router solicitation
+```
+
+Every unicast line has `10.10.10.14` on one side of it — the capture host's own address. The `ARP` and IPv6 multicast lines are there because those are flooded to every port by design. `WS-030` and `DC01` exchanged several megabytes during this capture and not one byte of it appears, because the switch had no reason to send it here.
+
+The mistake this causes is worse than an empty capture, because the capture is not empty. It is full of plausible traffic, and a responder who concludes "I captured the segment and the traffic you describe never happened" has stated something about their switch port and attributed it to the network.
 
 ## Two Filters, Constantly Confused
 
@@ -60,12 +73,26 @@ Capture filter (BPF):   kernel-level, decides what is RECORDED (discarded if not
 Display filter:         tool-level, decides what is SHOWN (data still there, just hidden)
 ```
 
+They are also **two different languages**, which is the mechanical reason the confusion persists — the same intent is written differently in each:
+
+| Intent | Capture filter (BPF) | Display filter (Wireshark) |
+|:--|:--|:--|
+| one host | `host 10.10.10.14` | `ip.addr == 10.10.10.14` |
+| a port | `tcp port 443` | `tcp.port == 443` |
+| both | `host 10.10.10.14 and tcp port 443` | `ip.addr == 10.10.10.14 && tcp.port == 443` |
+| SYN only | `tcp[tcpflags] & tcp-syn != 0` | `tcp.flags.syn == 1 && tcp.flags.ack == 0` |
+| not this subnet | `not net 10.10.10.0/24` | `!(ip.addr == 10.10.10.0/24)` |
+
+The two columns are close enough to look interchangeable and are not. Typing a display filter into `tcpdump` fails loudly, which is harmless. The reverse is the dangerous direction: `tcp port 443` typed into Wireshark's display-filter bar is accepted as a valid *expression* — `tcp`, `port` and `443` parse — and shows you a subset of packets that has nothing to do with what you asked for, with no error to warn you.
+
+Only one of these two mistakes announces itself, which is worth knowing before an incident rather than during one.
+
 The practical rule: **use a capture filter to control volume on a busy link** (you cannot record everything on a gigabit link, and recording irrelevant traffic buries the signal), and **use display filters to explore** what you captured. The danger of an overly narrow capture filter is that you discard the very packet that would have explained the problem — the retransmission, the reset, the error — so on anything but the busiest links, capture broadly and filter the display narrowly.
 
 BPF capture-filter syntax is worth fluency because it appears everywhere — tcpdump, Wireshark, and many security tools share it:
 
 ```bash
-sudo tcpdump -i eth0 'host 10.10.10.22 and tcp port 443'      # one host's HTTPS
+sudo tcpdump -i eth0 'host 10.10.10.14 and tcp port 443'      # one host's HTTPS
 sudo tcpdump -i eth0 'tcp[tcpflags] & tcp-syn != 0'          # SYN packets (find scans/handshakes)
 sudo tcpdump -i eth0 'icmp or arp'                           # low-level troubleshooting
 sudo tcpdump -i eth0 'net 10.10.10.0/24 and not port 22'    # a subnet, excluding SSH noise

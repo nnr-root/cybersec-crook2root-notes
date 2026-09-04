@@ -55,7 +55,7 @@ Node 0: 10.10.10.22:52418
 Node 1: 203.0.113.20:80
 ===================================================================
 GET /login HTTP/1.1
-Host: example.com
+Host: track.meridian.test
 User-Agent: curl/8.4.0
 
 HTTP/1.1 200 OK

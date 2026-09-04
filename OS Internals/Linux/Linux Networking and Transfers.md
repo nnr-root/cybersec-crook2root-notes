@@ -139,9 +139,9 @@ flowchart LR
 ```shell-session
 $ ip -br link; ip -br address
 lo               UNKNOWN        127.0.0.1/8 ::1/128
-enp0s31f6        UP             10.20.30.44/24 fe80::a62b:b0ff:fe12:3456/64
-$ ip route get 198.51.100.20
-198.51.100.20 via 10.10.10.1 dev enp0s31f6 src 10.20.30.44 uid 1000
+enp0s31f6        UP             10.10.10.14/24 fe80::200:5eff:fe00:530e/64
+$ ip route get 192.0.2.10
+192.0.2.10 via 10.10.10.1 dev enp0s31f6 src 10.10.10.14 uid 1000
     cache
 $ ip neigh show dev enp0s31f6
 10.10.10.1 lladdr 00:00:5e:00:53:01 REACHABLE
@@ -221,7 +221,7 @@ For transfers, verify free space, destination permissions, proxy variables, cert
 
 ```shell-session
 $ ip route get 203.0.113.20
-203.0.113.20 via 10.10.10.1 dev eth0 src 10.20.30.44 uid 1000
+203.0.113.20 via 10.10.10.1 dev eth0 src 10.10.10.14 uid 1000
 $ curl --fail-with-body --show-error --silent \
     --write-out 'code=%{http_code} type=%{content_type} bytes=%{size_download}\n' \
     -o artifact.bin https://repo.lab/artifact.bin
