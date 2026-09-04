@@ -37,7 +37,7 @@ operator@server:~$ sudo tcpdump -i eth0 -nn -w cap.pcap 'host 198.51.100.9 and p
 tcpdump: listening on eth0, link-type EN10MB (Ethernet)
 ^C  1428 packets captured
 operator@server:~$ tcpdump -nn -r cap.pcap 'tcp[tcpflags] & tcp-syn != 0' | head
-09:14:02.11 IP 10.10.10.44.51234 > 198.51.100.9.443: Flags [S], seq 12...
+09:14:02.11 IP 10.10.10.14.51234 > 198.51.100.9.443: Flags [S], seq 12...
 ```
 
 `-i` interface, `-nn` no name/port resolution, `-w` write pcap, `-r` read pcap, `-c N` stop after N, `-s0` full snaplen, `-A`/`-X` show ASCII/hex payload. The filter is **BPF** (same syntax as Wireshark's *capture* filter): `host`, `net`, `port`, `and`/`or`/`not`, and flag tests.

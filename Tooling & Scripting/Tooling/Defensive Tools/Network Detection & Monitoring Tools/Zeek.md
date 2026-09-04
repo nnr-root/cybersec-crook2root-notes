@@ -33,9 +33,9 @@ Point Zeek at an interface (or a pcap); it produces the logs:
 ```shell-session
 analyst@sensor:~$ zeek -i eth0
 analyst@sensor:~$ head -1 conn.log; cat conn.log | zeek-cut id.orig_h id.resp_h duration | head
-10.10.10.44  203.0.113.9   0.512
-10.10.10.44  203.0.113.9   0.498     ← same pair, regular ~0.5s connections
-10.10.10.44  203.0.113.9   0.505
+10.10.10.14  198.51.100.9  0.512
+10.10.10.14  198.51.100.9  0.498     ← same pair, regular ~0.5s connections
+10.10.10.14  198.51.100.9  0.505
 ```
 
 `zeek-cut` extracts columns from the tab-separated logs. The high-value logs: `conn.log` (every flow + duration + bytes), `dns.log` (queries — catch DGA/exfil), `ssl.log` (JA3 + SNI + cert), `http.log`, `files.log` (extracted files + hashes). Zeek's scripting language lets you write custom detections that trigger on protocol events.
@@ -51,7 +51,7 @@ conn.log  dns.log  http.log  ssl.log  files.log   ← logs, but where are the AL
 # there are none. You HUNT. C2 beaconing shows up as regularity, not a signature:
 analyst@sensor:~$ cat conn.log | zeek-cut id.resp_h ts | sort | \
     awk '{d=$2-p[$1]; if(d>55&&d<65) c[$1]++; p[$1]=$2} END{for(h in c) if(c[h]>10) print h,c[h]}'
-203.0.113.9  47      ← 47 connections at a steady ~60s interval = a beacon
+198.51.100.9  47     ← 47 connections at a steady ~60s interval = a beacon
 ```
 
 **The deliberate break:** Zeek produces **no alerts**, and a beginner concludes it's "not working." It's working perfectly — Zeek's model is *record now, detect later*. A Cobalt Strike beacon calling home every 60 seconds matches no Snort signature (the payload is encrypted, the domain rotates), but in `conn.log` it's glaringly obvious: the same destination at a metronomic interval. That's the class of threat behavioural monitoring exists to catch and signatures never will. The tradeoff the diagram states plainly: Zeek shifts the work from the *rule author* (signatures) to the *analyst* (hunting) — more effort, but it's the only side of the house that sees the novel and the encrypted. In practice you run Zeek *and* Suricata: signatures for the known, Zeek logs for everything else, both feeding the SIEM.

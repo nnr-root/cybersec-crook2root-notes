@@ -56,7 +56,7 @@ Rules use the same grammar as Snort; output lands in `eve.json` (one JSON event 
 analyst@sensor:~$ suricata -c /etc/suricata/suricata.yaml -i eth0
 analyst@sensor:~$ tail -f /var/log/suricata/eve.json | jq 'select(.event_type=="alert")'
 { "alert": { "signature": "ET MALWARE Cobalt Strike Beacon", "severity": 1 },
-  "src_ip": "10.10.10.44", "dest_ip": "203.0.113.9", "dest_port": 443 }
+  "src_ip": "10.10.10.14", "dest_ip": "198.51.100.9", "dest_port": 443 }
 ```
 
 A rule reads left to right — *action, protocol, source → destination, then options*:

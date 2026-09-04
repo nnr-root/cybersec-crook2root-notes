@@ -60,7 +60,7 @@ target → c2 : 10:00:00
 target → c2 : 10:01:00
 target → c2 : 10:02:00      ← a perfect metronome
 # blue team, over conn.log:
-cat conn.log | zeek-cut id.resp_h ts | (detect constant interval) → BEACON at 203.0.113.9
+cat conn.log | zeek-cut id.resp_h ts | (detect constant interval) → BEACON at 198.51.100.9
 ```
 
 **The deliberate break:** a fixed-interval beacon produces a *metronomic* connection pattern that stands out in `conn.log` like a heartbeat — no payload signature needed, just the regularity gives it away (this is precisely the Zeek beacon-hunt from the defensive side). Adding **jitter** breaks the rhythm, a **malleable profile** makes each request look like ordinary web traffic, and a **redirector** means even a detected beacon leads to a throwaway host, not your infrastructure. This is the whole design tension: a C2 is a normal distributed system (the architecture note's separation-of-concerns applies — beacon, listener, redirector, console are clean components), but its *design goal* is to have its traffic and topology resist the detections in the Defensive branch. Building one for an authorized exercise is the best way to understand both sides: every C2 design choice (jitter, profile, redirector, channel) maps to a specific blue-team detection it's trying to survive — and documenting that mapping is what makes the exercise valuable to the defenders.
