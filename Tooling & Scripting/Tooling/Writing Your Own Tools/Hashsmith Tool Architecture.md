@@ -43,6 +43,19 @@ analyst@lab:~$ hashsmith audit --input canary-hashes.txt --policy enterprise-v3.
 
 Core rules: **streaming digests** (a multi-GB file never enters memory), **constant-time** compares for authenticity decisions, mutually-exclusive input sources, diagnostics on stderr (never stdout), and stable exit codes (`0` ok · `1` mismatch · `2` bad invocation).
 
+## Why streaming and constant-time are architecture, not optimisation
+
+Two of the core rules look like performance tuning and are actually correctness. **Streaming digests** — feeding a file to the hash in fixed-size chunks rather than reading it whole — is what lets `hash --file` work on an image larger than RAM at all. The naive version has a hard ceiling that only appears in production:
+
+```python
+digest = hashlib.sha256(open(path,'rb').read()).hexdigest()   # loads the WHOLE file
+#  -> MemoryError on the 40 GB disk image you were asked to verify
+h = hashlib.sha256()
+for chunk in iter(lambda: f.read(1<<20), b''):  h.update(chunk)  # constant memory
+```
+
+**Constant-time comparison** is the subtler one. When Hashsmith decides *authenticity* — does this file's digest match the expected one, is this audit token valid — it must not use `==`. Ordinary string comparison returns the instant it finds a differing byte, so how long it takes leaks how many leading bytes were correct, and an attacker who can time the check recovers the secret one byte at a time. `hmac.compare_digest` takes the same time regardless. This is why the rule lives in the architecture and not in a style guide: a comparison is either always constant-time for authenticity decisions or the tool has a timing side channel, and you cannot bolt that guarantee on afterwards without auditing every `==` in the codebase.
+
 ## Designing a tool that refuses to over-claim
 
 Hash **identification** is where a naive tool over-claims — Hashsmith is designed to refuse to:

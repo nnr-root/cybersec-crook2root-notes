@@ -65,7 +65,16 @@ cat conn.log | zeek-cut id.resp_h ts | (detect constant interval) → BEACON at 
 
 **The deliberate break:** a fixed-interval beacon produces a *metronomic* connection pattern that stands out in `conn.log` like a heartbeat — no payload signature needed, just the regularity gives it away (this is precisely the Zeek beacon-hunt from the defensive side). Adding **jitter** breaks the rhythm, a **malleable profile** makes each request look like ordinary web traffic, and a **redirector** means even a detected beacon leads to a throwaway host, not your infrastructure. This is the whole design tension: a C2 is a normal distributed system (the architecture note's separation-of-concerns applies — beacon, listener, redirector, console are clean components), but its *design goal* is to have its traffic and topology resist the detections in the Defensive branch. Building one for an authorized exercise is the best way to understand both sides: every C2 design choice (jitter, profile, redirector, channel) maps to a specific blue-team detection it's trying to survive — and documenting that mapping is what makes the exercise valuable to the defenders.
 
-**How you'd spot it:** from the defender's side it is arithmetic on `conn.log` — group by destination, take the intervals between connections, and look at their standard deviation. Near zero is a heartbeat, whatever the payload encryption. From the operator's side that same statistic is the self-check: if your jitter does not widen the distribution measurably, it is decorative.
+The arithmetic the defender runs is small enough to show in full. Take the check-in intervals from two beacons — one at a flat 60-second sleep, one at 60 seconds with 37% jitter — and compute the mean and standard deviation of the gaps:
+
+```text
+no jitter : [60, 60, 60, 60, 60, 60, 60, 60]     mean 60.0   stdev 0.0
+37% jitter: [47, 71, 52, 80, 44, 66, 58, 74]     mean 61.5   stdev 12.4
+```
+
+The means are within a second of each other — jitter barely changes how often the implant calls home on average, which is what keeps it responsive. What it changes is the *spread*, and the spread is the entire signal. A standard deviation at or near zero is a machine; a human-driven session is bursty and irregular. This is why the detection is robust to encryption: it never looks at a single byte of payload, only at the timestamps, which TLS cannot hide.
+
+**How you'd spot it:** from the defender's side it is exactly that arithmetic on `conn.log` — group by destination, take the intervals between connections, and look at their standard deviation. Near zero is a heartbeat, whatever the payload encryption. From the operator's side that same statistic is the self-check: if your jitter does not widen the distribution measurably, it is decorative.
 
 ## Summary
 

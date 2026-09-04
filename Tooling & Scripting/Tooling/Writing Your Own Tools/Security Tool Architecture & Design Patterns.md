@@ -71,6 +71,18 @@ def main():
 
 **The deliberate break:** the god script *works* — until you need to test the detection logic, reuse it in another tool, add a second output format, or hand it to a teammate. Every one of those requires a live network and a specific CLI, because the logic is inseparable from the edges. Extract `is_vulnerable(banner) -> bool` into a pure function and it becomes trivially testable with string inputs, reusable anywhere, and stable to refactor. That is the whole lesson: **the value isn't in any one pattern, it's in keeping the core logic free of I/O.** Everything downstream (plugins, concurrency, JSON evidence, scope guards) is easy to add *around* a clean engine and painful to retrofit into a tangled one — which is why architecture is a day-one decision, not a cleanup task.
 
+The payoff is not abstract — it is a test suite that runs in milliseconds with no target at all. Once `is_vulnerable(banner) -> bool` is pure, its entire behaviour is exercised with string literals:
+
+```shell-session
+operator@lab:~$ python3 -m pytest test_engine.py -q
+test_engine.py::test_openssh_old   PASSED   # is_vulnerable("SSH-2.0-OpenSSH_7.4") is True
+test_engine.py::test_openssh_patched PASSED # is_vulnerable("SSH-2.0-OpenSSH_9.6") is False
+test_engine.py::test_empty_banner  PASSED   # is_vulnerable("") is False, no crash
+3 passed in 0.02s
+```
+
+Three edge cases — an old version, a patched one, and the empty banner that a god script would have thrown on — all checked without a socket, a target, or a specific CLI. The same engine now backs a `--format json` flag and a library import for free, because none of them touch the logic. That is the whole return on the architecture: the test that was impossible in the god script is trivial here, and it is impossible to write it *before* the extraction and trivial *after*, which is why the extraction is the first refactor to make.
+
 **How you'd spot it:** the test is whether you can exercise the logic with no network at all. If checking a detection rule requires standing up a live target and driving one specific CLI, the engine and the edges are fused. A pure function taking a banner and returning a boolean is testable with strings, which is why that extraction is the refactor that pays for itself first.
 
 ## Summary

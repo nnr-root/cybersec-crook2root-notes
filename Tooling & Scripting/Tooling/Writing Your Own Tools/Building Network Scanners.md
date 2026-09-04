@@ -48,6 +48,28 @@ async def scan(host, ports, concurrency=200):      # bounded concurrency
 
 Every probe has a **timeout** (or a filtered port hangs forever), concurrency is **capped** by a semaphore, and results are structured `(port, state)` tuples ready for JSON. Add `--rate` to throttle, and you have the skeleton of RustScan.
 
+Run against a host with three listeners open, the engine returns typed states in milliseconds:
+
+```shell-session
+operator@lab:~$ python3 scan.py 127.0.0.1 --ports 22,80,443,8022,8080,9000,3306
+127.0.0.1:8022  open
+127.0.0.1:8080  open
+127.0.0.1:9000  open
+# 7 ports, concurrency=50, 3 ms
+```
+
+## Why the concurrency number is not a guess
+
+The semaphore's value is not a taste preference — it falls directly out of the timeout. A scan's wall-clock time is roughly `ports × timeout ÷ concurrency`, because the only slow ports are the *filtered* ones that must wait the full timeout before giving up; open and closed ports answer in a round-trip. Scanning 200 unroutable (therefore filtered) ports at a half-second timeout makes the relationship exact:
+
+```shell-session
+200 filtered ports, timeout=0.5s, concurrency=10  -> 10.04s
+200 filtered ports, timeout=0.5s, concurrency=50  -> 2.01s
+200 filtered ports, timeout=0.5s, concurrency=200 -> 0.51s
+```
+
+Ten in flight means twenty sequential half-second waits; two hundred in flight means one. That is why concurrency and timeout are chosen *together*: a long timeout is affordable only with high concurrency, and high concurrency is safe only up to what the OS and the target can bear — which is the exact tension the next section is about. It is also why a scanner over the open internet uses a shorter timeout than one on a LAN: the round-trip budget is different, so the whole arithmetic shifts.
+
 ## Two concurrency mistakes that break a working scanner
 
 Two mistakes turn a working scanner into a broken one — both in the concurrency/rate layer:
@@ -55,12 +77,19 @@ Two mistakes turn a working scanner into a broken one — both in the concurrenc
 ```python
 # UNBOUNDED: fire all 65,535 at once
 await asyncio.gather(*(probe(host, p) for p in range(1, 65536)))
-# → OSError: [Errno 24] Too many open files   (each socket = an fd; you blew ulimit -n)
-#   and on the target side: a SYN flood you didn't mean to send.
 
 # NO TIMEOUT: a filtered port never answers
 await asyncio.open_connection(host, 445)   # ...hangs indefinitely, scan never finishes
 ```
+
+The first is not a hypothetical. Each in-flight connection holds a file descriptor, and the OS caps how many a process may hold; fire tens of thousands at once and you hit the ceiling before the target does:
+
+```shell-session
+operator@lab:~$ python3 unbounded.py          # ulimit -n is 256 here for the demo
+OSError: [Errno 24] Too many open files
+```
+
+That is a self-inflicted failure *on your own host* — and on the target side, tens of thousands of simultaneous SYNs is a flood you did not mean to send.
 
 **The deliberate break:** unbounded concurrency exhausts the OS file-descriptor limit (`ulimit -n`) *and* floods the target — a self-inflicted DoS on both ends — while a missing timeout makes the scan hang forever on the first filtered port (silence is a valid result you must handle, not wait on). Both are the concurrency/rate layer of the architecture doing its job: a semaphore bounds in-flight sockets to something the OS and the target can bear, and a per-probe timeout turns "no reply" into a decision instead of a hang. This is *exactly* the lesson RustScan's batch-size tuning teaches from the user side — building the scanner yourself is how you learn why those knobs exist. The engine (probe one port) is ten lines; the craft is entirely in bounding and timing the parallelism.
 

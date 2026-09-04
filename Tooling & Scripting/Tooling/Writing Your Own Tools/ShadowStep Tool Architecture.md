@@ -41,6 +41,14 @@ remote_audit=present  fixture_restored=true  marker_detected_by_siem=true
 
 Architecture rules: canonicalize every path and **deny system log locations** unless a disposable-lab policy explicitly allows them; require a dry-run and a short-lived approval token for destructive modules; write the audit trail to a *remote* store the local actions can't reach.
 
+## Why the audit store has to be somewhere the tool cannot reach
+
+The single design decision the whole tool rests on is *where the audit trail lives*. If ShadowStep writes its own log to the same host it operates on, then a tool whose job is to simulate tampering can tamper with its own record — the audit is only as trustworthy as the least-trusted action the tool can take, which is total. The architecture breaks the loop by writing evidence to a **remote, append-only store the local actions have no path to**: the operating host holds a write-only credential, the store rejects deletes and overwrites, and verification reads from the store rather than from anything on the host.
+
+This is the same principle that makes the defence it teaches actually work. A real attacker deleting `/var/log/auth.log` is defeated not by file permissions — they have root — but by the fact that the events were shipped off-box the instant they were written. ShadowStep is built to demonstrate exactly that asymmetry: the local copy is deletable and the remote copy is not, so the *gap* between them is the evidence. A tool that kept its audit locally could prove nothing, because its own destructive modules could erase the proof; putting the store out of reach is what turns "trust me, it was scoped" into "here is the external record."
+
+The **dry-run plan** enforces the second half of trustworthiness. Every destructive module must first emit a plan — which host, which actions, how many are destructive, whether rollback is available — and a human approves that plan before anything runs. The plan is not advisory output; it is a gate, and the destructive path is unreachable without a short-lived approval token minted against it. Safe-by-default means the tool's resting state does nothing irreversible, and every step toward irreversibility is a separate, logged, externally-witnessed decision.
+
 ## Proving that anti-forensics is detectable
 
 The most important thing ShadowStep is designed to *prove* is that **anti-forensics is detectable** — and the `verify` step makes that the product:
