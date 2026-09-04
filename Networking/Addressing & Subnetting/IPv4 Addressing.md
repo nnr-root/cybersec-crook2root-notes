@@ -41,7 +41,7 @@ For human convenience the 32 bits are split into four 8-bit groups called **octe
 
 The dotted notation is a display convention, nothing more. Every meaningful operation — determining which network an address belongs to, calculating a range, deciding whether two hosts are neighbours — happens on the binary form. Learners who never look at the bits end up memorizing tables they cannot generalize; learners who do can derive every table on demand.
 
-An address alone is incomplete. It must be paired with a **subnet mask**, which declares how many leading bits identify the *network* and how many trailing bits identify the *host within it*. `10.10.10.24` tells you almost nothing; `10.10.10.24/24` tells you the host lives on the network `10.10.10.0` alongside up to 253 neighbours.
+An address alone is incomplete. It must be paired with a **subnet mask**, which declares how many leading bits identify the *network* and how many trailing bits identify the *host within it*. `10.10.10.14` tells you almost nothing; `10.10.10.14/24` tells you the host lives on the network `10.10.10.0` alongside up to 253 neighbours.
 
 This pairing is the foundation of every forwarding decision a host makes. When your host wants to send to a destination, it applies its own mask to both its address and the destination's. If the network portions match, the destination is a neighbour and is reached directly at the link layer. If they differ, the packet goes to the default gateway. That single comparison is why a wrong mask produces the classic symptom of "some things work and some do not" — the host is misclassifying which destinations are local.
 
@@ -63,6 +63,8 @@ The diagram shows why the mask is not cosmetic: it is the input to the local-ver
 **The deliberate break:** an IP address feels like it identifies a machine, the way a phone number identifies a phone. It does neither of those things reliably.
 
 It identifies an **interface**, not a host: a server with four NICs has four addresses, and the same machine reached over VPN answers to a different one. And behind NAT, thousands of devices share a single public address, which is why "we blocked that IP" and "we blocked that attacker" are different sentences. An address is a routing label with a lease on it, not an identity.
+
+**How you'd spot it:** when an address turns up in a log, the useful question is not whose it is but what it was *at that moment*. Three checks answer it: whether the address sits inside a translation boundary, in which case it names a boundary rather than a host; whether the lease was held by the same machine for the whole interval, which needs the lease log and not the current table; and whether that machine has other interfaces, since an investigation scoped to one address will miss the same host arriving on another. A finding that names an address without naming the interval it was bound to is not attribution, and it will not survive being checked.
 
 ## Classes: History You Still Need to Read
 
@@ -104,7 +106,7 @@ An address in `100.64.0.0/10` means you are behind carrier-grade NAT and share a
 
 A service bound to `0.0.0.0` is listening on **every** interface, which is very different from `127.0.0.1`. Confusing the two is one of the most common ways a service intended for local use becomes network-reachable.
 
-**How you'd spot it:** the address itself is a diagnosis. `169.254.x.x` means the host asked for a DHCP lease and got no answer — a link or DHCP problem, never a routing one. `100.64.x.x` means you are behind carrier-grade NAT and share a public address with strangers, so inbound connections are impossible and any address reputation is not yours alone. Reading these before you start troubleshooting saves the first twenty minutes.
+Read together, these make the address itself a diagnosis. `169.254.x.x` means the host asked for a DHCP lease and got no answer — a link or DHCP problem, never a routing one. `100.64.x.x` means you are behind carrier-grade NAT and share a public address with strangers, so inbound connections are impossible and any address reputation is not yours alone. Reading these before you start troubleshooting saves the first twenty minutes.
 
 ## Reading a Real Configuration
 
@@ -119,7 +121,7 @@ Expected excerpt:
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536
     inet 127.0.0.1/8 scope host lo
 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500
-    inet 10.10.10.24/24 brd 10.10.10.255 scope global dynamic eth0
+    inet 10.10.10.14/24 brd 10.10.10.255 scope global dynamic eth0
        valid_lft 84213sec preferred_lft 84213sec
 
 default via 10.10.10.1 dev eth0 proto dhcp metric 100
@@ -128,7 +130,7 @@ default via 10.10.10.1 dev eth0 proto dhcp metric 100
 
 Every field here is a claim you can verify:
 
-- `10.10.10.24/24` — the address and prefix. Network is `10.10.10.0`, broadcast `10.10.10.255`, usable hosts `.1` through `.254`.
+- `10.10.10.14/24` — the address and prefix. Network is `10.10.10.0`, broadcast `10.10.10.255`, usable hosts `.1` through `.254`.
 - `scope global` — routable beyond this host, unlike `scope host` on loopback.
 - `dynamic` with `valid_lft` — this address came from DHCP and expires. A lease that is about to expire and cannot be renewed is a future outage you can see coming.
 - `proto kernel scope link` on the second route — the kernel added this automatically when the address was configured. It is what tells the host that `10.10.10.0/24` is directly reachable without the gateway.
@@ -142,24 +144,36 @@ Compare with a broken host:
     inet 10.10.10.14/16 brd 10.10.255.255 scope global eth0
 
 default via 10.10.10.1 dev eth0
-192.168.0.0/16 dev eth0 proto kernel scope link src 10.10.10.14
+10.10.0.0/16 dev eth0 proto kernel scope link src 10.10.10.14
 ```
 
-The mask is `/16` where the network is genuinely `/24`. Communication with `10.10.10.x` works perfectly, because those are neighbours under either mask. Communication with `192.168.50.x` fails silently — the host believes those addresses are local, so it attempts address resolution on the segment instead of sending to the gateway, and nothing answers. The symptom is partial connectivity with no error message, and the cause is invisible unless you compare the mask against the actual network design.
+The mask is `/16` where the network is genuinely `/24`, and the kernel has done exactly what it was told: the connected route now covers `10.10.0.0/16` rather than `10.10.10.0/24`.
 
-The troubleshooting step is to compare your mask with the gateway's view:
+Work out what that does before reading on, because the failure it produces is specific rather than general. Neighbours on `10.10.10.x` still work perfectly — they are local under either mask. Anything outside `10.10.x.x` still works too, because it falls to the default route either way. What breaks is exactly the range in between: `10.10.20.20` is `FS01` on the server segment, genuinely on the far side of the router, and this host now believes it is a neighbour.
 
 ```bash
-ip route get 203.0.113.20
+ip route get 10.10.20.20
 ```
 
 Expected excerpt on the broken host:
 
 ```text
-203.0.113.20 dev eth0 src 10.10.10.14 uid 1000
+10.10.20.20 dev eth0 src 10.10.10.14 uid 1000
 ```
 
-The absence of `via 10.10.10.1` is the finding. The host intends to deliver directly rather than route, which for an off-segment destination is always wrong.
+The absence of `via 10.10.10.1` is the finding. The host intends to deliver directly, so it broadcasts an address resolution request onto its own segment for a host that is not on it, and waits:
+
+```bash
+ip neigh show 10.10.20.20
+```
+
+```text
+10.10.20.20 dev eth0  FAILED
+```
+
+`FAILED` is the neighbour table admitting it asked and nobody answered. That is the whole diagnosis in one line, and it is why a mask error presents as partial connectivity with no error message: the segment is fine, the gateway is fine, the host is simply asking the wrong question about one specific slice of the address space.
+
+Note which destinations do *not* reveal the bug. A test against `203.0.113.20` succeeds on the broken host, because that address is remote under both masks and takes the default route regardless. Choosing a diagnostic destination that behaves identically either way is the most common reason a mask error survives an afternoon of troubleshooting.
 
 ## Security Implications
 
