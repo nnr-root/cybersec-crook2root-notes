@@ -8,6 +8,9 @@ Color: "#708090"
 
 # WinPEAS
 
+> [!abstract] Note of [[Privilege Escalation Enumeration Tools]]
+> WinPEAS sweeps a Windows host for local privilege-escalation vectors — services, token privileges, the registry, stored credentials — and colour-ranks them. This note covers why the highest-yield output is usually credentials rather than the exploit-shaped findings attention goes to, why an unquoted service path needs a second condition to be real, and why the sweep is one of the most reliably EDR-flagged things an operator runs.
+
 WinPEAS is the Windows counterpart of LinPEAS — the PEASS-ng script that sweeps a Windows host for local privilege-escalation vectors and colour-ranks them. Windows privesc is a different landscape from Linux: instead of SUID bits and sudo, the paths run through **service misconfigurations**, **token privileges**, the **registry**, and **stored credentials**. WinPEAS knows where they all hide.
 
 > [!warning] Authorized post-exploitation only
@@ -45,7 +48,7 @@ PS C:\Users\low\Downloads> .\winPEASx64.exe log=winpeas.txt
 ╔══════════╣ AlwaysInstallElevated
    HKLM & HKCU = 1   ← any .msi installs as SYSTEM
 ╔══════════╣ Looking for saved credentials (cmdkey)
-   Target: Domain:interactive=CORP\admin  (stored)
+   Target: Domain:interactive=MERIDIAN\admin_bob  (stored)
 ```
 
 Four independent SYSTEM paths in one sweep. Each maps to a concrete exploit — `SeImpersonate` → PrintSpoofer/GodPotato; `AlwaysInstallElevated` → a malicious `.msi` via `msfvenom`:
@@ -72,6 +75,18 @@ PS C:\hardened> .\winPEASx64.exe quiet servicesinfo | find /c "[!]"
 **The deliberate break / contrast:** the vulnerable host flags an unquoted path *whose directory is writable* — the combination that is exploitable; the hardened host shows `0`. The nuance WinPEAS teaches: an unquoted path alone is **not** enough — you also need write access somewhere along the path to plant the binary. A tester who reports every "unquoted service path" without checking the directory ACL produces false positives. WinPEAS surfaces the candidate; you confirm the writable directory before claiming the finding.
 
 Operational internals: prefer the `.exe` (the `.bat` misses many checks); `log=` writes an evidence file; AMSI/EDR frequently flags WinPEAS on write, so operators use obfuscated builds or the `.bat` in constrained environments (in an authorized test, coordinate expected alerts with the blue team rather than evading silently). And remember the Windows privesc reality: many findings (stored creds, DPAPI, GPP passwords) yield *credentials* rather than direct SYSTEM — those feed **NetExec**/**Impacket** for lateral movement, closing the loop with the AD tooling.
+
+## Security Implications
+
+**WinPEAS is flagged on write more reliably than almost any other enumeration tool.** The `.exe` is heavily signatured and AMSI inspects it, so EDR frequently catches it the moment it lands — which is why the `.bat` fallback and obfuscated builds exist, and why an authorised test coordinates the expected alert with the blue team rather than evading silently. The mass registry reads and service queries the sweep performs are themselves a behavioural signal independent of the binary's signature.
+
+**The credential stores it reads are hygiene findings on their own.** `cmdkey` entries, `unattend.xml` left behind by imaging, `Groups.xml` in SYSVOL (Group Policy Preferences, patched as MS14-025 but still present in old GPOs), AutoLogon values in the registry — each is a secret a low-privileged user can read, and each is a finding whether or not it is used. The remediation is scrubbing the artifact, not blocking the scanner.
+
+**The highest-yield output feeds the AD tooling rather than granting SYSTEM directly.** Stored credentials, DPAPI secrets and GPP passwords are logins, not local escalation, so they flow into [[NetExec]] and [[Impacket]] for lateral movement — closing the loop with the Active Directory category. A privesc sweep is therefore also a credential-harvest, and its output is sensitive engagement evidence.
+
+**An unquoted service path is only half a finding.** It is exploitable only with write access along the path to plant the binary, so reporting every unquoted path without checking the directory ACL produces false positives. WinPEAS surfaces the candidate; the writable-directory check is what makes it real.
+
+All use here is authorised post-exploitation on in-scope hosts; the sweep touches services, registry and credential stores extensively and is highly visible.
 
 ## Summary
 
