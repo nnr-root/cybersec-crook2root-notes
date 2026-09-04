@@ -45,9 +45,9 @@ Once you see it as a pipe, the "modes" are obvious: aim stdin at a socket to *se
 ```shell-session
 operator@lab:~$ nc -nvz -w 2 192.0.2.10 22 443
 Connection to 192.0.2.10 22 port [tcp/*] succeeded!
-operator@lab:~$ printf 'HEAD / HTTP/1.1\r\nHost: app.example.test\r\nConnection: close\r\n\r\n' | nc -nv 192.0.2.10 80
+operator@lab:~$ printf 'HEAD / HTTP/1.1\r\nHost: track.meridian.test\r\nConnection: close\r\n\r\n' | nc -nv 192.0.2.10 80
 HTTP/1.1 301 Moved Permanently
-Location: https://app.example.test/
+Location: https://track.meridian.test/
 ```
 
 **Lab listener + file transfer** (isolated range only — hash both ends, since Netcat proves nothing about integrity):
@@ -88,8 +88,8 @@ Netcat exposes the framing that higher-level clients hide — line endings, half
 
 ```shell-session
 operator@lab:~$ printf 'EHLO test\r\nQUIT\r\n' | nc -nv -w 3 192.0.2.25 25
-220 mail.example.test ESMTP
-250-mail.example.test
+220 mail.meridian.test ESMTP
+250-mail.meridian.test
 221 Bye
 operator@lab:~$ nc -nvz -w 2 192.0.2.10 53      # UDP "scan" — beware
 Connection to 192.0.2.10 53 port [udp/*] succeeded!
@@ -99,7 +99,15 @@ Connection to 192.0.2.10 53 port [udp/*] succeeded!
 
 **How you'd spot it:** a UDP scan reporting every port open is reporting silence, not services. Confirm by sending something the service must answer — a DNS query to 53, an SNMP get to 161 — and requiring a reply. The TCP sanity check is the mirror image: a port you know is closed should come back closed, and if it does not, something in the path is answering on the host's behalf.
 
-Defensively, raw listeners, odd outbound destinations, and plaintext probes show up cleanly in endpoint socket telemetry and firewall flows — Netcat is loud, which is why real operators reach for TLS-aware Ncat or SSH when confidentiality matters.
+## Security Implications
+
+**Netcat is invisible at the application layer and loud everywhere else.** It sends no User-Agent and speaks no protocol of its own, so HTTP-aware detection sees nothing — but a *listening* socket on a workstation, an outbound connection to an odd high port, and a plaintext payload all show cleanly in endpoint socket telemetry (Sysmon 3, network connect) and firewall flow records. It hides from content inspection and exposes itself to metadata, which is exactly the trade the transport branch describes.
+
+**The `-e` builds are remote code execution by configuration.** Traditional Netcat and some BusyBox builds accept `-e /bin/sh`, which wires a shell directly to the socket — a listener started that way is an unauthenticated RCE anyone who connects can use. Knowing which build is present matters before starting any listener, and it is why an unexpected `nc -e` on a host is treated as a compromise indicator.
+
+**No encryption, no integrity, no authentication — so it proves nothing about what it moved.** A file transferred with Netcat has no guarantee it arrived intact or unread, which is why both ends must hash. Where confidentiality matters, TLS-aware **Ncat** (`--ssl`) or SSH replaces it; Netcat's honesty about bytes includes its honesty about offering no protection at all.
+
+All use here targets only authorised scope; a raw listener is an open door for the duration it runs.
 
 ## Summary
 

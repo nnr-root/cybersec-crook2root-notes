@@ -31,7 +31,7 @@ Read the diagram and ffuf's filters make sense: `-fc 404` drops misses, `-fs 127
 Directory discovery, with the soft-404 filtered by size:
 
 ```shell-session
-operator@lab:~$ ffuf -w paths.txt -u https://app.example.test/FUZZ -mc all -fc 404 -fs 127 -t 10 -rate 20
+operator@lab:~$ ffuf -w paths.txt -u https://track.meridian.test/FUZZ -mc all -fc 404 -fs 127 -t 10 -rate 20
 admin    [Status: 403, Size: 226, Words: 18, Lines: 7]
 api      [Status: 301, Size: 169, Words: 5, Lines: 8]
 health   [Status: 200, Size: 31, Words: 2, Lines: 1]
@@ -40,8 +40,8 @@ health   [Status: 200, Size: 31, Words: 2, Lines: 1]
 Move the keyword to fuzz *parameters* or *vhosts* — same tool, different position:
 
 ```shell-session
-operator@lab:~$ ffuf -w params.txt -u 'https://app.example.test/report?FUZZ=canary' -fs 842
-operator@lab:~$ ffuf -w hosts.txt  -u https://192.0.2.10/ -H 'Host: FUZZ.example.test' -fs 127
+operator@lab:~$ ffuf -w params.txt -u 'https://track.meridian.test/report?FUZZ=canary' -fs 842
+operator@lab:~$ ffuf -w hosts.txt  -u https://192.0.2.10/ -H 'Host: FUZZ.meridian.test' -fs 127
 ```
 
 `-ac` (auto-calibration) sends baseline probes and derives the filters for you — but inspect its choices, don't trust them blindly. Output evidence with `-of json -o`.
@@ -61,6 +61,16 @@ at 20 req/s  →  ~5.8 days
 **How you'd spot it:** do the arithmetic before pressing enter — multiply the wordlist line counts and look at the number. ffuf's own progress line says the same thing seconds in: a total request count in the millions with an ETA in days means the mode is wrong, not the wordlists.
 
 The other classic failure is filters: an over-broad `-fs` silently drops the *real* result (zero hits), while missing calibration returns millions of soft-404 "hits." When results look wrong, compare a single request with **curl** before changing five flags at once, and keep a response sample for every retained cluster rather than treating each matched line as a finding.
+
+## Security Implications
+
+**Each fuzz position leaves a different signature.** Directory fuzzing looks like any content-discovery burst, but *parameter* mining hammers one endpoint with dozens of differing query keys, and *header*/`Host` fuzzing sends malformed or rotating headers to one URL — both are shapes a WAF can key on directly (parameter-count-per-request, Host values that do not resolve). The default `User-Agent: Fuzz Faster U Fool` is an outright signature until changed.
+
+**The filter is a silent failure mode, not just a convenience.** An over-broad `-fs`/`-fc` drops the real result and reports zero hits; missing calibration keeps millions of soft-404s. Neither errors. The discipline is to confirm one request with `curl` before trusting a filter, and to keep a response sample per retained cluster rather than treating every matched line as a finding.
+
+**Volume is an availability risk you own.** `clusterbomb` over two medium lists is millions of requests — enough to degrade the target and certainly enough to alert it. Computing `A × B` before launching is scope compliance, not tidiness: a fuzz run that takes a service down is an incident whatever the intent.
+
+All fuzzing targets only authorised scope, at a rate the target can bear.
 
 ## Summary
 

@@ -29,12 +29,12 @@ A `301` redirect to `/admin/` isn't an endpoint, it's a *door*; feroxbuster walk
 ## Watching it dig into what it finds
 
 ```shell-session
-operator@lab:~$ feroxbuster -u http://app.example.test -w raft-medium.txt
- 200  GET  http://app.example.test/index.html
- 301  GET  http://app.example.test/admin => /admin/
- 200  GET  http://app.example.test/admin/login.php
- 301  GET  http://app.example.test/admin/uploads => /admin/uploads/
- 200  GET  http://app.example.test/admin/uploads/readme.txt
+operator@lab:~$ feroxbuster -u http://track.meridian.test -w raft-medium.txt
+ 200  GET  http://track.meridian.test/index.html
+ 301  GET  http://track.meridian.test/admin => /admin/
+ 200  GET  http://track.meridian.test/admin/login.php
+ 301  GET  http://track.meridian.test/admin/uploads => /admin/uploads/
+ 200  GET  http://track.meridian.test/admin/uploads/readme.txt
 ```
 
 Notice it found `/admin`, then **auto-recursed** to `/admin/login.php` and `/admin/uploads/` — a flat scanner stops at `/admin`. The control flags:
@@ -46,14 +46,17 @@ Notice it found `/admin`, then **auto-recursed** to `/admin/login.php` and `/adm
 | `-C 404,403` | drop status codes |
 | `--filter-size 1520` | drop a constant soft-404 body |
 | `-t` / `--rate-limit` | threads / throttle |
+| `--extract-links` | scrape found responses for new paths to queue |
+
+One feature genuinely separates it from the other three fuzzers: with `--extract-links` it does not only brute-force, it **reads the responses it gets back** and pulls hrefs, script `src`s and other paths out of them, feeding those into the same recursive queue. A pure brute-forcer finds only what its wordlist contains; feroxbuster also finds what the application itself links to, which is often the paths that are not in any wordlist.
 
 ## How a soft-404 makes recursion explode
 
 ```shell-session
-operator@lab:~$ feroxbuster -u http://app.example.test -w list.txt
+operator@lab:~$ feroxbuster -u http://track.meridian.test -w list.txt
  200  GET  /app/config/  => /app/config/db.php.bak
  200  GET  /randomxyz123    (size 1520)   <-- everything returns 200?
-operator@lab:~$ feroxbuster -u http://app.example.test -w list.txt --filter-size 1520
+operator@lab:~$ feroxbuster -u http://track.meridian.test -w list.txt --filter-size 1520
  200  GET  /app/config/db.php.bak
 ```
 
@@ -62,6 +65,16 @@ operator@lab:~$ feroxbuster -u http://app.example.test -w list.txt --filter-size
 **How you'd spot it:** recursion makes this loud rather than subtle. Watch queue depth and request rate: a run that keeps discovering fresh directories several levels down, every one returning the same byte count, is recursing into paths that do not exist. Stop it and read the size column before restarting with a filter.
 
 Cap depth with `-d` on large sites (unbounded recursion brute-forces every discovered directory forever), and emit a report rather than scraping the console so status, size, and redirect target survive for the finding.
+
+## Security Implications
+
+**Recursion is the signature, not just the feature.** A flat scanner requests a fixed list; feroxbuster's requests get *progressively deeper* from one source, exploring paths in an order no human browsing session ever produces — `/admin`, then everything under it, then everything under what that found. That depth-first tree walk is a distinctive detection, and the default `User-Agent: feroxbuster/2.x` confirms it.
+
+**The soft-404 is an amplified availability risk here.** Because the tool recurses on `200`s, a server that answers every path with `200` makes it recurse into directories that do not exist, at every level — a runaway that multiplies load on the target as well as noise in the output. Calibrating the soft-404 size is what keeps the run finite, so on a recursive scanner it is a safety control, not only an accuracy one.
+
+**Depth is a scope decision.** Uncapped recursion on a large site is thousands of requests the engagement did not budget for; `-d` and `--rate-limit` bound both the load and the exposure. A recursive run against production without them is how a content-discovery pass becomes a denial of service.
+
+All discovery here targets only authorised scope.
 
 ## Summary
 

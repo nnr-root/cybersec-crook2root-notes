@@ -31,7 +31,7 @@ The diagram is the whole skill. Gobuster shows you a `Status:` and a `Size:` for
 Gobuster works in *modes* — `dir` (paths), `vhost` (Host-header routing), `dns` (subdomains):
 
 ```shell-session
-operator@lab:~$ gobuster dir -u https://app.example.test -w paths.txt -x html,json \
+operator@lab:~$ gobuster dir -u https://track.meridian.test -w paths.txt -x html,json \
     -t 10 --delay 100ms -b 404 --exclude-length 127 -o evidence/gobuster.txt
 /health   (Status: 200) [Size: 31]
 /admin    (Status: 403) [Size: 226]
@@ -51,7 +51,7 @@ HTTP controls that matter: `-c` (cookies for authenticated discovery), `-H` (hea
 Gobuster decides "hit vs. miss" from the status code, which a misconfigured server weaponises. **Always calibrate first** by requesting random nonexistent paths:
 
 ```shell-session
-operator@lab:~$ for p in zzz-a zzz-b; do curl -sk -o /dev/null -w "$p %{http_code} %{size_download}\n" "https://app.example.test/$p"; done
+operator@lab:~$ for p in zzz-a zzz-b; do curl -sk -o /dev/null -w "$p %{http_code} %{size_download}\n" "https://track.meridian.test/$p"; done
 zzz-a 200 127
 zzz-b 200 127
 ```
@@ -60,7 +60,15 @@ zzz-b 200 127
 
 **How you'd spot it:** calibrate before trusting anything — request two paths that cannot possibly exist and compare. Identical status *and* identical length means the server has no real 404, and every result in the run is noise until that length is filtered out. After the fact, the same finding looks like a results list where nearly every hit shares one byte count.
 
-Defensively, a Gobuster run is a recognizable burst of `404`s (or `403`s) from one source in seconds — trivial to detect, and a reason to prefer proper 404 semantics (soft-404s break the *defender's* log analysis too).
+## Security Implications
+
+**A run is a burst with a fingerprint.** Hundreds of `404`s from one source in seconds is the coarse signal; the fine one is that the requested paths arrive in *wordlist order* and every request carries the default `User-Agent: gobuster/3.6` unless changed. A WAF rule on request-rate-per-source catches the volume, and a static User-Agent match catches the lazy operator — which is why changing `-a` is basic OpSec and why its absence in a log is a gift to the defender.
+
+**Soft-404s hurt the defender too.** A server answering every path with `200` does not only mislead the scanner — it makes the site's own access logs unanalysable, because a real 404 and a fake hit are indistinguishable after the fact. Correct 404 semantics is a defensive property, not a courtesy to the attacker.
+
+**The `403` is the finding worth keeping.** A path that exists but is forbidden (`/server-status`, `/.git/`) is a control present but not sufficient — reachable, named, one misconfiguration from readable. Report the `403`s as attack surface, not as failures.
+
+All discovery here targets only authorised scope; the request volume is logged and attributable.
 
 ## Summary
 

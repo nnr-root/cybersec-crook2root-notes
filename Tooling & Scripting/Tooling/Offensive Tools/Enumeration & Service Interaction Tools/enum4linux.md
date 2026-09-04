@@ -40,9 +40,9 @@ The mental model: SMB is a chatty service, and enum4linux is the megaphone that 
 
 ```shell-session
 operator@lab:~$ enum4linux-ng -A 10.10.20.20
-[+] Got domain/workgroup name: CORP
+[+] Got domain/workgroup name: MERIDIAN
 [+] Server allows session using username '', password ''  (null session!)
-=== Users ===   svc_backup (RID 0x3e9),  jdoe (RID 0x3ea)
+=== Users ===   svc_backup (RID 0x3e9),  r.okonkwo (RID 0x3ea)
 === Shares ===  backup$   READ    (accessible with null session)
 === Password policy ===  Minimum length: 7   Lockout threshold: none
 ```
@@ -54,7 +54,7 @@ The gold: a null session leaked the user list **and** a policy with **no lockout
 ```shell-session
 operator@lab:~$ enum4linux-ng -U 10.10.20.20       # legacy/misconfigured
 [+] Server allows session using username '', password ''
-users: svc_backup, jdoe, intern
+users: svc_backup, r.okonkwo, k.adeyemi
 operator@lab:~$ enum4linux-ng -U 10.10.20.99       # hardened host
 [-] Could not establish null session: STATUS_ACCESS_DENIED
 [-] No users enumerated
@@ -65,6 +65,16 @@ operator@lab:~$ enum4linux-ng -U 10.10.20.99       # hardened host
 **How you'd spot it:** read the denial as data. `STATUS_ACCESS_DENIED` on the user query while other queries still answer means `RestrictAnonymous` is set, and that belongs in the report as a control working on that host. The finding worth raising is the opposite result — a full user list, share list and password policy returned to an empty username.
 
 Internals: `enum4linux-ng` speaks more protocols and outputs JSON (better than the legacy Perl script); RID cycling is slow over wide ranges, so bound it around known RIDs (500–1500); and an empty share list with a populated user list means anonymous can enumerate accounts but not shares — note the *exact* anonymous exposure, not a blanket "SMB is open."
+
+## Security Implications
+
+**The null session is a logged authentication, so the enumeration is visible.** Every anonymous bind lands as **event 4624 type 3** with the user `ANONYMOUS LOGON`, and each share touched is **5140**. One source opening an anonymous session and then issuing a rapid run of SAMR user and group lookups is the signature — and **RID cycling** makes it louder, since it is hundreds of sequential SID-to-name translations no legitimate client performs.
+
+**The fix is one setting, and its presence is itself the finding.** `RestrictAnonymous` / `RestrictNullSessAccess` turns the whole enumeration into `STATUS_ACCESS_DENIED`. A host that denies the null session is reporting good hygiene; a host that returns users, shares and a password policy to an empty username is the finding — and the *specific* exposure (users but not shares, or a lockout threshold of none) is what to write down, not a blanket "SMB is open".
+
+**The leaked policy reshapes later steps.** A password policy with no lockout threshold tells a downstream spray it can run without locking accounts — one enum4linux line changes the risk of the next tool. That linkage is why this data is sensitive engagement evidence, not just reconnaissance.
+
+All enumeration here targets only authorised internal scope; the user and policy data it exposes identifies real accounts.
 
 ## Summary
 
