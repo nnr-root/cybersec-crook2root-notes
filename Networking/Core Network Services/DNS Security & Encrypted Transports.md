@@ -53,10 +53,10 @@ The trust model is a **chain** that mirrors the delegation hierarchy. Each zone'
 
 ```mermaid
 flowchart TB
-    Root["Root zone key — the trust anchor"] --> DS1["DS record in root vouches for .com's key"]
-    DS1 --> COM[".com zone key"]
-    COM --> DS2["DS record in .com vouches for example.com's key"]
-    DS2 --> EX["example.com zone key"]
+    Root["Root zone key — the trust anchor"] --> DS1["DS record in root vouches for .test's key"]
+    DS1 --> COM[".test zone key"]
+    COM --> DS2["DS record in .test vouches for meridian.test's key"]
+    DS2 --> EX["meridian.test zone key"]
     EX --> SIG["RRSIG signatures over the actual records"]
     SIG --> V["Validating resolver verifies the whole chain or REJECTS the answer"]
 ```
@@ -66,17 +66,42 @@ The records involved: **DNSKEY** holds a zone's public keys, **RRSIG** holds sig
 Verify validation is working:
 
 ```bash
-dig www.example.com A +dnssec +multiline | grep -E "flags:|RRSIG"
+dig @10.10.20.10 track.meridian.test A +dnssec +multiline | grep -E "flags:|RRSIG"
 ```
 
 Expected excerpt when validation succeeded:
 
 ```text
 ;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2
-www.example.com. 300 IN RRSIG A 13 3 300 (...)
+track.meridian.test. 300 IN RRSIG A 13 3 300 (...)
 ```
 
-The **`ad` flag** — Authenticated Data — is the finding. It means the resolver cryptographically validated the chain. Its absence means either the zone is unsigned or your resolver is not validating; both are common, and distinguishing them matters.
+The **`ad` flag** — Authenticated Data — is the finding. It means the resolver cryptographically validated the chain.
+
+> [!note] Why a lab zone will not produce that flag on its own
+> A validating resolver trusts one key it was not told about by DNS: the IANA root anchor, shipped with the software. Every other key in the chain is vouched for by its parent. `meridian.test` sits under a lab root, so its chain terminates at a key no stock resolver has ever heard of, and validation fails at the top no matter how correctly the zone is signed — the answer comes back without `ad`, exactly as an unsigned zone would. Fixing it means configuring the lab root's key as an explicit trust anchor on the resolver. The general lesson outlives the lab: DNSSEC is not something a zone can grant itself, and a private hierarchy buys nothing until its anchor has been distributed to every validator by some channel other than DNS.
+
+### Separating "unsigned" from "not validating"
+
+Missing `ad` has two completely different causes and the same appearance, which is why the sentence "the absence of `ad` is the tell" is only half a method. One more query settles it — ask the zone's own server whether it has keys at all:
+
+```bash
+dig @10.10.20.10 track.meridian.test A +dnssec  | grep -E "flags:|RRSIG"
+dig @ns1.meridian.test meridian.test DNSKEY +noall +answer
+```
+
+Expected excerpts:
+
+```text
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1
+
+meridian.test.  3600  IN  DNSKEY  257 3 13 (...)
+meridian.test.  3600  IN  DNSKEY  256 3 13 (...)
+```
+
+No `ad` on the first, but `DNSKEY` records on the second. The zone *is* signed, so the gap is on the resolver's side: it is returning signed data without checking it, and every client behind it is unprotected while appearing to use a DNSSEC-enabled domain. Had the second query returned nothing, the conclusion would be the opposite — the resolver may be validating perfectly and simply has nothing to validate.
+
+Two queries, two independent facts, and the pair of them is a real finding where either alone is a guess. This is the same shape as the route-versus-next-hop check in [[Static Routing & Default Gateways]]: when one signal has two possible causes, the method is to add a second signal that separates them, not to interpret the first one harder.
 
 **What DNSSEC does not do**, stated plainly because it is widely overestimated: it does not encrypt anything, it does not authenticate the *user*, it does not protect the last hop between your device and your resolver unless that link is separately secured, and adoption remains partial so many zones are simply unsigned. It also introduces operational risk — a signing or key-rollover mistake makes a zone fail validation, which for validating resolvers means the domain becomes unreachable rather than merely unverified. That failure mode is a real deterrent to adoption and worth acknowledging honestly.
 
@@ -98,16 +123,16 @@ That design choice creates a genuine tension worth stating fairly. For a user on
 Neither position is simply correct. The practical enterprise posture is to **run an internal DoH/DoT resolver and require its use**, so clients get encrypted transport on the untrusted last hop while the organization retains logging at the resolver. Blocking DoH outright is increasingly impractical, since it is just HTTPS.
 
 ```bash
-kdig -d @1.1.1.1 +tls www.example.com          # DoT
+kdig -d @1.1.1.1 +tls track.meridian.test      # DoT
 curl -sH 'accept: application/dns-json' \
-  'https://cloudflare-dns.com/dns-query?name=www.example.com&type=A'   # DoH
+  'https://cloudflare-dns.com/dns-query?name=track.meridian.test&type=A'   # DoH
 ```
 
 Expected excerpt from the DoH query:
 
 ```text
 {"Status":0,"TC":false,"RD":true,"RA":true,"AD":false,
- "Answer":[{"name":"www.example.com","type":1,"TTL":300,"data":"203.0.113.10"}]}
+ "Answer":[{"name":"track.meridian.test","type":1,"TTL":300,"data":"203.0.113.20"}]}
 ```
 
 Note `"AD":false` — encrypted transport delivered the answer confidentially, and it is still not DNSSEC-validated. This single field demonstrates the note's central point better than any explanation.
@@ -130,7 +155,7 @@ sudo tcpdump -i eth0 -nn 'udp port 53' -A | grep -oE '[a-z0-9]{40,}'
 
 A stream of long random-looking labels is the signature. Note that neither DNSSEC nor encryption helps here — the queries may be perfectly signed and perfectly encrypted, and are still exfiltration. This is why resolver-level logging and analytics remain necessary regardless of transport security.
 
-**Subdomain takeover** exploits stale records. If `old-app.example.com` is a CNAME pointing at a cloud resource that was decommissioned, an attacker who claims that resource name at the provider now controls content served at your subdomain — inheriting your domain's reputation, cookies scoped to the parent domain, and any trust users place in it. The fix is record hygiene: remove DNS entries when the resource they point to is retired. This is a configuration-management failure that DNS security technologies do not address at all.
+**Subdomain takeover** exploits stale records. If `old-app.meridian.test` is a CNAME pointing at a cloud resource that was decommissioned, an attacker who claims that resource name at the provider now controls content served at your subdomain — inheriting your domain's reputation, cookies scoped to the parent domain, and any trust users place in it. The fix is record hygiene: remove DNS entries when the resource they point to is retired. This is a configuration-management failure that DNS security technologies do not address at all.
 
 **Malicious resolvers** return whatever they choose. A resolver configured by a rogue DHCP lease or by malware answers with attacker-controlled addresses, over encryption if you like. DNSSEC validation at the *client* would catch forged answers for signed zones, which is precisely why validation location matters — validating only at a resolver you do not trust provides no protection.
 

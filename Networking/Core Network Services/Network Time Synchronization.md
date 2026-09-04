@@ -31,11 +31,19 @@ Every computer has a clock, and every clock drifts. The oscillators that keep ti
 
 Time sources are organized by **stratum**, a distance-from-truth measure:
 
-- **Stratum 0** — a reference clock itself: an atomic clock or GPS receiver. Not on the network directly.
-- **Stratum 1** — a server directly attached to a stratum 0 source.
-- **Stratum 2** — synchronized to a stratum 1 server, and so on down.
+| Stratum | What it is | On Meridian |
+|:--|:--|:--|
+| **0** | A reference clock itself — atomic clock, GPS receiver. Never on the network directly | — |
+| **1** | A server directly attached to a stratum 0 source | upstream, outside the estate |
+| **2** | Synchronized to a stratum 1 server | `DC01`, the domain's authoritative source |
+| **3** | Synchronized to a stratum 2 server, and so on down | every domain member |
+| **16** | Conventionally, "unsynchronized" | a host with a problem |
 
 Each level is one step further from the authoritative source, and the number increases with distance. A stratum of 16 conventionally means "unsynchronized." The hierarchy exists so that a small number of high-quality reference clocks can serve time to the entire Internet through layers of redundancy.
+
+The opening question was chosen carefully, and the answer is: at four minutes, nothing. Kerberos allows a default skew of five minutes, so two servers four minutes apart authenticate normally, issue tickets normally, and give no indication that anything is unusual. At five minutes and one second, every Kerberos authentication between them fails — not slowly, not partially, and not with a message that mentions time.
+
+Hold that shape, because it is what makes clock drift such a distinctive class of incident. There is no degradation phase. A gradually drifting clock produces perfect service right up to a threshold and then total failure, which means the symptom appears with no recent change to blame it on and the cause has been developing for weeks. Almost everything else in this domain fails gradually enough to notice.
 
 > [!tip] The analogy, and where it breaks
 > Everyone setting their watch from a chain of clocks traceable back to one atomic reference, while allowing for how long the phone call announcing the time took. The analogy breaks on consequence: a wrong watch merely makes you late, whereas a host whose clock drifts past the tolerance cannot authenticate at all — not 'less securely', but not at all — and its logs can no longer be ordered against anyone else's.
@@ -69,7 +77,7 @@ chronyc tracking
 Expected excerpt:
 
 ```text
-Reference ID    : C0A80A01 (ntp.internal.example)
+Reference ID    : 0A0A140A (DC01)
 Stratum         : 3
 System time     : 0.000034 seconds fast of NTP time
 Last offset     : +0.000012 seconds
@@ -77,7 +85,11 @@ RMS offset      : 0.000089 seconds
 Root delay      : 0.004120 seconds
 ```
 
-`Stratum : 3` places this host three hops from a reference clock. The offset in microseconds indicates healthy synchronization; an offset growing into seconds is the warning sign that synchronization is failing. Check the sources feeding it:
+`Stratum : 3` places this host three hops from a reference clock, and the Reference ID is worth decoding rather than skipping: `0A0A140A` is not an identifier, it is an IPv4 address in hexadecimal, one byte per pair — `0A`, `0A`, `14`, `0A` is `10.10.20.10`, which is `DC01`. That decoding is a small habit with real payoff, because the Reference ID is often the only place a client records *who* it is actually taking time from, and a client synchronised to something you did not configure is a finding you would otherwise never see.
+
+`DC01` being the source is the normal arrangement rather than a lab shortcut: in a Windows domain the PDC emulator is the authoritative time source for every member, so the domain's time hierarchy and its authentication hierarchy are the same tree. That is convenient and it concentrates risk — the host that decides whether a Kerberos ticket is within tolerance is also the host that decides what the time is.
+
+The offset in microseconds indicates healthy synchronization; an offset growing into seconds is the warning sign that synchronization is failing. Check the sources feeding it:
 
 ```bash
 chronyc sources -v
@@ -87,8 +99,8 @@ Expected excerpt:
 
 ```text
 MS Name/IP address     Stratum Poll Reach LastRx Last sample
-^* ntp1.internal.example      2   10   377    412   +14us[+18us] +/- 2.1ms
-^+ ntp2.internal.example      2   10   377    408   -9us[-9us]   +/- 2.4ms
+^* 10.10.20.10                2   10   377    412   +14us[+18us] +/- 2.1ms
+^+ 10.10.20.11                2   10   377    408   -9us[-9us]   +/- 2.4ms
 ```
 
 The `^*` marks the currently selected source; `^+` marks acceptable alternates. `Reach 377` is an octal reachability register — all-ones means the last eight polls all succeeded. Multiple sources exist so that one lying or failing server can be outvoted rather than believed.

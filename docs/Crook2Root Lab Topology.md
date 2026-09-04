@@ -20,6 +20,7 @@ ever collide with a real host, a real domain, or a real organisation.
 | Kind | Reserved range | Authority |
 |:--|:--|:--|
 | Domain | `meridian.test` | RFC 6761 — `.test` is permanently reserved and can never be registered |
+| Lookalike domain | `meridian-freight.test` | The attacker's registered domain, used wherever a note needs a domain that authenticates perfectly and is not Meridian: phishing, DMARC alignment, certificate and brand impersonation. It is a real domain with real SPF and DKIM in the story — the point is always that every check passes |
 | Public IPv4 | `203.0.113.0/24` | RFC 5737 TEST-NET-3 |
 | Second public range | `198.51.100.0/24` | RFC 5737 TEST-NET-2 (attacker infrastructure). The attacker is `198.51.100.9` — the address forty-odd notes already use for a listener, a callback host, a scan source or a C2 endpoint. Other hosts in the range are ordinary attacker infrastructure and need no allocation |
 | Third public range | `192.0.2.0/24` | RFC 5737 TEST-NET-1 (upstream providers and BGP peers — inter-AS links are public by nature — and any ordinary third-party host on the wider internet, which is what the corpus mostly uses it for: a server Meridian connects *out* to, as distinct from Meridian's own public edge and from attacker infrastructure) |
@@ -90,6 +91,7 @@ flowchart TB
 | *(egress)* | 203.0.113.5 | The address the corporate LAN is translated to on the way out. Not a host — the boundary's public identity, and the only address the outside world sees for everything behind it | NAT, attribution, egress filtering |
 | `jump.meridian.test` | 10.20.0.5 | SSH bastion, the only DMZ→LAN path | Pivoting, tunnelling, SSH |
 | `DC01` | 10.10.20.10 | Windows Server domain controller, ADCS enabled. Also the **internal resolver** every LAN client is pointed at — `ns1` is authoritative for the public zone and is not what a workstation asks | AD, Kerberos, NTLM, ADCS, BloodHound, DNS |
+| `DC02` | 10.10.20.11 | Second domain controller. Already named by the AD and guided-pentest notes; registered here so a second resolver, a second Kerberos target or a second time source has somewhere to be | AD, replication, redundancy |
 | `FS01` | 10.10.20.20 | Windows file server, SMB shares, one null session left on | SMB, enum4linux, Responder, relay |
 | `APP01` | 10.10.20.30 | Ubuntu, Docker, the tracking backend, `/opt/meridian/routeplan` | Linux internals, privesc, containers, DevSecOps, exploit dev |
 | `LOG01` | 10.10.20.40 | Zeek, Sysmon collection, SIEM | Defensive Security, detection engineering |
@@ -166,7 +168,7 @@ real single-vendor fleet would look.
 | `00:00:5E:00:53:50` | `edge` |
 | `00:00:5E:00:53:C0` | the `MERIDIAN-CORP` access point |
 | `00:00:5E:00:53:C1` | the `MERIDIAN-GUEST` access point |
-| `00:00:5E:00:53:DE` | the attacker — deliberately memorable, used wherever a note shows a spoofed or hostile frame |
+| `00:00:5E:00:53:DE` | the attacker — deliberately memorable, used wherever a note shows a spoofed or hostile frame. When a note needs the attacker *on a segment* rather than out on the Internet — ARP spoofing, LLMNR poisoning, a rogue DHCP server, anything multicast or broadcast reaches — it is this MAC on an unallocated address in that VLAN (`10.10.10.66` where a note needs to name one), because those attacks require a foothold on the same wire and `198.51.100.9` cannot reach it |
 
 IPv6 hosts take `2001:db8:acad:<vlan>::<host>`, matching the IPv4 last octet:
 `WS-030` is `2001:db8:acad:10::30`. Link-local gateways stay `fe80::1`.

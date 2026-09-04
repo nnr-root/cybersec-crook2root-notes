@@ -44,8 +44,8 @@ Read left to right: check local **files** first, then **mDNS** for `.local` name
 The first source is always the **hosts file** — `/etc/hosts` on Unix-like systems, a similar file on Windows. It is a static, manually maintained mapping consulted before any network lookup:
 
 ```text
-127.0.0.1   localhost
-203.0.113.10 www.internal.example
+127.0.0.1     localhost
+203.0.113.20  track.meridian.test
 ```
 
 Because it wins over DNS, the hosts file is both a useful override (pin a name during testing) and a malware persistence technique (redirect a security-update domain to a dead address, or a bank to a phishing host). Checking the hosts file for unexpected entries is a basic compromise check precisely because it silently overrides everything below it.
@@ -67,10 +67,10 @@ The unifying principle, and the vulnerability, is identical across all three: **
 
 ```mermaid
 sequenceDiagram
-    participant V as Victim
-    participant Seg as Local segment (multicast/broadcast)
-    participant A as Attacker (listening)
-    V->>V: DNS lookup for "fileserver" fails (typo or unqualified name)
+    participant V as WS-014
+    participant Seg as VLAN 10 (multicast/broadcast)
+    participant A as Attacker on the segment
+    V->>V: DNS lookup for "fileserv" fails (typo or unqualified name)
     V->>Seg: LLMNR/mDNS/NBT-NS: "who is fileserver?"
     Note over Seg: No authority — anyone may answer
     A-->>V: "I am fileserver, connect to me"
@@ -84,6 +84,27 @@ The attack is not merely misdirection — it harvests authentication. On Windows
 
 This is one of the most reliably productive techniques in internal network assessment, and its power comes from how *ordinary* the trigger is. A user mistyping a share name, an application referring to a host by an unqualified name that DNS cannot resolve, or a stale login script all generate the failed lookup that starts the sequence. The attacker does nothing but wait and answer.
 
+The whole chain is visible in one capture, and the timestamps are the part to read:
+
+```text
+09:14:22.104  10.10.10.14.51204 > 10.10.20.10.53:    A? fileserv.meridian.test
+09:14:22.106  10.10.20.10.53 > 10.10.10.14.51204:    NXDOMAIN
+09:14:22.108  10.10.10.14.54882 > 224.0.0.252.5355:  LLMNR standard query A fileserv
+09:14:22.111  10.10.10.66.5355 > 10.10.10.14.54882:  LLMNR response A 10.10.10.66
+09:14:22.119  10.10.10.14.49733 > 10.10.10.66.445:   Negotiate Protocol Request
+09:14:22.121  10.10.10.66.445 > 10.10.10.14.49733:   Negotiate Protocol Response
+09:14:22.124  10.10.10.14.49733 > 10.10.10.66.445:   Session Setup Request, NTLMSSP_NEGOTIATE
+09:14:22.126  10.10.10.66.445 > 10.10.10.14.49733:   Session Setup Response, NTLMSSP_CHALLENGE
+09:14:22.131  10.10.10.14.49733 > 10.10.10.66.445:   Session Setup Request, NTLMSSP_AUTH
+                                                      user: MERIDIAN\r.okonkwo
+```
+
+Twenty-seven milliseconds from a typo to a credential exchange with a stranger. Nothing in that sequence required a decision from the user, and nothing in it produced an error they would see — the last line is where the workstation hands its authentication material to `10.10.10.66`, a host it had never heard of forty milliseconds earlier and knows nothing about now. There is no dialogue, no warning, and no step where anything asks whether `10.10.10.66` is entitled to be `fileserv`.
+
+Three lines deserve individual attention. Line 2 is the trigger: `NXDOMAIN` is DNS working correctly and answering honestly that the name does not exist. Line 4 is the entire vulnerability: an unsolicited claim of ownership, accepted because the protocol has no concept of a wrong answer. Line 9 is the loss, and it happens automatically because Windows offers single-sign-on credentials to SMB servers by default — which is a feature everywhere else and the payload here.
+
+Note also who the attacker is not. `10.10.10.66` is on VLAN 10, not out on the Internet, because every protocol in this note is multicast or broadcast and reaches exactly one segment. That constraint is the good news in an otherwise bleak mechanism: this attack requires a foothold on the same wire as the victim, so segmentation genuinely limits its blast radius in a way it does not for most of the attacks in this domain.
+
 ```bash
 sudo tcpdump -i eth0 -nn 'udp port 5355 or udp port 137 or udp port 5353'
 ```
@@ -93,7 +114,7 @@ Expected excerpt:
 ```text
 IP 10.10.10.30.54211 > 224.0.0.252.5355: UDP, length 24   # LLMNR query
 IP 10.10.10.30.137 > 10.10.10.255.137: UDP, length 50   # NetBIOS broadcast
-IP 10.10.10.44.5353 > 224.0.0.251.5353: UDP, length 32    # mDNS query
+IP 10.10.10.14.5353 > 224.0.0.251.5353: UDP, length 32    # mDNS query
 ```
 
 Seeing LLMNR (5355) and NetBIOS (137) queries on an enterprise segment is itself a finding: these protocols are usually unnecessary where DNS is properly configured, and every query is an opportunity for an attacker to answer. Their presence indicates both an attack surface and, often, a DNS misconfiguration causing the failed lookups that trigger them.

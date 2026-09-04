@@ -32,11 +32,11 @@ People use names; the network uses addresses. **DNS (Domain Name System)** is th
 Read a domain name **right to left**, because that is the order of delegation:
 
 ```text
-www . shop . example . com .
- |     |       |        |   |
- |     |       |        |   root (the trailing dot, usually implied)
- |     |       |        top-level domain (TLD)
- |     |       second-level domain — where an organization's authority usually begins
+www . eu . meridian . test .
+ |     |      |        |    |
+ |     |      |        |    root (the trailing dot, usually implied)
+ |     |      |        top-level domain (TLD)
+ |     |      second-level domain — where an organization's authority usually begins
  |     subdomain
  hostname
 ```
@@ -67,17 +67,17 @@ sequenceDiagram
     participant S as Stub resolver (your OS)
     participant R as Recursive resolver
     participant Root as Root servers
-    participant TLD as .com servers
-    participant A as example.com authoritative
-    S->>R: A? www.example.com
+    participant TLD as .test servers
+    participant A as ns1.meridian.test
+    S->>R: A? track.meridian.test
     Note over R: Cache miss — must walk the tree
-    R->>Root: A? www.example.com
-    Root-->>R: Referral: ask the .com servers
-    R->>TLD: A? www.example.com
-    TLD-->>R: Referral: ask ns1.example.com
-    R->>A: A? www.example.com
-    A-->>R: Answer: 203.0.113.10, TTL 300
-    R-->>S: 203.0.113.10 (and cache it for 300s)
+    R->>Root: A? track.meridian.test
+    Root-->>R: Referral: ask the .test servers
+    R->>TLD: A? track.meridian.test
+    TLD-->>R: Referral: ask ns1.meridian.test
+    R->>A: A? track.meridian.test
+    A-->>R: Answer: 203.0.113.20, TTL 300
+    R-->>S: 203.0.113.20 (and cache it for 300s)
 ```
 
 Two properties of this walk matter enormously.
@@ -85,6 +85,38 @@ Two properties of this walk matter enormously.
 **Referrals, not answers.** The root and TLD servers never know the final address. They only know who is authoritative one level down. This is what makes the system scale — the root does not need to know about every hostname on the Internet, only about TLDs.
 
 **Caching collapses the work.** The recursive resolver caches every answer and every referral for the duration of its **TTL (Time To Live)**. The full walk happens rarely; most queries are answered from cache in microseconds. This is why DNS can serve enormous query volumes with modest infrastructure.
+
+### Telling a memory from a fact
+
+The Tell above claims two things you can check in under a minute. Ask `DC01` twice, thirteen seconds apart, and then ask the zone's own server:
+
+```bash
+dig @10.10.20.10 track.meridian.test +noall +answer +comments
+sleep 13
+dig @10.10.20.10 track.meridian.test +noall +answer +comments
+dig @ns1.meridian.test track.meridian.test +noall +answer +comments +norecurse
+```
+
+Expected excerpts:
+
+```text
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+track.meridian.test.    300    IN    A    203.0.113.20
+
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+track.meridian.test.    287    IN    A    203.0.113.20
+
+;; flags: qr aa; QUERY: 1, ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 1
+track.meridian.test.    300    IN    A    203.0.113.20
+```
+
+Three answers, all giving the same address, and only one of them is a fact.
+
+**300 became 287.** Nothing was reconfigured in those thirteen seconds. That number is a countdown on a copy `DC01` is holding, and it will keep falling to zero, at which point the next query causes a real walk. A TTL that decrements between two queries is proof you are being handed someone's memory rather than an answer.
+
+**The third response carries `aa` and the first two do not.** `aa` is the authoritative-answer flag: the server setting it is claiming to own the zone, not to have heard about it. Notice what else changed with it — `ra` (recursion available) disappeared, because an authoritative server has no interest in walking the tree for you, and its TTL is the full 300 every single time, because it is not counting down a copy, it is stating the record's configured lifetime.
+
+That is the whole diagnostic. Two flags and a number distinguish "this is what the zone says" from "this is what my resolver remembers the zone saying", and almost every confusing DNS incident is one of those two being mistaken for the other.
 
 ## Record Types
 
@@ -94,9 +126,9 @@ A DNS record maps a name to data of a specific type.
 | --- | --- | --- |
 | **A** | Name → IPv4 address | `203.0.113.10` |
 | **AAAA** | Name → IPv6 address | `2001:db8::10` |
-| **CNAME** | Alias to another name | `shop.example.com. → lb.example.net.` |
-| **MX** | Mail servers for a domain, with priority | `10 mail.example.com.` |
-| **NS** | Delegates a zone to authoritative servers | `ns1.example.com.` |
+| **CNAME** | Alias to another name | `www.meridian.test. → edge.meridian.test.` |
+| **MX** | Mail servers for a domain, with priority | `10 mail.meridian.test.` |
+| **NS** | Delegates a zone to authoritative servers | `ns1.meridian.test.` |
 | **TXT** | Arbitrary text; carries SPF, DKIM, DMARC, verification | `"v=spf1 include:..."` |
 | **PTR** | Address → name (reverse lookup) | `10.113.0.203.in-addr.arpa. → edge.meridian.test.` |
 | **SRV** | Service location: host, port, priority, weight | `_ldap._tcp` → host and port |
@@ -112,36 +144,39 @@ Two of these carry frequent misunderstandings.
 ## Querying Directly
 
 ```bash
-dig www.example.com A +noall +answer
+dig track.meridian.test A +noall +answer
 ```
 
 Expected excerpt:
 
 ```text
-www.example.com.    300    IN    A    203.0.113.10
+track.meridian.test.    300    IN    A    203.0.113.20
 ```
 
 The four columns are name, **TTL in seconds**, class, type, and value. Trace the full delegation path:
 
 ```bash
-dig +trace www.example.com
+dig +trace track.meridian.test
 ```
 
 Expected excerpt:
 
 ```text
-.                    518400 IN NS a.root-servers.net.
-com.                 172800 IN NS a.gtld-servers.net.
-example.com.         172800 IN NS ns1.example.com.
-www.example.com.     300    IN A  203.0.113.10
+.                       518400 IN NS a.root-servers.net.
+test.                   172800 IN NS ns1.meridian.test.
+meridian.test.          172800 IN NS ns1.meridian.test.
+track.meridian.test.    300    IN A  203.0.113.20
 ```
 
 Each block is one referral step — this is the sequence diagram made concrete, and it is the definitive tool for diagnosing where a delegation breaks.
 
+> [!note] Why that trace could not happen on the real Internet
+> `.test` is reserved by RFC 6761 and is never delegated from the actual root, so a lab that resolves `meridian.test` is running its own root and its own `test.` zone — which is exactly why the second line above names Meridian's own server where the public hierarchy would name a TLD operator's. The *shape* is identical and everything this note says about delegation, referrals and TTLs holds unchanged; only who runs the top of the tree differs. It is worth knowing which one you are looking at, because a `+trace` that terminates early against a lab root and a `+trace` that terminates early against a broken public delegation are the same output with completely different causes.
+
 Query a specific server to bypass caching:
 
 ```bash
-dig @ns1.example.com www.example.com A +norecurse
+dig @ns1.meridian.test track.meridian.test A +norecurse
 ```
 
 Asking the authoritative server directly with `+norecurse` gets the truth, unmediated by any cache. Comparing that against what your resolver returns is how you determine whether a problem is a stale cache or a genuinely wrong record.
@@ -153,11 +188,11 @@ You change a record's address, and some users reach the new server while others 
 Distinguish the two cases directly:
 
 ```bash
-dig @<your resolver> www.example.com A +noall +answer    # what clients see
-dig @ns1.example.com www.example.com A +noall +answer    # what is actually configured
+dig @10.10.20.10 track.meridian.test A +noall +answer          # what clients see
+dig @ns1.meridian.test track.meridian.test A +noall +answer    # what is actually configured
 ```
 
-Different answers mean caching. Identical wrong answers mean the record itself is wrong.
+Different answers mean caching. Identical wrong answers mean the record itself is wrong. `10.10.20.10` is `DC01`, the resolver every workstation on the LAN is pointed at, so the first line is the answer a real user gets and the second is the answer the zone actually holds.
 
 ## Security Implications
 
@@ -168,7 +203,7 @@ Different answers mean caching. Identical wrong answers mean the record itself i
 **Zone transfers leak the map.** A zone transfer returns every record in a zone. If an authoritative server permits transfers to arbitrary clients, it hands over a complete inventory of hostnames — internal systems, development environments, infrastructure naming conventions. Transfers should be restricted to designated secondary servers.
 
 ```bash
-dig @ns1.example.com example.com AXFR
+dig @ns1.meridian.test meridian.test AXFR
 ```
 
 Expected excerpt when correctly restricted:

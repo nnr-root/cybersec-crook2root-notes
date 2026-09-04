@@ -45,7 +45,7 @@ These are complementary. Polling gives you current metrics (interface utilizatio
 **SNMP (Simple Network Management Protocol)** lets a management system query and configure network devices. A device runs an **agent** exposing a tree of values — the **MIB (Management Information Base)** — where each value has a numeric address called an **OID (Object Identifier)**. The manager polls OIDs for metrics, and devices can also push unsolicited **traps** when something notable occurs.
 
 ```bash
-snmpwalk -v2c -c public 10.10.10.1 system
+snmpwalk -v2c -c public 10.10.10.2 system
 ```
 
 Expected excerpt:
@@ -53,8 +53,8 @@ Expected excerpt:
 ```text
 SNMPv2-MIB::sysDescr.0 = STRING: Router OS v12.4, 8-port
 SNMPv2-MIB::sysUpTime.0 = Timeticks: (184023100) 21 days, 07:03:51.00
-SNMPv2-MIB::sysContact.0 = STRING: netops@example.com
-SNMPv2-MIB::sysName.0 = STRING: core-rtr-01
+SNMPv2-MIB::sysContact.0 = STRING: netops@meridian.test
+SNMPv2-MIB::sysName.0 = STRING: R1
 ```
 
 The security story is in the version and the `-c public`. SNMP versions 1 and 2c authenticate with a **community string** — a plaintext shared password transmitted in the clear. Worse, `public` (read) and `private` (write) are near-universal defaults that administrators routinely fail to change. A readable SNMP agent with a default community string discloses a device's configuration, interfaces, routing, and often far more; a writable one lets an attacker *reconfigure the device*.
@@ -74,8 +74,12 @@ flowchart LR
 **Syslog** is the standard for devices and systems to send event messages to a central collector. Each message carries a **facility** (which subsystem) and a **severity** (how urgent, from emergency down to debug), plus a timestamp and text.
 
 ```text
-<134>1 2026-08-03T14:22:07Z core-rtr-01 sshd 4021 - user login failed for admin from 198.51.100.9
+<36>1 2026-08-03T14:22:07Z R1 sshd 4021 - user login failed for admin from 198.51.100.9
 ```
+
+That leading number is not a message id, and it is the field most often skipped. The **priority value** encodes both fields the paragraph above named, as `facility × 8 + severity`. So `36` divides into facility `4` and severity `4` — `auth` and `warning` — which is why a collector can route this message to a security queue without parsing a word of the English text after it.
+
+The arithmetic is worth doing once by hand, because getting it wrong in a filter is silent. A rule written for `<134>` catches `local0` at `informational`, an entirely different class of message; the login failure above would pass straight through it. Severity also runs *backwards* from intuition — `0` is emergency and `7` is debug — so a filter for "severity greater than 4" collects the debug noise and discards the emergencies.
 
 Centralizing syslog is a security necessity for one blunt reason: **logs on a compromised device cannot be trusted.** An attacker who controls a device edits or deletes its local logs. Forwarding events to a separate, hardened collector in real time means the evidence exists somewhere the attacker does not control by the time they think to erase it. The value of central logging is precisely that it removes the evidence from the attacker's reach.
 
@@ -87,12 +91,16 @@ Classic syslog runs over UDP 514 — unencrypted, unauthenticated, and unreliabl
 
 ```text
 SrcIP           DstIP           Proto SrcPt DstPt  Packets Bytes  Flags
-10.10.10.22     203.0.113.90    TCP   52418 443    1204    88213  ...S
-10.10.10.22     198.51.100.7    UDP   51002 53     6       540    ...
-10.10.10.99     198.51.100.9    TCP   49877 4444   88291   14M    ...
+10.10.10.14     203.0.113.20    TCP   52418 443    1204    88213  ...S
+10.10.10.14     10.10.20.10     UDP   51002 53     6       540    ...
+10.10.10.30     198.51.100.9    TCP   49877 4444   88291   14M    ...
 ```
 
-Flow data is uniquely valuable because it scales and it survives encryption. Recording the full payload of a busy network is impractical and, increasingly, impossible because the traffic is encrypted. But flow *metadata* — who connected to whom, when, how much — is compact enough to retain for long periods and remains visible even when the content does not. The third row above tells a story without any payload: a large sustained transfer to an unusual high port on an external host is the shape of exfiltration or command-and-control, detectable purely from the metadata.
+Flow data is uniquely valuable because it scales and it survives encryption. Recording the full payload of a busy network is impractical and, increasingly, impossible because the traffic is encrypted. But flow *metadata* — who connected to whom, when, how much — is compact enough to retain for long periods and remains visible even when the content does not.
+
+Read those three rows as a set, because the first two are what make the third visible. `WS-014` fetching the tracking site over 443 and asking `DC01` for a name is what an ordinary workstation minute looks like: a few hundred kilobytes, six DNS packets, unremarkable ports. The third row is `WS-030` moving fourteen megabytes to an external address on port 4444 across eighty-eight thousand packets, and every field in it disagrees with the two above — a port with no registered service, an external destination that is not a web server, a volume an order of magnitude larger, and a duration long enough to be a session rather than a request.
+
+No payload was inspected to reach any of that, and none could have been; the traffic may well be encrypted. The finding is entirely in the shape of the metadata, which is why the row is legible at all.
 
 This is why flow analysis is central to modern detection: it is the one network-wide visibility that encryption does not blind. Where deep inspection fails against TLS and QUIC, flow records still reveal the communication pattern.
 

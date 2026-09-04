@@ -51,19 +51,19 @@ Email uses different protocols for sending and retrieving, and confusing them is
 SMTP is a human-readable, line-based protocol. Watching an exchange reveals both how it works and how little it originally verified:
 
 ```text
-S: 220 mail.example.com ESMTP ready
-C: EHLO client.example.net
-S: 250-mail.example.com
+S: 220 mail.meridian.test ESMTP ready
+C: EHLO ws-014.meridian.test
+S: 250-mail.meridian.test
 S: 250-STARTTLS
 S: 250 AUTH LOGIN PLAIN
-C: MAIL FROM:<alice@example.net>
+C: MAIL FROM:<r.okonkwo@meridian.test>
 S: 250 OK
-C: RCPT TO:<bob@example.com>
+C: RCPT TO:<d.varga@meridian.test>
 S: 250 OK
 C: DATA
 S: 354 Start mail input; end with <CRLF>.<CRLF>
-C: From: "Alice" <alice@example.net>
-C: Subject: Hello
+C: From: "R. Okonkwo" <r.okonkwo@meridian.test>
+C: Subject: Q3 freight reconciliation
 C: 
 C: Message body here.
 C: .
@@ -80,11 +80,11 @@ Because SMTP verifies no sender, three DNS-published mechanisms were layered on 
 
 ```mermaid
 flowchart TB
-    M["Incoming message claims to be from example.com"] --> SPF{"SPF: did it come from an IP example.com authorizes?"}
-    M --> DKIM{"DKIM: is the signature valid for example.com's key?"}
+    M["Incoming message claims to be from meridian.test"] --> SPF{"SPF: did it come from an IP meridian.test authorizes?"}
+    M --> DKIM{"DKIM: is the signature valid for meridian.test's key?"}
     SPF --> ALIGN["DMARC checks ALIGNMENT: does the visible From: domain match what SPF/DKIM authenticated?"]
     DKIM --> ALIGN
-    ALIGN --> POL{"DMARC policy for example.com?"}
+    ALIGN --> POL{"DMARC policy for meridian.test?"}
     POL -->|"pass"| DELIVER["Deliver"]
     POL -->|"fail + p=reject"| REJECT["Reject or quarantine"]
 ```
@@ -92,7 +92,7 @@ flowchart TB
 **SPF (Sender Policy Framework)** is a DNS TXT record listing which mail servers are authorized to send for a domain. The receiving server checks whether the connecting IP is on that list.
 
 ```bash
-dig example.com TXT +short | grep spf
+dig meridian.test TXT +short | grep spf
 ```
 
 Expected excerpt:
@@ -108,16 +108,40 @@ Expected excerpt:
 **DMARC (Domain-based Message Authentication, Reporting and Conformance)** ties the two together and adds the piece both lack: **alignment**. It requires that the domain authenticated by SPF or DKIM matches the domain in the visible `From:` header — closing the gap where a message could pass SPF for one domain while displaying a different domain to the user. DMARC also publishes a **policy** (what to do on failure) and a **reporting** address (where to send authentication statistics).
 
 ```bash
-dig _dmarc.example.com TXT +short
+dig _dmarc.meridian.test TXT +short
 ```
 
 Expected excerpt:
 
 ```text
-"v=DMARC1; p=reject; rua=mailto:dmarc@example.com; adkim=s; aspf=s"
+"v=DMARC1; p=reject; rua=mailto:dmarc@meridian.test; adkim=s; aspf=s"
 ```
 
 `p=reject` instructs receivers to reject failing mail; `p=none` only monitors. The three build on each other: SPF and DKIM authenticate, DMARC enforces alignment and policy. A domain with all three at enforcement is hard to spoof; a domain with none can be impersonated by anyone.
+
+### Where the verdicts are actually written down
+
+All three mechanisms are evaluated by the *receiving* server, which records what it found in an `Authentication-Results` header before delivering the message. That header, not the `From:` line, is what an investigation reads. Here is one from a message that reached `WS-014`:
+
+```text
+Received: from mx.meridian-freight.test (198.51.100.9)
+        by mail.meridian.test with ESMTPS id 4C71B9; Tue, 2 Sep 2026 09:14:22 +0000
+Authentication-Results: mail.meridian.test;
+        spf=pass (sender IP is 198.51.100.9) smtp.mailfrom=meridian-freight.test;
+        dkim=pass header.d=meridian-freight.test header.s=sel1;
+        dmarc=pass (p=reject sp=reject) header.from=meridian-freight.test
+From: "Meridian Freight Billing" <billing@meridian-freight.test>
+To: <r.okonkwo@meridian.test>
+Subject: Updated remittance details for September
+```
+
+Every verdict on that message is `pass`. Not a partial pass, not a soft fail — SPF authorised the IP, DKIM verified, and DMARC found the authenticated domain perfectly aligned with the visible `From:`. A filter tuned to reject authentication failures delivers this message, correctly.
+
+It is also a phish, and the reason is one character wide. Read the domain in all four places it appears: `meridian-freight.test`, not `meridian.test`. The attacker did not spoof anything — they registered a domain, published proper SPF and DKIM for it, and sent authentic mail from it. Every check the stack performs was answered honestly.
+
+This is the case [[Phishing & Spear-Phishing Methodology]] contrasts with the misaligned one, and the pair is worth holding together. There, `From:` said `meridian.test` while the authenticated domain said otherwise, and DMARC alignment is exactly the control that catches it. Here nothing is misaligned, so alignment has nothing to object to. The two examples mark the boundary of what the record stack can do: it can prove which domain sent a message, and it can never tell you whether that domain should be trusted.
+
+So the header answers a narrow question precisely. `dmarc=pass` reads as reassurance and means only "the sender controls the domain they claimed" — which is worth knowing, and is not the question the recipient was actually asking.
 
 **The deliberate break:** SPF, DKIM and DMARC read as "the anti-phishing controls" — publish the records, reach `p=reject`, and spoofed mail stops arriving.
 
@@ -127,7 +151,7 @@ They authenticate **the domain in the `From` header and nothing else**. A lookal
 
 ## Security Implications
 
-**Spoofing is trivial without the authentication stack, and these records are the defense.** An attacker sends mail claiming `From: ceo@example.com`. If example.com publishes no SPF, DKIM, or DMARC, receiving servers have no basis to reject it, and it lands looking authentic. Publishing DMARC at `p=reject` with aligned SPF and DKIM is what prevents direct domain impersonation. This is a configuration control living entirely in DNS, and its absence is a common, high-impact finding.
+**Spoofing is trivial without the authentication stack, and these records are the defense.** An attacker sends mail claiming `From: d.varga@meridian.test`. If `meridian.test` publishes no SPF, DKIM, or DMARC, receiving servers have no basis to reject it, and it lands looking authentic — and unlike the lookalike-domain case above, this one names the real domain, so nothing in the message gives a careful reader anything to notice. Publishing DMARC at `p=reject` with aligned SPF and DKIM is what prevents direct domain impersonation. This is a configuration control living entirely in DNS, and its absence is a common, high-impact finding.
 
 **The authentication stack does not stop all phishing.** It prevents spoofing of *your exact domain*. It does nothing about **lookalike domains** (`example-support.com`), display-name spoofing (a friendly name of "CEO" from an unrelated address), or compromised legitimate accounts sending real authenticated mail. DMARC is necessary and insufficient — it closes one specific, important gap and must be paired with user awareness and content filtering.
 
