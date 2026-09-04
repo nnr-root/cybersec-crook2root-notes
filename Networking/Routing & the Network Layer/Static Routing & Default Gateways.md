@@ -67,7 +67,7 @@ The `proto static` marker distinguishes these from routes the kernel derived or 
 
 Staying written is the failure. A dynamic protocol **withdraws** a route when the path dies; a static route has no idea the path died and keeps sending traffic into it. The result is not an error message, it is a black hole: packets leave, nothing comes back, and every device reports itself healthy. Static routing does not remove failure modes, it converts loud ones into silent ones.
 
-**How you'd spot it:** the route is present in the table and the next hop does not answer. `ip route get` will happily return a path that goes nowhere — a static route is a claim, not a measurement.
+**How you'd spot it:** ask the two questions separately, because the box will only ever answer the first one on its own. `ip route get` answers *is there a route*, and it will happily return a complete path into a dead gateway. `ip neigh show` answers *is the next hop actually there*, and a gateway that has stopped answering ARP reads `FAILED` or `INCOMPLETE` where a healthy one reads `REACHABLE`. A route that resolves beside a neighbour that will not is the signature of a static route outliving its path — a static route is a claim, not a measurement, and the neighbour table is where the measurement lives.
 
 ## When Static Is the Right Answer
 
@@ -88,10 +88,14 @@ The defining advantages are predictability and zero protocol attack surface: a s
 **Blackhole and null routes — a double-edged tool.** A route can deliberately point traffic at a discard interface:
 
 ```bash
-sudo ip route add 203.0.113.66/32 blackhole
+sudo ip route add 198.51.100.9/32 blackhole
 ```
 
-This silently drops all traffic to that destination. It is a legitimate and powerful control — dropping traffic to a known-malicious address, or absorbing a flood aimed at one victim address so the rest of the network survives. But the same mechanism, configured in error or by an attacker, silently discards legitimate traffic with no error message, producing an outage that is invisible in reachability tests from elsewhere. Blackhole routes are the intended tool for one job and a stealthy denial-of-service for another.
+This silently drops all traffic to that destination. Note carefully which address goes in the route: the destination, always — never the source. On Meridian's edge that command stops internal hosts from *reaching* `198.51.100.9`, which is how a null route is used to cut a compromised workstation off from its C2 endpoint. Stopping traffic arriving *from* that address is a different tool entirely — a filter, not a route — because forwarding decisions are made on destination alone.
+
+The mirror use faces the other way. To absorb a flood aimed at `203.0.113.20`, an operator asks the *upstream* provider to blackhole `203.0.113.20/32` — the victim's own address — so the flood is discarded a hop away instead of saturating the link. That is remotely triggered blackholing, and it works by deliberately completing the outage for one address to save the other two hundred and fifty-four. Learners routinely put the attacker's address in that route; upstream has no way to act on it.
+
+Either way, the same mechanism configured in error or by an attacker silently discards legitimate traffic with no error message, producing an outage invisible to reachability tests from elsewhere. Blackhole routes are the intended tool for one job and a stealthy denial-of-service for another.
 
 **Manual scaling collapse.** Every network reachable through a non-default path needs its own static route on every device that must reach it. As networks multiply, the number of routes to maintain by hand grows until an omission or a typo is inevitable. A single wrong next hop creates a silent partial outage.
 
@@ -101,6 +105,7 @@ Diagnose a dead static next hop:
 
 ```bash
 ip route get 10.20.0.5
+ip neigh show 10.10.10.254
 ping -c 2 10.10.10.254
 ```
 
@@ -108,11 +113,12 @@ Expected excerpt when the next hop is down:
 
 ```text
 10.20.0.5 via 10.10.10.254 dev eth0 src 10.10.10.14
+10.10.10.254 dev eth0 FAILED
 --- 10.10.10.254 ping statistics ---
 2 packets transmitted, 0 received, 100% packet loss
 ```
 
-The route resolves perfectly — the configuration is intact — but the next hop is unreachable. The route's health and the next hop's health are different facts, and static routing conflates them because it never checks.
+Read those three answers in order. The route resolves perfectly, so the configuration is intact. The neighbour entry reads `FAILED`, so the gateway is not answering ARP on the segment — the box asked for its MAC address and got silence. The ping then confirms what the neighbour table already said. The route's health and the next hop's health are different facts, and static routing conflates them because it never checks; the neighbour table is the only place on the host where the second fact is recorded.
 
 ## Security Implications
 
