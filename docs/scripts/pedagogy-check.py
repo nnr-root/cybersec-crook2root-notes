@@ -170,7 +170,12 @@ IPV4 = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 PROTECTED_IPS = {
     "0.0.0.0",            # wildcard bind
     "169.254.169.254",    # the real cloud-metadata address
-    "8.8.8.8", "8.8.4.4", "1.1.1.1", "9.9.9.9",   # real public resolvers, named as such
+    # Real public resolvers. Permitted because a note about DNS, DoH or DoT has
+    # to be able to name them — the identity is the lesson. Note that this check
+    # cannot verify the "named as such" part: it will also pass one of these
+    # standing in for "somewhere on the internet", which is not what the
+    # exemption is for. A generic external destination should be 192.0.2.x.
+    "8.8.8.8", "8.8.4.4", "1.1.1.1", "9.9.9.9",
     "255.255.255.255",    # limited broadcast
 }
 def _thread_ok(ip):

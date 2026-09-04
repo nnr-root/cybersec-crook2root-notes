@@ -152,7 +152,7 @@ real single-vendor fleet would look.
 
 | MAC | Host |
 |:--|:--|
-| `00:00:5E:00:53:01` | VLAN 10 gateway (10.10.10.1) |
+| `00:00:5E:00:53:01` | VLAN 10 gateway (10.10.10.1) — the VRRP **virtual** address, not a physical router |
 | `00:00:5E:00:53:0E` | `WS-014` |
 | `00:00:5E:00:53:1E` | `WS-030` |
 | `00:00:5E:00:53:20` | `DC01` |
@@ -179,6 +179,16 @@ demonstrates VLANs, two demonstrate trunking, spanning tree and hopping.
 |:--|:--|:--|
 | `SW-01` | `00:00:5E:00:53:F1` | Access switch. Carries VLANs 10, 20 and 30 |
 | `SW-02` | `00:00:5E:00:53:F2` | Second access switch, same VLANs, joined to `SW-01` by a trunk |
+
+### Routers on VLAN 10
+
+`10.10.10.1` is a **virtual** address. Two physical routers, `10.10.10.2` and
+`10.10.10.3`, present it between them under VRRP, which is what the first-hop
+redundancy note describes; hosts are configured with `.1` and never see either.
+Where a note needs a second or third next hop on the segment — a static route
+to the DMZ, a longest-prefix demonstration with several overlapping routes —
+it uses `10.10.10.253` and `10.10.10.254`, which are additional routers on the
+same wire. Nothing else on VLAN 10 forwards.
 
 Ports are named `Gi0/<n>`. Access ports live in `Gi0/1`–`Gi0/23`. The two
 switches are joined by **two** trunks, `Gi0/47` and `Gi0/48`, so either cable

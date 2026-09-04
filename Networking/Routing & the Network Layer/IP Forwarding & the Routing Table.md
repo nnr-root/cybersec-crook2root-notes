@@ -67,9 +67,9 @@ Consider a destination `10.10.20.50` against this table:
 
 ```text
 0.0.0.0/0        via 10.10.10.1     (prefix length 0)
-10.10.0.0/16     via 10.10.10.200   (prefix length 16)
+10.10.0.0/16     via 10.10.10.253   (prefix length 16)
 10.10.20.0/24    via 10.10.10.254   (prefix length 24)
-10.10.20.50/32   via 10.10.10.99    (prefix length 32)
+10.10.20.50/32   via 10.10.10.2     (prefix length 32)
 ```
 
 All four match `10.10.20.50` — the default matches everything, `/16` matches all of `10.10.x`, `/24` matches `10.10.20.x`, and `/32` matches this exact host. Longest-prefix match selects the `/32`. Ask the kernel to confirm the decision without sending anything:
@@ -81,16 +81,16 @@ ip route get 10.10.20.50
 Expected excerpt:
 
 ```text
-10.10.20.50 via 10.10.10.99 dev eth0 src 10.10.10.14
+10.10.20.50 via 10.10.10.2 dev eth0 src 10.10.10.14
 ```
 
 `ip route get` is the single most valuable routing diagnostic: it reports the exact decision the kernel will make for a destination, resolving all the overlapping routes for you. Trace several destinations and the rule becomes concrete:
 
 ```text
-10.10.20.50   -> via .99   (matched the /32, most specific)
-10.10.20.77   -> via .254  (matched the /24)
-10.10.99.5    -> via .200  (matched the /16)
-8.8.8.8       -> via .1    (matched only the default)
+10.10.20.50   -> via .2     (matched the /32, most specific)
+10.10.20.77   -> via .254   (matched the /24)
+10.10.99.5    -> via .253   (matched the /16)
+192.0.2.10    -> via .1     (matched only the default)
 ```
 
 ```mermaid

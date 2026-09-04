@@ -87,13 +87,13 @@ ss -tunp              # my connections and listeners — what am I actually talk
 `ip route get <destination>` is the most under-used and most valuable, because it reports the exact decision the kernel will make for a destination without sending anything:
 
 ```bash
-ip route get 8.8.8.8
+ip route get 192.0.2.10
 ```
 
 Expected excerpt:
 
 ```text
-8.8.8.8 via 10.10.10.1 dev eth0 src 10.10.10.14 uid 1000
+192.0.2.10 via 10.10.10.1 dev eth0 src 10.10.10.14 uid 1000
 ```
 
 This answers "how will my host actually try to reach this?" — which gateway, which interface, which source address — turning a routing question into a definite answer before any packet leaves. It is the fastest way to catch a wrong mask, a missing route, or a poisoned default.
