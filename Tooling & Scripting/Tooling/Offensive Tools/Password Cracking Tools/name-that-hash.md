@@ -8,6 +8,9 @@ Color: "#708090"
 
 # name-that-hash
 
+> [!abstract] Note of [[Password Cracking Tools]]
+> name-that-hash inspects a hash's structure and returns a *ranked* list of likely types, each annotated with the exact Hashcat mode and John format to run next. This note covers why it reasons about format rather than matching known hashes, why a bare 32-hex value is genuinely ambiguous, and why the type it reports is a hardening verdict the defender should read before any crack.
+
 name-that-hash (`nth`) answers the very first question of any cracking job: **"what kind of hash is this?"** Before John or Hashcat can attack a value, you must tell them the algorithm — and guessing wrong wastes hours or silently fails. `nth` inspects a hash's structure and returns a ranked list of likely types, each annotated with the exact Hashcat mode and John format to use next.
 
 > [!warning] Identification is safe; cracking is scoped
@@ -66,6 +69,14 @@ Most Likely
 **How you'd spot it:** a crack that runs a long time at a steady rate and recovers nothing has the shape of a wrong mode, not a strong password. Cross-check by hashing a known value in the candidate algorithm and comparing the format — and record each hash's source at the moment you collect it, because that is the fact that resolves the ambiguity later.
 
 Edge cases worth knowing: salted formats (`$id$salt$hash`) are self-describing and unambiguous; raw hashes are not. Truncated or encoded hashes (base64 vs hex) change the length signal — decode first. And `nth` reports *format*, never *strength*: it will happily identify a bcrypt hash it could never help you crack.
+
+## Security Implications
+
+**The ranked type is a storage verdict, read before any cracking.** When `nth` reports `bcrypt, HC: 3200` the defender has done the right thing and no run is worth starting; when it reports raw MD5 or NTLM, the weakness is already established. Reasoning about format rather than matching a database means it delivers that verdict even on values it has never seen — the security signal is in the shape.
+
+**Ranking is what turns identification into fewer wasted, and fewer noisy, runs.** hash-identifier lists matches flat; `nth` orders them by likelihood and attaches the exact `-m` and JtR format, so the operator starts with the probable mode rather than churning through a wrong one. A wrong mode is not just wasted time — it is a long steady run that recovers nothing and reads as a strong password when the real fault was the mode.
+
+**A recognised Kerberoast or PMKID line is a bridge, and a finding.** `nth` naming a `$krb5tgs$` ticket points straight at `hashcat -m 13100` from [[Impacket]]'s `GetUserSPNs`, and its appearance at all means a service account's ticket was obtainable — a finding independent of whether it cracks. Salted formats are self-describing and unambiguous; the dangerous ambiguity is only ever the raw, unsalted, common-length hash, which is itself the weakness.
 
 ## Summary
 

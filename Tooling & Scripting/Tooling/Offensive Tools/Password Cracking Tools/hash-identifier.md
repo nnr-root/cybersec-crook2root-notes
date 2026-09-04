@@ -8,6 +8,9 @@ Color: "#708090"
 
 # hash-identifier
 
+> [!abstract] Note of [[Password Cracking Tools]]
+> hash-identifier reads a hash's structural fingerprint — prefix, length, charset — and lists the algorithms it could be, with no sense of which is likeliest. This note covers why that ambiguity is the expected output rather than a fault, why provenance breaks the tie, and why the identified type is itself a hardening verdict before a single crack is attempted.
+
 hash-identifier (and the related `hashid`) is the classic interactive hash-type guesser. You paste a hash, it prints the algorithms whose structure matches. It predates and overlaps **name-that-hash** — knowing both matters because they disagree in useful ways, and disagreement is a signal about how confident you can be in the identification.
 
 > [!warning] Identification is safe; cracking is scoped
@@ -68,6 +71,14 @@ operator@lab:~$ hashid '5f4dcc3b5aa765d61d8327deb882cf99'
 **How you'd spot it:** ambiguity is the expected output here, not a fault. When it lists MD5, DCC and NTLM for one value, provenance breaks the tie rather than the tool — a web application database points to MD5, a domain controller dump points to NTLM. If you cannot say where the hash came from, that is the thing to go and fix first.
 
 Note `hashid` reads from files/stdin (scriptable) while `hash-identifier` is interactive only — for automation, `hashid` or name-that-hash; for a quick manual check, either.
+
+## Security Implications
+
+**Identification is completely passive — it touches nothing and leaves no trace.** You are reading a string you already hold, so there is no target interaction, no telemetry, and no scope concern in the identification step itself. The scoped, logged activity is everything downstream of it.
+
+**The identified type is a hardening verdict on its own.** A dump that hash-identifier calls raw MD5, SHA-1 or NTLM is a finding before anything is cracked: those are fast, and fast-at-rest is the weakness. A value it calls bcrypt or argon2 is a control working as intended. The type tells you the storage decision the defender made, which is often more reportable than whether any single password falls.
+
+**Misidentification is the real cost, and it is an attacker's own-goal.** Running the wrong Hashcat mode against a misidentified hash churns for hours and cracks nothing, looking exactly like a strong password. The tool narrows a field; it never decides. Provenance — a web app database points to MD5, a domain controller dump to NTLM — is what resolves an ambiguous 32-hex value, which is why recording where each hash came from is a workflow step, not a nicety.
 
 ## Summary
 
