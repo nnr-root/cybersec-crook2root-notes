@@ -26,12 +26,12 @@ flowchart LR
 
 ## 🗺️ Zero-to-Mastery Learning Path
 
-1. [[IP Forwarding & the Routing Table]]
-2. [[Static Routing & Default Gateways]]
-3. [[Interior Gateway Protocols]]
-4. [[BGP & Internet Routing]]
-5. [[First-Hop Redundancy & Gateway Failover]]
-6. [[Routing Security & Path Validation]]
+1. [[IP Forwarding & the Routing Table]] — trace how a packet matches a prefix and exits on the correct interface
+2. [[Static Routing & Default Gateways]] — configure manual routes; know when they are right and when they break
+3. [[Interior Gateway Protocols]] — compare OSPF and EIGRP convergence, metric, and failure-domain design
+4. [[BGP & Internet Routing]] — understand AS relationships, route advertisement, and prefix-hijack risk
+5. [[First-Hop Redundancy & Gateway Failover]] — deploy HSRP, VRRP, or GLBP for transparent default-gateway failure
+6. [[Routing Security & Path Validation]] — apply prefix filters, RPKI, and route authentication to defeat hijacks
 
 ---
 > 🔼 Up: [[Networking]]

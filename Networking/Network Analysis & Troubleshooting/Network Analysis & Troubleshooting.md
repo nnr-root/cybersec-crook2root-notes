@@ -26,12 +26,12 @@ flowchart LR
 
 ## 🗺️ Zero-to-Mastery Learning Path
 
-1. [[Packet Capture & Analysis]]
-2. [[Structured Network Troubleshooting]]
-3. [[Traffic Analysis & Flow Inspection]]
-4. [[Performance & Latency Analysis]]
-5. [[Connectivity Diagnostics]]
-6. [[Protocol Debugging & Deep Inspection]]
+1. [[Packet Capture & Analysis]] — capture with tcpdump and Wireshark; read frame, IP, and transport headers
+2. [[Structured Network Troubleshooting]] — apply the OSI divide-and-conquer methodology to any unexplained failure
+3. [[Traffic Analysis & Flow Inspection]] — derive behaviour from NetFlow, sFlow, and aggregated statistics without deep inspection
+4. [[Performance & Latency Analysis]] — measure RTT, jitter, retransmit rate, and queue depth to find bottlenecks
+5. [[Connectivity Diagnostics]] — use ping, traceroute, and pathping to localise a break
+6. [[Protocol Debugging & Deep Inspection]] — decode TLS, DNS, and application payloads to root-cause protocol misbehaviour
 
 ---
 > 🔼 Up: [[Networking]]

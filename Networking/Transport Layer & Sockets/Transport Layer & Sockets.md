@@ -26,12 +26,12 @@ flowchart LR
 
 ## 🗺️ Zero-to-Mastery Learning Path
 
-1. [[Ports & Sockets]]
-2. [[TCP Connections & State]]
-3. [[TCP Reliability & Congestion Control]]
-4. [[UDP & Connectionless Transport]]
-5. [[QUIC & Modern Transport]]
-6. [[Transport Layer Threats & Controls]]
+1. [[Ports & Sockets]] — map well-known and ephemeral ports to processes; read socket state
+2. [[TCP Connections & State]] — trace the three-way handshake, four-way teardown, and the half-open surface
+3. [[TCP Reliability & Congestion Control]] — understand retransmission, windowing, and why loss shapes scanning speed
+4. [[UDP & Connectionless Transport]] — contrast stateless delivery; identify the amplification and spoofing exposure
+5. [[QUIC & Modern Transport]] — follow HTTP/3's encrypted 0-RTT sessions and the visibility gap they create
+6. [[Transport Layer Threats & Controls]] — classify SYN flood, RST injection, and session hijack; apply mitigations
 
 ---
 > 🔼 Up: [[Networking]]

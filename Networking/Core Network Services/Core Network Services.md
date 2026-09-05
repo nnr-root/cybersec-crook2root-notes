@@ -26,12 +26,12 @@ flowchart LR
 
 ## 🗺️ Zero-to-Mastery Learning Path
 
-1. [[DNS Resolution & Records]]
-2. [[DNS Security & Encrypted Transports]]
-3. [[Local Name Resolution & Service Discovery]]
-4. [[Network Time Synchronization]]
-5. [[Email Transport Protocols]]
-6. [[Network Management Protocols]]
+1. [[DNS Resolution & Records]] — follow a query through the resolver hierarchy; read every record type
+2. [[DNS Security & Encrypted Transports]] — add DNSSEC, DoT, and DoH; defend the query channel
+3. [[Local Name Resolution & Service Discovery]] — understand mDNS, NetBIOS, LLMNR and the spoofing surface each creates
+4. [[Network Time Synchronization]] — explain NTP stratum, drift, and the authentication gap that enables attacks
+5. [[Email Transport Protocols]] — trace SMTP, IMAP, and POP3; locate the forgery and interception surfaces
+6. [[Network Management Protocols]] — audit SNMP, ICMP, and CDP/LLDP as both management and reconnaissance targets
 
 ---
 > 🔼 Up: [[Networking]]

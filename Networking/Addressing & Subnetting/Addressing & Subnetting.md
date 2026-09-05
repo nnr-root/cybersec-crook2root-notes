@@ -26,12 +26,12 @@ flowchart LR
 
 ## 🗺️ Zero-to-Mastery Learning Path
 
-1. [[IPv4 Addressing]]
-2. [[Subnetting & CIDR]]
-3. [[VLSM & Route Summarization]]
-4. [[IPv6 Addressing]]
-5. [[Address Assignment & DHCP]]
-6. [[NAT & Address Translation]]
+1. [[IPv4 Addressing]] — decode 32-bit dotted-decimal notation, classes, and special ranges
+2. [[Subnetting & CIDR]] — split address space with prefix lengths and calculate host ranges
+3. [[VLSM & Route Summarization]] — allocate differently-sized subnets and aggregate routes efficiently
+4. [[IPv6 Addressing]] — navigate 128-bit addresses, scopes, EUI-64, and dual-stack coexistence
+5. [[Address Assignment & DHCP]] — trace how hosts obtain addresses and the attack surface that creates
+6. [[NAT & Address Translation]] — understand rewriting at the boundary and the visibility it removes
 
 ---
 > 🔼 Up: [[Networking]]
