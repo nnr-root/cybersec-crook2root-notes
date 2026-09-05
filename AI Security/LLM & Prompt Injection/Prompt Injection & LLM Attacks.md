@@ -11,6 +11,7 @@ tags:
 Domain:
   - "[[LLM & Prompt Injection]]"
 Color: "#F032E6"
+verified: 2026-09-05
 ---
 
 # Prompt Injection & LLM Attacks
