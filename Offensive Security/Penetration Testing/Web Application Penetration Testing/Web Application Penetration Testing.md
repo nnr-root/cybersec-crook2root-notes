@@ -27,13 +27,14 @@ flowchart LR
 ## 🗺️ Zero-to-Mastery Learning Path
 
 1. [[OWASP Web Testing Methodology]]
-2. [[Web Identity & Access Control]]
-3. [[Web Injection Testing]]
-4. [[Client-Side Web Security]]
-5. [[HTTP Architecture & Advanced Web Attacks]]
-6. [[File, Parser & Serialization Security]]
-7. [[Business Logic & Workflow Security]]
-8. [[CMS & Framework Security Testing]]
+2. [[Whitebox Source-Code Review Methodology]]
+3. [[Web Identity & Access Control]]
+4. [[Web Injection Testing]]
+5. [[Client-Side Web Security]]
+6. [[HTTP Architecture & Advanced Web Attacks]]
+7. [[File, Parser & Serialization Security]]
+8. [[Business Logic & Workflow Security]]
+9. [[CMS & Framework Security Testing]]
 
 ## Practical artifact
 

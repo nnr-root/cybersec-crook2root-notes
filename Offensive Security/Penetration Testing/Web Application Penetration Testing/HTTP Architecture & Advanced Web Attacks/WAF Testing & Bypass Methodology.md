@@ -12,7 +12,7 @@ Color: "#DC143C"
 > Testing a WAF means probing it with attack-shaped payloads. Do so only against in-scope systems, and remember: a WAF bypass is a *finding about the WAF*, not a licence to exploit the app behind it. Prove with benign markers.
 
 ## Parent Learning Order
-Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WAF Testing & Bypass Methodology
+Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WAF Testing & Bypass Methodology -> GraphQL Security Testing
 
 ## Testing the Filter, Not Just the App
 

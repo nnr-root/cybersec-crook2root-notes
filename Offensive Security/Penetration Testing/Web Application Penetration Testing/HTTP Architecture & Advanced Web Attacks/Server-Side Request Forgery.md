@@ -12,7 +12,7 @@ Color: "#DC143C"
 > SSRF makes a server reach internal systems the attacker cannot. Prove it only against a benign internal marker you place (a local canary service), never a real internal system or cloud metadata endpoint. Test only in-scope applications.
 
 ## Parent Learning Order
-Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WAF Testing & Bypass Methodology
+Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WAF Testing & Bypass Methodology -> GraphQL Security Testing
 
 ## Making the Server Fetch on Your Behalf
 

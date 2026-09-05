@@ -12,7 +12,7 @@ Color: "#DC143C"
 > WordPress powers a large share of the web, so it is heavily targeted — test only in-scope installations, throttle user enumeration to avoid lockouts, and stop at proof. This is the worked example of the framework methodology.
 
 ## Parent Learning Order
-Framework & CMS Testing Methodology -> WordPress Security Testing
+Framework & CMS Testing Methodology -> WordPress Security Testing -> Dependency Confusion & Supply-Chain Attacks
 
 ## The World's Most-Attacked CMS
 

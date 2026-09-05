@@ -16,7 +16,7 @@ Color: "#DC143C"
 > A systematic web assessment maps architecture, identities, data flows, controls, and abuse cases before testing vulnerability classes. OWASP provides coverage guidance; professional testing adapts that guidance to business context and proves root causes safely.
 
 ## Parent Learning Order
-OWASP Web Testing Methodology -> Web Identity & Access Control -> Web Injection Testing -> Client-Side Web Security -> HTTP Architecture & Advanced Web Attacks -> File, Parser & Serialization Security -> Business Logic & Workflow Security -> CMS & Framework Security Testing
+OWASP Web Testing Methodology -> Whitebox Source-Code Review Methodology -> Web Identity & Access Control -> Web Injection Testing -> Client-Side Web Security -> HTTP Architecture & Advanced Web Attacks -> File, Parser & Serialization Security -> Business Logic & Workflow Security -> CMS & Framework Security Testing
 
 ## Testing model
 

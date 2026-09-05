@@ -21,6 +21,7 @@ flowchart LR
 2. [[HTTP Request Smuggling]]
 3. [[Web Cache Attacks]]
 4. [[WAF Testing & Bypass Methodology]]
+5. [[GraphQL Security Testing]]
 
 ---
 > 🔼 Up: [[Web Application Penetration Testing]]

@@ -12,7 +12,7 @@ Color: "#DC143C"
 > Cache attacks can serve poisoned content to *other users* or leak *other users'* private data. Prove them in a lab you build with synthetic data, and treat production testing as high-risk requiring explicit authorization. Use benign markers only.
 
 ## Parent Learning Order
-Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WAF Testing & Bypass Methodology
+Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WAF Testing & Bypass Methodology -> GraphQL Security Testing
 
 ## Attacking the Thing That Serves Many Users One Copy
 

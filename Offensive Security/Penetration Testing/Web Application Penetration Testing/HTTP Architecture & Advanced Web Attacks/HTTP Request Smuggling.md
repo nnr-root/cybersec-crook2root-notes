@@ -12,7 +12,7 @@ Color: "#DC143C"
 > Smuggling poisons the request stream and can affect *other users'* requests. It is high-risk to test in production. Prove the parsing disagreement in a lab you build, and treat any production test as requiring explicit, careful authorization. Prove with benign markers only.
 
 ## Parent Learning Order
-Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WAF Testing & Bypass Methodology
+Server-Side Request Forgery -> HTTP Request Smuggling -> Web Cache Attacks -> WAF Testing & Bypass Methodology -> GraphQL Security Testing
 
 ## When Two Servers Disagree About Where a Request Ends
 
