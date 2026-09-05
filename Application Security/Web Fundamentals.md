@@ -9,6 +9,7 @@ tags:
 Domain:
   - "[[Web Security]]"
 Color: "#911EB4"
+verified: 2026-09-05
 ---
 
 # 🕸️ Web Fundamentals

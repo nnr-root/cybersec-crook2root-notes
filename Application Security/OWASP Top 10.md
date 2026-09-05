@@ -9,6 +9,7 @@ tags:
 Domain:
   - "[[Standards & API]]"
 Color: "#911EB4"
+verified: 2026-09-05
 ---
 
 # 🔟 OWASP Top 10
