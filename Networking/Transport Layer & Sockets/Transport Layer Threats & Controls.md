@@ -9,6 +9,7 @@ tags:
 Domain:
   - "[[Transport Layer & Sockets]]"
 Color: "#42D4F4"
+verified: 2026-09-05
 ---
 
 # 🧨 Transport Layer Threats & Controls

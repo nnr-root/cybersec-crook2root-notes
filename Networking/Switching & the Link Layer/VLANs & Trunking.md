@@ -10,6 +10,7 @@ visual-verified: 2026-09-02
 Domain:
   - "[[Switching & the Link Layer]]"
 Color: "#42D4F4"
+verified: 2026-09-05
 ---
 
 # 🗂️ VLANs & Trunking

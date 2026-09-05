@@ -9,6 +9,7 @@ tags:
 Domain:
   - "[[OS Theory and Architecture]]"
 Color: "#FFA500"
+verified: 2026-09-05
 ---
 
 # 🧠 I/O & File System Paradigms

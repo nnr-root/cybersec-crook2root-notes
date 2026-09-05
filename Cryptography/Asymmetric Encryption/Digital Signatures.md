@@ -9,6 +9,7 @@ tags:
 Domain:
   - "[[Asymmetric Encryption]]"
 Color: "#FFE119"
+verified: 2026-09-05
 ---
 
 # ✍️ Digital Signatures

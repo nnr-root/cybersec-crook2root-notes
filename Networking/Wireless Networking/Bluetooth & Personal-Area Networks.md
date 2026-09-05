@@ -13,6 +13,7 @@ thread-exempt:
   - "4C:87:5D: same, a second BLE device address"
   - "6F:2C:19: same, a third BLE device address"
 Color: "#42D4F4"
+verified: 2026-09-05
 ---
 
 # 🎧 Bluetooth & Personal-Area Networks

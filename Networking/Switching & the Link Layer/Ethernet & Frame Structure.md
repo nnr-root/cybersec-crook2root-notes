@@ -15,6 +15,7 @@ thread-exempt:
   - "8a:1f: kernel-generated locally administered MAC — the note teaches the LA bit from this exact hex digit, and 00:00:5E has it clear"
   - "6e:9a: the veth pair's other end, same LA-bit lesson"
   - "02:11: the spoofed address in the MAC-spoofing demonstration — 02 carries the LA bit deliberately"
+verified: 2026-09-05
 ---
 
 # 🧬 Ethernet & Frame Structure

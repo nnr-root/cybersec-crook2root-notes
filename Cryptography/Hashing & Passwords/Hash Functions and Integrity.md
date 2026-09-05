@@ -9,6 +9,7 @@ tags:
 Domain:
   - "[[Hashing & Passwords]]"
 Color: "#FFE119"
+verified: 2026-09-05
 ---
 
 # #️⃣ Hash Functions & Integrity

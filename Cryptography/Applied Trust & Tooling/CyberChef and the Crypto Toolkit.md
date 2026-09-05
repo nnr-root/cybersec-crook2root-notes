@@ -10,6 +10,7 @@ tags:
 Domain:
   - "[[Applied Trust & Tooling]]"
 Color: "#FFE119"
+verified: 2026-09-05
 ---
 
 # 🧰 CyberChef & the Crypto Toolkit

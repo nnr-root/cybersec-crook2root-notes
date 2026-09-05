@@ -9,6 +9,7 @@ tags:
 Domain:
   - "[[Windows]]"
 Color: "#FFA500"
+verified: 2026-09-05
 ---
 
 # 🪟 Windows Command Prompt & Batch

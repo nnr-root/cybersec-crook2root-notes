@@ -11,6 +11,7 @@ Domain:
 thread-exempt:
   - "6a:11:04: the rogue AP's BSSID — the locally-administered bit in its first octet is the lesson, and 00:00:5E has that bit clear"
 Color: "#42D4F4"
+verified: 2026-09-05
 ---
 
 # 🛰️ Wireless Reconnaissance & Defense

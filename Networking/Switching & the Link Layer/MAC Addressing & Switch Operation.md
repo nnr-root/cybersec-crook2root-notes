@@ -13,6 +13,7 @@ thread-exempt:
   - "00:50:56: named as a second real vendor OUI in the same comparison"
 Color: "#42D4F4"
 visual-verified: 2026-09-02
+verified: 2026-09-05
 ---
 
 # 🎚️ MAC Addressing & Switch Operation

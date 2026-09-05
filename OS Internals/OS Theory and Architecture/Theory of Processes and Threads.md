@@ -9,6 +9,7 @@ tags:
 Domain:
   - "[[OS Theory and Architecture]]"
 Color: "#FFA500"
+verified: 2026-09-05
 ---
 
 # 🧠 Theory of Processes & Threads

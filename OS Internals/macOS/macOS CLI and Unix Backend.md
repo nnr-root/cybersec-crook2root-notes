@@ -9,6 +9,7 @@ tags:
 Domain:
   - "[[macOS]]"
 Color: "#FFA500"
+verified: 2026-09-05
 ---
 
 # 🍎 macOS CLI & Unix Backend

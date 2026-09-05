@@ -9,6 +9,7 @@ tags:
 Domain:
   - "[[Encoding & Obfuscation]]"
 Color: "#FFE119"
+verified: 2026-09-05
 ---
 
 # 🔤 Base64 & the Base Family

@@ -11,6 +11,7 @@ Domain:
 thread-exempt:
   - "01:80:c2:00:00:03: the IEEE 802.1X PAE group address — a protocol constant the note names, not a host"
 Color: "#42D4F4"
+verified: 2026-09-05
 ---
 
 # 🎟️ Network Access Control

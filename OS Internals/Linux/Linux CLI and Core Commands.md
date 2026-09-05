@@ -9,6 +9,7 @@ tags:
 Domain:
   - "[[Linux]]"
 Color: "#FFA500"
+verified: 2026-09-05
 ---
 
 # ⌨️ Linux CLI & Core Commands

@@ -11,6 +11,7 @@ Domain:
 thread-exempt:
   - "10.113.0.203: not an address — the reversed in-addr.arpa name for 203.0.113.10, which is edge"
 Color: "#42D4F4"
+verified: 2026-09-05
 ---
 
 # 🔎 DNS Resolution & Records

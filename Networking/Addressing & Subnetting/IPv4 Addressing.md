@@ -14,6 +14,7 @@ thread-exempt:
   - "192.168.0.0: same, the third RFC 1918 range"
   - "100.64.0.0: the RFC 6598 carrier-grade NAT block, named as such"
 Color: "#42D4F4"
+verified: 2026-09-05
 ---
 
 # 🏷️ IPv4 Addressing

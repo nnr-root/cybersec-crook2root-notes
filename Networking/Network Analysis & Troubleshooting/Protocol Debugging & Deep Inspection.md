@@ -9,6 +9,7 @@ tags:
 Domain:
   - "[[Network Analysis & Troubleshooting]]"
 Color: "#42D4F4"
+verified: 2026-09-05
 ---
 
 # 🔬 Protocol Debugging & Deep Inspection

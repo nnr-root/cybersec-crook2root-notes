@@ -12,6 +12,7 @@ thread-exempt:
   - "A4:2B:8C: a real vendor OUI — the note teaches rogue-AP detection by comparing it against a prefix in no registry"
   - "00:11:22: the rogue BSSID, deliberately a prefix that appears in no vendor registry"
 Color: "#42D4F4"
+verified: 2026-09-05
 ---
 
 # 😈 Wireless Attacks & Rogue Infrastructure

@@ -11,6 +11,7 @@ Domain:
 thread-exempt:
   - "100.64.0.0: the RFC 6598 carrier-grade NAT block — the note explains what that range means"
 Color: "#42D4F4"
+verified: 2026-09-05
 ---
 
 # 🔁 NAT & Address Translation

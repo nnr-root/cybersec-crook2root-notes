@@ -9,6 +9,7 @@ tags:
 Domain:
   - "[[Core Network Services]]"
 Color: "#42D4F4"
+verified: 2026-09-05
 ---
 
 # 🏠 Local Name Resolution & Service Discovery

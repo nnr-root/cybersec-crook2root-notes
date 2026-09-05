@@ -11,6 +11,7 @@ thread-exempt:
 Domain:
   - "[[Routing & the Network Layer]]"
 Color: "#42D4F4"
+verified: 2026-09-05
 ---
 
 # 🔀 First-Hop Redundancy & Gateway Failover
