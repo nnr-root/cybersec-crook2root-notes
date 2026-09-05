@@ -21,7 +21,7 @@ Color: "#DC143C"
 > The lab injects a benign `write` into a process *you started* using the same primitive (ptrace) a debugger uses. Injection and syscall tradecraft are studied to test EDR visibility — never applied to processes or systems you don't own.
 
 ## Parent Learning Order
-AV, EDR & Telemetry Evasion Testing -> Payload Engineering & Obfuscation -> Process Injection & Direct Syscalls
+AV, EDR & Telemetry Evasion Testing -> Payload Engineering & Obfuscation -> Process Injection & Direct Syscalls -> In-Memory Evasion — Unhooking, Sleep Masking & Call-Stack Spoofing -> In-Memory Execution — Reflective Loading & Beacon Object Files
 
 ## Running Code Inside Another Process, Quietly
 
@@ -64,6 +64,63 @@ flowchart TD
 ```
 
 The arms race: EDR moved to **kernel callbacks** and **ETW Threat Intelligence** precisely because userland hooks are bypassable — so direct syscalls evade the hook but not necessarily the kernel-level telemetry.
+
+## Indirect Syscalls: defeating the "syscall outside ntdll" detector
+
+Direct syscalls (previous section) skip hooked `ntdll` functions by issuing
+the `syscall` instruction from the attacker's own code. That creates a new
+anomaly: the kernel sees a `syscall` whose return address points *outside*
+`ntdll`. A detector watching for system calls that don't originate in `ntdll`'s
+address range catches direct syscalls exactly as easily as it catches the hooked
+path — the call simply moved from "suspicious because it went through the hook"
+to "suspicious because it didn't come from `ntdll` at all."
+
+**Indirect syscalls** close that gap. Instead of emitting a `syscall` instruction
+in shellcode, the stub **jumps into the `syscall` instruction that already exists
+inside `ntdll`** — using a pointer calculated at runtime:
+
+```text
+# Direct syscall stub (attacker's memory, outside ntdll):
+  mov r10, rcx
+  mov eax, <syscall number>
+  syscall                   ; <- return address points to attacker's page
+
+# Indirect syscall stub (attacker's memory):
+  mov r10, rcx
+  mov eax, <syscall number>
+  jmp [ntdll!NtAllocateVirtualMemory+0x12]   ; jump INTO ntdll's syscall instr
+                            ; <- return address now points inside ntdll
+```
+
+From the kernel's perspective, and from any telemetry watching the syscall
+origin address, the transition looks like it came from `ntdll` — because the
+`syscall` instruction that executed *is* the one in `ntdll`. The attacker's stub
+never actually reaches the kernel; it hands off one instruction before the
+boundary.
+
+**Finding the syscall number at runtime.** Because Microsoft changes syscall
+numbers across OS builds (they are not a stable ABI), an indirect-syscall stub
+must resolve the number dynamically rather than hardcoding it. Three approaches:
+
+| Technique | Mechanism | Notes |
+|---|---|---|
+| **HellsGate** | Read `eax` from the function's own prologue in `ntdll` | Works on unhooked functions; hook overwrites the `mov eax, N` |
+| **HalosGate** | If hooked, walk adjacent syscall stubs ±N to find a clean one | Resilient to partial hooking |
+| **SysWhispers3** | Compile-time + runtime: generates stubs that locate syscall numbers from `ntdll` at load time | Common toolkit implementation |
+
+```mermaid
+flowchart TD
+    S["Attacker stub: mov r10,rcx; mov eax,N; jmp ptr"] --> J["jmp resolves to ntdll+0x12 (the syscall instruction)"]
+    J --> K["kernel transition — origin address = inside ntdll"]
+    K --> T["ETW-TI records the call — but origin check passes"]
+```
+
+The remaining tells: the *call* to the attacker's stub still comes from
+attacker-controlled memory (the stack frame before the jump), and an
+`NtAllocateVirtualMemory` with execute permission logged by `ETW-TI` at an
+unusual time is still suspicious regardless of the syscall's apparent origin.
+Indirect syscalls defeat one class of origin check; they don't address call-stack
+inspection (see [[In-Memory Evasion — Unhooking, Sleep Masking & Call-Stack Spoofing]]).
 
 ## Worked Example: Making Another Process Do the Work
 
@@ -152,6 +209,7 @@ You should now be able to:
 - Explain why running code inside another process evades process-lineage detection, and what a syscall is.
 - Inject a benign action into a running process via ptrace, and explain how direct syscalls skip userland EDR hooks.
 - Explain why the injection *act* (remote thread/ptrace/hollowing) is itself detectable, why EDR moved to kernel callbacks/ETW-TI because userland hooks are bypassable, and how CFI/protected-processes/least-privilege defend against injection.
+- Explain how indirect syscalls improve on direct syscalls by jumping into `ntdll`'s own `syscall` instruction (defeating origin-address checks) and how HellsGate/HalosGate/SysWhispers3 resolve syscall numbers at runtime without hardcoding them.
 
 ---
 > 🔼 Up: [[Evasion & Endpoint Tradecraft]]

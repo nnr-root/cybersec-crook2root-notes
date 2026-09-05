@@ -6,6 +6,8 @@ aliases:
   - C2 Architecture
   - Redirectors
   - Command and Control
+  - Malleable Profiles
+  - Malleable C2
 tags:
   - tree/offensive
   - cyber/offensive/redteam
@@ -71,6 +73,93 @@ flowchart LR
 ```
 
 Domain/traffic governance means owning the domains, controlling DNS/TLS, honoring provider terms, logging, and — always — a documented **teardown** (next leaf). Techniques like domain fronting or abusing third-party trust may violate provider terms and are not assumed available.
+
+## Malleable Profiles: shaping the beacon's HTTP transaction
+
+A redirector hides the control server; a **malleable profile** hides the *beacon
+itself* inside traffic that looks like a legitimate application. Without one,
+a Cobalt Strike (or compatible) beacon makes HTTP requests with recognisable
+default headers, URIs, and timing — a defender who knows the defaults finds the
+beacon immediately. A malleable profile is a configuration file that specifies,
+field by field, what the beacon's HTTP GET and POST transactions look like:
+URIs, method, headers, cookies, body transforms, sleep interval, and jitter.
+
+The goal is a transaction that is **indistinguishable from a known software
+product's legitimate traffic** — not just "looks like HTTP", but "matches the
+specific fields a real Office CDN check-in or Teams heartbeat would produce."
+
+```text
+# Excerpt: shaping the beacon GET to resemble a software update check
+set sleeptime "45000";        # 45-second check-in interval
+set jitter     "20";          # ±20% random jitter — breaks metronomic detection
+
+http-get {
+    set uri "/updates/check?v=16.0.1&build=canary";
+
+    client {
+        header "Accept"          "application/json, text/plain, */*";
+        header "Accept-Language" "en-US,en;q=0.9";
+        header "User-Agent"      "Microsoft Office/16.0 (Windows NT 10.0)";
+
+        metadata {
+            base64url;
+            prepend "session=";
+            header "Cookie";
+        }
+    }
+
+    server {
+        header "Content-Type"  "application/json";
+        header "Cache-Control" "no-store";
+
+        output {
+            base64url;
+            print;
+        }
+    }
+}
+```
+
+**Key directives and what they control:**
+
+| Directive | Controls |
+|---|---|
+| `set sleeptime` / `set jitter` | Check-in interval in ms; jitter as % randomisation |
+| `http-get` / `http-post` | Shape of the two transaction types independently |
+| `header` | HTTP headers sent by the client or returned by the server |
+| `uri` | The path and query string of the request |
+| `metadata` / `id` / `output` | Where beacon metadata/task IDs/results are hidden and how they are encoded (`base64`, `base64url`, `netbios`, `mask`) |
+| `transform-x86` / `transform-x64` | Shellcode transforms (prepend/append/xor) applied to the staged payload |
+| `post-ex` block | Process spawn settings and pipe names for post-exploitation |
+
+**The limit a profile cannot remove.** Even a perfect profile is visible at the
+*behavioural* level. The destination is still a single IP or domain that the host
+calls on a regular interval; the frequency, data volume per request, and
+correlation between one host's check-ins and another's are all preserved. A
+mature defender does not look at the `User-Agent` alone — they look at the
+*pattern*:
+
+```text
+# Zeek connection summary for a host running a 45s jittered beacon:
+# ts=11:00:00  src=10.10.10.14  dst=203.0.113.10  bytes=340   uri=/updates/check?v=...
+# ts=11:00:47  src=10.10.10.14  dst=203.0.113.10  bytes=340   uri=/updates/check?v=...
+# ts=11:01:31  src=10.10.10.14  dst=203.0.113.10  bytes=340   uri=/updates/check?v=...
+```
+
+The host WS-014 (10.10.10.14 on The Thread) is talking to edge (203.0.113.10)
+every ~47 seconds with identical request size, to a URI pattern that a real CDN
+would vary. Jitter randomises the interval; it does not randomise the destination,
+the size, or the existence of the pattern. Domain reputation, destination rarity,
+and size-distribution analysis engage malleable profiles at the layer the profile
+cannot control.
+
+**Auditing your own profile before an engagement.** Extract a capture of your
+beacon's traffic and compare it against legitimate captures of the software it
+impersonates: header order, TLS ALPN values, JA3/JA3S fingerprints, response
+sizes. Any mismatch is a field a defender's ruleset can key on. The profile tells
+the beacon what to send; it cannot tell the TLS stack what fingerprint to present —
+browser-impersonation profiles that need a specific JA3 require a matching TLS
+library, not just a malleable directive.
 
 ## Worked Example: An Agent That Never Talks to the Control Server
 
@@ -149,6 +238,7 @@ You should now be able to:
 - Explain what C2 is, what beaconing is, and why a redirector separates public ingress from the real control server.
 - Stand up a transparent, audited C2 with a default-deny redirector, and task a canary agent through it.
 - Compare C2 channels by reliability/auditability/detectability, explain why beacon patterns and egress control are the decisive defenses, and why authorized C2 must be signed/RBAC'd/kill-switched/audited.
+- Explain what a malleable profile controls (URI, headers, transforms, sleep/jitter) and why profile-perfect traffic is still detectable via interval cadence, destination rarity, and JA3 fingerprint — the dimensions a profile cannot change.
 
 ---
 > 🔼 Up: [[C2 Infrastructure & Operational Security]]

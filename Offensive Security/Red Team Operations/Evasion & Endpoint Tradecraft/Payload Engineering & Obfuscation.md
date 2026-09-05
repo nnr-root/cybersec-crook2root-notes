@@ -20,7 +20,7 @@ Color: "#DC143C"
 > Authorized payloads are minimal, attributable, bounded, reversible, and built for *control measurement*. The lab uses a benign canary payload. Obfuscation is studied to understand detection limits — never to attack systems you don't own.
 
 ## Parent Learning Order
-AV, EDR & Telemetry Evasion Testing -> Payload Engineering & Obfuscation -> Process Injection & Direct Syscalls
+AV, EDR & Telemetry Evasion Testing -> Payload Engineering & Obfuscation -> Process Injection & Direct Syscalls -> In-Memory Evasion — Unhooking, Sleep Masking & Call-Stack Spoofing -> In-Memory Execution — Reflective Loading & Beacon Object Files
 
 ## Building the Thing That Runs
 

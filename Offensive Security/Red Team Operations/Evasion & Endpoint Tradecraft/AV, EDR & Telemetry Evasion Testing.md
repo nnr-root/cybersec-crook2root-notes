@@ -21,7 +21,7 @@ Color: "#DC143C"
 > Evasion testing measures *what the client's endpoint stack detects* — it is done under authorization, with canary payloads, to produce a detection-coverage outcome. The goal is improving the blue team's visibility, not defeating protection on systems you don't own.
 
 ## Parent Learning Order
-AV, EDR & Telemetry Evasion Testing -> Payload Engineering & Obfuscation -> Process Injection & Direct Syscalls
+AV, EDR & Telemetry Evasion Testing -> Payload Engineering & Obfuscation -> Process Injection & Direct Syscalls -> In-Memory Evasion — Unhooking, Sleep Masking & Call-Stack Spoofing -> In-Memory Execution — Reflective Loading & Beacon Object Files
 
 ## Knowing What the Endpoint Can See
 
