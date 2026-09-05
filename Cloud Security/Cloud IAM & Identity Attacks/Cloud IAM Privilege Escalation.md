@@ -11,6 +11,7 @@ tags:
 Domain:
   - "[[Cloud IAM & Identity Attacks]]"
 Color: "#FABED4"
+verified: 2026-09-05
 ---
 
 # Cloud IAM Privilege Escalation
