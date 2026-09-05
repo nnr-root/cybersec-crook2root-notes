@@ -4,6 +4,7 @@ aliases: ["feroxbuster"]
 tags: [tree/tooling, cyber/tooling/offensive/enumeration/feroxbuster, type/tool, difficulty/medium]
 Domain: "[[Enumeration & Service Interaction Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # feroxbuster

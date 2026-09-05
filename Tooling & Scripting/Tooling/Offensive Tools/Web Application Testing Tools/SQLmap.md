@@ -4,6 +4,7 @@ aliases: ["sqlmap"]
 tags: [tree/tooling, cyber/tooling/offensive/web/sqlmap, type/tool, difficulty/hard]
 Domain: "[[Web Application Testing Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # SQLmap

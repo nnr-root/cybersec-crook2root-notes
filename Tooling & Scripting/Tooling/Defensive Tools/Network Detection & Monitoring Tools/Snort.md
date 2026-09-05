@@ -4,6 +4,7 @@ aliases: ["snort"]
 tags: [tree/tooling, cyber/tooling/defensive/snort, type/tool, difficulty/medium]
 Domain: "[[Network Detection & Monitoring Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Snort

@@ -4,6 +4,7 @@ aliases: ["Mass IP Port Scanner"]
 tags: [tree/tooling, cyber/tooling/offensive/masscan, type/tool, difficulty/hard]
 Domain: "[[Network Discovery Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Masscan

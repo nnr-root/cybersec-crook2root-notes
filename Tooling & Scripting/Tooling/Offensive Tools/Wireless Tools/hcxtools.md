@@ -4,6 +4,7 @@ aliases: ["hcxtools", "hcxdumptool", "hcxpcapngtool"]
 tags: [tree/tooling, cyber/tooling/offensive/wireless/hcxtools, type/tool, difficulty/hard]
 Domain: "[[Wireless Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # hcxtools

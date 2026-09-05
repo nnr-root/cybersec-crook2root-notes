@@ -4,6 +4,7 @@ aliases: ["enum4linux", "enum4linux-ng"]
 tags: [tree/tooling, cyber/tooling/offensive/enumeration/enum4linux, type/tool, difficulty/medium]
 Domain: "[[Enumeration & Service Interaction Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # enum4linux

@@ -4,6 +4,7 @@ aliases: ["dirsearch"]
 tags: [tree/tooling, cyber/tooling/offensive/enumeration/dirsearch, type/tool, difficulty/medium]
 Domain: "[[Enumeration & Service Interaction Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # dirsearch

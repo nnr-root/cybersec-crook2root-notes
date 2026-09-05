@@ -4,6 +4,7 @@ aliases: ["Network Mapper"]
 tags: [tree/tooling, cyber/tooling/offensive/nmap, type/tool, difficulty/hard]
 Domain: "[[Network Discovery Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Nmap

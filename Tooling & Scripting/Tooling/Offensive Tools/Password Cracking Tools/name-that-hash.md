@@ -4,6 +4,7 @@ aliases: ["name-that-hash", "nth", "name that hash"]
 tags: [tree/tooling, cyber/tooling/offensive/cracking/nth, type/tool, difficulty/medium]
 Domain: "[[Password Cracking Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # name-that-hash

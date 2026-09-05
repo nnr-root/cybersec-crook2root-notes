@@ -4,6 +4,7 @@ aliases: ["Building Network Scanners", "Writing a Port Scanner"]
 tags: [tree/tooling, cyber/tooling/development/scanners, type/concept, difficulty/medium]
 Domain: "[[Writing Your Own Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Building Network Scanners

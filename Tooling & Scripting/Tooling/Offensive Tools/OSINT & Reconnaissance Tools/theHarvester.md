@@ -4,6 +4,7 @@ aliases: ["theharvester"]
 tags: [tree/tooling, cyber/tooling/offensive/osint/theharvester, type/tool, difficulty/medium]
 Domain: "[[OSINT & Reconnaissance Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # theHarvester

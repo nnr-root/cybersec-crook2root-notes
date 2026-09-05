@@ -4,6 +4,7 @@ aliases: ["zeek", "Bro"]
 tags: [tree/tooling, cyber/tooling/defensive/zeek, type/tool, difficulty/hard]
 Domain: "[[Network Detection & Monitoring Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Zeek

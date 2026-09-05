@@ -4,6 +4,7 @@ aliases: ["nxc", "CrackMapExec", "crackmapexec"]
 tags: [tree/tooling, cyber/tooling/offensive/ad/netexec, type/tool, difficulty/medium]
 Domain: "[[Active Directory & Windows Attack Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # NetExec

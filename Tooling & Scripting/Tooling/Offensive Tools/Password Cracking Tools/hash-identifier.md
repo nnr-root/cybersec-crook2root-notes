@@ -4,6 +4,7 @@ aliases: ["hash-identifier", "hashid", "hash-id"]
 tags: [tree/tooling, cyber/tooling/offensive/cracking/hashid, type/tool, difficulty/easy]
 Domain: "[[Password Cracking Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # hash-identifier

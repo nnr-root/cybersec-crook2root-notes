@@ -6,6 +6,7 @@ Domain: "[[Packet Analysis Tools]]"
 thread-exempt:
   - "9.100.51.198: not an address — the reversed in-addr.arpa name for 198.51.100.9, the query tcpdump emits about its own filter target"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # tcpdump

@@ -4,6 +4,7 @@ aliases: ["linpeas", "PEASS-ng"]
 tags: [tree/tooling, cyber/tooling/offensive/privesc/linpeas, type/tool, difficulty/hard]
 Domain: "[[Privilege Escalation Enumeration Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # LinPEAS

@@ -3,6 +3,7 @@ title: "Network Detection & Monitoring Tools"
 tags: [tree/tooling, cyber/tooling/defensive/network-monitoring, cyber/moc]
 Domain: "[[Defensive Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Network Detection & Monitoring Tools

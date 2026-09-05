@@ -4,6 +4,7 @@ aliases: ["suricata"]
 tags: [tree/tooling, cyber/tooling/defensive/suricata, type/tool, difficulty/medium]
 Domain: "[[Network Detection & Monitoring Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Suricata

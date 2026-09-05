@@ -4,6 +4,7 @@ aliases: ["Golang Security Engineering", "Go"]
 tags: [tree/tooling, cyber/tooling/programming/go, type/concept, difficulty/medium]
 Domain: "[[Programming for Security]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Go for Security Engineering

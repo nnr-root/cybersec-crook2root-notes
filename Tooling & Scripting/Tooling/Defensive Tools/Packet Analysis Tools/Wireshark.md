@@ -4,6 +4,7 @@ aliases: ["wireshark", "tshark"]
 tags: [tree/tooling, cyber/tooling/defensive/wireshark, type/tool, difficulty/medium]
 Domain: "[[Packet Analysis Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Wireshark

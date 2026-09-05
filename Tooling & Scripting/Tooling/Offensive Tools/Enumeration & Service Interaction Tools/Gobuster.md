@@ -4,6 +4,7 @@ aliases: ["Gobuster Content Discovery"]
 tags: [tree/tooling, cyber/tooling/offensive/gobuster, type/tool, difficulty/medium]
 Domain: "[[Enumeration & Service Interaction Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Gobuster

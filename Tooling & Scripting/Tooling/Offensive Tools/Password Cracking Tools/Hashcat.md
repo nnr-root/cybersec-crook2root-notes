@@ -4,6 +4,7 @@ aliases: ["hashcat"]
 tags: [tree/tooling, cyber/tooling/offensive/cracking/hashcat, type/tool, difficulty/hard]
 Domain: "[[Password Cracking Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Hashcat

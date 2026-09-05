@@ -4,6 +4,7 @@ aliases: ["amass", "OWASP Amass"]
 tags: [tree/tooling, cyber/tooling/offensive/osint/amass, type/tool, difficulty/hard]
 Domain: "[[OSINT & Reconnaissance Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Amass

@@ -4,6 +4,7 @@ aliases: ["Security Tool Architecture", "Tool Design Patterns"]
 tags: [tree/tooling, cyber/tooling/development/architecture, type/concept, difficulty/hard]
 Domain: "[[Writing Your Own Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Security Tool Architecture & Design Patterns

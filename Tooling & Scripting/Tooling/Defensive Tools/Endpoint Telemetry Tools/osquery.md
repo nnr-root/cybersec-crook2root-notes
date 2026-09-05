@@ -4,6 +4,7 @@ aliases: ["osquery", "osqueryi"]
 tags: [tree/tooling, cyber/tooling/defensive/osquery, type/tool, difficulty/medium]
 Domain: "[[Endpoint Telemetry Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # osquery

@@ -4,6 +4,7 @@ aliases: ["Bash Security Automation", "Bash"]
 tags: [tree/tooling, cyber/tooling/programming/bash, type/concept, difficulty/medium]
 Domain: "[[Programming for Security]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Bash for Security Operations

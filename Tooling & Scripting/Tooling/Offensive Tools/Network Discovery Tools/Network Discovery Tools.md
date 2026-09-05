@@ -3,6 +3,7 @@ title: "Network Discovery Tools"
 tags: [tree/tooling, cyber/tooling/offensive/discovery, cyber/moc]
 Domain: "[[Offensive Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Network Discovery Tools

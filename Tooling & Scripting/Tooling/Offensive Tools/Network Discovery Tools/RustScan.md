@@ -4,6 +4,7 @@ aliases: ["Rust Port Scanner"]
 tags: [tree/tooling, cyber/tooling/offensive/rustscan, type/tool, difficulty/medium]
 Domain: "[[Network Discovery Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # RustScan

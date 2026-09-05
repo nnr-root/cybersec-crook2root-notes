@@ -4,6 +4,7 @@ aliases: ["aircrack-ng suite", "airodump-ng"]
 tags: [tree/tooling, cyber/tooling/offensive/wireless/aircrack, type/tool, difficulty/medium]
 Domain: "[[Wireless Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # aircrack-ng

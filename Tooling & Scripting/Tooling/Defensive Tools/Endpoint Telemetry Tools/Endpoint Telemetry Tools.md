@@ -3,6 +3,7 @@ title: "Endpoint Telemetry Tools"
 tags: [tree/tooling, cyber/tooling/defensive/endpoint, cyber/moc]
 Domain: "[[Defensive Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Endpoint Telemetry Tools

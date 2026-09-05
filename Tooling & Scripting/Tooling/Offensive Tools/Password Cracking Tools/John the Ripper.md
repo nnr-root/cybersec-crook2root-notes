@@ -4,6 +4,7 @@ aliases: ["JtR", "john"]
 tags: [tree/tooling, cyber/tooling/offensive/cracking/john, type/tool, difficulty/medium]
 Domain: "[[Password Cracking Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # John the Ripper

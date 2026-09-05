@@ -3,6 +3,7 @@ title: "Packet Analysis Tools"
 tags: [tree/tooling, cyber/tooling/defensive/packet-analysis, cyber/moc]
 Domain: "[[Defensive Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Packet Analysis Tools

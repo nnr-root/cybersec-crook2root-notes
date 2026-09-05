@@ -3,6 +3,7 @@ title: "Enumeration & Service Interaction Tools"
 tags: [tree/tooling, cyber/tooling/offensive/enumeration, cyber/moc]
 Domain: "[[Offensive Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Enumeration & Service Interaction Tools

@@ -4,6 +4,7 @@ aliases: ["ShadowStep Engineering"]
 tags: [tree/tooling, cyber/tooling/development/shadowstep, type/concept, difficulty/hard]
 Domain: "[[Writing Your Own Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # ShadowStep Tool Architecture

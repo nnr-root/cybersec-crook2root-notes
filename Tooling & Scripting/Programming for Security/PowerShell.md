@@ -4,6 +4,7 @@ aliases: ["PowerShell", "PowerShell Security", "Windows Automation"]
 tags: [tree/tooling, cyber/tooling/programming/powershell, type/concept, difficulty/medium]
 Domain: "[[Programming for Security]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # PowerShell for Security Operations

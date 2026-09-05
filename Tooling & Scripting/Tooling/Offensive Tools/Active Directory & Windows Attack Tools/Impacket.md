@@ -4,6 +4,7 @@ aliases: ["impacket", "secretsdump", "wmiexec"]
 tags: [tree/tooling, cyber/tooling/offensive/ad/impacket, type/tool, difficulty/hard]
 Domain: "[[Active Directory & Windows Attack Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Impacket

@@ -4,6 +4,7 @@ aliases: ["nikto"]
 tags: [tree/tooling, cyber/tooling/offensive/web/nikto, type/tool, difficulty/medium]
 Domain: "[[Web Application Testing Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Nikto

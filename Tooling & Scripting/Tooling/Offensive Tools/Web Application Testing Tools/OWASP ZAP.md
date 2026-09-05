@@ -4,6 +4,7 @@ aliases: ["ZAP", "Zed Attack Proxy"]
 tags: [tree/tooling, cyber/tooling/offensive/web/zap, type/tool, difficulty/medium]
 Domain: "[[Web Application Testing Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # OWASP ZAP

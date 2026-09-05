@@ -4,6 +4,7 @@ aliases: ["Fuzz Faster U Fool"]
 tags: [tree/tooling, cyber/tooling/offensive/ffuf, type/tool, difficulty/hard]
 Domain: "[[Enumeration & Service Interaction Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # ffuf

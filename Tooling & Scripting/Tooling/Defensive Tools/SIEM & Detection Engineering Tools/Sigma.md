@@ -4,6 +4,7 @@ aliases: ["sigma", "sigma rules"]
 tags: [tree/tooling, cyber/tooling/defensive/sigma, type/tool, difficulty/hard]
 Domain: "[[SIEM & Detection Engineering Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Sigma

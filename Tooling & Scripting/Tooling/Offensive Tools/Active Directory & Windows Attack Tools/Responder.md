@@ -4,6 +4,7 @@ aliases: ["responder"]
 tags: [tree/tooling, cyber/tooling/offensive/ad/responder, type/tool, difficulty/medium]
 Domain: "[[Active Directory & Windows Attack Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Responder

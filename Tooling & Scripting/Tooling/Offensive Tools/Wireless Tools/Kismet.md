@@ -4,6 +4,7 @@ aliases: ["kismet"]
 tags: [tree/tooling, cyber/tooling/offensive/wireless/kismet, type/tool, difficulty/medium]
 Domain: "[[Wireless Tools]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Kismet

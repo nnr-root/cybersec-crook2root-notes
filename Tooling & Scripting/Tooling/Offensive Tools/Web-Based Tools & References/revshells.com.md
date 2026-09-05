@@ -4,6 +4,7 @@ aliases: ["revshells", "reverse shell generator"]
 tags: [tree/tooling, cyber/tooling/offensive/web-tools/revshells, type/tool, difficulty/medium]
 Domain: "[[Web-Based Tools & References]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # revshells.com

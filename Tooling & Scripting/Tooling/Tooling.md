@@ -7,6 +7,7 @@ tags:
   - cyber/moc
 Domain: "[[Tooling & Scripting]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # Tooling

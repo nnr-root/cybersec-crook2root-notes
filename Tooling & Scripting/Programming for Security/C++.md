@@ -4,6 +4,7 @@ aliases: ["C++ Security", "C++"]
 tags: [tree/tooling, cyber/tooling/programming/cpp, type/concept, difficulty/hard]
 Domain: "[[Programming for Security]]"
 Color: "#708090"
+verified: 2026-09-05
 ---
 
 # C++ for Security Engineering
