@@ -11,6 +11,7 @@ tags:
 Domain:
   - "[[Firmware Analysis & Extraction]]"
 Color: "#9A6324"
+verified: 2026-09-05
 ---
 
 # Firmware Extraction & Analysis
