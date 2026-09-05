@@ -96,6 +96,8 @@ flowchart TB
 | `FS01` | 10.10.20.20 | Windows file server, SMB shares, one null session left on | SMB, enum4linux, Responder, relay |
 | `APP01` | 10.10.20.30 | Ubuntu, Docker, the tracking backend, `/opt/meridian/routeplan` | Linux internals, privesc, containers, DevSecOps, exploit dev |
 | `LOG01` | 10.10.20.40 | Zeek, Sysmon collection, SIEM | Defensive Security, detection engineering |
+| `MECM01` | 10.10.20.35 | Microsoft Configuration Manager (SCCM) primary site server, PXE + software deployment to every managed host — a Tier 0 asset in practice | SCCM/MECM attacks, client push, NAA, site takeover |
+| `AADC01` | 10.10.20.36 | Entra Connect (Azure AD Connect) sync server; runs the `MSOL_`/`ADSync` account with directory-replication rights on-prem | Hybrid identity, PHS/PTA abuse, on-prem↔cloud pivot |
 | `WS-014` | 10.10.10.14 | Windows 11, finance analyst | Phishing target, endpoint |
 | `WS-030` | 10.10.10.30 | Windows 11, IT admin — *already referenced by the BloodHound note* | Lateral movement, sessions |
 | `SCAN-07` | 10.10.30.7 | Embedded Linux barcode scanner, ancient firmware | Hardware/IoT, wireless |
@@ -110,6 +112,14 @@ these directly.
 
 **Cloud:** bucket `meridian-tracking`, and `169.254.169.254` reachable from
 `track` — the SSRF target that makes the cloud-metadata lesson concrete.
+
+**Entra ID (cloud identity):** the tenant is `meridian.onmicrosoft.com`, with
+`meridian.test` added and verified as its custom domain, so `r.okonkwo@meridian.test`
+is the same principal on-prem and in the cloud. It is synchronised from on-prem
+AD by Entra Connect on `AADC01`, and Seamless SSO is enabled, which creates the
+computer account `AZUREADSSOACC$` in on-prem AD — the account whose Kerberos key
+forges cloud access in the Seamless SSO silver-ticket attack. This is the single
+on-prem↔cloud seam every hybrid-identity example uses.
 
 ## 4. The identities
 
@@ -168,6 +178,8 @@ real single-vendor fleet would look.
 | `00:00:5E:00:53:21` | `FS01` |
 | `00:00:5E:00:53:22` | `APP01` |
 | `00:00:5E:00:53:23` | `LOG01` |
+| `00:00:5E:00:53:35` | `MECM01` |
+| `00:00:5E:00:53:36` | `AADC01` |
 | `00:00:5E:00:53:30` | `SCAN-07` |
 | `00:00:5E:00:53:40` | `jump` |
 | `00:00:5E:00:53:50` | `edge` |
