@@ -4,6 +4,7 @@ aliases: ["API Authorization Testing", "API Business Logic Security", "API Rate 
 tags: [tree/offensive, cyber/offensive/api, type/concept, difficulty/medium]
 Domain: "[[API & Modern Protocol Testing]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🔑 API Security Fundamentals

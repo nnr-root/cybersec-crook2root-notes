@@ -4,6 +4,7 @@ aliases: ["Passive Recon", "OSINT", "Corporate OSINT", "Identity OSINT", "Code E
 tags: [tree/offensive, cyber/offensive/recon, type/technique, difficulty/medium]
 Domain: "[[Reconnaissance & Attack Surface]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🔭 Passive Reconnaissance & OSINT

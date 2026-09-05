@@ -4,6 +4,7 @@ aliases: ["Web Cache Poisoning", "Web Cache Deception", "Cache Poisoning", "Cach
 tags: [tree/offensive, cyber/offensive/web/http/cache, type/technique, difficulty/medium]
 Domain: "[[HTTP Architecture & Advanced Web Attacks]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🗄️ Web Cache Attacks

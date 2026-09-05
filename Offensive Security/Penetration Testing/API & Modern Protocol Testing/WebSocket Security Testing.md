@@ -4,6 +4,7 @@ aliases: ["WebSocket Testing", "Cross-Site WebSocket Hijacking"]
 tags: [tree/offensive, cyber/offensive/api/websocket, type/technique, difficulty/medium]
 Domain: "[[API & Modern Protocol Testing]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🔁 WebSocket Security Testing

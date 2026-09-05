@@ -4,6 +4,7 @@ aliases: ["Dependency Confusion", "Supply Chain Attacks", "Namespace Confusion",
 tags: [tree/offensive, cyber/offensive/web/supply-chain, type/technique, difficulty/medium]
 Domain: "[[CMS & Framework Security Testing]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 📦 Dependency Confusion & Supply-Chain Attacks

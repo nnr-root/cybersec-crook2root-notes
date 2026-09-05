@@ -3,6 +3,7 @@ title: "Cloud Data Access Simulation"
 tags: [tree/offensive, cyber/offensive/cloud/data, type/technique, difficulty/hard]
 Domain: "[[Cloud Red Team Operations]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # Cloud Data Access Simulation

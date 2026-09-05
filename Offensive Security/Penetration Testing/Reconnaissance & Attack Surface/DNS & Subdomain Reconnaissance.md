@@ -4,6 +4,7 @@ aliases: ["DNS Reconnaissance", "Subdomain Reconnaissance", "Domain Reconnaissan
 tags: [tree/offensive, cyber/offensive/recon, type/technique, difficulty/medium]
 Domain: "[[Reconnaissance & Attack Surface]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🌐 DNS & Subdomain Reconnaissance

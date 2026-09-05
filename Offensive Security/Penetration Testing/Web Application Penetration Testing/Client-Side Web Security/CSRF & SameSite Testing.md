@@ -4,6 +4,7 @@ aliases: ["CSRF", "Cross-Site Request Forgery", "SameSite Testing"]
 tags: [tree/offensive, cyber/offensive/web/client-side/csrf, type/technique, difficulty/medium]
 Domain: "[[Client-Side Web Security]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🎣 CSRF & SameSite Testing

@@ -4,6 +4,7 @@ aliases: ["File Upload Testing", "Malicious Upload"]
 tags: [tree/offensive, cyber/offensive/web/files/upload, type/technique, difficulty/medium]
 Domain: "[[File, Parser & Serialization Security]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 📤 File Upload Security Testing

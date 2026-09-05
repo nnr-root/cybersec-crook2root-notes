@@ -4,6 +4,7 @@ aliases: ["Django Security Testing", "Drupal Security Testing", "Joomla Security
 tags: [tree/offensive, cyber/offensive/web/cms, type/methodology, difficulty/medium]
 Domain: "[[CMS & Framework Security Testing]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🧱 Framework & CMS Testing Methodology

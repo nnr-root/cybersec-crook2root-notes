@@ -4,6 +4,7 @@ aliases: ["Race Condition Testing", "TOCTOU", "Concurrency Attacks"]
 tags: [tree/offensive, cyber/offensive/web/race-conditions, type/technique, difficulty/medium]
 Domain: "[[Business Logic & Workflow Security]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🏁 Race Condition & Concurrency Testing

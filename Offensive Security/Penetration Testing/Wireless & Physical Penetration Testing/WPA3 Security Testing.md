@@ -3,6 +3,7 @@ title: "WPA3 Security Testing"
 tags: [tree/offensive, cyber/offensive/wireless/wpa3, type/technique, difficulty/medium]
 Domain: "[[Wireless & Physical Penetration Testing]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # WPA3 Security Testing

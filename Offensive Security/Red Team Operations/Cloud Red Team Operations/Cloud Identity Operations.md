@@ -3,6 +3,7 @@ title: "Cloud Identity Operations"
 tags: [tree/offensive, cyber/offensive/cloud/identity, type/technique, difficulty/hard]
 Domain: "[[Cloud Red Team Operations]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # Cloud Identity Operations

@@ -4,6 +4,7 @@ aliases: ["Internet Exposure Discovery", "Shodan Recon", "Cloud Asset Discovery"
 tags: [tree/offensive, cyber/offensive/recon/cloud, type/technique, difficulty/medium]
 Domain: "[[Reconnaissance & Attack Surface]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # ☁️ Cloud & Internet Exposure Discovery

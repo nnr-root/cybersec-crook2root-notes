@@ -15,6 +15,7 @@ tags:
   - difficulty/hard
 Domain: "[[C2 Infrastructure & Operational Security]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 📡 C2 Infrastructure & Redirectors

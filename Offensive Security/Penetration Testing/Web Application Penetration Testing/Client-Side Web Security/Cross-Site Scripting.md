@@ -4,6 +4,7 @@ aliases: ["XSS", "Reflected XSS", "Stored XSS", "DOM XSS"]
 tags: [tree/offensive, cyber/offensive/web/client-side/xss, type/technique, difficulty/medium]
 Domain: "[[Client-Side Web Security]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 💉 Cross-Site Scripting

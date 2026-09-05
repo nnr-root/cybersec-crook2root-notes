@@ -4,6 +4,7 @@ aliases: ["WAF Testing", "Edge Control Validation", "WAF Bypass"]
 tags: [tree/offensive, cyber/offensive/web/http/waf, type/technique, difficulty/medium]
 Domain: "[[HTTP Architecture & Advanced Web Attacks]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🧱 WAF Testing & Bypass Methodology

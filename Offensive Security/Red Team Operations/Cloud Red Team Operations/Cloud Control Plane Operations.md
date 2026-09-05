@@ -3,6 +3,7 @@ title: "Cloud Control Plane Operations"
 tags: [tree/offensive, cyber/offensive/cloud/control-plane, type/technique, difficulty/hard]
 Domain: "[[Cloud Red Team Operations]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # Cloud Control Plane Operations

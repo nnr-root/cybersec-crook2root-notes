@@ -4,6 +4,7 @@ aliases: ["IDOR Testing", "BOLA Testing", "BFLA Testing", "Insecure Direct Objec
 tags: [tree/offensive, cyber/offensive/web/access, type/technique, difficulty/medium]
 Domain: "[[Web Identity & Access Control]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🚧 Broken Access Control

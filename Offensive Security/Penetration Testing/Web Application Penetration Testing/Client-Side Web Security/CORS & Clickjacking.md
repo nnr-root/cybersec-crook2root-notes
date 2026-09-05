@@ -4,6 +4,7 @@ aliases: ["CORS Misconfiguration", "Clickjacking", "Cross-Origin Resource Sharin
 tags: [tree/offensive, cyber/offensive/web/client-side, type/technique, difficulty/medium]
 Domain: "[[Client-Side Web Security]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🪟 CORS & Clickjacking

@@ -12,6 +12,7 @@ tags:
   - difficulty/hard
 Domain: "[[Lateral Operations & Objectives]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🕵️ Red Team Credential Access & Lateral Movement

@@ -4,6 +4,7 @@ aliases: ["Active Reconnaissance Methodology", "Port Scanning Methodology", "Act
 tags: [tree/offensive, cyber/offensive/recon, type/technique, difficulty/medium]
 Domain: "[[Reconnaissance & Attack Surface]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 📡 Active Reconnaissance & Port Scanning

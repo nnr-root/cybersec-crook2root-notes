@@ -4,6 +4,7 @@ aliases: ["Business Logic Flaws", "Workflow Abuse Testing", "Entitlement Securit
 tags: [tree/offensive, cyber/offensive/web/logic, type/technique, difficulty/medium]
 Domain: "[[Business Logic & Workflow Security]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🧩 Business Logic Testing

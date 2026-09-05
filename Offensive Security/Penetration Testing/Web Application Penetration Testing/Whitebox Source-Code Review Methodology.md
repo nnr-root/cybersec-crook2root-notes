@@ -4,6 +4,7 @@ aliases: ["Source Code Review", "Whitebox Review", "Code Audit", "Taint Tracking
 tags: [tree/offensive, cyber/offensive/web/whitebox, type/methodology, difficulty/hard]
 Domain: "[[Web Application Penetration Testing]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🔍 Whitebox Source-Code Review Methodology

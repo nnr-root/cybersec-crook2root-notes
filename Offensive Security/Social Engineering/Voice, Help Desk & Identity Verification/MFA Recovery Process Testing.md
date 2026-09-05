@@ -3,6 +3,7 @@ title: "MFA Recovery Process Testing"
 tags: [tree/offensive, cyber/offensive/social/mfa-recovery, type/technique, difficulty/medium]
 Domain: "[[Voice, Help Desk & Identity Verification]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # MFA Recovery Process Testing

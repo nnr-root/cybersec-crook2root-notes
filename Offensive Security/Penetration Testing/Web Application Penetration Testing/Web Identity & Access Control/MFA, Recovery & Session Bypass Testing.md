@@ -4,6 +4,7 @@ aliases: ["MFA Bypass Testing", "MFA Recovery Process Testing", "Account Recover
 tags: [tree/offensive, cyber/offensive/web/identity/mfa, type/technique, difficulty/medium]
 Domain: "[[Web Identity & Access Control]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 📱 MFA, Recovery & Session Bypass Testing

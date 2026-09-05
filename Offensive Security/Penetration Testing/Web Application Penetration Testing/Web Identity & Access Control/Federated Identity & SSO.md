@@ -4,6 +4,7 @@ aliases: ["OAuth 2.0 & OpenID Connect Testing", "SAML Security Testing", "OAuth 
 tags: [tree/offensive, cyber/offensive/web/identity, type/technique, difficulty/medium]
 Domain: "[[Web Identity & Access Control]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🔗 Federated Identity & SSO

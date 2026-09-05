@@ -13,6 +13,7 @@ tags:
   - difficulty/medium
 Domain: "[[Methodologies & Frameworks]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🎭 Threat Modeling & MITRE ATT&CK

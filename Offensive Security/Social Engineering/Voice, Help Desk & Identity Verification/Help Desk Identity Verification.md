@@ -3,6 +3,7 @@ title: "Help Desk Identity Verification"
 tags: [tree/offensive, cyber/offensive/social/helpdesk, type/technique, difficulty/medium]
 Domain: "[[Voice, Help Desk & Identity Verification]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # Help Desk Identity Verification

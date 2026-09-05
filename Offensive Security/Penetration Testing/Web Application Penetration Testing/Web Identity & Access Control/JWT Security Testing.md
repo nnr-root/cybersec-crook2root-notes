@@ -4,6 +4,7 @@ aliases: ["JWT Testing", "JSON Web Token Security"]
 tags: [tree/offensive, cyber/offensive/web/identity/jwt, type/technique, difficulty/medium]
 Domain: "[[Web Identity & Access Control]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🎟️ JWT Security Testing

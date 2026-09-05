@@ -7,6 +7,7 @@ thread-exempt:
   - "4a:1b: a spoofed MAC inside an ip-netns lab on the reader's own machine — the LA bit is deliberate"
   - "8a:9b: the second spoofed MAC in the same local reproduction"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🔌 Layer 2 & 3 Network Attacks

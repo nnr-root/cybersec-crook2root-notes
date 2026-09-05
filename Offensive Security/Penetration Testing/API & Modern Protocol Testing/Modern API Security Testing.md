@@ -4,6 +4,7 @@ aliases: ["REST API Security Testing", "GraphQL Security Testing", "gRPC & Proto
 tags: [tree/offensive, cyber/offensive/api, type/technique, difficulty/medium]
 Domain: "[[API & Modern Protocol Testing]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🔌 Modern API Security Testing

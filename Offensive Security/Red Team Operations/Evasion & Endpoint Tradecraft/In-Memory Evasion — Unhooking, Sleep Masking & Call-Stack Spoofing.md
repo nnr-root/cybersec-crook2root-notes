@@ -4,6 +4,7 @@ aliases: ["In-Memory Evasion", "Unhooking", "Sleep Masking", "Sleep Obfuscation"
 tags: [tree/offensive, cyber/offensive/redteam, type/technique, difficulty/hard]
 Domain: "[[Evasion & Endpoint Tradecraft]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🫥 In-Memory Evasion — Unhooking, Sleep Masking & Call-Stack Spoofing

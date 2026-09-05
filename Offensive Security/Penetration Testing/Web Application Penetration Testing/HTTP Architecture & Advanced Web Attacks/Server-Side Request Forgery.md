@@ -4,6 +4,7 @@ aliases: ["SSRF", "Server Side Request Forgery"]
 tags: [tree/offensive, cyber/offensive/web/http/ssrf, type/technique, difficulty/medium]
 Domain: "[[HTTP Architecture & Advanced Web Attacks]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🎯 Server-Side Request Forgery

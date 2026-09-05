@@ -8,6 +8,7 @@ tags:
   - difficulty/medium
 Domain: "[[Phishing & Messaging Security Testing]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 📱 Smishing, QR & Collaboration-Platform Testing

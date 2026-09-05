@@ -4,6 +4,7 @@ aliases: ["Request Smuggling", "HTTP Desync", "CL.TE", "TE.CL"]
 tags: [tree/offensive, cyber/offensive/web/http/smuggling, type/technique, difficulty/hard]
 Domain: "[[HTTP Architecture & Advanced Web Attacks]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🚚 HTTP Request Smuggling

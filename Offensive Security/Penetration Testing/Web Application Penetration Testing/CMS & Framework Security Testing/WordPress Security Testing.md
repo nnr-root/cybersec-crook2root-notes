@@ -4,6 +4,7 @@ aliases: ["WordPress Testing", "WPScan Methodology"]
 tags: [tree/offensive, cyber/offensive/web/cms/wordpress, type/technique, difficulty/medium]
 Domain: "[[CMS & Framework Security Testing]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 📝 WordPress Security Testing

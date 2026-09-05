@@ -4,6 +4,7 @@ aliases: ["GraphQL Security", "GraphQL Testing", "GraphQL Introspection", "Graph
 tags: [tree/offensive, cyber/offensive/web/graphql, type/technique, difficulty/hard]
 Domain: "[[HTTP Architecture & Advanced Web Attacks]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🕸️ GraphQL Security Testing

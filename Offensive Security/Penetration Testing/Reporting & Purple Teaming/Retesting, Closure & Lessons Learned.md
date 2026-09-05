@@ -11,6 +11,7 @@ tags:
   - difficulty/medium
 Domain: "[[Reporting & Purple Teaming]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🔁 Retesting, Closure & Lessons Learned

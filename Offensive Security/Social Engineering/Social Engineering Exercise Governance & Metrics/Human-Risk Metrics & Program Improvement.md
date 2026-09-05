@@ -3,6 +3,7 @@ title: "Human-Risk Metrics & Program Improvement"
 tags: [tree/offensive, cyber/offensive/social/metrics, difficulty/medium]
 Domain: "[[Social Engineering Exercise Governance & Metrics]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # Human-Risk Metrics & Program Improvement

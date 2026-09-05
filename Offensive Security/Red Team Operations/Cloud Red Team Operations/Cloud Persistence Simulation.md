@@ -3,6 +3,7 @@ title: "Cloud Persistence Simulation"
 tags: [tree/offensive, cyber/offensive/cloud/persistence, type/technique, difficulty/hard]
 Domain: "[[Cloud Red Team Operations]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # Cloud Persistence Simulation

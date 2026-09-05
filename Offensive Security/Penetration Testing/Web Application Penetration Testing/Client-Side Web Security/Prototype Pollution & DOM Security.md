@@ -4,6 +4,7 @@ aliases: ["Prototype Pollution", "DOM Security", "JavaScript Prototype Pollution
 tags: [tree/offensive, cyber/offensive/web/client-side/prototype, type/technique, difficulty/hard]
 Domain: "[[Client-Side Web Security]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🧬 Prototype Pollution & DOM Security

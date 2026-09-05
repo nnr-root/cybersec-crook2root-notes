@@ -4,6 +4,7 @@ aliases: ["Authentication Attacks", "Identity and Session Testing", "Session Man
 tags: [tree/offensive, cyber/offensive/web/auth, type/technique, difficulty/medium]
 Domain: "[[Web Identity & Access Control]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🔐 Web Authentication Testing

@@ -4,6 +4,7 @@ aliases: ["Protocol Enumeration", "Service Enumeration & Exploitation", "Enterpr
 tags: [tree/offensive, cyber/offensive/network-pentest, type/technique, difficulty/medium]
 Domain: "[[Network Penetration Testing]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🛎️ Service Enumeration

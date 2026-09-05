@@ -17,6 +17,7 @@ tags:
   - difficulty/easy
 Domain: "[[Methodologies & Frameworks]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # ⚖️ Rules of Engagement & Scoping

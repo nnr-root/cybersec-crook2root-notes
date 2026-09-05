@@ -12,6 +12,7 @@ tags:
   - difficulty/hard
 Domain: "[[Evasion & Endpoint Tradecraft]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 🧬 Payload Engineering & Obfuscation

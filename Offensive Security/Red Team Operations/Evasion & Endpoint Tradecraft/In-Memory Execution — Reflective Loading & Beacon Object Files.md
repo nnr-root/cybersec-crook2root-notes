@@ -4,6 +4,7 @@ aliases: ["Reflective DLL Injection", "Reflective Loading", "Beacon Object Files
 tags: [tree/offensive, cyber/offensive/redteam, type/technique, difficulty/hard]
 Domain: "[[Evasion & Endpoint Tradecraft]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 📦 In-Memory Execution — Reflective Loading & Beacon Object Files

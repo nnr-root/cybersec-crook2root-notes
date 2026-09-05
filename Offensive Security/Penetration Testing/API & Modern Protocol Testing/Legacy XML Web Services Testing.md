@@ -4,6 +4,7 @@ aliases: ["SOAP Security Testing", "WSDL Security Testing", "XML API Security Te
 tags: [tree/offensive, cyber/offensive/api, type/technique, difficulty/medium]
 Domain: "[[API & Modern Protocol Testing]]"
 Color: "#DC143C"
+verified: 2026-09-05
 ---
 
 # 📜 Legacy XML Web Services Testing
